@@ -1,0 +1,48 @@
+<div class="ui result modal">
+  <i class="close icon"></i>
+  <div class="header">
+    <i class="history icon"></i>
+    &nbsp;Resultado do processamento
+  </div>
+  <div class="scrolling content">
+    <div class="description">
+      <div class="ui header">
+        <div class="sub header">
+          Título
+        </div>
+      </div>
+      <table class="ui celled result compact table" id="resultTable">
+        <thead>
+          <tr>
+            <th class="center aligned">Nº documento</th>
+            <th class="center aligned">Cliente</th>
+            <th class="center aligned">Data vencimento</th>
+            <th class="center aligned">Valor cobrado</th>
+          </tr>
+          <tr>
+            <th colspan="4" class="center aligned">Resultado</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+        <tfoot class="full-width">
+          <tr>
+            <th colspan="4">
+              <button class="ui right floated small primary labeled icon button"
+                      onclick="tableToExcel('resultTable', 'Resultado processamento')">
+                <i class="file excel icon"></i>
+                Exportar para Excel
+              </button>
+            </th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+  <div class="actions">
+    <div class="ui positive right labeled icon button">
+      Fechar
+      <i class="checkmark icon"></i>
+    </div>
+  </div>
+</div>

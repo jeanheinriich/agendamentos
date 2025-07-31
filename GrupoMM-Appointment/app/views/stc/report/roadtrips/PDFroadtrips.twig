@@ -1,0 +1,194 @@
+{% extends 'templates/basePDF.twig' %}
+{% block title %}
+  Detalhamento das jornadas executadas
+{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+  <style>
+    h1 {
+      font-weight: bold;
+      margin-bottom: 1.0em;
+    }
+
+    tr.bold,
+    tr.bold td {
+      font-weight: bold;
+    }
+
+    table.zebra tfoot tr.bottomborder td {
+      border-bottom: 1px solid #103040;
+    }
+
+    tr.group td {
+      text-align: left;
+      background-color: #f8f8f0;
+      border-top: 1px solid #103040;
+      border-bottom: 1px solid #103040;
+    }
+
+    /* --------------------------------------------------------------
+     * Personalizações das cores de linhas
+     * -------------------------------------------------------------- */
+
+    tr.ignore td {
+      text-decoration: line-through;
+    }
+    tr.start td {
+      color: #006599;
+      font-weight: bold;
+    }
+    tr.message td {
+      color: #a36222;
+    }
+    tr.end td {
+      color: #00324c;
+      font-weight: bold;
+    }
+    tr.restart td {
+      color: #748aa8;
+      font-style: oblique;
+    }
+    tr.start.error td {
+      color: #990000;
+      font-weight: bold;
+    }
+    tr.start.end td {
+      color: #550000;
+      font-weight: bold;
+    }
+    tr.restart.error td {
+      color: #a87474;
+    }
+    tr.error td {
+      color: #770000;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if error is null %}
+  <table width="100%" class="noborder">
+    <tbody>
+      <tr class="first title">
+        <td colspan="6">
+          <h1 class="title">
+            Detalhamento de jornadas executadas
+          </h1>
+        </td>
+      </tr>
+      <tr class="content">
+        <td colspan="3">
+          <span class="field">Empresa:</span><br>
+          <span class="content">{{ driver.employername }}</span>
+        </td>
+      </tr>
+      <tr class="content">
+        <td width="19%">
+          <span class="field">Matrícula:</span><br>
+          <span class="content">{{ driver.id }}</span>
+        </td>
+        <td>
+          <span class="field">Nome empregado:</span><br>
+          <span class="content">{{ driver.name }}</span>
+        </td>
+        <td>
+          <span class="field">Função:</span><br>
+          <span class="content">{{ driver.occupation }}</span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <table width="100%" class="zebra">
+    <thead>
+      <tr>
+        <th>Pos</th>
+        <th>Hora</th>
+        <th>Tipo</th>
+        <th>Local/Mensagem</th>
+        <th>Duração</th>
+        <th>Placa</th>
+      </tr>
+    </thead>
+    <tfoot>
+      <tr class="bottomBorder">
+        <td colspan="6">
+        </td>
+      </tr>
+      <tr class="signature">
+        <td colspan="7" style="font-size: 0.8em;">
+          &nbsp;<br>
+          &nbsp;<br>
+          ________________________________________________________________________________________________________________________________________   Data: ________ / ________ / ________________________<br>
+          Nome: <span class="bold">{{ driver.name }}</span>
+        </td>
+      </tr>
+    </tfoot>
+    <tbody>
+      {% set lastDay = '' %}
+      {% for event in events %}
+        {% set attr = [] %}
+
+        {% if event.status == 'Incompleta' %}
+          {% set attr = attr|merge(['error']) %}
+        {% else %}
+          {% if event.incomplete == true %}
+            {% set attr = attr|merge(['error']) %}
+          {% endif %}
+          {% if event.ignore == true %}
+            {% set attr = attr|merge(['ignore']) %}
+          {% endif %}
+        {% endif %}
+        {% if event.typeofevent == 'Início de viagem' %}
+          {% set attr = attr|merge(['start']) %}
+        {% endif %}
+        {% if event.typeofevent == 'Reinício de viagem' %}
+          {% set attr = attr|merge(['restart']) %}
+        {% endif %}
+        {% if event.typeofevent == 'Fim de viagem' %}
+          {% set attr = attr|merge(['end']) %}
+        {% endif %}
+        {% if event.typeofevent == 'Envio de mensagem' %}
+          {% set attr = attr|merge(['message']) %}
+        {% endif %}
+        {% if event.day != lastDay %}
+        <tr class="group">
+          <td colspan="3">
+            <span class="bold">Dia {{ event.day }}</span>
+            <span class="weekday">({{ event.dayOfWeek }})</span>
+          </td>
+          <td colspan="3">
+            &nbsp;
+          </td>
+          {% set lastDay = event.day %}
+        </tr>
+        {% endif %}
+        <tr class="{{ attr|join(' ') }}">
+          <td class="center" width="35px">
+            {{ loop.index }}
+          </td>
+          <td class="center" width="65px">
+            {{ event.time }}
+          </td>
+          <td width="160px">
+            {{ event.typeofevent }}
+          </td>
+          <td style="font-weight: normal;">
+            {% if event.typeofevent == 'Envio de mensagem' %}
+              Mensagem: {{ event.message }}
+            {% else %}
+              {{ event.location }}
+            {% endif %}
+          </td>
+          <td class="center" width="65px">
+            {{ event.duration }}
+          </td>
+          <td class="center" width="65px" style="border-right: 1px dotted #103040;">
+            {{ event.plate }}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <span class="error">Atenção!<br><br>{{ error }}</span>
+  {% endif %}
+{% endblock content %}

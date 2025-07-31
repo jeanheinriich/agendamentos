@@ -1,0 +1,117 @@
+{% extends 'templates/stc/layout_clean.twig' %}
+{% block title %}{{ parent() }} - Login{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  {{ css('login.min.css') }}
+  {{ css('libs/jquery/plugins/observe.input/observe.input.min.css') }}
+{% endblock stylesheets %}
+{% block content %}
+  <div class="ui middle aligned center aligned grid">
+    <div class="column">
+      <form class="ui large blue form error" action="{{ path_for('STC\\Login', { 'UUID': uuid }) }}" method="POST">
+        <div class="ui basic segment">
+          <img class="ui centered normal image"
+               src="/stc/resources/logo/inverted/{{ uuid }}"
+               alt="Logomarca da empresa">
+          <div class="ui clearing divider"></div>
+
+          <h2 class="ui header">
+            <div class="content">
+              Acesso ao sistema
+              <div class="sub header">
+                Digite o seu usuário e senha para entrar
+              </div>
+            </div>
+          </h2>
+          <div class="field{{ cssError('auth') }}">
+            <input type="text" name="username" maxlength="25"
+                   placeholder="Nome de acesso">
+          </div>
+          <div class="field{{ cssError('auth') }}">
+            <input type="password" name="password" maxlength="25"
+                   placeholder="Senha">
+          </div>
+          <div class="field" style="text-align: left !important;">
+            <div class="ui checkbox">
+              <input type="checkbox" id="remember" name="remember" class="hidden">
+              <label for="remember">Lembre-se de mim neste computador</label>
+            </div>
+          </div>
+
+          {{ csrf() }}
+          
+          <table width="100%" cellspacing="0">
+            <tbody>
+              <tr>
+                <td>
+                  <input type="submit"
+                         class="ui fluid large blue button"
+                         style="margin-left: 0;"
+                         value="Autenticar">
+                </td>
+                <td width="55px" style="text-align: right;">
+                  <button type="button" class="ui large orange icon button"
+                          style="margin-right: 0;"
+                          data-tooltip="Retorna à página inicial do site"
+                          data-position="top left"
+                          onclick="location.href='{{ path_for('Home') }}';">
+                    <i class="home icon"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!--<p class="message">
+            Esqueceu sua senha? <a href="{ { path_ for ('STC\\Forgot', { 'UUID': uuid }) }}">Recupere-a</a>
+          </p>-->
+        </div>
+
+        {% if hasErrors() %}
+        <div class="ui error message">
+          {% for error in getErrors('auth') %}
+            <p>{{ error }}</p>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+  
+  {{ lib('jquery/plugins/observe.input/observe.input.min.js') }}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // Trata a digitação nos campos relativos ao login e senha,
+      // permitindo prevenir o uso do CapsLock
+      $("input[name=username]")
+        .observeinput({
+          icon: {
+            left: 'user'
+          }
+        })
+      ;
+      $("input[name=password]")
+        .observeinput({
+          enableToggleView: true,
+          icon: {
+            left: 'lock'
+          }
+        })
+      ;
+      
+      // Coloca o foco no primeiro campo
+      $("input[name='username']")
+        .focus()
+      ;
+    });
+  </script>
+  {% endapply %}
+{% endblock scripts %}

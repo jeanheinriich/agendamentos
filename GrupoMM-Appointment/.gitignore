@@ -1,0 +1,54 @@
+# LOGS
+*.log
+
+# OS GENERATED FILES
+._*
+.DS_Store
+.DS_Store?
+.Trashes
+.vscode
+.phpunit.result.cache
+Thumbs.db
+
+# MISCELLANEOUS
+*.bak
+*.RET
+*.csv
+
+# PROJECT-SPECIFIC
+/backups
+/docs
+/vendor
+/var/cache/*
+!/var/cache/.gitkeep
+!/var/cache/README.md
+/var/router/*
+!/var/router/.gitkeep
+!/var/router/README.md
+/var/log/*
+!/var/log/.gitkeep
+!/var/log/README.md
+/var/storage/*
+!/var/storage/.gitkeep
+!/var/storage/README.md
+/var/storage/attachments/*
+!/var/storage/attachments/.gitkeep
+!/var/storage/attachments/README.md
+/var/storage/images/*
+!/var/storage/images/.gitkeep
+!/var/storage/images/README.md
+/var/session/*
+!/var/session/.gitkeep
+!/var/session/README.md
+/assets/library/semantic-ui/*
+/node_modules
+/olds
+/public/assets/*
+/public/favicon-*.png
+/public/favicon.ico
+composer.lock
+package-lock.json
+
+# EDITORS
+*.sublime-workspace
+*.sublime-project

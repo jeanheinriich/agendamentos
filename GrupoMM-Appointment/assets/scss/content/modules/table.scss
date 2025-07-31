@@ -1,0 +1,316 @@
+/* ----------------------------------------------------[ Table ]-----
+   As definições de tabelas usando Datatables.
+   ------------------------------------------------------------------ */
+
+.ui.stackable.grid {
+  margin-top: 0 !important;
+
+  .row:first-child {
+    display: none;
+  }
+
+  @media screen and (max-width: 767px) {
+    width: auto;
+    margin-top: -1rem !important;
+    margin-left: -1rem !important;
+    margin-right: -1rem !important;
+  }
+}
+
+.ui.table thead tr:first-child > th:last-child {
+  border-right: 2px solid rgba(34,36,38,.15);
+}
+
+.dataTables_scrollHead,
+.dataTables_scrollBody {
+  border-right: 1px solid rgba(34,36,38,.15);
+}
+
+// Ajustes no tamanho do cabeçalho das tabelas para redução de espaço
+.ui.compact.table thead th {
+  padding: .5em .7em;
+}
+
+div.dataTables_wrapper {
+  // Ocultação de informações adicionais para dispositivos com telas
+  // menores
+  div.dataTables_info {
+    @media screen and (max-width: 767px) {
+      display: none;
+    }
+  }
+
+  // Personalização da caixa indicadora de processamento no datatables
+  div.dataTables_processing {
+    background-color: #eaf3ff;
+
+    svg path,
+    svg rect {
+      fill: #0f6fff;
+    }
+  }
+}
+
+// Ajustes no sistema de paginação
+.ui.pagination.menu {
+  font-size: .9em;
+
+  .item {
+    line-height: 1.05em;
+
+    @media screen and (max-width: 470px) {
+      min-width: 1em;
+      font-size: 0.7em;
+    }
+  }
+
+  @media screen and (max-width: 767px) {
+    margin-bottom: 10px;
+  }
+}
+
+table.dataTable.table {
+  // Deslocamos os ícones de ordenação para cima
+  thead th.sorting::after,
+  thead th.sorting_asc::after,
+  thead th.sorting_desc::after,
+  thead td.sorting::after,
+  thead td.sorting_asc::after,
+  thead td.sorting_desc::after {
+    top: 8px !important;
+  }
+
+  // Mudamos os ícones de sentido da ordenação das colunas para maior
+  // clareza
+  thead th.sorting::after,
+  thead td.sorting::after {
+    content: "\f338" !important;
+    font-size: 1em !important;
+  }
+  
+  thead th.sorting_asc::after,
+  thead td.sorting_asc::after {
+    content: "\f309" !important;
+    color: $blueTextColor;
+  }
+
+  thead th.sorting_desc::after,
+  thead td.sorting_desc::after {
+    content: "\f30c" !important;
+    color: $blueTextColor;
+  }
+
+  // Acrescentamos uma cor para linhas selecionadas
+  tbody tr.selected,
+  tbody th.selected,
+  tbody td.selected {
+    background: rgba(50,150,250,.15) !important;
+    color: rgba(0,100,250,.95) !important;
+  }
+  tbody tr.selected:nth-child(2n),
+  tbody th.selected:nth-child(2n),
+  tbody td.selected:nth-child(2n) {
+    background-color: rgba(50,150,250,.20) !important;
+  }
+}
+
+// Acrescentamos os alinhamentos
+.ui.celled.table tr th.dt-center,
+.ui.celled.table tr td.dt-center {
+  text-align: center;
+}
+.ui.celled.table tr th.dt-right,
+.ui.celled.table tr td.dt-right {
+  text-align: right;
+}
+
+// Acrescentamos uma cor para o evento "hover" em linhas selecionadas
+.ui.selectable.table tbody tr.selected:hover,
+.ui.table tbody tr.selected td.selectable:hover {
+  background: rgba(50,150,250,.25) !important;
+  color: rgba(0,100,250,.95) !important;
+}
+
+// Ajusta a cor das informações adicionais
+div.dataTables_wrapper div.dataTables_info {
+  color: #8c8c8c;
+}
+
+/* -----------------------------------------------[ Row Colors ]-----
+   As definições das cores das linhas em um DataGrid
+   ------------------------------------------------------------------ */
+
+/* 1.  Cores das linhas em função do bloqueio */
+/* 1.1 Bloqueado */
+tr.blocked {
+  td {
+    color: DarkRed;
+  }
+  
+  &:nth-of-type(odd){
+    td {
+      background-color: rgba(255,0,0,.03);
+    }
+  }
+
+  &:nth-of-type(even){
+    td {
+      background-color: rgba(255,0,0,.04);
+    }
+  }
+}
+
+/* 2.  Cores das linhas em função da situação de um equipamento */
+/* 2.1 Com defeito */
+tr.broked {
+  td {
+    color: #ff7b25;
+
+    &.strikethrough {
+      font-style: oblique;
+      text-decoration:line-through;
+    }
+  }
+  
+  &:nth-of-type(odd){
+    td {
+      background-color: rgba(255,153,0,.03);
+    }
+  }
+
+  &:nth-of-type(even){
+    td {
+      background-color: rgba(255,153,0,.04);
+    }
+  }
+}
+
+/* 2.2 Em manutenção */
+tr.maintenance {
+  td {
+    color: #660066;
+
+    &.strikethrough {
+      font-style: oblique;
+      text-decoration:line-through;
+    }
+  }
+  
+  &:nth-of-type(odd){
+    td {
+      background-color: rgba(51,0,51,0.05);
+    }
+  }
+
+  &:nth-of-type(even){
+    td {
+      background-color: rgba(51,0,51,0.07);
+    }
+  }
+}
+
+/* 2.3 Inutilizado (sem possibilidade de conserto) */
+tr.damaged {
+  td {
+    color: #9090a0;
+    font-style: oblique;
+
+    &.strikethrough {
+      text-decoration:line-through;
+    }
+  }
+  
+  &:nth-of-type(odd){
+    td {
+      background-color: rgba(0,0,71,.03);
+    }
+  }
+
+  &:nth-of-type(even){
+    td {
+      background-color: rgba(0,0,71,.04);
+    }
+  }
+}
+
+/* 3.  Cores das linhas em função dos dias da semana */
+/* 3.1 Dias normais */
+tr.otherday {
+  td {
+  }
+}
+
+/* 3.2 Sábados */
+tr.saturday {
+  &:nth-of-type(odd){
+    td {
+      background-color: rgba(255,153,0,.03);
+    }
+  }
+
+  &:nth-of-type(even){
+    td {
+      background-color: rgba(255,153,0,.04);
+    }
+  }
+}
+
+/* 3.3 Domingos */
+tr.sunday {
+  &:nth-of-type(odd){
+    td {
+      background-color: rgba(255,0,0,.03);
+    }
+  }
+
+  &:nth-of-type(even){
+    td {
+      background-color: rgba(255,0,0,.04);
+    }
+  }
+}
+
+/* 4.  Cores das linhas em função do tipo de feriado */
+tr.holiday{ 
+  &.mobile {
+    td {
+      color: #9aabc2;
+      font-style: oblique;
+    }
+  }
+
+  &.national {
+    td {
+      color: #4c72b5;
+    }
+  }
+
+  &.regional {
+    td {
+      color: #00a3cc;
+    }
+  }
+
+  &.local {
+    td {
+      color: #212121;
+    }
+  }
+}
+
+/* 5.  Cores das células em função do dia da semana */
+.dayOfWeek {
+  font-weight: normal;
+
+  &.weekday {
+    color: #212121;
+  }
+
+  &.saturday {
+    color: #ff7b25;
+  }
+
+  &.sunday {
+    color: DarkRed;
+  }
+}

@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<!--
+/*
+ * This file is part of the payment's API library.
+ *
+ * (c) Emerson Cavalcanti
+ *
+ * LICENSE: The MIT License (MIT)
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject
+ * to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * 
+ * ---------------------------------------------------------------------
+ * Descrição:
+ * 
+ * Modelo para formatação de um boleto avulso.
+ *
+ * O boleto avulso difere do boleto padrão apenas por não conter as
+ * instruções de impressão, ou seja, nele são impressos o recibo do
+ * pagador seguido da ficha de compensação.
+ */
+
+/**
+ * @author Emerson Cavalcanti <emersoncavalcanti@gmail.com>
+ */
+-->
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <style type="text/css">
+      <!-- Embed the CSS content here --> 
+      <?php include $resourcePath . '/css/styles.css' ?>
+    </style>
+  </head>
+  <body>
+    <div style="width: 666px">
+      <table width="100%" style="vertical-align: bottom; color: #000000;">
+        <tbody>
+          <tr>
+            <td>
+              <table width="100%">
+                  <tr>
+                    <td height="13px" valign="top" class="right normalFont">
+                      Recibo do pagador
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <!-- Informações da empresa beneficiária -->
+      <table width="100%" class="default" style="margin-bottom: 10px;">
+        <tbody>
+          <tr>
+            <?php if ($emitter['logo']) : ?>
+            <td valign="top" width="50px" class="left smallFont" rowspan="4">
+              <div style="display: inline-block; padding-right: 10px;">
+                <img alt="logotipo" src="<?php echo $emitter['logo']; ?>" style="max-height: 50px;" />
+              </div>
+            </td>
+
+            <td valign="top" width="10px" style="border-left: 1px solid Gainsboro;" rowspan="4">
+            <?php endif ?>
+
+            <td>
+              <strong><?php echo $emitter['name']; ?></strong>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              <?php echo $emitter['document']; ?>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              <?php echo $emitter['addressLine1']; ?>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              <?php echo $emitter['addressLine2']; ?>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <table>
+        <tbody>
+          <tr>
+            <td class="zero center doubleBorderBottom noneBorderRight" width="130px">
+              <img src="<?php echo $bank['logo']; ?>" alt="Logotipo do banco" border="0">
+            </td>
+
+            <td class="zero center bigFont bold doubleBorderBottom doubleBorderLeft noneBorderRight" width="90px">
+              <?php echo $bank['code']; ?>
+            </td>
+
+            <td class="zero right mediumFont bold doubleBorderBottom doubleBorderLeft noneBorderRight" width="516px" style="padding-right: 5px;">
+              <?php echo $digitableLine; ?>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <table class="simpleBorder default field">
+        <tbody>
+          <tr>
+            <td colspan="6" width="250" class="withBorder">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      Beneficiário
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content">
+                      <?php echo $emitter['name']; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+
+            <td class="withBorder" width="130">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      <?php echo $emitter['documentType']; ?> do Beneficiário
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content">
+                      <?php echo $emitter['documentNumber']; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+
+            <td class="withBorder lastBorder" width="130">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      Data de Vencimento
+                    </td>
+                  </tr>
+                  <tr>
+                    <td height="20px" width="100%" class="content center">
+                      <?php echo $dateOfExpiration; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td colspan="6" class="withBorder">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      Pagador
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content">
+                      <?php echo $payer['name']; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+
+            <td class="withBorder" width="130">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      <?php echo $payer['documentType']; ?> do Pagador
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content">
+                      <?php echo $payer['documentNumber']; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+
+            <td class="withBorder lastBorder" width="130">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      Agência/Código do Beneficiário
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content right">
+                      <?php echo $emitter['agencyAndAccount']; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td colspan="2" class="withBorder">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      Data do documento
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content center">
+                      <?php echo $dateOfDocument; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+
+            <td colspan="2" class="withBorder" width="100">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      Nº documento
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content">
+                      <?php echo $documentNumber; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+
+            <td class="withBorder">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      Espécie doc.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td height="20px" width="100%" class="content center">
+                      <?php echo $kindOfDocument; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+            
+            <td class="withBorder">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      Aceite
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content center">
+                      <?php echo $acceptance; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+
+            <td class="withBorder">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      Data processamento
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content center">
+                      <?php echo $dateOfProcessing; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+
+            <td class="withBorder lastBorder">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      Nosso número
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content right">
+                      <?php echo $bankIdentificationNumber; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <?php if (isset($hideForBankUse)?($hideForBankUse===false):true) : ?>
+            <td<?php if (isset($showCIP)?($showCIP===false):true) : ?> colspan="2"<?php endif ?> class="withBorder">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      Uso do banco
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content">
+                      <?php echo $forBankUse; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+            <?php endif; ?>
+
+            <?php if (isset($showCIP)?$showCIP:false) : ?>
+            <!-- Campo exclusivo do Bradesco -->
+            <td class="withBorder" width="20">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      CIP
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content">
+                      <?php echo (intval($CIP) > 0)?$CIP:''; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+            <?php endif ?>
+            
+            <td<?php if (isset($hideForBankUse)?($hideForBankUse===true):false) : ?> colspan="3"<?php endif; ?> class="withBorder">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      Carteira
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content">
+                      <?php echo $walletName; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+
+            <td class="withBorder" width="35">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      Espécie
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content">
+                      <?php echo $specie['symbol']; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+
+            <td colspan="2" class="withBorder">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      Quantidade
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content center">
+                      <?php echo $amount; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+
+            <td class="withBorder">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      (X) Valor
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content right">
+                      <?php echo $unitaryValue; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+
+            <td class="withBorder lastBorder">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      (=) Valor Documento
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content right">
+                      <?php echo $documentValue; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td colspan="2" class="withBorder" width="120">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      (-) Descontos / Abatimentos
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content right">
+                      <?php echo $discounts; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+
+            <td colspan="2" class="withBorder" width="120">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      (-) Outras deduções
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content right">
+                      <?php echo $otherDeductions; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+
+            <td colspan="2" class="withBorder">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      (+) Mora / Multa
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content right">
+                      <?php echo $fineValue; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+
+            <td class="withBorder">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      (+) Outros acréscimos
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content right">
+                      <?php echo $otherAdditions; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+
+            <td class="withBorder lastBorder">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      (=) Valor cobrado
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content right">
+                      <?php echo $paidValue; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td colspan="6" class="withBorder simpleBorderBottom">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      Demonstrativo
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content">
+                      <?php echo $demonstrativeText[0]; ?>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content">
+                      <?php echo $demonstrativeText[1]; ?>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content">
+                      <?php echo $demonstrativeText[2]; ?>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content">
+                      <?php echo $demonstrativeText[3]; ?>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content">
+                      <?php echo $demonstrativeText[4]; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+
+            <td colspan="2" class="noneBorderLeft simpleBorderTop simpleBorderRight simpleBorderBottom">
+              <table width="100%">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label center">
+                      Autenticação mecânica
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="5px" valign="bottom" width="100%" class="lightBorderLeft lightBorderTop lightBorderRight">
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <br>
+      <!-- Linha de Corte -->
+      <table width="100%">
+        <tbody>
+          <tr>
+            <td height="13px" valign="bottom" class="right smallFont">
+              Corte na linha pontilhada <img src="<?php echo $cutHere; ?>" width="19" height="10" border="0">
+            </td>
+          </tr>
+          <tr>
+            <td height="2px" style="border-top: 1px dotted #000000;">
+              &nbsp;
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <!-- Ficha de compensação -->
+      <?php include(__DIR__ . '/partials/CompensationForm.phtml') ?>
+    </div>
+  </body>
+</html>

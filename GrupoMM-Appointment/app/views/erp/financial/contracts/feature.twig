@@ -1,0 +1,32 @@
+          <div class="fields featureEntry {% if first %}hidden{% endif %}">
+
+            <div class="field name">
+              {% if loop.first %}
+              <label>Característica</label>
+              {% endif %}
+              <div class="ui action input{{ readonly }}">
+                {% if editMode %}
+                <select name="features[{{ featureNumber }}][featureid]"
+                        class="ui dropDownLabel selection dropdown">
+                  {% for technicalFeature in technicalFeatures %}
+                    <option value="{{ technicalFeature.id }}"{% if technicalFeature.id == feature.featureid %} selected{% endif %}>{{ technicalFeature.name }}</option>
+                  {% endfor %}
+                </select>
+                {% else %}
+                <div class="field static">
+                  <span class="darking">{{ feature.featurename }}&nbsp;</span>
+                </div>
+                {% endif %}
+                <input name="features[{{ featureNumber }}][planfeatureid]"
+                       type="hidden"
+                       value="{{ feature.planfeatureid }}" />
+                <button class="ui tiny youtube icon button"
+                        data-tooltip="Remove este plano de assinatura"
+                        data-position="top right" type="button"
+                        feature="{{ featureNumber }}"
+                        onclick="delFeature(this);">
+                  <i class="minus icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>

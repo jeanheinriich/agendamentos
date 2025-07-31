@@ -1,0 +1,1282 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} equipamento{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('libs/semantic-ui/components/calendar.min.css') }}
+  {{ css('form.min.css') }}
+  <style>
+    .red {
+      background-color: red !important;
+    }
+    .ui.dropdown .menu>.item>.image,
+    .ui.dropdown .menu>.item>img {
+      width: 50px !important;
+      height:16px;
+      margin-top: 0;
+      margin-bottom: 0;
+      padding-right: 5px;
+      border-right: 1px dotted rgba(34,36,38,.15);
+    }
+    .ui.dropdown:not(.button)>.default.text {
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      width: 100%;
+    }
+    
+    label.readonly {
+      color: rgba(0,0,0,.5) !important;
+      text-decoration: line-through;
+    }
+
+    .ui.input.info>input {
+      color: #276f86;
+      background: #f8ffff;
+      border-color: #a9d5de;
+      -webkit-box-shadow: none;
+      box-shadow: none;
+    }
+    .ui.input.warning>input {
+      color: #634717;
+      background:#fdf9ed;
+      border-color: #ebcd92;
+      -webkit-box-shadow: none;
+      box-shadow: none;
+    }
+    .ui.form>.field.info>.ui.labeled.input:not(.right):not([class*="corner labeled"])>.ui.label,
+    .ui.form>.field.info>.ui.left.action.input>.ui.button,
+    .ui.labeled.input.info:not(.right):not([class*="corner labeled"])>.ui.label,
+    .ui.left.action.input.info>.ui.button,
+    .ui.action.input.info:not(.left)>input+.ui.button,
+    .ui.form>.field.info>.ui.action.input:not(.left)>input+.ui.button,
+    .ui.form>.field.info>.ui.right.labeled.input:not([class*="corner labeled"])>input+.ui.label,
+    .ui.right.labeled.input.info:not([class*="corner labeled"])>input+.ui.label {
+      color: #276f86;
+      background-color: #e1f7f7;
+    }
+    div.field.static span.contingency {
+      background-color: darkorange;
+      color: white;
+      border: 1px solid rgba(34,36,38,0.15);
+      text-align: center;
+    }
+    div.field.static span.main {
+      background-color: #0262ed;
+      color: white;
+      border: 1px solid rgba(34,36,38,0.15);
+      text-align: center;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Devices\\Equipments\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Devices\\Equipments\\Edit' %}
+  {% endif %}
+  {% set previous = 'ERP\\Devices\\Equipments' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  {% if getValue('isleasedequipment') %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/equipments.svg', 'Equipamento') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} equipamento
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  equipamento.
+                </div>
+              {% else %}
+                Visualizar equipamento
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um equipamento.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <br>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL, { 'equipmentID': getValue('equipmentid') }) }}">
+        <h3 class="ui header">Dados básicos do equipamento</h3>
+        <div class="fields">
+          <div class="five wide field{{ cssError('equipmentmodelname') }}">
+            <label>Modelo de equipamento</label>
+            <input name="equipmentmodelname" type="text" class="search"
+                   maxlength="50"
+                   placeholder="Informe o modelo do equipamento..."
+                   {{ readonly }}
+                   value="{{ getValue('equipmentmodelname') }}">
+            <input name="equipmentmodelid" type="hidden"
+                   value="{{ getValue('equipmentmodelid') }}" >
+            {% if hasError('equipmentmodelname') %}
+            <small class="helper">{{ getError('equipmentmodelname') }}</small>
+            {% endif %}
+          </div>
+          
+          <div class="five wide field">
+            <label>Marca</label>
+            <div class="ui input readonly">
+              <input name="equipmentbrandname" type="text"
+                     readonly tabindex="-1"
+                     value="{{ getValue('equipmentbrandname') }}">
+            </div>
+            <input type="hidden"
+                   name="equipmentbrandid"
+                   value="{{ getValue('equipmentbrandid') }}" >
+          </div>
+
+          <div class="two wide field">
+            <label>
+              Slots
+              <span data-tooltip="Quantidade de slots disponíveis para SIM Cards"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui input readonly">
+              <input name="maxsimcards" type="text"
+                     readonly tabindex="-1"
+                     placeholder="0"
+                     value="{{ getValue('maxsimcards') }}">
+            </div>
+          </div>
+
+          <div class="four wide field">
+            <label>Modelo do slot</label>
+            <div class="ui input readonly">
+              <input name="simcardtypename" type="text"
+                     readonly tabindex="-1"
+                     value="{{ getValue('simcardtypename') }}">
+            </div>
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="five wide field{{ cssError('serialnumber') }}">
+            <label>
+              N&ordm; de série
+              <span data-tooltip="N&ordm; de série do fabricante"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui icon input{{ readonly }}">
+              <input name="serialnumber" type="text" maxlength="30"
+                     placeholder="N&ordm; de série..."
+                     {{ readonly }}
+                     value="{{ getValue('serialnumber') }}">
+              <i class="icon"></i>
+            </div>
+            {% if hasError('serialnumber') %}
+            <small class="helper">{{ getError('serialnumber') }}</small>
+            {% endif %}
+          </div>
+          
+          <div class="five wide field{{ cssError('imei') }}">
+            <label>
+              IMEI
+              <span data-tooltip="International Mobile Equipment Identity"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui icon input{{ readonly }}">
+              <input name="imei" type="text"
+                     placeholder="Informe o IMEI..."
+                     {{ readonly }}
+                     value="{{ getValue('imei') }}">
+              <i class="icon"></i>
+            </div>
+            {% if hasError('imei') %}
+            <small class="helper">{{ getError('imei') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="six wide field{{ cssError('depositid') }}">
+            {% if formMethod == 'POST' %}
+              <label>Onde se encontra</label>
+              {% if deposits|length > 1 %}
+              <div class="ui search selection dropdown">
+                <input name="depositid" type="hidden"
+                       value="{{ getValue('depositid') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text">Informe o depósito</div>
+                <div class="menu">
+                {% set depositID = getValue('depositid') %}
+                {% for deposit in deposits %}
+                  <div class="item" {% if deposit.id == depositID %}selected{% endif %}
+                       data-value="{{ deposit.id }}"
+                       data-text="{{ deposit.name }}">
+                    {{ deposit.name }}
+                  </div>
+                {% endfor %}
+                </div>
+              </div>
+              {% else %}
+              <div class="field static">
+                <span class="darking">{{ deposits[0].name }}</span>
+                <input name="depositid" type="hidden"
+                       value="{{ deposits[0].id }}">
+              </div>
+              {% endif %}
+            {% else %}
+              <label>Situação atual</label>
+              <div class="field static">
+                <span class="darking">{{ getValue('storedlocationname') }}</span>
+                <input name="storedlocationname" type="hidden"
+                       value="{{ getValue('storedlocationname') }}">
+                <input name="storagelocation" type="hidden"
+                       value="{{ getValue('storagelocation') }}">
+              </div>
+            {% endif %}
+            {% if hasError('depositid') %}
+            <small class="helper">{{ getError('depositid') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if getValue('storagelocation') == 'Installed' %}
+        <h3 class="ui header">Dados do veículo onde o equipamento está instalado</h3>
+        {% set vehicle = getValue('vehicle') %}
+        {% if vehicle.isRentedVehicle|toBoolean %}
+        <div class="fields">
+          <div class="sixteen wide field">
+            <label>Comodatante</label>
+            <div class="ui input warning">
+              <input name="contractorname" type="text" readonly
+                     value="{{ vehicle.contractorname }}">
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        <div class="fields">
+          <div class="three wide field">
+            <label>Placa</label>
+            <div class="ui input info">
+              <input name="plate" type="text" readonly
+                     value="{{ vehicle.plate }}">
+            </div>
+          </div>
+
+          <div class="five wide field">
+            <label>Marca</label>
+            <div class="ui input info">
+              <input name="vehiclebrandname" type="text" readonly
+                     value="{{ vehicle.vehiclebrandname }}">
+            </div>
+            <input name="vehiclebrandid" type="hidden"
+                   value="{{ vehicle.vehiclebrandid }}">
+          </div>
+
+          <div class="eight wide field">
+            <label>Modelo do ve&iacute;culo</label>
+            <div class="ui input info">
+              <input name="vehiclemodelname" type="text" readonly
+                     value="{{ vehicle.vehiclemodelname }}">
+            </div>
+            <input name="vehiclemodelid" type="hidden"
+                   value="{{ vehicle.vehiclemodelid }}">
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="three wide field">
+            <label class="nowrap">Tipo de veículo</label>
+            <div class="ui input info">
+              <input name="vehicletypename" type="text" readonly
+                     value="{{ vehicle.vehicletypename }}">
+            </div>
+            <input name="vehicletypeid" type="hidden"
+                   value="{{ vehicle.vehicletypeid }}">
+          </div>
+
+          <div class="three wide field">
+            <label class="nowrap">Cor predominante</label>
+            <div class="ui input info">
+              <input name="vehiclecolorname" type="text" readonly
+                     value="{{ vehicle.vehiclecolorname }}">
+            </div>
+            <input name="vehiclecolorid" type="hidden"
+                   value="{{ vehicle.vehiclecolorid }}">
+          </div>
+
+          <div class="three wide field">
+            <label class="nowrap">N&ordm; da Frota/Carro</label>
+            <div class="ui input info">
+              <input name="carnumber" type="text" readonly
+                     value="{{ vehicle.carnumber }}">
+            </div>
+          </div>
+
+          <div class="three wide field">
+            <label class="nowrap">RENAVAM</label>
+            <div class="ui input info">
+              <input name="renavam" type="text" readonly
+                     value="{{ vehicle.renavam }}">
+            </div>
+          </div>
+
+          <div class="four wide field">
+            <label class="nowrap">N&uacute;mero do Chassi</label>
+            <div class="ui input info">
+              <input name="vin" type="text" readonly
+                     value="{{ vehicle.vin }}">
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="three wide field">
+            <label class="nowrap">Data da instalação</label>
+            <div class="ui input left icon info">
+              <i class="calendar icon"></i>
+              <input name="installedat" type="text" readonly
+                     placeholder="Quando ocorreu a instalação do equipamento..."
+                     value="{{ getValue('installedat') }}">
+            </div>
+          </div>
+
+          <div class="thirteen wide field">
+            <label class="nowrap">Local da instalação</label>
+            <div class="ui input info">
+              <input name="installationsite" type="text" readonly
+                     placeholder="Local onde foi instalado o equipamento..."
+                     value="{{ getValue('installationsite') }}">
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="six wide field">
+            <label class="nowrap">Tipo da instalação</label>
+            <div class="field center aligned static">
+              {% if getValue('main')|toBoolean %}
+              <span class="main">Rastreador principal</span>
+              {% else %}
+              <span class="contingency">Rastreador de contingência</span>
+              {% endif %}
+              <input type="hidden" name="main"
+                     value="{% if getValue('main')|toBoolean %}true{% else %}false{% endif %}">
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <h3 class="ui header">Dados de SIM Cards</h3>
+        {% set simcardPerSlot = getValue('simcardPerSlot') %}
+        {% set showSlotNumber = getValue('maxsimcards') > 1 %}
+        {% for simcard in simcardPerSlot %}
+        <div class="fields">
+          {% if showSlotNumber %}
+          <div class="one wide field">
+            <label>Slot</label>
+            <div class="ui input info">
+              <input name="number" type="text" readonly
+                     value="{{ simcard.number }}">
+            </div>
+          </div>
+          {% endif %}
+
+          {% if simcard.iccid %}
+          <div class="{% if showSlotNumber %}five{% else %}six{% endif %} wide field">
+            <label>ICCID</label>
+            <div class="ui input info">
+              <input name="iccid" type="text" readonly
+                     value="{{ simcard.iccid }}">
+            </div>
+          </div>
+
+          <div class="five wide field">
+            <label>N&ordm; de telefone</label>
+            <div class="ui input info">
+              <input name="phonenumber" type="text" readonly
+                     value="{{ simcard.phonenumber }}">
+            </div>
+          </div>
+
+          <div class="five wide field">
+            <label>Operadora</label>
+            <div class="ui input info">
+              <input name="mobileoperatorname" type="text" readonly
+                     value="{{ simcard.mobileoperatorname }}">
+            </div>
+          </div>
+          {% else %}
+            {% if showSlotNumber %}
+            <div class="fifteen wide field">
+              <label>&nbsp;</label>
+              <div class="ui input info">
+                <input name="iccid" type="text" readonly
+                      value="N&atilde;o informado">
+              </div>
+            </div>
+            {% else %}
+            <div class="sixteen wide field">
+              <label>N&atilde;o informado</label>
+            </div>
+            {% endif %}
+          {% endif %}
+        </div>
+        {% endfor %}
+
+        <h3 class="ui header">Dados da propriedade</h3>
+        <div class="fields">
+          <div class="four wide field{{ cssError('ownershiptypeid') }}">
+            <label>Tipo de propriedade</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="ownershiptypeid" type="hidden"
+                     value="{{ getValue('ownershiptypeid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Informe o tipo de propriedade</div>
+              <div class="menu">
+              {% set ownershipTypeID = getValue('ownershiptypeid') %}
+              {% for ownershipType in ownershipTypes %}
+                <div class="item" {% if ownershipType.id == ownershipTypeID %}selected{% endif %}
+                     data-value="{{ ownershipType.id }}"
+                     data-text="{{ ownershipType.name }}">
+                  {{ ownershipType.name }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('ownershiptypename') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('ownershiptypeid') %}
+            <small class="helper">{{ getError('ownershiptypeid') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="{% if getValue('isleasedequipment') %}twelve{% else %}five{% endif %} wide field{{ cssError('suppliername') }}">
+            <label>Nome do fornecedor</label>
+            <input name="suppliername" type="text" maxlength="100"
+                   placeholder="Informe o nome do cliente..."
+                   {{ readonly }}
+                   value="{{ getValue('suppliername') }}">
+            <input name="supplierid" type="hidden"
+                   value="{{ getValue('supplierid') }}">
+            {% if hasError('suppliername') %}
+            <small class="helper">{{ getError('suppliername') }}</small>
+            {% endif %}
+          </div>
+
+          {% if not getValue('isleasedequipment') %}
+          <div class="four wide field{{ cssError('subsidiaryname') }}">
+            <label>Unidade/Filial</label>
+            <input name="subsidiaryname" type="text" maxlength="50"
+                   placeholder="Informe a unidade/filial..."
+                   {{ readonly }}
+                   value="{{ getValue('subsidiaryname') }}">
+            <input name="subsidiaryid" type="hidden"
+                   value="{{ getValue('subsidiaryid') }}">
+            {% if hasError('subsidiaryname') %}
+            <small class="helper">{{ getError('subsidiaryname') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="three wide field{{ cssError('assetnumber') }}">
+            <label class="nowrap">N&ordm; de patrimônio</label>
+            <div class="ui input{{ readonly }}">
+              <input name="assetnumber" type="text" maxlength="20"
+                     placeholder="Informe o n&ordm; de patrimônio..."
+                     {{ readonly }}
+                     value="{{ getValue('assetnumber') }}">
+            </div>
+            {% if hasError('assetnumber') %}
+            <small class="helper">{{ getError('assetnumber') }}</small>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+
+        {% if enableToggleBlocked %}
+          {% if formMethod == 'PUT' %}
+          <div class="fields">
+            <div class="eight wide field">
+              <div class="ui checkbox">
+                <input name="blocked" type="hidden"
+                       value="{% if getValue('blocked')|toBoolean %}true{% else %}false{% endif %}">
+                <input name="_blocked" type="checkbox"
+                       class="hidden" toggle="none"
+                       {% if getValue('blocked')|toBoolean %}checked="checked"{% endif %}>
+                <label>Inativar este equipamento</label>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        {% else %}
+          {% if getValue('blocked')|toBoolean %}
+          <div class="fields">
+            <div class="eight wide darkred field">
+              <i class="lock icon"
+                 style="font-size: 1.8em; line-height: 1em; vertical-align: middle;"></i>
+              Este equipamento está inativado.
+            </div>
+          </div>
+          {% endif %}
+        {% endif %}
+
+        {% if not getValue('isleasedequipment') %}
+          {% if formMethod == 'PUT' %}
+          {% set leasedequipment = getValue('leasedequipment')|first %}
+          <h3 class="ui header">Dados de comodato</h3>
+          <div class="fields">
+            <div class="eight wide field">
+              <div class="ui checkbox{{ readonly }}" style="margin-top: 0;">
+                <input name="leasedingequipment" type="hidden"
+                      value="{% if getValue('leasedingequipment')|toBoolean %}true{% else %}false{% endif %}">
+                <input name="_leasedingequipment" type="checkbox"
+                      class="hidden" {{ readonly }}
+                      {% if getValue('leasedingequipment')|toBoolean %}checked="checked"{% endif %}>
+                <label>Realizar comodato deste equipamento</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="leasedingequipment block">
+            <div class="fields">
+              <div class="sixteen wide field{{ cssError('leasedequipment[0][assignedtoname]') }}">
+                <label>Nome do comodatário</label>
+                <input name="leasedequipment[0][assignedtoname]" type="text" maxlength="100"
+                       placeholder="Informe o nome do comodatário..."
+                       {{ readonly }}
+                       value="{{ leasedequipment.assignedtoname }}">
+                <input name="leasedequipment[0][assignedto]" type="hidden"
+                       value="{{ leasedequipment.assignedto }}">
+                <input name="leasedequipment[0][leasedequipmentid]" type="hidden"
+                       value="{{ leasedequipment.leasedequipmentid }}">
+                {% if hasError('leasedequipment[0][assignedtoname]') %}
+                <small class="helper">{{ getError('leasedequipment[0][assignedtoname]') }}</small>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="fields">
+              <div class="four wide field{{ cssError('leasedequipment[0][startdate]') }}">
+                <label>Data de início</label>
+                <div class="ui calendar" id="leasedequipment[0][startdate]">
+                  <div class="ui input left icon{{ readonly }}">
+                    <i class="calendar icon"></i>
+                    <input name="leasedequipment[0][startdate]" type="text"
+                          placeholder="Quando ocorreu o ínício do comodato..."
+                          {{ readonly }}
+                          value="{{ leasedequipment.startdate }}">
+                  </div>
+                </div>
+                {% if hasError('leasedequipment[0][startdate]') %}
+                <small class="helper">{{ getError('leasedequipment[0][startdate]') }}</small>
+                {% endif %}
+              </div>
+
+              <div class="four wide field{{ cssError('leasedequipment[0][graceperiod]') }}">
+                <label>
+                  Tempo de carência
+                  <span data-tooltip="Contados à partir do início do comodato"
+                        data-content="Top Left" data-position="top left"
+                        data-inverted="">
+                    <i class="question circle olive outline icon"></i>
+                  </span>
+                </label>
+                <div class="ui right labeled input">
+                  <input name="leasedequipment[0][graceperiod]" type="text"
+                        class="right"
+                        {{ readonly }}
+                        value="{{ leasedequipment.graceperiod }}">
+                  <div class="ui basic label">meses</div>
+                </div>
+                {% if hasError('leasedequipment[0][graceperiod]') %}
+                <small class="helper">{{ getError('leasedequipment[0][graceperiod]') }}</small>
+                {% endif %}
+              </div>
+
+              <div class="four wide field">
+                <label>Término da carência</label>
+                <div class="ui input readonly">
+                  <input name="leasedequipment[0][endofgraceperiod]" type="text"
+                         readonly tabindex="-1"
+                         value="{{ leasedequipment.endofgraceperiod }}">
+                </div>
+              </div>
+
+              <div class="four wide field{{ cssError('leasedequipment[0][enddate]') }}">
+                <label>Data de término</label>
+                <div class="ui calendar" id="leasedequipment[0][enddate]">
+                  <div class="ui input left icon{{ readonly }}">
+                    <i class="calendar icon"></i>
+                    <input name="leasedequipment[0][enddate]" type="text"
+                          placeholder="Quando ocorreu o término do comodato..."
+                          {{ readonly }}
+                          value="{{ leasedequipment.enddate }}">
+                  </div>
+                </div>
+                {% if hasError('leasedequipment[0][enddate]') %}
+                <small class="helper">{{ getError('leasedequipment[0][enddate]') }}</small>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        {% endif %}
+
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        <input type="hidden" name="equipmentid" value="{{ getValue('equipmentid') }}">
+      </form>
+      <!-- Fim formulário -->
+
+      {% if formMethod == 'PUT' %}
+      <!-- Início painel informativo de modificações -->
+      <div class="ui segments">
+        <div class="ui grey inverted segment">
+          <h5>
+            Histórico de modificações:
+          </h5>
+          Cadastrado {{ getValue('createdat')|localizedDate('long') }} por {{ getValue('createdbyusername') }}
+          <div class="ui divider"></div>
+          Modificado {{ getValue('updatedat')|localizedDate('long') }} por {{ getValue('updatedbyusername') }}
+        </div>
+      </div>
+      <!-- Fim painel informativo de modificações -->
+      {% endif %}
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/question.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('semantic-ui/components/calendar.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+  
+  {% set getEquipmentModelCompletion = { 'URL': 'ERP\\Parameterization\\Equipments\\Models\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  {% set getEntityDataCompletion     = { 'URL': 'ERP\\Cadastre\\Entities\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      $('.ui.checkbox')
+        .checkbox(checkboxOptions)
+      ;
+      $("input[name='equipmentmodelname']")
+        .autocomplete(equipmentModelNameCompletionOptions)
+      ;
+      $("input[name='imei']")
+        .mask({
+          type: 'imei',
+          validate: true
+        })
+      ;
+      $("input[name='suppliername']")
+        .autocomplete(supplierNameCompletionOptions)
+      ;
+      $("input[name='subsidiaryname']")
+        .autocomplete(subsidiaryNameCompletionOptions)
+      ;
+
+      $("input[name='equipmentmodelname']")
+        .focus()
+      ;
+
+      {% if formMethod == 'PUT' %}
+        {% if not getValue('isleasedequipment') %}
+        $("input[name='_leasedingequipment']")
+          .change(leasedingEquipmentHandler)
+        ;
+        toggleLeasedingEquipmentData($("input[name='_leasedingequipment']").is(":checked"));
+
+        $("input[name='leasedequipment[0][assignedtoname]']")
+          .autocomplete(assignedToNameCompletionOptions)
+        ;
+        $("input[name='leasedequipment[0][startdate]']")
+          .closest('div')
+          .calendar(calendarOptions)
+        ;
+        $("input[name='leasedequipment[0][graceperiod']")
+          .mask({
+            type: 'integer',
+            validate: true
+          })
+        ;
+        $("input[name='leasedequipment[0][graceperiod]']")
+          .change(gracePeriodHandler)
+          .trigger('change')
+        ;
+        $("input[name='leasedequipment[0][enddate]']")
+          .closest('div')
+          .calendar(calendarOptions)
+        ;
+
+        {% endif %}
+      {% endif %}
+    });
+
+    // =================================================[ Options ]=====
+
+    // As opções para os checkbox
+    var checkboxOptions = {
+      // Dispara ao iniciar para definir o valor, se necessário
+      onChange   : function() {
+        var
+          checkbox = $(this).prop('name'),
+          // Invertemos o valor atual
+          checked = !($(this).attr('checked') !== undefined && $(this).attr('checked')),
+          boolValue = (checked
+            ? 'true'
+            : 'false'),
+          toggleField = checkbox.replace('_','')
+        ;
+
+        // Invertemos o checkbox fake
+        $(this)
+          .attr('checked', checked)
+        ;
+
+        // Alteramos o valor do verdadeiro input
+        $("input[name='" + toggleField + "']")
+          .val(boolValue)
+        ;
+      }
+    };
+
+    // As opções para o componente de autocompletar o nome do modelo de
+    // equipamento
+    var equipmentModelNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      ajax: {
+        url: "{{ path_for(getEquipmentModelCompletion.URL) }}",
+        type: "{{ getEquipmentModelCompletion.method }}"
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        return ''
+          + '<div class="content">'
+          +   '<div class="title">' + suggestion.name + '<br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       suggestion.brandname
+          +     '</span> '
+          +     '<span style="color: #8db0f2; font-style: italic;">'
+          +       '(' + suggestion.maxsimcards + ' slots)'
+          +     '</span>'
+          +   '</div>'
+          + '</div>'
+        ;
+      },
+      onSelect: function (element, suggestion) {
+        console.log(suggestion);
+        // Armazena o ID do item selecionado
+        $("input[name='equipmentmodelid']")
+          .val(suggestion.id)
+        ;
+        $("input[name='equipmentbrandid']")
+          .val(suggestion.brandid)
+        ;
+        $("input[name='equipmentbrandname']")
+          .val(suggestion.brandname)
+        ;
+        $("input[name='maxsimcards']")
+          .val(suggestion.maxsimcards)
+        ;
+        $("input[name='simcardtypename']")
+          .val(suggestion.simcardtypename)
+        ;
+      },
+      onInvalidateSelection: function () {
+        // Não conseguiu localizar um modelo de equipamento com base nos
+        // valores informados, então limpa os dados atuais
+        $("input[name='equipmentmodelid']")
+          .val(0)
+        ;
+        $("input[name='equipmentbrandid']")
+          .val(0)
+        ;
+        $("input[name='equipmentbrandname']")
+          .val('')
+        ;
+        $("input[name='maxsimcards']")
+          .val('')
+        ;
+        $("input[name='simcardtypename']")
+          .val('')
+        ;
+      }
+    };
+
+    // As opções para o componente de autocompletar o nome do fornecedor
+    var supplierNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      ajax: {
+        url: "{{ path_for(getEntityDataCompletion.URL) }}",
+        type: "{{ getEntityDataCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'supplier';
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        if (suggestion.juridicalperson) {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     (
+                    (suggestion.tradingname)
+                      ? '[<span style="color: #0256C4; font-style: italic;">' + suggestion.tradingname + '</span>]<br>'
+                      : ''
+                  )
+            +     (
+                    (suggestion.items > 1)
+                      ? (' (<span style="color: CornflowerBlue; font-style: italic;">' + suggestion.subsidiaryname + '</span>)')
+                      : ''
+                  )
+            +   '</div>'
+            + '</div>'
+          ;
+        } else {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     (
+                    (suggestion.tradingname)
+                      ? '[<span style="color: #0256C4; font-style: italic;">' + suggestion.tradingname + '</span>]<br>'
+                      : ''
+                  )
+            +     (
+                    (suggestion.items > 1)
+                      ? ( ''
+                          + '<span style="color: CornflowerBlue; font-style: italic;">'
+                          +     (
+                                  (suggestion.headoffice == true)
+                                    ? 'Titular'
+                                    : ('Dependente: ' + suggestion.subsidiaryname)
+                                )
+                          +     '</span>'
+                        )
+                      : ''
+                  )
+            +   '</div>'
+            + '</div>'
+          ;
+        }
+      },
+      onSelect: function (element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='supplierid']")
+          .val(suggestion.id)
+        ;
+        $("input[name='subsidiaryid']")
+          .val(suggestion.subsidiaryid)
+        ;
+        $("input[name='subsidiaryname']")
+          .val(suggestion.subsidiaryname)
+        ;
+      },
+      onInvalidateSelection: function ()
+      {
+        // Não conseguiu localizar um fornecedor com base nos valores
+        // informados, então limpa os dados atuais
+        $("input[name='supplierid']")
+          .val(0)
+        ;
+        $("input[name='subsidiaryid']")
+          .val(0)
+        ;
+        $("input[name='subsidiaryname']")
+          .val("")
+        ;
+      }
+    };
+
+    // As opções para o componente de autocompletar a unidade/filial do
+    // cliente
+    var subsidiaryNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      ajax: {
+        url: "{{ path_for(getEntityDataCompletion.URL) }}",
+        type: "{{ getEntityDataCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'subsidiary';
+          params.entityID = $("input[name='supplierid']").val();
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        return ''
+          + '<div class="content">'
+          +   '<div class="title">' + suggestion.name + '<br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       (suggestion.nationalregister.length > 14?'CNPJ: ':'CPF: ') + suggestion.nationalregister
+          +     '</span><br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       suggestion.city + '/' + suggestion.state
+          +     '</span>'
+          +   '</div>'
+          + '</div>'
+        ;
+      },
+      onSelect: function (element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='subsidiaryid']")
+          .val(suggestion.id)
+        ;
+      },
+      onInvalidateSelection: function () {
+        // Não conseguiu localizar uma unidade/filial com base nos
+        // valores informados, então limpa os dados atuais
+        $("input[name='subsidiaryid']")
+          .val(0)
+        ;
+      }
+    };
+
+    // As opções para o componente de autocompletar o nome do fornecedor
+    var assignedToNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      ajax: {
+        url: "{{ path_for(getEntityDataCompletion.URL) }}",
+        type: "{{ getEntityDataCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'contractor';
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        if (suggestion.juridicalperson) {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     (
+                    (suggestion.tradingname)
+                      ? '[<span style="color: #0256C4; font-style: italic;">' + suggestion.tradingname + '</span>]<br>'
+                      : ''
+                  )
+            +     (
+                    (suggestion.items > 1)
+                      ? (' (<span style="color: CornflowerBlue; font-style: italic;">' + suggestion.subsidiaryname + '</span>)')
+                      : ''
+                  )
+            +   '</div>'
+            + '</div>'
+          ;
+        } else {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     (
+                    (suggestion.tradingname)
+                      ? '[<span style="color: #0256C4; font-style: italic;">' + suggestion.tradingname + '</span>]<br>'
+                      : ''
+                  )
+            +     (
+                    (suggestion.items > 1)
+                      ? ( ''
+                          + '<span style="color: CornflowerBlue; font-style: italic;">'
+                          +     (
+                                  (suggestion.headoffice == true)
+                                    ? 'Titular'
+                                    : ('Dependente: ' + suggestion.subsidiaryname)
+                                )
+                          +     '</span>'
+                        )
+                      : ''
+                  )
+            +   '</div>'
+            + '</div>'
+          ;
+        }
+      },
+      onSelect: function (element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='leasedequipment[0][assignedto]']")
+          .val(suggestion.id)
+        ;
+      },
+      onInvalidateSelection: function ()
+      {
+        // Não conseguiu localizar um contratante com base nos valores
+        // informados, então limpa os dados atuais
+        $("input[name='leasedequipment[0][assignedto]']")
+          .val(0)
+        ;
+      }
+    };
+
+    // As opções para o componente de exibição de calendário
+    var calendarOptions = {
+      type: 'date',
+      formatInput: true,
+      monthFirst: false,
+      today: true,
+      text: {
+        days: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'],
+        months: [
+          'Janeiro', 'Fevereiro', 'Março', 'Abril',
+          'Maio', 'Junho', 'Julho', 'Agosto',
+          'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ],
+        monthsShort: [
+          'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+          'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+        ],
+        today: 'Hoje',
+        now: 'Agora',
+        am: 'AM',
+        pm: 'PM'
+      },
+      formatter: {
+        date: function (date, settings) {
+          if (!date) {
+            return '';
+          }
+
+          var
+            day   = date.getDate().toString().padLeftWithZeros(2),
+            month = (date.getMonth()+1).toString().padLeftWithZeros(2),
+            year  = date.getFullYear()
+          ;
+
+          return (settings.type === 'year')
+            ? year
+            : (settings.type === 'month')
+              ? month + '/' + year
+              : ( settings.monthFirst
+                  ? month + '/' + day
+                  : day + '/' + month
+                ) + '/' + year
+          ;
+        }
+      }
+    };
+
+    // ----------------------------[ Leaseding Equipment Handlers ]-----
+
+    /**
+     * Faz o tratamento do campo que indica se o equipamento será
+     * emprestado em comodato.
+     *
+     * @return void
+     */
+    function leasedingEquipmentHandler() {
+      const leasedingEquipment = $(this).is(":checked");
+      const storageLocation = $("input[name='storagelocation']").val();
+
+      if (storageLocation === 'Installed') {
+        const action = leasedingEquipment
+          ? 'comodatar'
+          : 'descomodatar'
+        ;
+        // Precisamos alertar o usuário que o equipamento está
+        // instalado e que a mudança irá fazer com que ele seja
+        // desinstalado, questionando se ele deseja prosseguir
+        questionDialog(
+          'Comodato de equipamento',
+          'O equipamento que você deseja ' + action + ' está instalado '
+          + 'em um veículo. Se prosseguir, o vínculo com este<br />'
+          + 'veículo será encerrado. Tem certeza de que deseja continuar?',
+          function() {
+            toggleLeasedingEquipmentData(leasedingEquipment);
+          },
+          function() {
+            $("input[name='_leasedingequipment']")
+              .prop('checked', !leasedingEquipment)
+            ;
+          }
+        );
+      } else {
+        toggleLeasedingEquipmentData(leasedingEquipment);
+      }
+    }
+
+    /**
+     * Lida com a exibição dos campos do comodatário e das condições de
+     * empréstimo.
+     *
+     * @param bool leasedingEquipment
+     *   O indicativo se o equipamento será emprestado em comodato.
+     *
+     * @return void
+     */
+    function toggleLeasedingEquipmentData(leasedingEquipment) {
+      if (leasedingEquipment) {
+        // Exibe os campos com os números de telefone
+        $("div.leasedingequipment.block")
+          .show()
+        ;
+
+        // Habilita a entrada dos dados do comodatário
+        $("div.leasedingequipment")
+          .find('div.field')
+          .removeClass("disabled")
+          .removeClass("blocked")
+        ;
+
+        $("div.leasedingequipment")
+          .find("input[type='text']")
+          .prop('readonly', false)
+          .closest('div')
+          .removeClass("readonly")
+        ;
+
+        // Mantém a entrada da data de término da carência como somente
+        // leitura
+        $("div.leasedingequipment")
+          .find("input[name='leasedequipment[0][endofgraceperiod]']")
+          .prop('readonly', true)
+          .closest('div')
+          .addClass("readonly")
+        ;
+        $("input[name='leasedequipment[0][assignedtoname]']")
+          .closest('div')
+          .find('i.search.icon')
+          .removeClass("hidden")
+        ;
+      } else {
+        // Esconde os campos com os números de telefone
+        $("div.leasedingequipment.block")
+          .hide()
+        ;
+
+        // Desabilita a entrada dos dados do comodatário
+        $("div.leasedingequipment")
+          .find('div.field')
+          .addClass("disabled")
+          .addClass("blocked")
+        ;
+
+        $("div.leasedingequipment")
+          .find("input[type='text']")
+          .prop('readonly', true)
+          .closest('div')
+          .addClass("readonly")
+        ;
+        $("input[name='leasedequipment[0][assignedtoname]']")
+          .closest('div')
+          .find('i.search.icon')
+          .addClass("hidden")
+        ;
+      }
+    }
+
+    // O manipulador do campo tempo de carência
+    function gracePeriodHandler() {
+      console.log('Grace period handler');
+      // Ignora qualquer modificação se estivermos em um campo somente
+      // leitura
+      if ($(this).prop('readonly')) {
+        return;
+      }
+
+      let
+        startDate = $("input[name='leasedequipment[0][startdate]']").val(),
+        gracePeriod = parseInt($(this).val())
+      ;
+
+      if (gracePeriod > 0) {
+        // Verifica se a data é válida
+        if (startDate.length === 10) {
+          let
+            parts    = startDate.split("/"),
+            day      = parseInt(parts[0]),
+            month    = parseInt(parts[1]),
+            year     = parseInt(parts[2]),
+            startday = new Date(year, month-1, day),
+            // Calcula a data de término da carência que é a quantidade de
+            // meses somados à data de início
+            endday   = new Date(startday.setMonth(startday.getMonth() + parseInt(gracePeriod))),
+            enddate  = endday.toLocaleDateString('pt-BR')
+          ;
+
+          // Coloca a data calculada no campo de término de carência
+          $("input[name='leasedequipment[0][endofgraceperiod]']")
+            .val(enddate)
+            .trigger("change")
+          ;
+        } else {
+          // Não foi fornecida uma data de início, então ignora
+          $("input[name='leasedequipment[0][endofgraceperiod]']")
+            .val('')
+            .trigger("change")
+          ;
+        }
+      } else {
+        // Não foi fornecido um período de carência, então ignora
+        $("input[name='leasedequipment[0][endofgraceperiod]']")
+          .val('')
+          .trigger("change")
+        ;
+      }
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

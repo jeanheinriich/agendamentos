@@ -1,0 +1,931 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} usuário{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('libs/jquery/plugins/observe.input/observe.input.min.css') }}
+  {{ css('libs/semantic-ui/components/calendar.min.css') }}
+  {{ css('form.min.css') }}
+  {{ css('loading.min.css') }}
+  <style>
+    /* Criamos um controle com itens em degradê para permitir que o
+       grau de recursos fique claro */
+    .color1 {
+      color: #c31432 !important;
+      background-color: rgba(255,0,0,.12);
+    }
+    .ui.dropdown .menu .color1.active.item {
+      background-color: rgba(255,0,0,.16);
+    }
+    .color2 {
+      color: #8d1133 !important;
+      background-color: rgba(255,0,0,.10);
+    }
+    .ui.dropdown .menu .color2.active.item {
+      background-color: rgba(255,0,0,.14);
+    }
+    .color3 {
+      color: #8c1133 !important;
+      background-color: rgba(255,0,0,.08);
+    }
+    .ui.dropdown .menu .color3.active.item {
+      background-color: rgba(255,0,0,.12);
+    }
+    .color4 {
+      color: #560e35 !important;
+      background-color: rgba(255,0,0,.06);
+    }
+    .ui.dropdown .menu .color4.active.item {
+      background-color: rgba(255,0,0,.10);
+    }
+    .color5 {
+      color: #250b36 !important;
+      background-color: rgba(255,0,0,.04);
+    }
+    .ui.dropdown .menu .color5.active.item {
+      background-color: rgba(255,0,0,.08);
+    }
+    .ui.dropdown .menu .active.item {
+      font-weight: normal;
+    }
+    .ui.selection.dropdown .menu > .item {
+      padding-left: 1.5em !important;
+    }
+    .ui.selection.dropdown .menu > div[class*=color]:hover {
+      background-color: rgba(255,0,0,.18);
+    }
+    .ui.dropdown .menu .active.item:before {
+      content: "✔";
+      font-weight: 700;
+      color: black;
+      margin-left: -17px;
+      width: 36px;
+    }
+    .ui.form .fields:not(.grouped):not(.inline) .field:not(:only-child) .ui.checkbox {
+      /*margin-top: 2.41428571em;*/
+      margin-top: 0;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Cadastre\\Users\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Cadastre\\Users\\Edit' %}
+  {% endif %}
+  {% set toggleForceNewPassword = { 'URL': 'ERP\\Cadastre\\Users\\ToggleForceNewPassword', 'method': 'PUT' } %}
+  {% set toggleBlocked = { 'URL': 'ERP\\Cadastre\\Users\\ToggleBlocked', 'method': 'PUT' } %}
+  {% set previous = 'ERP\\Cadastre\\Users' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  {% set enableToggleForceNewPassword = authorization.getAuthorizationFor(toggleForceNewPassword.URL, toggleForceNewPassword.method) %}
+  {% set enableToggleBlocked = authorization.getAuthorizationFor(toggleBlocked.URL, toggleBlocked.method) %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/users.svg', 'Usuário') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if editMode %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} usuário
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  usuário.
+                </div>
+              {% else %}
+                Visualizar usuário
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um usuário.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <div class="loading hidden">Processando...&#8230;</div>
+      <form class="ui form" method="POST" autocomplete="off"
+            onsubmit="loading();"
+            action="{{ path_for(URL, {'userID': getValue('userid') }) }}">
+        <h3 class="ui header">Dados básicos do usuário</h3>
+        <div class="fields">
+          <div class="six wide field{{ cssError('name') }}">
+            <label>Nome do usuário</label>
+            <div class="ui input{{ readonly }}">
+              <input name="name" type="text" maxlength="50"
+                     placeholder="Informe o nome completo..."
+                     {{ readonly }}
+                     value="{{ getValue('name') }}">
+            </div>
+            {% if hasError('name') %}
+            <small class="helper">{{ getError('name') }}</small>
+            {% endif %}
+          </div>
+          <div class="six wide field{{ cssError('role') }}">
+            <label>Cargo</label>
+            <div class="ui input{{ readonly }}">
+              <input name="role" type="text" maxlength="50"
+                     placeholder="Informe o cargo que ocupa..."
+                     {{ readonly }}
+                     value="{{ getValue('role') }}">
+            </div>
+            {% if hasError('role') %}
+            <small class="helper">{{ getError('role') }}</small>
+            {% endif %}
+          </div>
+          <div class="four wide field{{ cssError('phonenumber') }}">
+            <label>Telefone</label>
+            <div class="ui left icon input{{ readonly }}">
+              <input name="phonenumber" type="text"
+                     placeholder="Informe um telefone de contato..."
+                     {{ readonly }}
+                     value="{{ getValue('phonenumber') }}">
+              <i class="phone icon"></i>
+            </div>
+            {% if hasError('phonenumber') %}
+            <small class="helper">{{ getError('phonenumber') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field{{ cssError('entityname') }}">
+            <label>Empresa ou cliente à qual pertence</label>
+            <input name="entityname" type="text" class="search"
+                   maxlength="100"
+                   placeholder="Informe o nome da empresa..."
+                   {{ readonly }}
+                   value="{{ getValue('entityname') }}">
+            <input type="hidden" name="entityid"
+                   value="{{ getValue('entityid') }}">
+            {% if hasError('entityname') %}
+            <small class="helper">{{ getError('entityname') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="four wide field{{ cssError('username') }}">
+            <label>Nome de acesso</label>
+            <div class="ui {% if formMethod == 'PUT' %}readonly{% else %}{{ readonly }}{% endif %} input">
+              <input name="username" type="text" maxlength="25"
+                     autocomplete="off"
+                     placeholder="Informe o nome de acesso..."
+                     {% if formMethod == 'PUT' %}
+                       readonly
+                     {% else %}
+                     {{ readonly }}
+                     {% endif %}
+                     value="{{ getValue('username') }}">
+            </div>
+            {% if hasError('username') %}
+            <small class="helper">{{ getError('username') }}</small>
+            {% endif %}
+          </div>
+          <div class="four wide field{{ cssError('groupid') }}">
+            <label>Nível de permissão</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="groupid" type="hidden"
+                     value="{{ getValue('groupid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Informe o nível de permissão...</div>
+              <div class="menu">
+                {% set groupID = getValue('groupid') %}
+                {% for group in groups %}
+                  <div class="item color{{ group.id }}"
+                       {% if group.id == groupID %}
+                         selected
+                       {% endif %}
+                       data-value="{{ group.id }}"
+                       data-text="{{ group.name }}">
+                    {{ group.name }}
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('groupname') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('groupid') %}
+            <small class="helper">{{ getError('groupid') }}</small>
+            {% endif %}
+          </div>
+          <div class="eight wide field{{ cssError('email') }}">
+            <label>E-mail</label>
+            <div class="ui {% if authorization.user.groupid > 2 %}readonly{% else %}{{ readonly }}{% endif %} input">
+              <input name="email" type="text" maxlength="50"
+                     autocomplete="off"
+                     placeholder="Informe um e-mail de contato..."
+                     {% if authorization.user.groupid > 2 %}
+                     readonly
+                     {% else %}
+                     {{ readonly }}
+                     {% endif %}
+                     value="{{ getValue('email') }}">
+            </div>
+            {% if hasError('email') %}
+            <small class="helper">{{ getError('email') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="eight wide field">
+            <div class="ui checkbox{{ readonly }}">
+              <input name="autogeneratepassword" type="hidden"
+                     value="{% if getValue('autogeneratepassword')|toBoolean %}true{% else %}false{% endif %}">
+              <input name="_autogeneratepassword" type="checkbox"
+                     toggle="normal" class="hidden" {{ readonly }}
+                     {% if getValue('autogeneratepassword')|toBoolean %}checked="checked"{% endif %}>
+              <label>Gerar uma senha segura e enviar por e-mail</label>
+            </div>
+          </div>
+
+          {% if enableToggleForceNewPassword %}
+          <div class="eight wide field">
+            <div class="ui checkbox{{ readonly }}">
+              <input name="forcenewpassword" type="hidden"
+                     value="{% if getValue('forcenewpassword')|toBoolean %}true{% else %}false{% endif %}">
+              <input name="_forcenewpassword" type="checkbox"
+                     class="hidden" {{ readonly }}
+                     {% if getValue('forcenewpassword')|toBoolean %}checked="checked"{% endif %}>
+              <label>Forçar usuário a trocar sua senha na próxima autenticação</label>
+            </div>
+          </div>
+          {% else %}
+            {% if getValue('forcenewpassword')|toBoolean %}
+            <div class="eight wide darkred field">
+              <i class="history icon"
+                 style="font-size: 1.8em; line-height: 1em; vertical-align: middle;"></i>
+              Forçar a trocar sua senha na próxima autenticação
+            </div>
+            {% endif %}
+          {% endif %}
+        </div>
+        <div id="passwordGroup">
+          <div class="fields">
+            <div class="eight wide field{{ cssError('password') }}">
+              <label>Senha</label>
+              <input name="password" type="password" maxlength="25"
+                     placeholder="Informe uma senha..."
+                     {{ readonly }}
+                     value="{{ getValue('password') }}">
+              {% if hasError('password') %}
+              <small class="helper">{{ getError('password') }}</small>
+              {% endif %}
+            </div>
+            <div class="eight wide field{{ cssError('chkpassword') }}">
+              <label>Confirme a senha</label>
+              <input name="chkpassword" type="password" maxlength="25"
+                     placeholder="Confirme a senha..."
+                     {{ readonly }}
+                     value="{{ getValue('chkpassword') }}">
+              {% if hasError('chkpassword') %}
+              <small class="helper">{{ getError('chkpassword') }}</small>
+              {% endif %}
+            </div>
+          </div>
+          <div class="sixteen wide tablet eight wide computer column">
+            <div id="errorMessage" class="ui error hidden message">
+              <div class="header">
+                A nova senha digitada possui os seguintes erros:
+              </div>
+              <ul class="list">
+                <li>
+                  Você deve incluir tanto letras maiúsculas quanto
+                  minúsculas em sua senha
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field">
+            <div class="ui checkbox{{ readonly }}">
+              <input name="expires" type="hidden"
+                     value="{% if getValue('expires')|toBoolean %}true{% else %}false{% endif %}">
+              <input name="_expires" type="checkbox"
+                     toggle="inverted" class="hidden" {{ readonly }}
+                     {% if getValue('expires')|toBoolean %}checked="checked"{% endif %}>
+              <label>A conta deste usuário possui uma data de expiração</label>
+            </div>
+          </div>
+        </div>
+
+        <div id="expirationGroup" class="ui inverted orange segment">
+          <div class="fields">
+            <div class="four wide field{{ cssError('expiresat') }}">
+              <label>Data em que a conta expira</label>
+              <div class="ui calendar" id="expiresat">
+                <div class="ui input left icon{{ readonly }}">
+                  <i class="calendar icon"></i>
+                  <input name="expiresat" type="text"
+                         placeholder="Informe a data de expiração..."
+                         {{ readonly }}
+                         value="{{ getValue('expiresat') }}">
+                </div>
+              </div>
+              {% if hasError('expiresat') %}
+              <small class="helper">{{ getError('expiresat') }}</small>
+              {% endif %}
+            </div>
+            <div class="eight wide field">
+              <label>&nbsp;</label>
+              <span id="expiresatMessage" class="static">
+                &nbsp;
+              </span>
+              <p ></p>
+            </div>
+          </div>
+        </div>
+        {% if enableToggleBlocked %}
+          {% if formMethod == 'PUT' %}
+          <div class="fields">
+            <div class="sixteen wide field">
+              <div class="ui checkbox">
+                <input type="hidden" name="blocked"
+                       value="{% if getValue('blocked')|toBoolean %}true{% else %}false{% endif %}">
+                <input class="hidden" type="checkbox"
+                       name="_blocked"
+                       {% if getValue('blocked')|toBoolean %}checked="checked"{% endif %}>
+                <label>Bloquear a conta deste usuário</label>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        {% else %}
+          {% if getValue('blocked')|toBoolean %}
+          <div class="fields">
+            <div class="eight wide darkred field">
+              <i class="lock icon"
+                 style="font-size: 1.8em; line-height: 1em; vertical-align: middle;"></i>
+              A conta deste usuário está bloqueada
+            </div>
+          </div>
+          {% endif %}
+        {% endif %}
+
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="userid" value="{{ getValue('userid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+
+      {% if formMethod == 'PUT' %}
+      <!-- Início painel informativo de modificações -->
+      <div class="ui segments">
+        <div class="ui grey inverted segment">
+          <h5>
+            Histórico de modificações:
+          </h5>
+          Cadastrado {{ getValue('createdat')|localizedDate('long') }}
+          <div class="ui divider"></div>
+          Modificado {{ getValue('updatedat')|localizedDate('long') }}
+        </div>
+      </div>
+      <!-- Fim painel informativo de modificações -->
+      {% endif %}
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('semantic-ui/components/calendar.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('template-engine/template.engine.min.js') }}
+  {{ lib('jquery/plugins/password.strength.inspector/password.strength.inspector.min.js') }}
+  {{ lib('jquery/plugins/observe.input/observe.input.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+  
+  {% set getEntityDataCompletion = { 'URL': 'ERP\\Cadastre\\Entities\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      strengthOptions = [
+        'length',
+        'alpha',
+        'numeric',
+        'special',
+        'onlynumeric'
+      ],
+      strength = new PasswordStrengthInspector(25, strengthOptions)
+    ;
+
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $("input[name='phonenumber']")
+        .mask({
+          type: 'phoneNumber'
+        })
+      ;
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      $('.ui.checkbox')
+        .checkbox(checkboxOptions)
+      ;
+      $("input[name='entityname']")
+        .autocomplete(entityNameCompletionOptions)
+      ;
+      $("input[name=password]")
+        .observeinput({
+          enableToggleView: true,
+          icon: {
+            left: 'lock',
+            right: 'none',
+          },
+          onComplete: function () {
+            var
+              password = $(this).val(),
+              result   = strength.validate(password)
+            ;
+            
+            if (result) {
+              $("#errorMessage")
+                .hide()
+              ;
+            } else {
+              // Exibe os erros
+              var
+                errorList = $("#errorMessage").children("ul.list"),
+                errors    = strength.getErrors()
+              ;
+
+              errorList
+                .empty()
+              ;
+              $.each(errors, function(index, value) {
+                errorList
+                  .append('<li>'+value+'</li>')
+                ;
+              });
+              $("#errorMessage")
+                .show()
+              ;
+            }
+            
+            return result;
+          },
+        })
+      ;
+      $("input[name=chkpassword]")
+        .observeinput({
+          enableToggleView: true,
+          icon: {
+            left: 'lock',
+            right: 'none'
+          },
+          onTyping: function () {
+            var newpassword = $("input[name=password]").val();
+            return ($(this).val() === newpassword)?true:false;
+          },
+        })
+      ;
+      $("input[name='autogeneratepassword']")
+        .closest('div')
+        .checkbox(checkboxOptions)
+      ;
+      if ($("input[name='autogeneratepassword']").val() === "true") {
+        $("#passwordGroup").slideUp(1);
+      } else {
+        $("#passwordGroup").slideDown(1);
+      }
+      $("input[name='expires']")
+        .closest('div')
+        .checkbox(checkboxOptions)
+      ;
+      if ($("input[name='expires']").val() === "false") {
+        $("#expirationGroup").slideUp(1);
+      } else {
+        $("#expirationGroup").slideDown(1);
+      }
+      $("#expiresat")
+        .calendar(calendarOptions)
+      ;
+      $("input[name='expiresat")
+        .mask({
+          type: 'date'
+        })
+        .blur(expiresAtHandler)
+        .trigger("blur")
+      ;
+
+      // Coloca o foco no primeiro campo
+      $("input[name='name']").focus();
+    });
+
+
+    // =================================================[ Options ]=====
+
+    // As opções para o componente de Checkbox
+    var checkboxOptions = {
+      // Dispara ao iniciar para definir o valor, se necessário
+      onChange: function() {
+        var
+          checkbox = $(this).prop('name'),
+          // Invertemos o valor atual
+          checked = !($(this).attr('checked') !== undefined && $(this).attr('checked')),
+          boolValue = (checked
+            ? 'true'
+            : 'false'),
+          toggleField = checkbox.replace('_',''),
+          toggleType = (($(this).attr('toggle') === undefined)
+            ? 'none'
+            : $(this).attr('toggle'))
+        ;
+
+        if (toggleType != "none") {
+          if (toggleType === "inverted") {
+            if (checked) {
+              $(this)
+                .closest('div.fields')
+                .next()
+                .slideDown()
+              ;
+            } else {
+              $(this)
+                .closest('div.fields')
+                .next()
+                .slideUp()
+              ;
+            }
+          } else {
+            if (checked) {
+              $(this)
+                .closest('div.fields')
+                .next()
+                .slideUp()
+              ;
+            } else {
+              $(this)
+                .closest('div.fields')
+                .next()
+                .slideDown()
+              ;
+            }
+          }
+        }
+
+        // Invertemos o checkbox fake
+        $(this)
+          .attr('checked', checked)
+        ;
+
+        // Alteramos o valor do verdadeiro input
+        $("input[name='" + toggleField + "']")
+          .val(boolValue)
+        ;
+      }
+    };
+
+    // As opções para o componente de exibição de calendário no campo de
+    // entrada de data
+    var calendarOptions = {
+      type: 'date',
+      formatInput: true,
+      monthFirst: false,
+      today: true,
+      text: {
+        days: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'],
+        months: [
+          'Janeiro', 'Fevereiro', 'Março', 'Abril',
+          'Maio', 'Junho', 'Julho', 'Agosto',
+          'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ],
+        monthsShort: [
+          'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+          'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+        ],
+        today: 'Hoje',
+        now: 'Agora',
+        am: 'AM',
+        pm: 'PM'
+      },
+      formatter: {
+        date: function (date, settings) {
+          if (!date) {
+            return '';
+          }
+
+          var
+            day   = date.getDate().toString().padLeftWithZeros(2),
+            month = (date.getMonth()+1).toString().padLeftWithZeros(2),
+            year  = date.getFullYear()
+          ;
+
+          return (settings.type === 'year')
+            ? year
+            : (settings.type === 'month')
+              ? month + '/' + year
+              : ( settings.monthFirst
+                  ? month + '/' + day
+                  : day + '/' + month
+                ) + '/' + year
+          ;
+        }
+      }
+    };
+
+    // As opções para o componente de autocompletar o nome da entidade
+    // (cliente ou fornecedor)
+    var entityNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      ajax: {
+        url: "{{ path_for(getEntityDataCompletion.URL) }}",
+        type: "{{ getEntityDataCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'entity';
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        if (suggestion.juridicalperson) {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     (
+                    (suggestion.tradingname)
+                      ? '[<span style="color: #0256C4; font-style: italic;">' + suggestion.tradingname + '</span>]<br>'
+                      : ''
+                  )
+            +     (
+                    (suggestion.items > 1)
+                      ? (' (<span style="color: CornflowerBlue; font-style: italic;">' + suggestion.subsidiaryname + '</span>)')
+                      : ''
+                  )
+            +   '</div>'
+            + '</div>'
+          ;
+        } else {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     (
+                    (suggestion.tradingname)
+                      ? '[<span style="color: #0256C4; font-style: italic;">' + suggestion.tradingname + '</span>]<br>'
+                      : ''
+                  )
+            +     (
+                    (suggestion.items > 1)
+                      ? ( ''
+                          + '<span style="color: CornflowerBlue; font-style: italic;">'
+                          +     (
+                                  (suggestion.headoffice == true)
+                                    ? 'Titular'
+                                    : ('Dependente: ' + suggestion.subsidiaryname)
+                                )
+                          +     '</span>'
+                        )
+                      : ''
+                  )
+            +   '</div>'
+            + '</div>'
+          ;
+        }
+      },
+      onSelect: function (element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='entityid']")
+          .val(suggestion.id)
+        ;
+
+        // Para o dropdown de seleção da permissão do usuário, alterna
+        // o tipo de entidade selecionada
+        var
+          $dropdown = $("input[name='groupid']")
+            .closest('div.ui.search.selection.dropdown'),
+
+          // Os tipos de entidades
+          contractor      = 0,
+          supplier        = 1,
+          serviceprovider = 2,
+          customer        = 3,
+          entityType      = 0,
+
+          // As permissões para cada grupo por nível de usuário
+          permissionPerGroup = [
+            // None
+            [ false, false, false, false ],
+            // Administrador ERP
+            [ false, false, false, false ],
+            // Administrador Contratante
+            [ true,  false, false, false ],
+            // Atendente
+            [ true,  false, false, false ],
+            // Operador
+            [ true,  true,  true,  false ],
+            // Técnico
+            [ true,  false, true,  false ],
+            // Cliente
+            [ true,  false, false, true  ],
+          ]
+        ;
+
+        // Disponibilizamos os níveis de permissão conforme o tipo de
+        // entidade selecionada
+        if (suggestion.customer) {
+          entityType = customer;
+        } else {
+          if (suggestion.supplier) {
+            if (suggestion.serviceprovider) {
+              entityType = serviceprovider;
+            } else {
+              entityType = supplier;
+            }
+          } else {
+            entityType = contractor;
+          }
+        }
+        $dropdown.find('div.item').each(function() {
+          var
+            groupID = parseInt($(this).data("value"))
+          ;
+
+          if ( permissionPerGroup[ groupID ][ entityType ] ) {
+            $(this)
+              .removeClass('disabled')
+            ;
+          } else {
+            $(this)
+              .addClass('disabled')
+            ;
+          }
+        });
+
+        // Seleciona o primeiro item disponível
+        var
+          $first = $dropdown.find('div.item:not(.disabled)').first()
+        ;
+        $dropdown
+          .dropdown('set selected', $first.data('value'))
+        ;
+      },
+      onInvalidateSelection: function ()
+      {
+        var
+          $dropdown = $("input[name='groupid']")
+            .closest('div.ui.search.selection.dropdown')
+        ;
+
+        // Não conseguiu localizar uma entidade com base nos valores
+        // informados, então limpa os dados atuais
+        $("input[name='entityid']")
+          .val(0)
+        ;
+
+        // Habilita todos os itens de permissão
+        $dropdown.find('div.item').each(function() {
+          $(this)
+            .removeClass('disabled')
+          ;
+        });
+      }
+    };
+
+
+    // ================================================[ Handlers ]=====
+
+    // Faz o tratamento da entrada de uma data de expiração, indicando
+    // se a data já está vencida ou não
+    function expiresAtHandler()
+    {
+      Date.prototype.withoutTime = function () {
+        var
+          dateWithoutTime = new Date(this)
+        ;
+
+        dateWithoutTime.setHours(0, 0, 0, 0);
+
+        return dateWithoutTime;
+      };
+      Date.daysBetween = function( date1, date2 ) {
+        var
+          // Obtém o valor de tempo de 1 dia em milissegundos
+          one_day = 1000*60*60*24,
+
+          // Converte ambas as datas para milissegundos
+          date1_ms = date1.getTime(),
+          date2_ms = date2.getTime(),
+
+          // Calcula a diferença entre as datas em milissegundos 
+          difference_ms = date2_ms - date1_ms,
+
+          // Converte novamente para dias
+          amountOfDays = Math.round(difference_ms/one_day)
+        ;
+
+        if (amountOfDays > 1) {
+          return amountOfDays + " dias";
+        } else {
+          if (amountOfDays === 0) {
+            return "hoje";
+          } else {
+            return amountOfDays + " dia";
+          }
+        }
+      };
+
+      var
+        value = $(this).val(),
+        message = "A conta não possui uma data de bloqueio definida"
+      ;
+
+      if (value !== "") {
+        var
+          expiresAt = new Date(
+              value.split("/").reverse().join("-") + 'T00:00:00Z'
+            ),
+          now       = new Date(),
+          today     = new Date(
+              Date.UTC(
+                now.getUTCFullYear(),
+                now.getUTCMonth(),
+                now.getUTCDate()
+              )
+            )
+        ;
+
+        if (today.withoutTime() > expiresAt.withoutTime()) {
+          message = "A conta está bloqueada à "
+            + Date.daysBetween(expiresAt.withoutTime(),
+                today.withoutTime()
+              )
+          ;
+        } else {
+          if (today.withoutTime() < expiresAt.withoutTime()) {
+            message = "A conta está disponível por "
+              + Date.daysBetween(today.withoutTime(),
+                  expiresAt.withoutTime()
+                )
+            ;
+          } else {
+            message = "A conta está disponível até hoje";
+          }
+        }
+      }
+
+      $('#expiresatMessage').html(message);
+    }
+
+    var loading = function() {
+      $(document.body)
+        .css({
+          'cursor' : 'wait'
+        })
+      ;
+      $(".loading")
+        .removeClass("hidden")
+      ;
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

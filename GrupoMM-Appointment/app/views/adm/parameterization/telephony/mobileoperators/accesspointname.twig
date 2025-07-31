@@ -1,0 +1,66 @@
+          <div class="fields accessPointEntry">
+            <div class="field{{ cssError('accesspoints[' ~ number ~ '][name]') }}">
+              {% if loop.first %}
+              <label class="column mobile hidden">Nome</label>
+              {% endif %}
+              <input name="accesspoints[{{ number }}][name]"
+                     placeholder="Nome da APN..." type="text"
+                     value="{{ accessPoint.name }}"
+                     label="Nome"
+                     maxlength="30">
+              <input name="accesspoints[{{ number }}][accesspointnameid]"
+                     type="hidden"
+                     value="{{ accessPoint.accesspointnameid }}" />
+              {% if hasError('accesspoints[' ~ number ~ '][name]') %}
+              <small class="helper">{{ getError('accesspoints[' ~ number ~ '][name]') }}</small>
+              {% endif %}
+            </div>
+            <div class="field{{ cssError('accesspoints[' ~ number ~ '][address]') }}">
+              {% if loop.first %}
+              <label class="ui mobile hidden">Ponto de Acesso (APN)</label>
+              {% endif %}
+              <input name="accesspoints[{{ number }}][address]"
+                     placeholder="APN..." type="text"
+                     value="{{ accessPoint.address }}"
+                     label="APN"
+                     maxlength="100">
+              {% if hasError('accesspoints[' ~ number ~ '][address]') %}
+              <small class="helper">{{ getError('accesspoints[' ~ number ~ '][address]') }}</small>
+              {% endif %}
+            </div>
+            <div class="field{{ cssError('accesspoints[' ~ number ~ '][username]') }}">
+              {% if loop.first %}
+              <label class="ui mobile hidden">Usuário</label>
+              {% endif %}
+              <input name="accesspoints[{{ number }}][username]"
+                     placeholder="Usuário..." type="text"
+                     value="{{ accessPoint.username }}"
+                     label="Usuário"
+                     maxlength="50">
+              {% if hasError('accesspoints[' ~ number ~ '][username]') %}
+              <small class="helper">{{ getError('accesspoints[' ~ number ~ '][username]') }}</small>
+              {% endif %}
+            </div>
+            <div class="field{{ cssError('accesspoints[' ~ number ~ '][password]') }}">
+              {% if loop.first %}
+              <label class="ui mobile hidden">Senha</label>
+              {% endif %}
+              <div class="ui action input">
+                <input name="accesspoints[{{ number }}][password]"
+                       placeholder="Senha..." type="text"
+                       value="{{ accessPoint.password }}"
+                       label="Senha"
+                       maxlength="50">
+                <button class="ui mini youtube icon button"
+                        data-tooltip="Remove esta APN"
+                        data-position="top right" type="button"
+                        accesspoint="{{ number }}"
+                        onclick="delAPN(this);">
+                  <i class="minus icon"></i>
+                </button>
+              </div>
+              {% if hasError('accesspoints[' ~ number ~ '][password]') %}
+              <small class="helper">{{ getError('accesspoints[' ~ number ~ '][password]') }}</small>
+              {% endif %}
+            </div>
+          </div>

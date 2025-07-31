@@ -1,0 +1,106 @@
+{% import "templates/stc/macros/menuItem.twig" as menu %}
+  <ul class="level1">
+    {{ menu.addItem('STC\\Home', 'home', 'Início') }}
+
+    {% if ( authorization.hasAuthorizationForGroupOfRoutes('STC\\Cadastre') ) %}
+    <li class="item has-submenu">
+      <div>
+        <i class="fas fa-book-open"></i> Cadastro
+        <i class="dropdown icon"></i>
+      </div>
+
+      <ul class="level2">
+        {% if authorization.user.groupid < 6 %}
+        {{ menu.addItem('STC\\Cadastre\\Customers', 'house-user', 'Clientes') }}
+        {% else %}
+        {{ menu.addItem('STC\\Cadastre\\Customers\\View', 'house-user', 'Cliente', { 'clientID': authorization.user.entityid }) }}
+        {% endif %}
+        {{ menu.addItem('STC\\Cadastre\\Vehicles', 'truck', 'Veículos') }}
+        {{ menu.addItem('STC\\Cadastre\\Drivers', 'user-tie', 'Motoristas') }}
+        {{ menu.addItem('STC\\Cadastre\\Equipments', 'box', 'Equipamentos') }}
+      </ul>
+    </li>
+    {% endif %}
+
+    {% if ( authorization.hasAuthorizationForGroupOfRoutes('STC\\Parameterization') ) %}
+    <li class="item has-submenu">
+      <div>
+        <i class="fas fa-layer-group"></i> Parametrizações
+        <i class="dropdown icon"></i>
+      </div>
+
+      <ul class="level2">
+        {% if ( authorization.hasAuthorizationForGroupOfRoutes('STC\\Parameterization\\Cadastral') ) %}
+        <li class="item has-submenu">
+          <div>
+            <i class="fab fa-elementor"></i> Dados Cadastrais
+            <i class="dropdown icon"></i>
+          </div>
+
+          <ul class="level3">
+            {{ menu.addItem('STC\\Parameterization\\Cadastral\\Cities', 'city', 'Cidades') }}
+            {{ menu.addItem('STC\\Parameterization\\Cadastral\\Journeys', 'user-clock', 'Jornadas de trabalho') }}
+          </ul>
+        </li>
+        {% endif %}
+
+        {% if ( authorization.hasAuthorizationForGroupOfRoutes('STC\\Parameterization\\Vehicles') ) %}
+        <li class="item has-submenu">
+          <div>
+            <i class="fas fa-truck"></i> Veículos
+            <i class="dropdown icon"></i>
+          </div>
+
+          <ul class="level3">
+            {{ menu.addItem('STC\\Parameterization\\Vehicles\\Types', 'ambulance', 'Tipos') }}
+            {{ menu.addItem('STC\\Parameterization\\Vehicles\\Brands', 'award', 'Marcas') }}
+            {{ menu.addItem('STC\\Parameterization\\Vehicles\\Models', 'ambulance', 'Modelos') }}
+          </ul>
+        </li>
+        {% endif %}
+
+        {% if ( authorization.hasAuthorizationForGroupOfRoutes('STC\\Parameterization\\Equipments') ) %}
+        <li class="item has-submenu">
+          <div>
+            <i class="fas fa-box"></i> Equipamentos
+            <i class="dropdown icon"></i>
+          </div>
+
+          <ul class="level3">
+            {{ menu.addItem('STC\\Parameterization\\Equipments\\Manufactures', 'award', 'Fabricantes') }}
+          </ul>
+        </li>
+        {% endif %}
+      </ul>
+    </li>
+    {% endif %}
+
+    {% if ( authorization.hasAuthorizationForGroupOfRoutes('STC\\Data') ) %}
+    <li class="item has-submenu">
+      <div>
+        <i class="fas fa-database"></i> Dados
+        <i class="dropdown icon"></i>
+      </div>
+
+      <ul class="level2">
+        {{ menu.addItem('STC\\Data\\Positions', 'map-marked-alt', 'Posicionamento') }}
+      </ul>
+    </li>
+    {% endif %}
+
+    {% if ( authorization.hasAuthorizationForGroupOfRoutes('STC\\Report') ) %}
+    <li class="item has-submenu">
+      <div>
+        <i class="fas fa-file-alt"></i> Relatório
+        <i class="dropdown icon"></i>
+      </div>
+
+      <ul class="level2">
+        {{ menu.addItem('STC\\Report\\RoadTrips', 'shipping-fast', 'Viagens') }}
+        {{ menu.addItem('STC\\Report\\Workdays', 'user-clock', 'Jornadas de trabalho') }}
+      </ul>
+    </li>
+    {% endif %}
+
+    {{ menu.addItem('STC\\About', 'info-circle', 'Sobre') }}
+  </ul>

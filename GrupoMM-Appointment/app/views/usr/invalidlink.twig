@@ -1,0 +1,101 @@
+{% extends 'templates/site/layoutsimple.twig' %}
+{% block title %}{{ parent() }} - Link inválido{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  <style>
+    .notfound .notfound-404 {
+      position: relative;
+      height: 200px;
+      margin: 0px auto 20px;
+      text-align: center;
+      z-index: -1;
+    }
+
+    .notfound h1 {
+      font-size: 256px;
+      font-weight: 200;
+      margin: 0px;
+      color: #3b3b3b;
+      text-transform: uppercase;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      -webkit-transform: translate(-50%, -50%);
+      -ms-transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%);
+    }
+
+    .notfound h2 {
+      font-size: 28px;
+      font-weight: 400;
+      text-transform: uppercase;
+      color: #211b19;
+      color: #fff;
+      background: #fff;
+      background: #ff5500;
+      padding: 10px 5px;
+      margin: auto;
+      display: inline-block;
+      position: absolute;
+      bottom: 0px;
+      left: 0;
+      right: 50px;
+      width: 550px;
+    }
+
+    .ui.align.center {
+      font-size: 1.5em;
+      text-align: center;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  <div class="ui main basic segment">
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início conteúdo módulo -->
+      <div class="ui vertical segment">
+        <div id="notfound">
+          <div class="notfound">
+            <div class="notfound-404">
+              <h1>Oops!</h1>
+              <h2>404 - Link inválido ou inexistente</h2>
+            </div>
+          </div>
+        </div>
+        <p class="ui align center">
+          O endereço do link informado está inválido ou é inexistente.
+          Por favor, verifique o endereço informado e tente novamente.
+          <br />
+          Caso o problema persista, entre em contato com o serviço de
+          atendimento ao cliente.
+        </p>
+      </div>
+      
+      <div class="ui vertical segment">
+        <button type="button" class="ui blue labeled icon button"
+                onclick="location.href='{{ path_for('Home') }}';">
+          <i class="home icon"></i> Retornar para a página inicial
+        </button>
+      </div>
+    </div>
+    <!-- Fim conteúdo módulo -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {% apply minify %}
+  <script>
+    $(document).ready(function() {
+      $('.image')
+        .popup()
+      ;
+    });
+  </script>
+  {% endapply %}
+{% endblock scripts %}

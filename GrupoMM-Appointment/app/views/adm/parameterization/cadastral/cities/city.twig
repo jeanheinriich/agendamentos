@@ -1,0 +1,215 @@
+{% extends 'templates/adm/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} cidade{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  {{ css('loading.min.css') }}
+  <style>
+    .blue {
+      color: CornflowerBlue;
+      font-style: italic;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ADM\\Parameterization\\Cadastral\\Cities\\Add' %}
+  {% else %}
+    {% set URL = 'ADM\\Parameterization\\Cadastral\\Cities\\Edit' %}
+  {% endif %}
+  {% set previous = 'ADM\\Parameterization\\Cadastral\\Cities' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('adm/cities.svg', 'Cidade') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if editMode %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} cidade
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar uma nova {% else %}modificar as informações cadastrais de uma {% endif %}
+                  cidade.
+                </div>
+              {% else %}
+                Visualizar cidade
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de uma cidade.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início mensagem -->
+      <div class="ui message">
+        <div class="header">
+          Atenção
+        </div>
+        <p>
+          A Tabela de Códigos de Municípios, elaborada pelo IBGE,
+          apresenta a lista dos municípios brasileiros associados a um
+          código composto de 7 dígitos, sendo os dois primeiros
+          referentes ao código do estado. Esta tabela, que reflete a
+          organização do território, é utilizada não apenas pelo IBGE
+          para o processamento das informações de suas pesquisas e
+          cadastros, como também por outras instituições.
+
+          É atualizada sistematicamente de forma a incluir as alterações
+          decorrentes do desdobramento de municípios e, conseqüentemente,
+          da criação de novos municípios, mudanças de nome dos municípios,
+          como também de processos de fusão que resultam na extinção ou
+          modificação de nome de algum município.
+        </p>
+      </div>
+      <!-- Fim mensagem -->
+
+      <!-- Início formulário -->
+      <div class="loading hidden">Processando...&#8230;</div>
+      <form class="ui form" method="POST" autocomplete="off"
+            onsubmit="loading();"
+            action="{{ path_for(URL, { 'cityID': getValue('cityid') }) }}">
+        <div class="fields">
+          <div class="eight wide field{{ cssError('name') }}">
+            <label>Cidade</label>
+            <div class="ui input{{ readonly }}">
+              <input name="name" type="text" maxlength="50"
+                     placeholder="Informe o nome da cidade..."
+                     {{ readonly }}
+                     value="{{ getValue('name') }}">
+            </div>
+            {% if hasError('name') %}
+            <small class="helper">{{ getError('name') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="five wide field{{ cssError('state') }}">
+            <label>UF</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="state" type="hidden"
+                     value="{{ getValue('state') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">{{ getValue('state') }}</div>
+              <div class="menu">
+                {% for state in states %}
+                  <div class="item" data-value="{{ state.id }}"
+                       state-name="{{ state.name }}">
+                    <span class="tablet hidden">{{ state.name }}</span>
+                    <span class="tablet hidden blue"> ({{ state.id }})</span>
+                    <span class="tablet only">{{ state.id }}</span>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('state') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('state') %}
+            <small class="helper">{{ getError('state') }}</small>
+            {% endif %}
+          </div>
+          <div class="three wide field{{ cssError('ibgecode') }}">
+            <label>Código IBGE</label>
+            <div class="ui input{{ readonly }}">
+              <input name="ibgecode" type="text"
+                     placeholder="Código IBGE..."
+                     {{ readonly }}
+                     value="{{ getValue('ibgecode') }}">
+            </div>
+            {% if hasError('ibgecode') %}
+            <small class="helper">{{ getError('ibgecode') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="cityid" value="{{ getValue('cityid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+  
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      $("input[name='ibgecode']")
+        .mask({
+          type: 'number',
+          maxlength: 7
+        })
+      ;
+
+      // Coloca o foco no primeiro campo
+      $("input[name='name']")
+        .focus()
+      ;
+    });
+
+    var loading = function() {
+      $(document.body)
+        .css({
+          'cursor' : 'wait'
+        })
+      ;
+      $(".loading")
+        .removeClass("hidden")
+      ;
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

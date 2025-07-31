@@ -1,0 +1,175 @@
+/* ---------------------------------------------[ Single Pages ]-----
+   As definições para páginas simples.
+   ------------------------------------------------------------------ */
+
+main {
+  section.description {
+    .ui.basic.segment {
+      font-size: 1.1em;
+    }
+  }
+}
+
+.ui.basic.segment {
+  h2.ui.header {
+    margin-bottom: calc(-0.142857em + 3rem);
+
+    &.blue {
+      color: $headerTextColor !important;
+    }
+
+    table {
+      width: 100%;
+      
+      tr {
+        td {
+          vertical-align: top;
+
+          &:first-child {
+            align: right;
+            width: 80px;
+            padding-right: 10px;
+
+            @include transition(all 0.5s ease);
+          }
+        }
+      }
+    }
+  }
+}
+
+.description {
+  .ui.list {
+    .item {
+      i {
+        font-size: 1.18571429rem;
+        vertical-align: top !important;
+      }
+    }
+  }
+  
+  .ui.relaxed.list {
+    i {
+      font-size: 45px;
+      color: #005FA6;
+      width: 1.5em;
+      vertical-align: top !important;
+      @media screen and (max-width: 450px) {
+        display: none;
+      }
+    }
+  }
+  
+  .ui.steps .step .title,
+  .ui.menu {
+    font-family: $fontBase;
+  }
+  .ui.steps .step .title {
+    font-weight: 600;
+  }
+
+  .ui.list>.item>.icon+.content {
+    padding-left: 0;
+  }
+  .ui.segment, .ui.segments .segment {
+    font-size: 1.2rem;
+    font-weight: 300;
+  }
+
+  .ui.list,
+  .ui.relaxed.list {
+    .content {
+      .header {
+        font-size: 1.18571429rem;
+        padding-bottom: 5px;
+        font-weight: 500;
+      }
+
+      .description {
+        line-height: 1.4285em;
+        color: #8c8c8c;
+      }
+
+      @media screen and (max-width: 450px) {
+        padding-left: 0;
+      }
+    }
+  }
+}
+
+.ui.header {
+  margin-bottom: calc(-0.142857em + 3rem);
+
+  &.blue {
+    color: #005FA6 !important;
+  }
+
+  .ui.image {
+    @media screen and (max-width: 767px) {
+      display: none;
+    }
+  }
+}
+.ui.header > .image + .content,
+.ui.header > img + .content {
+  padding-left: 0;
+}
+
+.ui.tabular {
+  &.menu {
+    .item {
+      border-top-width: 1px;
+      border-color: #d4d4d5;
+      @include border-radii-default(.28571429rem,.28571429rem,0,0);
+      
+      &.active {
+        cursor: pointer;
+        background: #f0f1f2;
+        @include gradient(#f8f8f8, #ffffff);
+        color: rgba(0,0,0,.87);
+        
+        .content {
+          @media screen and (max-width: 567px) {
+            display: none;
+          }
+        }
+      }
+      
+      &:not(.active) {
+        .content {
+          @media screen and (max-width: 900px) {
+            display: none;
+          }
+        }
+      }
+      
+      &:hover {
+        cursor: pointer;
+        background: #dcddde;
+        color: rgba(0,0,0,.87);
+      }
+    }
+  }
+
+  &.steps {
+    width: 100% !important;
+    
+    .step {
+      .icon {
+        color: #4183c4 !important;
+        font-size: 2.0em;
+      }
+      
+      .item:hover {
+      }
+      
+      &::after {
+        display: none !important;
+        
+        &.active {
+          display: none !important;
+        }
+      }
+    }
+  }
+}

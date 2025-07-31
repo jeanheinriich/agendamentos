@@ -1,0 +1,1524 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} veículo{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('libs/semantic-ui/components/calendar.min.css') }}
+  {{ css('form.min.css') }}
+  {{ css('dialog.min.css') }}
+  {{ css('colorselector.min.css') }}
+  {{ css('libs/jquery/plugins/file.input/file.input.min.css') }}
+  <style>
+    .fields.hidden {
+      display: none !important;
+    }
+    .ui.special.stackable.cards {
+      padding-bottom: 10px;
+    }
+    @media screen and (max-width: 767px) {
+      .ui.special.stackable.cards {
+        padding-top: 20px;
+        padding-bottom: 0px;
+      }
+      .ui.checkbox {
+        padding-top: .38571429em;
+        padding-bottom: .38571429em;
+      }
+      .ownerdata {
+        margin-top: .38571429em;
+        background-color: #eff5fb;
+        padding: 0.2rem;
+        border-radius: .28571429rem;
+        -webkit-box-shadow: 0 1px 3px 0 #d4d4d5, 0 0 0 1px #d4d4d5;
+        box-shadow: 0 1px 3px 0 #d4d4d5, 0 0 0 1px #d4d4d5;
+        -webkit-transition: -webkit-box-shadow .1s ease,-webkit-transform .1s ease;
+        transition: -webkit-box-shadow .1s ease,-webkit-transform .1s ease;
+        transition: box-shadow .1s ease,transform .1s ease;
+        transition: box-shadow .1s ease,transform .1s ease,-webkit-box-shadow .1s ease,-webkit-transform .1s ease;
+      }
+    }
+    .ui.vertical.segment.mini.form {
+      border-bottom: none;
+      padding-bottom: 0;
+      margin-bottom: 0;
+    }
+    .ui.vertical.segment.noBottomBorder .fields:first-child {
+      margin-top: .5em;
+    }
+    .ui.vertical.segment.noBottomBorder .fields:last-child {
+      margin-bottom: 0;
+    }
+    .ui.bottom.attached.vertical.segment {
+      border: none;
+      border-radius: 0;
+      margin-bottom: 0;
+    }
+    .ui.grid.phoning {
+      margin-top: 0;
+    }
+    .withTopMargin {
+      margin-top: 1rem !important;
+    }
+
+    /**
+     * Ajustes nas tabelas de valores
+     */
+    .ui.ui.table td.neuter, .ui.ui.ui.ui.table tr.neuter {
+      -webkit-box-shadow: 0 0 0 #a3c293 inset;
+      box-shadow: 0 0 0 #a3c293 inset;
+      background: #f9fafb;
+      color: rgba(0,0,0,.87);
+    }
+    span.ui.medium.text {
+      font-size: 1.1em;
+    }
+    tr.positive>td>span.blue {
+      color: #009b00 !important;
+    }
+    .ui.table thead tr:first-child>th:last-child {
+      border-right: none;
+    }
+
+    /**
+     * Personaliza os dropdowns para permitir melhor seleção dos valores
+     */
+    .ui.dropdown .menu>.item.vertical {
+      display: -webkit-box;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: reverse;
+      -ms-flex-direction: column-reverse;
+      flex-direction: column-reverse;
+    }
+    .ui.dropdown .menu>.item.vertical>.description {
+      margin: 0;
+      color: CornflowerBlue;
+      font-style: italic;
+      border-top: 1px solid rgba(34,36,38,0.15);
+      line-height: 1.3em;
+    }
+    .ui.dropdown .menu>.item.vertical>.text {
+      margin-bottom: .25em;
+    }
+    .symbol {
+      color: gray;
+      font-size: .9em;
+    }
+    .plate,
+    .monetary {
+      color: DarkOrange;
+      font-size: 1em;
+    }
+    .ui.dropdown>.text>.description>.hidden {
+      display: none;
+    }
+    .ui.search.autocomplete {
+      width: 100%;
+    }
+
+    .ui.list .list>.item .description,
+    .ui.list>.item .description {
+      position: relative;
+      padding-left: 2.085714em;
+      margin-top: .2em;
+      margin-bottom: .4em;
+      color: rgba(0,0,0,.5);
+    }
+    .item > .ui.checkbox {
+      font-size: 1.1em;
+    }
+    .item > .ui.checkbox label,
+    .ui.blue {
+      color: #005FA6;
+      font-weight: bold;
+    }
+
+    @media only screen and (max-width:767px) {    
+      .ui.list .list>.item,
+      .ui.list>.item {
+        margin-bottom: .5em;
+      }
+    }
+
+    label.readonly {
+      color: rgba(0,0,0,.5) !important;
+      text-decoration: line-through;
+    }
+    h4.ui.header .sub.header {
+      margin-top: .5em;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Cadastre\\Vehicles\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Cadastre\\Vehicles\\Edit' %}
+  {% endif %}
+  {% set toggleBlocked = { 'URL': 'ERP\\Cadastre\\Vehicles\\ToggleBlocked', 'method': 'PUT' } %}
+  {% set previous = 'ERP\\Cadastre\\Vehicles' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  {% set enableToggleBlocked = authorization.getAuthorizationFor(toggleBlocked.URL, toggleBlocked.method) %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/vehicles.svg', 'Veículo') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if editMode %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} veículo
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  veículo.
+                </div>
+              {% else %}
+                Visualizar veículo
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um
+                  veículo.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            enctype="multipart/form-data"
+            action="{{ path_for(URL, {'vehicleID': getValue('vehicleid') }) }}">
+        <h3 class="ui header">Dados do cliente ao qual o veículo está vinculado</h3>
+        <div class="fields">
+          <div class="eight wide field{{ cssError('customername') }}">
+            <label>Nome do cliente</label>
+            {% if authorization.user.groupid < 6 %}
+            <input name="customername" type="text" class="search"
+                   maxlength="100"
+                   placeholder="Informe o nome do cliente..."
+                   {{ readonly }}
+                   value="{{ getValue('customername') }}">
+            {% else %}
+            <div class="field static">
+              <span class="darking">
+                {{ getValue('customername') }}
+              </span>
+              <input type="hidden" name="customername"
+                     value="{{ getValue('customername') }}">
+            </div>
+            {% endif %}
+            <input type="hidden" name="entitytypeid"
+                   value="{{ getValue('entitytypeid') }}">
+            <input type="hidden" name="customerid"
+                   value="{{ getValue('customerid') }}">
+            {% if formMethod == 'PUT' %}
+            <input type="hidden" name="originalcustomerid"
+                   value="{{ getValue('originalcustomerid') }}">
+            {% endif %}
+            {% if hasError('customername') %}
+            <small class="helper">{{ getError('customername') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="eight wide field{{ cssError('subsidiaryname') }}">
+            {% if getValue('entitytypeid') == 2 %}
+            <label for="subsidiarytitle">Titular ou dependente ao qual o veículo está vinculado</label>
+            {% else %}
+              {% if getValue('entitytypeid') == 3 %}
+              <label for="subsidiarytitle">Associado ou unidade ao qual o veículo está vinculado</label>
+              {% else %}
+              <label for="subsidiarytitle">Unidade/filial ao qual o veículo está vinculado</label>
+              {% endif %}
+            {% endif %}
+            <input name="subsidiaryname" type="text" class="search"
+                   maxlength="50"
+                   placeholder="Informe a unidade/filial..."
+                   {{ readonly }}
+                   value="{{ getValue('subsidiaryname') }}">
+            <input name="subsidiaryid" type="hidden"
+                   value="{{ getValue('subsidiaryid') }}">
+            <input type="hidden" name="affiliated"
+                   value="{% if getValue('affiliated')|toBoolean %}true{% else %}false{% endif %}">
+            {% if formMethod == 'PUT' %}
+            <input type="hidden" name="originalsubsidiaryid"
+                   value="{{ getValue('originalsubsidiaryid') }}">
+            {% endif %}
+            {% if hasError('subsidiaryname') %}
+            <small class="helper">{{ getError('subsidiaryname') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if formMethod == 'PUT' %}
+          {% if getValue('customerid') == getValue('originalcustomerid') %}
+            {% set hideTransfer = true %}
+          {% else %}
+            {% set hideTransfer = false %}
+          {% endif %}
+          {% set equipments = getValue('equipments') %}
+          {% if equipments| length > 0 %}
+          <div class="transfer" {% if hideTransfer %} style="display: none;"{% endif %}>
+            <h4 class="ui header">
+              <div class="content">
+                Transferência dos equipamentos
+                <div class="sub header">
+                  Este veículo já estava sendo rastreado. Como está sendo
+                  realizada a troca de titularidade, você também precisa
+                  fazer a transferência dos equipamentos para os novos
+                  contratos, de forma que a cobrança ocorra corretamente.
+                </div>
+              </div>
+            </h4>
+
+            <div class="ui vertical segment tiny form">
+              <table class="ui compact celled table">
+                <thead class="full-width">
+                  <tr>
+                    <th width="40"></th>
+                    <th class="center aligned">Equipamento atualmente instalado</th>
+                    <th colspan="2" class="center aligned" width="150">Informações da transferência</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for equipmentNumber, equipment in equipments %}
+                  <tr>
+                    <td rowspan="3" class="center aligned">
+                      <h2 class="ui center aligned header">
+                        {{ equipmentNumber + 1 }}
+                      </h2>
+                    </td>
+                    <td rowspan="3" class="top aligned">
+                      Nº de série: <span class="ui blue medium text">{{ equipment.serialnumber }}</span><br>
+                      {{ equipment.equipmentbrandname }} / {{ equipment.equipmentmodelname }}
+                      <input name="equipments[{{ equipmentNumber }}][equipmentid]"
+                            type="hidden" value="{{ equipment.equipmentid }}">
+                      <input name="equipments[{{ equipmentNumber }}][serialnumber]"
+                            type="hidden" value="{{ equipment.serialnumber }}">
+                      <input name="equipments[{{ equipmentNumber }}][equipmentbrandname]"
+                            type="hidden" value="{{ equipment.equipmentbrandname }}">
+                      <input name="equipments[{{ equipmentNumber }}][equipmentmodelname]"
+                            type="hidden" value="{{ equipment.equipmentmodelname }}">
+                      <input name="equipments[{{ equipmentNumber }}][amountOfPayerContracts]"
+                            type="hidden" value="{{ equipment.amountOfPayerContracts }}">
+                      <input name="equipments[{{ equipmentNumber }}][amountOfItensInContract]"
+                            type="hidden" value="{{ equipment.amountOfItensInContract }}">
+                      <input name="equipments[{{ equipmentNumber }}][loyaltyperiod]"
+                            type="hidden" value="{{ equipment.loyaltyperiod }}">
+                      <input name="equipments[{{ equipmentNumber }}][disablechargeloyaltybreak]"
+                            type="hidden" value="{% if equipment.disablechargeloyaltybreak|toBoolean %}true{% else %}false{% endif %}">
+                      <br>
+                      <br>
+                      Data da instalação do equipamento no veículo<br>
+                      <span><i class="calendar check blue icon"></i>{{ equipment.installedat }}</span>
+                      <input name="equipments[{{ equipmentNumber }}][installedat]"
+                            type="hidden" value="{{ equipment.installedat }}">
+                      <br>
+                      <br>
+                      Data do início do item de contrato<br>
+                      <span><i class="calendar check green icon"></i>Iniciando em {{ equipment.startdate|date("d/m/Y") }}</span>                    <br>
+                      <input name="equipments[{{ equipmentNumber }}][startdate]"
+                            type="hidden" value="{{ equipment.startdate }}">
+                      {% if equipment.contractsuspended > 0 %}
+                      <span class="ui red text" style="font-size: 1.1em;">
+                      <i class="exclamation triangle icon"></i>
+                        O contrato ao qual este item pertence está suspenso
+                      </span><br>
+                      {% endif %}
+                      <input type="hidden" name="equipments[{{ equipmentNumber }}][contractsuspended]"
+                            value="{% if equipment.contractsuspended|toBoolean %}true{% else %}false{% endif %}">
+                      {% if equipment.loyaltyperiod > 0 %}
+                      <br>
+                      Período de fidelidade<br>
+                      <span><i class="clock orange icon"></i>{{ equipment.loyaltyperiod }} meses</span><br>
+                      <span><i class="calendar check orange icon"></i>Encerrando em {{ equipment.endloyaltyperiod|date("d/m/Y") }}</span>
+                      <input name="equipments[{{ equipmentNumber }}][endloyaltyperiod]"
+                            type="hidden" value="{{ equipment.endloyaltyperiod }}">
+                      {% endif %}
+                    </td>
+                    <td width="350" class="left aligned{{ cssError('equipments[' ~ equipmentNumber ~ '][customerpayername]') }}">
+                      <label>Cliente responsável pelo item de contrato</label>
+                      <input name="equipments[{{ equipmentNumber }}][customerpayername]" type="text" class="search"
+                            maxlength="100"
+                            placeholder="Informe o nome do pagante..."
+                            {{ readonly }}
+                            value="{{ equipment.customerpayername }}"
+                            equipmentNumber="{{ equipmentNumber }}">
+                      <input type="hidden" name="equipments[{{ equipmentNumber }}][customerpayerid]"
+                            value="{{ equipment.customerpayerid }}">
+                      <input type="hidden" name="equipments[{{ equipmentNumber }}][originalcustomerpayerid]"
+                            value="{{ equipment.originalcustomerpayerid }}">
+                      <input type="hidden" name="equipments[{{ equipmentNumber }}][payerentitytypeid]"
+                            value="{{ equipment.payerentitytypeid }}">
+                      {% if hasError('equipments[' ~ equipmentNumber ~ '][customerpayername]') %}
+                      <small class="helper">{{ getError('equipments[' ~ equipmentNumber ~ '][customerpayername]') }}</small>
+                      {% endif %}
+                    </td>
+                    <td width="350" class="left aligned{{ cssError('equipments[' ~ equipmentNumber ~ '][subsidiarypayername]') }}">
+                      {% if equipment.payerentitytypeid == 2 %}
+                      <label for="equipments[{{ equipmentNumber }}][subsidiarypayername]">Titular ou dependente</label>
+                      {% else %}
+                      <label for="equipments[{{ equipmentNumber }}][subsidiarypayername]">Unidade/filial</label>
+                      {% endif %}
+                      <input name="equipments[{{ equipmentNumber }}][subsidiarypayername]" type="text" class="search"
+                            maxlength="50"
+                            placeholder="Informe a unidade/filial..."
+                            {{ readonly }}
+                            value="{{ equipment.subsidiarypayername }}"
+                            equipmentNumber="{{ equipmentNumber }}">
+                      <input name="equipments[{{ equipmentNumber }}][subsidiarypayerid]" type="hidden"
+                            value="{{ equipment.subsidiarypayerid }}">
+                      <input name="equipments[{{ equipmentNumber }}][originalsubsidiarypayerid]" type="hidden"
+                            value="{{ equipment.originalsubsidiarypayerid }}">
+                      {% if hasError('equipments[' ~ equipmentNumber ~ '][subsidiarypayername]') %}
+                      <small class="helper">{{ getError('equipments[' ~ equipmentNumber ~ '][subsidiarypayername]') }}</small>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="left aligned{{ cssError('equipments[' ~ equipmentNumber ~ '][contractid]') }}" style="border-left: 1px solid rgba(34,36,38,.1);">
+                      <label>Nº do contrato</label>
+                      <div class="ui fluid long selection dropdown">
+                        <input name="equipments[{{ equipmentNumber }}][contractid]" type="hidden"
+                              value="{{ equipment.contractid }}"
+                              equipmentNumber="{{ equipmentNumber }}">
+                        <i class="dropdown icon"></i>
+                        <div class="default text">Escolha um contrato...</div>
+                        <div class="menu">
+                        {% for contract in contracts[equipment.customerpayerid][equipment.subsidiarypayerid] %}
+                          <div class="vertical item"
+                              {% if contract.id == equipment.contractid %}
+                              selected
+                              {% endif %}
+                              data-value="{{ contract.id }}">
+                            <span class="description">
+                              <div class="hidden">
+                                {{ contract.description }}<br>
+                              </div>
+                              <span class="symbol">(R$ <span class="monetary">{{ contract.monthprice }}</span>)</span>
+                            </span>
+                            <span class="text">{{ contract.number }}</span>
+                          </div>
+                        {% endfor %}
+                        </div>
+                      </div>
+                      <input type="hidden" name="equipments[{{ equipmentNumber }}][actualcontractid]"
+                            value="{{ equipment.contractid }}">
+                      {% if hasError('equipments[' ~ equipmentNumber ~ '][contractid]') %}
+                      <small class="helper">{{ getError('equipments[' ~ equipmentNumber ~ '][contractid]') }}</small>
+                      {% endif %}
+                    </td>
+                    <td class="left aligned{{ cssError('equipments[' ~ equipmentNumber ~ '][installationid]') }}">
+                      <label>Nº do item de contrato</label>
+                      <div class="ui fluid long selection dropdown">
+                        <input name="equipments[{{ equipmentNumber }}][installationid]" type="hidden"
+                              value="{{ equipment.installationid }}"
+                              equipmentNumber="{{ equipmentNumber }}>
+                        <i class="dropdown icon"></i>
+                        <div class="default text">Escolha um item de contrato...</div>
+                        <div class="menu">
+                        {% for installation in installations[equipment.contractid] %}
+                          <div class="vertical item"
+                              {% if installation.id == equipment.installationid %}
+                              selected
+                              {% endif %}
+                              data-value="{{ installation.id }}">
+                            <span class="description">
+                              <div class="hidden">
+                                {{ installation.description }}<br>
+                              </div>
+                              <span class="plate">{{ installation.plate }}</span>
+                            </span>
+                            <span class="text">{{ installation.number }}</span>
+                          </div>
+                        {% endfor %}
+                        </div>
+                      </div>
+                      <input type="hidden" name="equipments[{{ equipmentNumber }}][actualinstallationid]"
+                            value="{{ equipment.installationid }}">
+                      {% if hasError(('equipments[' ~ equipmentNumber ~ '][installationid]')) %}
+                      <small class="helper">{{ getError(('equipments[' ~ equipmentNumber ~ '][installationid]')) }}</small>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="left aligned" colspan="2" style="border-left: 1px solid rgba(34,36,38,.1);">
+                      Em relação ao contrato do qual o veículo está saíndo:
+                      <div class="ui list">
+                        {% if equipment.amountOfPayerContracts == 1 and equipment.amountOfItensInContract == 1 %}
+                          {% if equipment.originalcustomerpayerid == equipment.customerpayerid %}
+                            {% set disabledTerminateFields = ' disabled' %}
+                          {% else %}
+                            {% set disabledTerminateFields = '' %}
+                          {% endif %}
+                        <div class="item">
+                          <div class="ui checkbox{{ disabledTerminateFields }}">
+                            <input type="hidden" name="equipments[{{ equipmentNumber }}][terminate]"
+                                  value="{% if equipment.terminate|toBoolean %}true{% else %}false{% endif %}">
+                            <input class="hidden" type="checkbox"
+                                  name="_equipments[{{ equipmentNumber }}][terminate]"
+                                  equipment="{{ equipmentNumber }}" {{ disabledTerminateFields }}
+                                  {% if equipment.terminate|toBoolean %}checked="checked"{% endif %}>
+                            <label>Encerrar contrato</label>
+                          </div>
+                          <div class="description">
+                            O contrato será encerrado após a transferência,
+                            já que este é o único veículo para o qual era
+                            prestado serviço.
+                          </div>
+                        </div>
+                        {% else %}
+                        <input type="hidden" name="equipments[{{ equipmentNumber }}][terminate]"
+                              value="false">
+                        {% endif %}
+                        <div class="item">
+                          <div class="ui checkbox{{ disabledTerminateFields }}">
+                            <input type="hidden" name="equipments[{{ equipmentNumber }}][notclose]"
+                                  value="{% if equipment.notclose|toBoolean %}true{% else %}false{% endif %}">
+                            <input class="hidden" type="checkbox"
+                                  name="_equipments[{{ equipmentNumber }}][notclose]"
+                                  {% if equipment.terminate|toBoolean %}
+                                  disabled
+                                  {% endif %}
+                                  {{ disabledTerminateFields }}
+                                  {% if equipment.notclose|toBoolean %}checked="checked"{% endif %}>
+                            <label>Manter item de contrato ativo</label>
+                          </div>
+                          <div class="description">
+                            O item de contrato será mantido ativo após a
+                            transferência, já que outro veículo será
+                            incluído posteriormente.
+                          </div>
+                        </div>
+                        {% if authorization.user.groupid < 3 %}
+                          {% if equipment.loyaltyperiod > 0 and equipment.disablechargeloyaltybreak|toBoolean == false %}
+                          <div class="item">
+                            <div class="ui checkbox{{ disabledTerminateFields }}">
+                              <input type="hidden" name="equipments[{{ equipmentNumber }}][notchargeloyaltybreak]"
+                                    value="{% if equipment.notchargeloyaltybreak|toBoolean %}true{% else %}false{% endif %}">
+                              <input class="hidden" type="checkbox"
+                                    name="_equipments[{{ equipmentNumber }}][notchargeloyaltybreak]"
+                                    {{ disabledTerminateFields }}
+                                    {% if equipment.notchargeloyaltybreak|toBoolean %}checked="checked"{% endif %}>
+                              <label>Não cobrar multa por quebra de fidelidade</label>
+                            </div>
+                            <div class="description">
+                              Não será cobrada a multa pela quebra do período
+                              de fidelidade previsto em contrato.
+                            </div>
+                          </div>
+                          {% else %}
+                          <input type="hidden" name="equipments[{{ equipmentNumber }}][notchargeloyaltybreak]"
+                                 value="true">
+                          {% endif %}
+                        {% endif %}
+                      </div>
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td class="center aligned">--</td>
+                    <td class="center aligned">Não têm</td>
+                    <td class="center aligned">---</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="3" class="right aligned">
+                      Informe a data em que ocorreu a transferência:
+                    </td>
+                    <td class="collapsing{{ cssError('transferat') }}">
+                      <div class="ui calendar">
+                        <div class="ui input left icon{{ readonly }}">
+                          <i class="calendar icon"></i>
+                          <input name="transferat" type="text"
+                                placeholder="Quando ocorreu a transferência..."
+                                {{ readonly }}
+                                value="{{ getValue('transferat') }}">
+                        </div>
+                      </div>
+                      {% if hasError('transferat') %}
+                      <small class="helper">{{ getError('transferat') }}</small>
+                      {% endif %}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+          {% else %}
+          <div class="transfer" {% if hideTransfer %} style="display: none;"{% endif %}>
+            <h4 class="ui header">
+              <div class="content">
+                Transferência dos equipamentos
+                <div class="sub header">
+                  Este veículo não estava sendo rastreado, portanto, não
+                  há necessidade de qualquer intervenção.
+                </div>
+              </div>
+            </h4>
+          </div>
+          {% endif %}
+        {% endif %}
+
+        <h3 class="ui header">Dados básicos do veículo</h3>
+        <div class="fields">
+          <div class="three wide field{{ cssError('plate') }}">
+            <label>Placa</label>
+            <div class="ui input{{ readonly }}">
+              <input name="plate" type="text" maxlength="7"
+                     placeholder="AAA0000"
+                     {{ readonly }}
+                     value="{{ getValue('plate') }}">
+            </div>
+            {% if hasError('plate') %}
+            <small class="helper">{{ getError('plate') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="seven wide field{{ cssError('vehiclemodelname') }}">
+            <label>Modelo do ve&iacute;culo</label>
+            <input name="vehiclemodelname" type="text" class="search"
+                   maxlength="50"
+                   placeholder="Informe o modelo do veículo..."
+                   {{ readonly }}
+                   value="{{ getValue('vehiclemodelname') }}">
+            <input name="vehiclemodelid" type="hidden"
+                   value="{{ getValue('vehiclemodelid') }}">
+            {% if hasError('vehiclemodelname') %}
+            <small class="helper">{{ getError('vehiclemodelname') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="three wide field{{ cssError('yearfabr') }}">
+            <label class="nowrap">Ano fabricação</label>
+            <div class="ui input{{ readonly }}">
+              <input name="yearfabr" type="text"
+                     placeholder="Ano..."
+                     {{ readonly }}
+                     value="{{ getValue('yearfabr') }}">
+            </div>
+            {% if hasError('yearfabr') %}
+            <small class="helper">{{ getError('yearfabr') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="three wide field{{ cssError('yearmodel') }}">
+            <label class="nowrap">Ano modelo</label>
+            <div class="ui input{{ readonly }}">
+              <input name="yearmodel" type="text"
+                     placeholder="Ano..."
+                     {{ readonly }}
+                     value="{{ getValue('yearmodel') }}">
+            </div>
+            {% if hasError('yearmodel') %}
+            <small class="helper">{{ getError('yearmodel') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="four wide field{{ cssError('vehicletypeid') }}">
+            <label>Tipo de veículo</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="vehicletypeid" type="hidden"
+                     value="{{ getValue('vehicletypeid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Informe o tipo...</div>
+              <div class="menu">
+              {% set vehicleTypeID = getValue('vehicletypeid') %}
+              {% for vehicleType in vehicleTypes %}
+                <div class="item"
+                     {% if vehicleType.id == vehicleTypeID %}
+                       selected
+                     {% endif %}
+                     data-value="{{ vehicleType.id }}"
+                     data-text="{{ vehicleType.name }}">
+                  {{ vehicleType.name }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('vehicletypename') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('vehicletypeid') %}
+            <small class="helper">{{ getError('vehicletypeid') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('vehiclesubtypeid') }}">
+            <label>Sub-tipo</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="vehiclesubtypeid" type="hidden"
+                     value="{{ getValue('vehiclesubtypeid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Informe o subtipo de veículo...</div>
+              <div class="menu">
+              {% set vehicleSubtypeID = getValue('vehiclesubtypeid') %}
+              {% for vehicleSubtype in vehicleSubtypesPerType[vehicleTypeID] %}
+                <div class="item" {% if vehicleSubtype.id == vehicleSubtypeID %}selected{% endif %}
+                     data-value="{{ vehicleSubtype.id }}"
+                     data-text="{{ vehicleSubtype.name }}">
+                  {{ vehicleSubtype.name }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('vehiclesubtypename') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('vehiclesubtypeid') %}
+            <small class="helper">{{ getError('vehiclesubtypeid') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('vehiclebrandname') }}">
+            <label>Marca</label>
+            <input name="vehiclebrandname" type="text" class="search"
+                   maxlength="30"
+                   placeholder="Informe a marca do veículo..."
+                   {{ readonly }}
+                   value="{{ getValue('vehiclebrandname') }}">
+            <input name="vehiclebrandid" type="hidden"
+                   value="{{ getValue('vehiclebrandid') }}">
+            {% if hasError('vehiclebrandname') %}
+            <small class="helper">{{ getError('vehiclebrandname') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('vehiclecolorid') }}">
+            <label>Cor predominante</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="vehiclecolorid" type="hidden"
+                     value="{{ getValue('vehiclecolorid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Informe a cor predominante</div>
+              <div class="menu">
+              {% set vehicleColorID = getValue('vehiclecolorid') %}
+              {% for vehicleColor in vehicleColors %}
+                <div class="item" {% if vehicleColor.id == vehicleColorID %}selected{% endif %}
+                     data-value="{{ vehicleColor.id }}"
+                     data-text="{{ vehicleColor.name }}">
+                  <div class="ui {{ vehicleColor.color }} empty square label"></div>
+                  {{ vehicleColor.name }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('vehiclecolorname') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('vehiclecolorid') %}
+            <small class="helper">{{ getError('vehiclecolorid') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="four wide field{{ cssError('renavam') }}">
+            <label>RENAVAM</label>
+            <div class="ui input{{ readonly }}">
+              <input name="renavam" type="text"
+                     placeholder="RENAVAM..."
+                     {{ readonly }}
+                     value="{{ getValue('renavam') }}">
+            </div>
+            {% if hasError('renavam') %}
+            <small class="helper">{{ getError('renavam') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('vin') }}">
+            <label>N&uacute;mero do Chassi {{ cssError('vin') }}</label>
+            <div class="ui input{{ readonly }}">
+              <input name="vin" type="text"
+                     placeholder="N&uacute;mero do chassi..."
+                     {{ readonly }}
+                     value="{{ getValue('vin')|trim }}">
+            </div>
+            {% if hasError('vin') %}
+            <small class="helper">{{ getError('vin') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('fueltype') }}">
+            <label>Combust&iacute;vel</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="fueltype" type="hidden"
+                     value="{{ getValue('fueltype') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Informe o combustível</div>
+              <div class="menu">
+              {% set fuelTypeID = getValue('fueltype') %}
+              {% for fuelType in fuelTypes %}
+                <div class="item" {% if fuelType.id == fuelTypeID %}selected{% endif %}
+                     data-value="{{ fuelType.id }}"
+                     data-text="{{ fuelType.name }}">
+                  {{ fuelType.name }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('fueltypename') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('fueltype') %}
+            <small class="helper">{{ getError('fueltype') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('carnumber') }}">
+            <label>N&ordm; da Frota/Carro</label>
+            <div class="ui input{{ readonly }}">
+              <input name="carnumber" type="text" maxlength="20"
+                     placeholder="N&ordm; da frota..."
+                     {{ readonly }}
+                     value="{{ getValue('carnumber') }}">
+            </div>
+            {% if hasError('carnumber') %}
+            <small class="helper">{{ getError('carnumber') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <h3 class="ui header">Dados do propriet&aacute;rio do ve&iacute;culo</h3>
+        <div class="fields">
+          <div class="eight wide field">
+            <div class="ui {% if getValue('customerid') == 0 %}disabled{% endif %} checkbox{{ readonly }}" style="margin-top: 0;">
+              <input name="customeristheowner" type="hidden"
+                     value="{% if getValue('customeristheowner')|toBoolean %}true{% else %}false{% endif %}">
+              <input name="_customeristheowner" type="checkbox"
+                     class="hidden" {{ readonly }}
+                     {% if getValue('customeristheowner')|toBoolean %}checked="checked"{% endif %}>
+              <label>O cliente &eacute; o propriet&aacute;rio deste ve&iacute;culo</label>
+            </div>
+          </div>
+          {% if editMode %}
+          <div class="eight wide field">
+            <a class="ui gray horizontal label"
+               onclick="emptyOwnerData();" id="ownerClear"
+               data-tooltip="Clique para limpar os dados do proprietário"
+               data-position="top right">
+               <i class="quidditch icon" style="margin:0 !important;"></i>
+               Limpar dados do proprietário
+            </a>
+            <a class="ui gray horizontal label"
+               onclick="getOwnerDataHandler();" id="ownerRestore"
+               data-tooltip="Clique para restaurar os dados do proprietário"
+               data-position="top right">
+               <i class="undo icon" style="margin:0 !important;"></i>
+               Restaurar dados do proprietário
+            </a>
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="ownerdata">
+          <div class="fields">
+            <div class="sixteen wide field{{ cssError('ownername') }}">
+              <label>Nome do propriet&aacute;rio</label>
+              <div class="ui input{{ readonly }}">
+                <input name="ownername" type="text" maxlength="100"
+                       placeholder="Informe o nome do propriet&aacute;rio..."
+                       {{ readonly }}
+                       value="{{ getValue('ownername') }}">
+              </div>
+              {% if hasError('ownername') %}
+              <small class="helper">{{ getError('ownername') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="four wide field{{ cssError('regionaldocumenttype') }}">
+              <label>Tipo de documento</label>
+              {% if editMode %}
+              <div class="ui search selection dropdown">
+                <input name="regionaldocumenttype" type="hidden"
+                       value="{{ getValue('regionaldocumenttype') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text">Informe o tipo de documento</div>
+                <div class="menu">
+                {% for documentType in documentTypes %}
+                  <div class="item" {% if documentType.id == subsidiary.regionaldocumenttype %}selected{% endif %}
+                       data-value="{{ documentType.id }}" data-text="{{ documentType.name }}">
+                    {{ documentType.name }}
+                  </div>
+                {% endfor %}
+                </div>
+              </div>
+              {% else %}
+              <div class="field static">
+                <span class="darking">{{ getValue('documenttypename') }}&nbsp;</span>
+              </div>
+              {% endif %}
+              {% if hasError('regionaldocumenttype') %}
+              <small class="helper">{{ getError('regionaldocumenttype') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="five wide field{{ cssError('regionaldocumentnumber') }}">
+              <label class="nowrap">N&uacute;mero do documento</label>
+              <div class="ui input{{ readonly }}">
+                <input name="regionaldocumentnumber" type="text"
+                       placeholder="Número do documento..."
+                       {{ readonly }}
+                       value="{{ getValue('regionaldocumentnumber') }}">
+              </div>
+              {% if hasError('regionaldocumentnumber') %}
+              <small class="helper">{{ getError('regionaldocumentnumber') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="two wide field{{ cssError('regionaldocumentstate') }}">
+              <label>UF</label>
+              <div class="ui input{{ readonly }}">
+                <input name="regionaldocumentstate" type="text" maxlength="2"
+                       placeholder="UF..."
+                       {{ readonly }}
+                       value="{{ getValue('regionaldocumentstate') }}">
+              </div>
+              {% if hasError('regionaldocumentstate') %}
+              <small class="helper">{{ getError('regionaldocumentstate') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="five wide field{{ cssError('nationalregister') }}">
+              <label for="nationalregister">CPF/CNPJ</label>
+              <div class="ui icon input{{ readonly }}">
+                <input name="nationalregister" type="text" maxlength="18"
+                       placeholder="CPF ou CNPJ..."
+                       {{ readonly }}
+                       value="{{ getValue('nationalregister') }}">
+                <i class="id card outline icon"></i>
+              </div>
+              {% if hasError('nationalregister') %}
+              <small class="helper">{{ getError('nationalregister') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="four wide field{{ cssError('postalcode') }}">
+              <label>CEP</label>
+              <div class="ui icon input{{ readonly }}">
+                <input name="postalcode" type="text" maxlength="9"
+                       placeholder="CEP..."
+                       {{ readonly }}
+                       value="{{ getValue('postalcode') }}">
+                <i class="search icon grey"></i>
+              </div>
+              {% if hasError('postalcode') %}
+              <small class="helper">{{ getError('postalcode') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="nine wide field{{ cssError('address') }}">
+              <label>Endereço</label>
+              <div class="ui input{{ readonly }}">
+                <input name="address" type="text" maxlength="100"
+                       placeholder="Endereço..."
+                       {{ readonly }}
+                       value="{{ getValue('address') }}">
+              </div>
+              {% if hasError('address') %}
+              <small class="helper">{{ getError('address') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="three wide field{{ cssError('streetnumber') }}">
+              <label>N&ordm;</label>
+              <div class="ui input{{ readonly }}">
+                <input name="streetnumber"
+                       type="text" maxlength="10" {{ readonly }}
+                       placeholder="Número..."
+                       value="{{ getValue('streetnumber') }}">
+              </div>
+              {% if hasError('streetnumber') %}
+              <small class="helper">{{ getError('streetnumber') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="sixteen wide field{{ cssError('complement') }}">
+              <label>Complemento</label>
+              <div class="ui input{{ readonly }}">
+                <input name="complement"
+                       type="text" maxlength="30" {{ readonly }}
+                       placeholder="Complemento..."
+                       value="{{ getValue('complement') }}">
+              </div>
+              {% if hasError('complement') %}
+              <small class="helper">{{ getError('complement') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+
+          <div class="fields">
+            <div class="six wide field{{ cssError('district') }}">
+              <label>Bairro</label>
+              <div class="ui input{{ readonly }}">
+                <input name="district" type="text" maxlength="50"
+                       placeholder="Bairro..."
+                       {{ readonly }}
+                       value="{{ getValue('district') }}">
+              </div>
+              {% if hasError('district') %}
+              <small class="helper">{{ getError('district') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="eight wide field{{ cssError('cityname') }}">
+              <label>Cidade</label>
+              <input name="cityname" type="text" maxlength="50"
+                     class="search" {{ readonly }}
+                     placeholder="Cidade..."
+                     value="{{ getValue('cityname') }}">
+              <input name="cityid" type="hidden"
+                     value="{{ getValue('cityid') }}">
+              {% if hasError('cityname') %}
+              <small class="helper">{{ getError('cityname') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="two wide field{{ cssError('state') }}">
+              <label>UF</label>
+              <div class="ui readonly input">
+                <input name="state" type="text"
+                       placeholder="UF..."
+                       value="{{ getValue('state') }}"
+                       readonly>
+              </div>
+              {% if hasError('state') %}
+              <small class="helper">{{ getError('state') }}</small>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="owner block">
+          <div class="ui vertical segment form noTopPadding noBottomPadding">
+            <div class="ownerPhoneList">
+              <div class="sixteen wide mobile sixteen wide tablet eight wide computer six wide large screen column">
+                <label>Telefone principal</label>
+              </div>
+              {% set ownerphones = getValue('ownerPhones') %}
+              {% for phoneNumber, phone in ownerphones %}
+                {% include 'erp/cadastre/vehicles/ownerphone.twig' with { phoneTypes: phoneTypes, phoneNumber: phoneNumber, phone: phone, editMode: editMode, readonly: readonly }  %}
+              {% endfor %}
+            </div>
+            {% if editMode %}
+            <div class="ui bottom attached vertical segment">
+              <button type="button" class="ui mini green right labeled icon button"
+                      onclick="addOwnerPhone(this);">
+                <i class="plus icon"></i> Novo telefone
+              </button>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <h3 class="ui header">Local de permanência do ve&iacute;culo</h3>
+        <div class="grouped fields">
+          <div class="sixteen wide field">
+            <div class="ui radio checkbox{{ readonly }}">
+              <input name="placeOfStay" type="radio" {{ readonly }}
+                     value="atsamecustomeraddress"
+                     {% if getValue('placeOfStay') == 'atsamecustomeraddress' %}checked="checked"{% endif %}">
+              <label>Nas dependências do cliente</label>
+            </div>
+          </div>
+
+          <div class="sixteen wide field">
+            <div class="ui {% if getValue('customerid') == 0 %}disabled{% endif %} radio checkbox{{ readonly }}">
+              <input name="placeOfStay" type="radio" {{ readonly }}
+                     value="atsameowneraddress"
+                     {% if getValue('customeristheowner')|toBoolean %}disabled="disabled"{% endif %}
+                     {% if getValue('placeOfStay') == 'atsameowneraddress' %}checked="checked"{% endif %}>
+              <label>Nas dependências do proprietário do veículo</label>
+            </div>
+          </div>
+
+          <div class="sixteen wide field">
+            <div class="ui radio checkbox{{ readonly }}">
+              <input name="placeOfStay" type="radio" {{ readonly }}
+                     value="atanotheraddress"
+                     {% if getValue('placeOfStay') == 'atanotheraddress' %}checked="checked"{% endif %}>
+              <label>Em outro local</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="anotheraddressdata">
+          <div class="fields">
+            <div class="sixteen wide field{{ cssError('anothername') }}">
+              <label>Nome do local</label>
+              <div class="ui input{{ readonly }}">
+                <input name="anothername" type="text" maxlength="100"
+                       placeholder="Informe o nome do propriet&aacute;rio..."
+                       {{ readonly }}
+                       value="{{ getValue('anothername') }}">
+              </div>
+              {% if hasError('anothername') %}
+              <small class="helper">{{ getError('anothername') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="four wide field{{ cssError('anotherpostalcode') }}">
+              <label>CEP</label>
+              <div class="ui icon input{{ readonly }}">
+                <input name="anotherpostalcode" type="text" maxlength="9"
+                       placeholder="CEP..."
+                       {{ readonly }}
+                       value="{{ getValue('anotherpostalcode') }}">
+                <i class="search icon grey"></i>
+              </div>
+              {% if hasError('anotherpostalcode') %}
+              <small class="helper">{{ getError('anotherpostalcode') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="nine wide field{{ cssError('anotheraddress') }}">
+              <label>Endereço</label>
+              <div class="ui input{{ readonly }}">
+                <input name="anotheraddress" type="text" maxlength="100"
+                       placeholder="Endereço..."
+                       {{ readonly }}
+                       value="{{ getValue('anotheraddress') }}">
+              </div>
+              {% if hasError('anotheraddress') %}
+              <small class="helper">{{ getError('anotheraddress') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="three wide field{{ cssError('anotherstreetnumber') }}">
+              <label>N&ordm;</label>
+              <div class="ui input{{ readonly }}">
+                <input name="anotherstreetnumber"
+                       type="text" maxlength="10" {{ readonly }}
+                       placeholder="Número..."
+                       value="{{ getValue('anotherstreetnumber') }}">
+              </div>
+              {% if hasError('anotherstreetnumber') %}
+              <small class="helper">{{ getError('anotherstreetnumber') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="sixteen wide field{{ cssError('anothercomplement') }}">
+              <label>Complemento</label>
+              <div class="ui input{{ readonly }}">
+                <input name="anothercomplement"
+                       type="text" maxlength="30" {{ readonly }}
+                       placeholder="Complemento..."
+                       value="{{ getValue('anothercomplement') }}">
+              </div>
+              {% if hasError('anothercomplement') %}
+              <small class="helper">{{ getError('anothercomplement') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="six wide field{{ cssError('anotherdistrict') }}">
+              <label>Bairro</label>
+              <div class="ui input{{ readonly }}">
+                <input name="anotherdistrict" type="text" maxlength="50"
+                       placeholder="Bairro..."
+                       {{ readonly }}
+                       value="{{ getValue('anotherdistrict') }}">
+              </div>
+              {% if hasError('anotherdistrict') %}
+              <small class="helper">{{ getError('anotherdistrict') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="eight wide field{{ cssError('anothercityname') }}">
+              <label>Cidade</label>
+              <input name="anothercityname" type="text" maxlength="50"
+                     class="search" {{ readonly }}
+                     placeholder="Cidade..."
+                     value="{{ getValue('anothercityname') }}">
+              <input name="anothercityid" type="hidden"
+                     value="{{ getValue('anothercityid') }}">
+              {% if hasError('anothercityname') %}
+              <small class="helper">{{ getError('anothercityname') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="two wide field{{ cssError('anotherstate') }}">
+              <label>UF</label>
+              <div class="ui readonly input">
+                <input name="anotherstate" type="text"
+                       placeholder="UF..."
+                       value="{{ getValue('anotherstate') }}"
+                       readonly>
+              </div>
+              {% if hasError('anotherstate') %}
+              <small class="helper">{{ getError('anotherstate') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="ui vertical segment form noTopPadding noBottomPadding">
+            <div class="anotherPhoneList">
+              <div class="sixteen wide mobile sixteen wide tablet eight wide computer six wide large screen column">
+                <label>Telefone principal</label>
+              </div>
+              {% set anotherPhones = getValue('anotherPhones') %}
+              {% for phoneNumber, phone in anotherPhones %}
+                {% include 'erp/cadastre/vehicles/anotherphone.twig' with { phoneTypes: phoneTypes, phoneNumber: phoneNumber, phone: phone, editMode: editMode, readonly: readonly }  %}
+              {% endfor %}
+            </div>
+            {% if editMode %}
+            <div class="ui bottom attached vertical segment">
+              <button type="button" class="ui mini green right labeled icon button"
+                      onclick="addAnotherPhone(this);">
+                <i class="plus icon"></i> Novo telefone
+              </button>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <h3 class="ui header">Documentos anexados</h3>
+        {% set attachments = getValue('attachments') %}
+        {% if attachments is empty %}
+          <h3 class="ui header">Documentos/fotos</h3>
+          <div class="ui placeholder segment">
+            <div class="ui icon header">
+              <i class="pdf file outline icon"></i>
+              Nenhum documento ou foto foi adicionado.
+            </div>
+            <br>
+            {% if editMode %}
+            <button type="button" id="addDocument"
+                    class="ui primary right labeled icon button"
+                    onclick="addDocumentHandler();">
+              Adicionar
+              <i class="checkmark icon"></i>
+            </button>
+            {% endif %}
+          </div>
+
+          {% if editMode %}
+          <div class="fields hidden">
+            <div class="sixteen wide field">
+              <input type="file" name="attachments[]"
+                     accept="{{ AcceptFileFormats|join(', ') }}"
+                     multiple>
+            </div>
+          </div>
+          {% endif %}
+        {% else %}
+          {% if editMode %}
+          <div class="fields">
+            <div class="sixteen wide field">
+              <input type="file" name="attachments[]"
+                     accept="{{ AcceptFileFormats|join(', ') }}"
+                     multiple>
+            </div>
+          </div>
+          {% endif %}
+        <div class="ui four special stackable cards">
+          {% for attachment in attachments %}
+          <div class="card" id="attachment{{ loop.index }}">
+            <div class="{% if attachment.zoom %}blurring dimmable {% endif %}image">
+              {% if attachment.zoom %}
+              <div class="ui dimmer transition hidden"
+                   onclick="showModal(this);"
+                   data-src="{{ attachment.id }}">
+                <div class="content">
+                  <div class="center">
+                    <i class="search plus icon" style="font-size: 48px;"></i>
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+              {% set thumbnailPath = path_for('ERP\\Cadastre\\Vehicles\\Attachments\\Thumbnail', { 'filename': attachment.filename }) %}
+              <img src="{{ thumbnailPath }}"
+                   {% if attachment.zoom %}class="transition visible"{% endif %}>
+              <div class="floating ui red label">{{ loop.index }}</div>
+            </div>
+            <div class="content">
+              <div class="header singleline" title="{{ attachment.realfilename }}">{{ attachment.realfilename }}</div>
+              <div class="meta">{{ attachment.size }}</div>
+            </div>
+
+            <div class="extra invert content">
+              <span class="right floated">
+              {% set getAttachmentPath = path_for('ERP\\Cadastre\\Vehicles\\Attachments\\Get', { 'operation': 'download', 'attachmentID': attachment.id }) %}
+              <button class="ui compact icon facebook button" type="button"
+                      onclick="location.href='{{ getAttachmentPath }}';"
+                      data-tooltip="Faz o download deste anexo..."
+                      data-position="top center">
+                <i class="download icon"></i>
+              </button>
+              <button class="ui compact icon black {% if not attachment.pdf %}disabled {% endif %}button" type="button"
+                      onclick="getPDFAttachment('{{ attachment.id }}')"
+                      data-tooltip="Gera um PDF deste anexo..."
+                      data-position="top right"
+                      target="_blank">
+                <i class="file pdf icon"></i>
+              </button>
+              <button class="ui compact icon youtube button" type="button"
+                      onclick="deleteAttachment({{ loop.index }}, '{{ attachment.id }}', '{{ attachment.clientfilename }}')"
+                      data-tooltip="Remove este anexo..."
+                      data-position="top right">
+                <i class="remove icon"></i>
+              </button>
+              </span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <h3 class="ui header">Informações complementares</h3>
+        <div class="fields">
+          <div class="sixteen wide field{{ cssError('note') }}">
+            <label>Observação</label>
+            <div class="ui input{{ readonly }}">
+              <textarea name="note" rows="4" {{ readonly }}
+                        placeholder="Faça um breve comentário...">{{ getValue('note') }}</textarea>
+            </div>
+            {% if hasError('note') %}
+            <small class="helper">{{ getError('note') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if enableToggleBlocked %}
+          {% if formMethod == 'PUT' %}
+          <div class="fields">
+            <div class="eight wide field">
+              <div class="ui checkbox{{ readonly }}">
+                <input name="blocked" type="hidden"
+                       value="{% if getValue('blocked')|toBoolean %}true{% else %}false{% endif %}">
+                <input name="_blocked" type="checkbox"
+                       class="hidden" toggle="none" {{ readonly }}
+                       {% if getValue('blocked')|toBoolean %}checked="checked"{% endif %}>
+                <label>Inativar este veículo</label>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        {% else %}
+          {% if getValue('blocked')|toBoolean %}
+          <div class="fields">
+            <div class="eight wide darkred field">
+              <i class="lock icon"
+                 style="font-size: 1.8em; line-height: 1em; vertical-align: middle;"></i>
+              Este veículo está inativado.
+            </div>
+          </div>
+          {% endif %}
+        {% endif %}
+
+        {% if formMethod == 'PUT' %}
+        <h3 class="ui header">
+          Bloqueio do envio de mensagens de aviso
+          <div class="sub header withTopMargin">
+            Permite bloquear o envio de mensagens de avisos ao
+            proprietário deste veículo durante um determinado período de
+            dias. Isto é usado para evitar que sejam enviadas mensagens,
+            por exemplo, de falta de comunicação do equipamento quando o
+            veículo está em manutenção. O tempo é determinado em dias.
+            Caso a quantidade de dias seja '0' (zero), o tempo será
+            considerado indeterminado.
+          </div>
+        </h3>
+        <div class="fields">
+          <div class="eight wide field">
+            <div class="ui checkbox{{ readonly }}" style="margin-top: 0;">
+              <input name="blocknotices" type="hidden"
+                     value="{% if getValue('blocknotices')|toBoolean %}true{% else %}false{% endif %}">
+              <input name="_blocknotices" type="checkbox"
+                     class="hidden" {{ readonly }}
+                     {% if getValue('blocknotices')|toBoolean %}checked="checked"{% endif %}>
+              <label>Bloquear o envio de avisos para este veículo</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="noticesdata">
+          <div class="fields">
+            <div class="four wide field{{ cssError('blockeddays') }}">
+              <label>
+                Duração do bloqueio
+                <span data-tooltip="Duração do período de bloqueio do envio de avisos"
+                      data-content="Top Left" data-position="top left"
+                      data-inverted="">
+                  <i class="question circle olive outline icon"></i>
+                </span>
+              </label>
+              <div class="ui right labeled input">
+                <input name="blockeddays" type="text"
+                       class="right"
+                       placeholder="0"
+                       value="{{ getValue('blockeddays') }}">
+                <div class="ui basic label">dias</div>
+               </div>
+            </div>
+
+            <div class="eight wide field">
+              <label>
+                Período de bloqueio
+              </label>
+              <div class="ui input readonly">
+                <input name="blockedstartat" type="hidden"
+                       value="{{ getValue('blockedstartat') }}">
+                <input name="period" type="text"
+                       readonly>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="vehicleid" value="{{ getValue('vehicleid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+
+      {% if formMethod == 'PUT' %}
+      <!-- Início painel informativo de modificações -->
+      <div class="ui segments">
+        <div class="ui grey inverted segment">
+          <h5>
+            Histórico de modificações:
+          </h5>
+          Cadastrado {{ getValue('createdat')|localizedDate('long') }} por {{ getValue('createdbyusername') }}
+          <div class="ui divider"></div>
+          Modificado {{ getValue('updatedat')|localizedDate('long') }} por {{ getValue('updatedbyusername') }}
+        </div>
+      </div>
+      <!-- Fim painel informativo de modificações -->
+      {% endif %}
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/info.twig' %}
+  {% include 'templates/erp/partials/dialogs/question.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('semantic-ui/components/calendar.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('jquery/plugins/file.input/file.input.min.js') }}
+  {{ lib('template-engine/template.engine.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+  
+  {% set getCityNameCompletion     = { 'URL': 'ERP\\Parameterization\\Cities\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  {% set getEntityDataCompletion   = { 'URL': 'ERP\\Cadastre\\Entities\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  {% set getPostalCodeData         = { 'URL': 'ERP\\Parameterization\\Cities\\PostalCode\\Get', 'method': 'PATCH' } %}
+  {% set getVehicleBrandCompletion = { 'URL': 'ERP\\Parameterization\\Vehicles\\Brands\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  {% set getVehicleModelCompletion = { 'URL': 'ERP\\Parameterization\\Vehicles\\Models\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  {% set getContracts              = { 'URL': 'ERP\\Financial\\Contracts\\Get', 'method': 'PATCH' } %}
+  {% set getInstallations          = { 'URL': 'ERP\\Financial\\Contracts\\Installations\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    /* ---------------------------------[ Subtipos de veículos ]----- */
+    var
+      vehicleSubtypes = {
+      {% for vehicleTypeID, vehicleSubtypes in vehicleSubtypesPerType %}
+        {{ vehicleTypeID }}: [
+        {% for vehicleSubtype in vehicleSubtypes %}
+          {
+            'name': '{{ vehicleSubtype.name }}',
+            'value': {{ vehicleSubtype.id }}
+          },
+        {% endfor %}
+        ],
+      {% endfor %}
+      }
+    ;
+    /* -------------------------------------------------------------- */
+
+    {% include 'erp/cadastre/vehicles/vehicle.js' with {
+      getCityNameCompletion: getCityNameCompletion,
+      getEntityDataCompletion: getEntityDataCompletion,
+      getPostalCodeData: getPostalCodeData,
+      getVehicleBrandCompletion: getVehicleBrandCompletion,
+      getVehicleModelCompletion: getVehicleModelCompletion,
+      getContracts: getContracts,
+      getInstallations: getInstallations,
+      formMethod: formMethod
+    } %}
+  </script>
+  {% endapply %}
+{% endblock scripts %}

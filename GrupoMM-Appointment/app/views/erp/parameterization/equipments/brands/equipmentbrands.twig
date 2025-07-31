@@ -1,0 +1,330 @@
+{% extends 'templates/erp/layout.twig' %}
+{% import "templates/erp/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento de marcas de equipamentos{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.main.basic.segment .searchbar.fields .field.searchbox {
+      flex-grow: 1;
+      min-width: 409px;
+    }
+    @media only screen and (min-width: 768px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+    }
+    @media only screen and (max-width: 767px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 100px;
+        width: calc(100% - 98px);
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox input {
+        max-width: calc(100% - 38px);
+      }
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set add  = { 'URL': 'ERP\\Parameterization\\Equipments\\Brands\\Add', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/equipmentbrands.svg', 'Marcas de equipamentos') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento das marcas de equipamentos
+                <div class="sub header">
+                  Permite gerenciar as marcas de equipamentos cadastrados no
+                  sistema.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(add.URL, add.method) %}
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Adiciona uma marca de equipamento"
+                      data-position="top left" type="button"
+                      onclick="location.href='{{ path_for(add.URL) }}'">
+                <i class="add icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite a marca que procura..."
+                       value="{{ equipmentBrand.name }}">
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza uma marca de equipamento"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Marca de equipamento</th>
+          <th {{ tooltip.add('left', 'Permite remover a marca de equipamento') }}><i class="remove darkred icon"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/info.twig' %}
+  {% include 'templates/erp/partials/dialogs/question.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/DeleteFormatter.min.js') }}
+  
+  {% set getData = { 'URL': 'ERP\\Parameterization\\Equipments\\Brands\\Get', 'method': 'PATCH' } %}
+  {% set add     = { 'URL': 'ERP\\Parameterization\\Equipments\\Brands\\Add', 'method': 'GET' } %}
+  {% set edit    = { 'URL': 'ERP\\Parameterization\\Equipments\\Brands\\Edit', 'method': 'GET' } %}
+  {% set remove  = { 'URL': 'ERP\\Parameterization\\Equipments\\Brands\\Delete', 'method': 'DELETE' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      table
+    ;
+    
+    $(document).ready(function() {
+      // --------------------------------[ Componentes da Searchbar ]---
+      $('#searchValue').keypress(function(e) {
+        if (e.which == 13) {
+          searchLoad();
+        }
+      });
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "id",
+            "data": "id",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "name",
+            "data": "name",
+            "visible": true,
+            "orderable": true },
+          { "targets": 2,
+            "name": "delete",
+            "data": "id",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": deleteFormatter("Remover esta marca de equipamento") }
+        ],
+        order: [[ 1, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.searchValue = $('#searchValue').val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        }
+      });
+
+      // Manipula os eventos de click
+      table
+        .on('user-select', function (e, dt, type, cell, originalEvent) {
+          if (type === 'cell') {
+            var
+              // Recupera os dados da célula selecionada
+              index   = cell[0][0],
+
+              // Recupera a marca de equipamento selecionada
+              equipmentBrand = dt.rows( index.row ).data().toArray()[0]
+            ;
+
+            // Em função da coluna onde ocorreu o clique, executa a ação
+            // correspondente
+            switch (index.column) {
+              {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}
+              case 2:
+                // Apaga a marca de equipamento selecionada
+                questionDialog(
+                  'Remover marca de equipamento',
+                  'Você deseja realmente remover a marca de equipamento <b>&ldquo;' + equipmentBrand.name + '&rdquo;</b>?<br>Esta ação não poderá ser desfeita.',
+                  function() {
+                    // Remove a marca de equipamento selecionada
+                    var
+                      url  = "{{ buildURL(remove.URL, {'equipmentBrandID': 'equipmentBrand.id'}) }}"
+                    ;
+
+                    deleteJSONData(url, [],
+                    function (data, params, message) {
+                      // Atualiza a tabela
+                      searchLoad();
+                    });
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  }
+                );
+
+                break;
+              {% endif %}
+              default:
+                {% if authorization.getAuthorizationFor(edit.URL, edit.method) %}
+                // Coloca a marca de equipamento em edição
+                window.location.href = "{{ buildURL(edit.URL, {'equipmentBrandID': 'equipmentBrand.id'}) }}";
+                {% endif %}
+            }
+
+            e.preventDefault();
+          }
+        }
+      );
+
+      // Força a atualização da tabela para reajustar as colunas após
+      // a carga
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 1500);
+    });
+
+
+    // ================================================[ Handlers ]=====
+    
+    // Executa a pesquisa
+    function searchLoad() {
+      table
+        .ajax
+        .reload()
+      ;
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 500);
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

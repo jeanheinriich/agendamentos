@@ -1,0 +1,195 @@
+{% extends 'templates/stc/layout.twig' %}
+{% block title %}{{ parent() }} - Visualizar veículo{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  <style>
+    @media screen and (max-width: 1100px) {
+      .contactList .ui.selection.dropdown {
+        min-width: 70px !important;
+        width: 70px !important;
+      }
+    }
+
+    @media screen and (max-width: 767px) {
+      .ui.form .field .ui.reduced.input input {
+        width: 110px;
+      }
+      .contactList .ui.selection.dropdown {
+        min-width: 125px !important;
+        width: 125px !important;
+      }
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set URL = 'STC\\Cadastre\\Vehicles\\View' %}
+  {% set previous = 'STC\\Cadastre\\Vehicles' %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('stc/vehicles.svg', 'Veículo') }}
+            </td>
+            <td>
+              <div class="content">
+                Visualizar veículo
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um
+                  veículo.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL, {'vehicleID': getValue('vehicleid') }) }}">
+        <h3 class="ui header">
+          Dados básicos do veículo
+          <span data-tooltip="Os dados cadastrais são importados do sistema STC e sua modificação é bloqueada."
+                data-content="Top Left" data-position="top left"
+                data-inverted="" data-blue>
+            <i class="question circle olive outline icon"></i>
+          </span>
+        </h3>
+
+        {% if authorization.user.groupid < 6 %}
+        <div class="fields">
+          <div class="sixteen wide field">
+            <label>Cliente</label>
+            <div class="field static">
+              <span class="darking">
+                {{ getValue('customername') }}
+              </span>
+              <input type="hidden" name="customername"
+                     value="{{ getValue('customername') }}">
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="fields">
+          <div class="three wide field">
+            <label>Placa</label>
+            <div class="ui input readonly">
+              <input name="plate" type="text" maxlength="7"
+                     placeholder="AAA0000"
+                     readonly
+                     value="{{ getValue('plate') }}">
+            </div>
+          </div>
+
+          <div class="seven wide field">
+            <label>Modelo do ve&iacute;culo</label>
+            <div class="ui input readonly">
+              <input name="vehiclemodelname" type="text" class="search"
+                     maxlength="50"
+                     placeholder="Informe o modelo do veículo..."
+                     readonly
+                     value="{{ getValue('vehiclemodelname') }}">
+              <input name="vehiclemodelid" type="hidden"
+                     value="{{ getValue('vehiclemodelid') }}">
+            </div>
+          </div>
+
+          <div class="three wide field">
+            <label class="nowrap">Ano fabricação</label>
+            <div class="ui input readonly">
+              <input name="yearfabr" type="text"
+                     placeholder="Ano..."
+                     readonly
+                     value="{{ getValue('yearfabr') }}">
+            </div>
+          </div>
+
+          <div class="three wide field">
+            <label class="nowrap">Ano modelo</label>
+            <div class="ui input readonly">
+              <input name="yearmodel" type="text"
+                     placeholder="Ano..."
+                     readonly
+                     value="{{ getValue('yearmodel') }}">
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="four wide field">
+            <label>Tipo de veículo</label>
+            <div class="field static">
+              <span class="darking">{{ getValue('vehicletypename') }}&nbsp;</span>
+            </div>
+          </div>
+          <div class="four wide field">
+            <label>Marca</label>
+            <div class="ui input readonly">
+              <input name="vehiclebrandname" type="text" class="search"
+                     maxlength="30"
+                     placeholder="Informe a marca do veículo..."
+                     {{ readonly }}
+                     value="{{ getValue('vehiclebrandname') }}">
+              <input name="vehiclebrandid" type="hidden"
+                     value="{{ getValue('vehiclebrandid') }}">
+            </div>
+          </div>
+          <div class="four wide field">
+            <label>RENAVAM</label>
+            <div class="ui input readonly">
+              <input name="renavam" type="text"
+                     placeholder="RENAVAM..."
+                     readonly
+                     value="{{ getValue('renavam') }}">
+            </div>
+          </div>
+          <div class="four wide field">
+            <label>N&uacute;mero do Chassi</label>
+            <div class="ui input readonly">
+              <input name="vin" type="text"
+                     placeholder="N&uacute;mero do chassi..."
+                     readonly
+                     value="{{ getValue('vin')|trim }}">
+            </div>
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide readonly field">
+            <label>Informações</label>
+            <div class="ui readonly input">
+              <textarea readonly>{{ getValue('info') }}</textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+          </div>
+        </div>
+
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock content %}
+{% block scripts %}
+  {{ parent() }}
+{% endblock scripts %}

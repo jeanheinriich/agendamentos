@@ -1,0 +1,92 @@
+<div class="ui duedate small modal">
+  <i class="close icon"></i>
+  <div class="header">
+    <i class="calendar check icon"></i>
+    &nbsp;Alterar data de vencimento
+  </div>
+  <div class="content">
+    <div class="description">
+      <div class="ui header">
+        <div class="sub header">
+          Título
+        </div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="ui duedate form">
+        <div class="fields">
+          <span class="ui error text"></span>
+          <input type="hidden" name="duedateID"
+                 value="0">
+          <input type="hidden" name="duedateMethodID"
+                 value="0">
+        </div>
+        <div class="fields">
+          <div class="six wide field">
+            <label>
+              Data de vencimento atual:
+            </label>
+            <div class="ui calendar">
+              <div class="ui input left icon info">
+                <i class="calendar icon"></i>
+                <input name="currentduedate" type="text"
+                       placeholder="Data de vencimento atual..."
+                       readonly
+                       value="">
+              </div>
+            </div>
+          </div>
+
+          <div class="five wide field">
+            <label>
+              Valor do documento:
+            </label>
+            <div class="ui left labeled input info">
+              <div class="ui basic label">R$</div>
+              <input name="valuetopayindate" type="text"
+                     placeholder="0,00"
+                     class="right" readonly
+                     value="0,00">
+            </div>
+          </div>
+
+          <div class="five wide field">
+            <label>
+              Nova data de vencimento:
+            </label>
+            <div class="ui calendar" id="newduedate">
+              <div class="ui input left icon">
+                <i class="calendar icon"></i>
+                <input name="newduedate" type="text"
+                       placeholder="Nova data de vencimento..."
+                       value="">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field">
+            <label>
+              Observações sobre o desconto:
+            </label>
+            <div class="ui input">
+              <textarea name="duedatereasons" rows="6"
+                        placeholder="Faça um breve comentário sobre o desconto concedido..."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="ui youtube cancel right labeled icon button">
+      Cancelar
+      <i class="remove icon"></i>
+    </button>
+    <button class="ui primary ok right labeled icon button">
+      Confirmar
+      <i class="checkmark icon"></i>
+    </button>
+  </div>
+</div>

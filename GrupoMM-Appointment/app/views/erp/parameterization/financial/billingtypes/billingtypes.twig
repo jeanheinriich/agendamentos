@@ -1,0 +1,464 @@
+{% extends 'templates/erp/layout.twig' %}
+{% import "templates/erp/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento de tipos de cobranças{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.main.basic.segment .searchbar.fields .field.searchbox {
+      flex-grow: 1;
+      min-width: 456px;
+    }
+    @media only screen and (min-width: 768px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+    }
+    @media only screen and (max-width: 767px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 100px;
+        width: calc(100% - 47px);
+      }
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+
+    /* --------------------------------------------------------------
+     * Personalizações das linhas do datagrid apenas para este módulo
+     * -------------------------------------------------------------- */
+    .blocked > td {
+      color: #7f7f7f
+    }
+    .blocked > td {
+      background-color: #fff6f6 !important;
+      color: DarkRed;
+    }
+    tr.blocked:hover > td {
+      background-color: #f6e7e7 !important;
+    }
+    tr.group td {
+      background-color: rgba(0,0,71,0.04);
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set add  = { 'URL': 'ERP\\Parameterization\\Financial\\BillingTypes\\Add', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/billingtypes.svg', 'Tipos de cobrança') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento dos tipos de cobranças
+                <div class="sub header">
+                  Permite gerenciar os tipos de cobranças existentes e
+                  que são passíveis de serem lançados em um plano de
+                  serviços e/ou contrato. Os tipos de cobranças podem
+                  ser: produtos (tais como chaveiro 24h, guincho),
+                  acessórios (teclados, leitores de i-button, etc) e
+                  serviços técnicos (instalação, manutenção, etc). Os
+                  serviços técnicos também ficam disponíveis no cadastro
+                  dos prestadores de serviços para determinação dos
+                  valores a eles pago.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(add.URL, add.method) %}
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Adiciona um tipo de cobrança"
+                      data-position="top left" type="button"
+                      onclick="location.href='{{ path_for(add.URL) }}'">
+                <i class="add icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite o tipo de cobrança que procura..."
+                       value="{{ billingtype.name }}">
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza um tipo de cobrança"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nome da cobrança</th>
+          <th>É um serviço executado por técnico?</th>
+          <th>Pré-Aprovado</th>
+          <th>Momento da cobrança</th>
+          <th>Tempo de execução</th>
+          <th>Condições de parcelamento</th>
+          <th {{ tooltip.add('left', 'Permite remover o tipo de cobrança') }}><i class="remove darkred icon"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/info.twig' %}
+  {% include 'templates/erp/partials/dialogs/question.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/DateFormatter.min.js') }}
+  {{ lib('datatables/formatters/DeleteFormatter.min.js') }}
+  
+  {% set getData = { 'URL': 'ERP\\Parameterization\\Financial\\BillingTypes\\Get', 'method': 'PATCH' } %}
+  {% set edit    = { 'URL': 'ERP\\Parameterization\\Financial\\BillingTypes\\Edit', 'method': 'GET' } %}
+  {% set remove  = { 'URL': 'ERP\\Parameterization\\Financial\\BillingTypes\\Delete', 'method': 'DELETE' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      table,
+      groupColumn = 2
+    ;
+
+    // Um formatador para exibir um ícone indicativo de que o serviço é
+    // pré-aprovado, ou seja, não depende da anuência do cliente
+    var preApprovedFormatter = function ( value, type, row, meta ) {
+      if (value == true)
+        return '<span data-position="left center"' +
+                     'data-blue data-inverted ' +
+                     'data-tooltip="Pré-aprovado">' +
+                 '<i class="check darkgreen icon">' +
+                 '</i>' +
+               '</span>';
+      
+      return '<i class="icon"></i>';
+    };
+
+    // Um formatador para exibir um ícone indicativo de que o serviço é
+    // pré-aprovado, ou seja, não depende da anuência do cliente
+    var executionTimeFormatter = function ( value, type, row, meta ) {
+      if (value != '00:00:00') {
+        var
+          times = value.split(":"),
+          content = ''
+            + (times[0]=='00'?'':times[0] + ' h')
+            + (((times[0]!=='00') && (times[1]!=='00'))?' e ':' ')
+            + (times[1]=='00'?'':times[1] + ' min')
+        ;
+
+        return content.trim();
+      }
+      
+      return '';
+    };
+
+    $(document).ready(function() {
+      // --------------------------------[ Componentes da Searchbar ]---
+      $('#searchValue').keypress(function(e) {
+        if(e.which == 13) {
+          searchLoad();
+        }
+      });
+
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "id",
+            "data": "id",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "billingtypes.inattendance, billingtypes.name",
+            "data": "name",
+            "visible": true,
+            "orderable": true },
+          { "targets": 2,
+            "name": "inattendance",
+            "data": "inattendance",
+            "visible": false,
+            "orderable": false },
+          { "targets": 3,
+            "name": "preapproved",
+            "data": "preapproved",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": preApprovedFormatter },
+          { "targets": 4,
+            "name": "moments",
+            "data": "moments",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false },
+          { "targets": 5,
+            "name": "executiontime",
+            "data": "executiontime",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "render": executionTimeFormatter },
+          { "targets": 6,
+            "name": "installmenttypes.name, billingtypes.name",
+            "data": "installmenttypename",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true },
+          { "targets": 7,
+            "name": "delete",
+            "data": "id",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": deleteFormatter("Remover este tipo de cobrança") }
+        ],
+        order: [[ 1, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.searchValue = $('#searchValue').val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+
+          {% set colspan = 6 %}
+
+          // Agrupamento de linhas
+          var
+            api          = this.api(),
+            rows         = api.rows( {page:'current'} ).nodes(),
+            lastGroup    = null
+          ;
+
+          api.column(groupColumn, {page:'current'} ).data().each(function( group, i ) {
+            var
+              addSubGroupRow = false
+            ;
+
+            if (lastGroup !== group) {
+              // Agrupamento de tipos de cobrança, separando os produtos
+              // e acessórios dos serviços técnicos
+
+              // Primeiramente, cria as novas colunas
+              
+              // 1. Coluna expandida com o nome do agrupamento
+
+              // Monta os dados dos cabeçalhos das colunas
+              var
+                groupName = group
+                  ? 'Serviços realizados por técnico e lançado em ordem de serviço'
+                  :'Produtos, serviços ou acessórios cobrados do cliente',
+                $column1 = $("<td colspan='{{ colspan }}'>")
+                  .html('<i class="check circle orange icon"></i> ' + groupName)
+                  .css("font-weight", "600")
+              ;
+
+              // Adiciona uma nova linha e, internamente, as colunas
+              var
+                $newRow = $("<tr>")
+                  .addClass('group')
+                  .append($column1)
+              ;
+
+              // Adiciona a nova linha de agrupamento antes da linha
+              // atual
+              $(rows)
+                .eq( i )
+                .before(
+                  $newRow
+                )
+              ;
+
+              lastGroup = group;
+            }
+          } );
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        createdRow: function(row, data, dataIndex) {
+          // Deixa as linhas com cores diferentes para indicar os
+          // bloqueios de tipos de cobranças
+          if (data.blocked) {
+            $(row)
+              .addClass('blocked')
+            ;
+          }
+        }
+      });
+      
+      // Manipula os eventos de click
+      table
+        .on('user-select', function (e, dt, type, cell, originalEvent) {
+          if (type === 'cell') {
+            var
+              // Recupera os dados da célula selecionada
+              index   = cell[0][0],
+
+              // Recupera o tipo de cobrança selecionado
+              billingType = dt.rows( index.row ).data().toArray()[0]
+            ;
+
+            // Em função da coluna onde ocorreu o clique, executa a ação
+            // correspondente
+            switch (index.column) {
+              {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}
+              case 7:
+                // Questiona se deve apagar o tipo de cobrança selecionado
+                questionDialog(
+                  'Remover tipo de cobrança',
+                  'Você deseja realmente remover o tipo de cobrança <b>&ldquo;' + billingType.name + '&rdquo;</b>? Esta ação não poderá ser desfeita.',
+                  function() {
+                    // Remove o tipo de cobrança selecionado
+                    var url  = "{{ buildURL(remove.URL, {'billingTypeID': 'billingType.id'}) }}";
+                    
+                    deleteJSONData(url, [],
+                    function (data, params, message) {
+                      // Atualiza a tabela
+                      searchLoad();
+                    });
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  }
+                );
+
+                break;
+              {% endif %}
+              default:
+                {% if authorization.getAuthorizationFor(edit.URL, edit.method) %}
+                // Coloca o tipo de cobrança em edição
+                window.location.href = "{{ buildURL(edit.URL, {'billingTypeID': 'billingType.id'}) }}";
+                {% endif %}
+            }
+
+            e.preventDefault();
+          }
+        }
+      );
+    });
+
+
+    // ================================================[ Handlers ]=====
+    
+    // Executa a pesquisa
+    function searchLoad() {
+      table.ajax.reload();
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

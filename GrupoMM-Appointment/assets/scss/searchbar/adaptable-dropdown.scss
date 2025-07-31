@@ -1,0 +1,40 @@
+/* ---------------------------------------[ Adaptable Dropdown ]-----
+   As definições do menu dropdown adaptável ao tamanho da tela
+   ------------------------------------------------------------------ */
+
+.ui.adaptable.dropdown {
+  &.button {
+    color: rgba(0,0,0,0.6);
+    background-color: #e8e8e8 !important;
+  }
+  
+  &.states {
+    min-width: 10em;
+
+    > .text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .menu > .item {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    @media screen and (max-width: 767px) {
+      min-width: 5em;
+    }
+  }
+
+  @media screen and (max-width: 767px) {
+    padding-left: .5em;
+    padding-right: 1.5em;
+    min-width: 5em;
+
+    .menu > .item {
+      padding-left: .5em !important;
+      padding-right: .5em !important;
+    }
+  }
+}

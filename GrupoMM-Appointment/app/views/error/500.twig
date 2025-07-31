@@ -1,0 +1,151 @@
+{% extends 'templates/site/layout.twig' %}
+{% block title %}{{ parent() }} - Erro interno do aplicativo{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+  <style>
+    .ui.celled.grid {
+      border-bottom: 1px solid #d4d4d5;
+    }
+    .ui.header {
+      color: DarkRed !important;
+      text-shadow: 0 2px 2px rgba(0,0,0,.5);
+    }
+    .black {
+      color: black;
+      font-weight: 700;
+    }
+    .ui.image.face {
+      width: 60%;
+      image-rendering: -webkit-optimize-contrast;
+    }
+    .ui.accordion .title:not(.ui) {
+      font-size: 1.4em;
+      color: black;
+    }
+    code {
+      display: block;
+      font-family: monospace;
+      margin: 1em 0;
+      white-space: pre;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .attached.segment .copy:hover {
+      color: darkRed;
+    }
+    .attached.segment .label {
+      margin-bottom: 0;
+    }
+    .attached.segment .copy {
+      float: right;
+      position: absolute;
+      top: 20px;
+      right: 10px;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+    <main>
+      <section class="description">
+        <div class="ui internally celled grid">
+          <div class="three wide column">
+            <img class="ui centered image face"
+                 src="/images/error/stop.png"
+                 alt="Erro interno">
+          </div>
+          <div class="thirteen wide column">
+            <h1 class="ui header">
+              Ocorreu um erro interno do aplicativo
+            </h1>
+            <h3 class="black">O que aconteceu?</h3>
+            <h3>O aplicativo possui um erro interno e a sua execução foi
+              interrompida.</h3>
+            {% if error is not empty %}
+            <div class="ui warning message">
+            <div class="ui fluid accordion">
+              <div class="title">
+                <i class="dropdown icon"></i>
+                Detalhamento do erro
+              </div>
+              <div class="content">
+                <div style="width: 100%;">
+                  {{ error|raw }}
+                </div>
+              </div>
+            </div>
+            </div>
+            {% endif %}
+            <h3 class="black">E agora, o que devo fazer?</h3>
+            <h3>Você pode retornar à <a onclick="goHome();">página inicial</a>.
+              Caso deseje relatar o ocorrido, pode utilizar o nosso
+              <a href="{{ path_for('ContactUs') }}">formulário de contato</a>
+              disponível.</h3>
+            <br>
+            <button class="ui primary icon button" onclick="goHome();">
+              <i class="home icon"></i> Ir para a página inicial
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {% apply minify %}
+  <script>
+    $(document).ready(function(){
+      $('.ui.accordion')
+        .accordion();
+      $('i.copy.link').on( "click", function() {
+        var content = $(this).closest("div").next().children('code')[ 0 ];
+
+        copyElementContentToClipboard(content);
+      });
+    });
+
+    function goHome() {
+      window.location.href="{{ homepage }}";
+    }
+
+    /**
+     * Copia o conteúdo de um elemento para a área de transferência
+     *
+     * @param object element
+     *   O elemento a ser copiado
+     *
+     * @return void
+     */
+    async function copyElementContentToClipboard(element) {
+      var
+        isInput = (element.tagName === "INPUT" || element.tagName === "TEXTAREA"),
+        content = (isInput == true)
+          ? element.value
+          : element.textContent,
+        icon = '<i class="copy outline large icon"></i>'
+      ;
+
+      try {
+        await navigator.clipboard.writeText(content);
+
+        // Avisa que o texto foi copiado
+        $('body')
+          .toast({
+            message: icon + ' Conteúdo do erro copiado com sucesso',
+            class : 'red',
+            showProgress: 'bottom'
+          })
+        ;
+      } catch (error) {
+        $('body')
+          .toast({
+            message: icon + ' Não foi possível copiar o conteúdo do erro',
+            class : 'red',
+            showProgress: 'bottom'
+          })
+        ;
+      }
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

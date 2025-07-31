@@ -1,0 +1,234 @@
+{% extends 'templates/site/layoutsimple.twig' %}
+{% block title %}{{ parent() }} - Login{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('flash.min.css') }}
+  {{ css('form.min.css') }}
+  {{ css('dialog.min.css') }}
+  {{ css('libs/jquery/plugins/observe.input/observe.input.min.css') }}
+  <style>
+    .ui.items > .item > .image:not(.ui) {
+      width: 125px;
+    }
+    i.big.big.big.icon,
+    i.big.big.big.icons {
+      font-size: 3em;
+      vertical-align: middle;
+    }
+    i.lightblue.icon.icon.icon.icon.icon {
+      color: lightblue;
+    }
+
+    .ui.middle.aligned .column {
+      max-width: 480px;
+    }
+
+    .left.aligned {
+      text-align: left !important;
+    }
+
+    .toggle.icon {
+      opacity: .5 !important;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+    <main>
+      <section class="description">
+        <div class="ui basic segment">
+        </div>
+
+        <div class="ui basic segment">
+          <div class="ui middle aligned center aligned grid">
+            <article class="column">
+              <!-- Start flash messages -->
+              {% include 'templates/usr/partials/flash.twig' %}
+              <!-- End flash messages -->
+
+              <!-- Start Form -->
+              <form class="ui blue secondary segment medium form" method="POST"
+                    action="{{ path_for('USR\\Reset', { 'UUID': uuid, 'Token': token }) }}">
+                <h3 class="ui dividing left aligned header">Redefinição de senha</h3>
+                <div class="sub header left aligned" style="padding-bottom: 10px;">
+                  Agora vamos prosseguir no processo de redefinição da
+                  senha de sua conta. Utilize uma senha forte, que você
+                  possa lembrar facilmente. Esta senha deve ter ao menos
+                  8 caracteres e conter letras maiúsculas e minúsculas.
+                  Não use nomes óbios como o nome do seu animal de
+                  estimação, nem reutilize senhas de outras contas.
+                </div>
+                
+                {% if hasErrors() %}
+                <div class="ui error message" style="display: block;">
+                  {% for error in getErrors('auth') %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="fields">
+                  <div class="sixteen wide left aligned field{{ cssError('password') }}">
+                    <label class="nowrap">Senha</label>
+                    <input type="password" name="password" maxlength="25"
+                           placeholder="Informe a sua nova senha..."
+                           value="{{ getValue('password') }}">
+                    {% if hasError('password') %}
+                    <small class="helper">{{ getError('password') }}</small>
+                    {% endif %}
+                  </div>
+                </div>
+                
+                <div class="fields">
+                  <div class="sixteen wide left aligned field{{ cssError('chkpassword') }}">
+                    <label class="nowrap">Senha</label>
+                    <input type="password" name="chkpassword" maxlength="25"
+                           placeholder="Confirme a nova senha..."
+                           value="{{ getValue('chkpassword') }}">
+                    {% if hasError('chkpassword') %}
+                    <small class="helper">{{ getError('chkpassword') }}</small>
+                    {% endif %}
+                  </div>
+                </div>
+
+                {{ csrf() }}
+                
+                <div class="fields">
+                  <div class="sixteen wide left aligned field">
+                    <button type="button" class="ui large orange icon button"
+                            style="margin-right: 0;"
+                            data-tooltip="Retorna à página inicial do site"
+                            data-position="top left"
+                            onclick="location.href='{{ path_for('Home') }}';">
+                      <i class="home icon"></i>
+                    </button>
+
+                    <button type="button" class="ui large green icon button"
+                            style="margin-right: 0;"
+                            data-tooltip="Retorna à página de autenticação"
+                            data-position="top left"
+                            onclick="location.href='{{ path_for('USR\\Login', { 'UUID': uuid }) }}';">
+                      <i class="lock icon"></i>
+                    </button>
+
+                    <button type="submit"
+                            class="ui submit primary right labeled icon right floated button">
+                      <i class="checkmark icon"></i> Redefinir
+                    </button>
+                  </div>
+                </div>
+                
+                <input type="hidden" name="_method" value="{{ formMethod }}">
+                <input type="hidden" name="uuid" value="{{ getValue('uuid') }}">
+                <input type="hidden" name="token" value="{{ getValue('token') }}">
+              </form>
+              <!-- End Form -->
+            </article>
+          </div>
+        </div>
+        <div class="ui basic segment" style="min-height: 21vh;">
+        </div>
+      </section>
+    </main>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/site/partials/dialogs/error.twig' %}
+  {% include 'templates/site/partials/dialogs/info.twig' %}
+  {% include 'templates/site/partials/dialogs/question.twig' %}
+  {% include 'templates/site/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('jquery/plugins/password.strength.inspector/password.strength.inspector.min.js') }}
+  {{ lib('jquery/plugins/observe.input/observe.input.min.js') }}
+  
+  {% apply minify %}
+  <script>
+    var
+      strengthOptions = [
+        'length',
+        'alpha',
+        'numeric',
+        'special',
+        'onlynumeric'
+      ],
+      strength = new PasswordStrengthInspector(25, strengthOptions)
+    ;
+
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $("input[name=password]")
+        .observeinput({
+          enableToggleView: true,
+          icon: {
+            left: 'lock',
+            right: 'none',
+          },
+          onComplete: function () {
+            var
+              password = $(this).val(),
+              result   = strength.validate(password)
+            ;
+            
+            if (result) {
+              $("#errorMessage")
+                .hide()
+              ;
+            } else {
+              // Exibe os erros
+              var
+                errorList = $("#errorMessage").children("ul.list"),
+                errors    = strength.getErrors()
+              ;
+
+              errorList
+                .empty()
+              ;
+              $.each(errors, function(index, value) {
+                errorList
+                  .append('<li>'+value+'</li>')
+                ;
+              });
+              $("#errorMessage")
+                .show()
+              ;
+            }
+            
+            return result;
+          },
+        })
+      ;
+
+      $("input[name=chkpassword]")
+        .observeinput({
+          enableToggleView: true,
+          icon: {
+            left: 'lock',
+            right: 'none'
+          },
+          onTyping: function () {
+            var password = $("input[name=password]").val();
+            return ($(this).val() === password)?true:false;
+          },
+        })
+      ;
+      
+      // Coloca o foco no primeiro campo
+      $("input[name='password']")
+        .focus()
+      ;
+    });
+  </script>
+  {% endapply %}
+{% endblock scripts %}

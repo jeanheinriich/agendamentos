@@ -1,0 +1,116 @@
+{% import "templates/adm/macros/menuItem.twig" as menu %}
+  <ul class="level1">
+    {{ menu.addItem('ADM\\Home', 'home', 'Início') }}
+
+    {% if ( authorization.hasAuthorizationForGroupOfRoutes('ADM\\Cadastre') ) %}
+    <li class="item has-submenu">
+      <div>
+        <i class="fas fa-book-open"></i> Cadastro
+        <i class="dropdown icon"></i>
+      </div>
+
+      <ul class="level2">
+        {{ menu.addItem('ADM\\Cadastre\\Contractors', 'globe', 'Contratantes') }}
+        {{ menu.addItem('ADM\\Cadastre\\Monitors', 'desktop', 'Empresas de monitoramento') }}
+        {{ menu.addItem('ADM\\Cadastre\\Users', 'users-cog', 'Usuários') }}
+      </ul>
+    </li>
+    {% endif %}
+
+    {% if ( authorization.hasAuthorizationForGroupOfRoutes('ADM\\Parameterization') ) %}
+    <li class="item has-submenu">
+      <div>
+        <i class="fas fa-layer-group"></i> Parametrizações
+        <i class="dropdown icon"></i>
+      </div>
+
+      <ul class="level2">
+        {% if ( authorization.hasAuthorizationForGroupOfRoutes('ADM\\Parameterization\\Cadastral') ) %}
+        <li class="item has-submenu">
+          <div>
+            <i class="fab fa-elementor"></i> Dados Cadastrais
+            <i class="dropdown icon"></i>
+          </div>
+
+          <ul class="level3">
+            {{ menu.addItem('ADM\\Parameterization\\Cadastral\\Cities', 'city', 'Cidades') }}
+            {{ menu.addItem('ADM\\Parameterization\\Cadastral\\DocumentTypes', 'file-medical', 'Tipos de documentos') }}
+            {{ menu.addItem('ADM\\Parameterization\\Cadastral\\MaritalStatus', 'street-view', 'Estados civis') }}
+            {{ menu.addItem('ADM\\Parameterization\\Cadastral\\Genders', 'restroom', 'Gêneros (Sexos)') }}
+            {{ menu.addItem('ADM\\Parameterization\\Cadastral\\MeasureTypes', 'tape', 'Tipos de medidas') }}
+            {{ menu.addItem('ADM\\Parameterization\\Cadastral\\FieldTypes', 'calendar-week', 'Tipos de campos') }}
+          </ul>
+        </li>
+        {% endif %}
+
+        {% if ( authorization.hasAuthorizationForGroupOfRoutes('ADM\\Parameterization\\Vehicles') ) %}
+        <li class="item has-submenu">
+          <div>
+            <i class="fas fa-truck"></i> Veículos
+            <i class="dropdown icon"></i>
+          </div>
+
+          <ul class="level3">
+            {{ menu.addItem('ADM\\Parameterization\\Vehicles\\Types', 'ambulance', 'Tipos') }}
+            {{ menu.addItem('ADM\\Parameterization\\Vehicles\\Subtypes', 'ambulance', 'Subtipos') }}
+            {{ menu.addItem('ADM\\Parameterization\\Vehicles\\Fuels', 'gas-pump', 'Combustíveis') }}
+            {{ menu.addItem('ADM\\Parameterization\\Vehicles\\Colors', 'palette', 'Cores') }}
+          </ul>
+        </li>
+        {% endif %}
+
+        {% if ( authorization.hasAuthorizationForGroupOfRoutes('ADM\\Parameterization\\Devices') ) %}
+        <li class="item has-submenu">
+          <div>
+            <i class="fas fa-project-diagram"></i> Dispositivos
+            <i class="dropdown icon"></i>
+          </div>
+
+          <ul class="level3">
+            {{ menu.addItem('ADM\\Parameterization\\Devices\\Accessories\\Types', 'plug', 'Tipos de acessórios') }}
+            {{ menu.addItem('ADM\\Parameterization\\Devices\\Features', 'dna', 'Características técnicas') }}
+            {{ menu.addItem('ADM\\Parameterization\\Devices\\Brands', 'award', 'Marcas') }}
+            {{ menu.addItem('ADM\\Parameterization\\Devices\\Models', 'window-restore', 'Modelos') }}
+          </ul>
+        </li>
+        {% endif %}
+
+        {% if ( authorization.hasAuthorizationForGroupOfRoutes('ADM\\Parameterization\\Telephony') ) %}
+        <li class="item has-submenu">
+          <div>
+            <i class="fas fa-tty"></i> Telefonia
+            <i class="dropdown icon"></i>
+          </div>
+
+          <ul class="level3">
+            {{ menu.addItem('ADM\\Parameterization\\Telephony\\PhoneTypes', 'phone', 'Tipos de telefones') }}
+            {{ menu.addItem('ADM\\Parameterization\\Telephony\\MobileOperators', 'broadcast-tower', 'Operadoras') }}
+            {{ menu.addItem('ADM\\Parameterization\\Telephony\\SimCardTypes', 'sim-card', 'Modelos de SIM Cards') }}
+          </ul>
+        </li>
+        {% endif %}
+
+        {{ menu.addItem('ADM\\Parameterization\\OwnershipTypes', 'hand-holding-usd', 'Tipos de propriedade') }}
+        {{ menu.addItem('ADM\\Parameterization\\Holidays', 'umbrella-beach', 'Feriados') }}
+        {{ menu.addItem('ADM\\Parameterization\\Permissions', 'shield-alt', 'Permissões') }}
+        {{ menu.addItem('ADM\\Parameterization\\SystemActions', 'vote-yea', 'Ações do sistema') }}
+      </ul>
+    </li>
+    {% endif %}
+
+    {% if ( authorization.hasAuthorizationForGroupOfRoutes('ADM\\Financial') ) %}
+    <li class="item has-submenu">
+      <div>
+        <i class="fas fa-coins"></i> Financeiro
+        <i class="dropdown icon"></i>
+      </div>
+
+      <ul class="level2">
+        {{ menu.addItem('ADM\\Financial\\Banks', 'university', 'Bancos') }}
+        {{ menu.addItem('ADM\\Financial\\Indicators', 'chart-line', 'Indicadores') }}
+      </ul>
+    </li>
+    {% endif %}
+
+    {{ menu.addItem('ADM\\About', 'info-circle', 'Sobre') }}
+  </ul>

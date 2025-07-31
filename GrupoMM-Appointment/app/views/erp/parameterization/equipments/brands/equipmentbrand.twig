@@ -1,0 +1,179 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} marca de equipamento{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Parameterization\\Equipments\\Brands\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Parameterization\\Equipments\\Brands\\Edit' %}
+  {% endif %}
+  {% set previous = 'ERP\\Parameterization\\Equipments\\Brands' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/equipmentbrands.svg', 'Marca de equipamento') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} marca de equipamento
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar uma nova {% else %}modificar as informações cadastrais de uma {% endif %}
+                  marca de equipamento.
+                </div>
+              {% else %}
+                Visualizar marca de equipamento
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de uma
+                  marca de equipamento.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL, {'equipmentBrandID': getValue('equipmentbrandid') }) }}">
+        <div class="fields">
+          <div class="sixteen wide field{{ cssError('name') }}">
+            <label>Marca de equipamento</label>
+            <div class="ui input{{ readonly }}">
+              <input name="name" type="text" maxlength="30"
+                     placeholder="Informe o nome da marca de equipamento..."
+                     {{ readonly }}
+                     value="{{ getValue('name') }}">
+            </div>
+            {% if hasError('name') %}
+            <small class="helper">{{ getError('name') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="eight wide field">
+            <div class="ui checkbox">
+              <input type="hidden" name="madetracker"
+                     value="{% if getValue('madetracker')|toBoolean %}true{% else %}false{% endif %}">
+              <input class="hidden" type="checkbox"
+                     name="_madetracker"
+                     {% if getValue('madetracker')|toBoolean %}checked="checked"{% endif %}>
+              <label>Fabrica rastreadores</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="eight wide field">
+            <div class="ui checkbox">
+              <input type="hidden" name="madeaccessory"
+                     value="{% if getValue('madeaccessory')|toBoolean %}true{% else %}false{% endif %}">
+              <input class="hidden" type="checkbox"
+                     name="_madeaccessory"
+                     {% if getValue('madeaccessory')|toBoolean %}checked="checked"{% endif %}>
+              <label>Fabrica acessórios</label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="equipmentbrandid" value="{{ getValue('equipmentbrandid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.ui.checkbox')
+        .checkbox(checkboxOptions)
+      ;
+
+      // Coloca o foco no primeiro campo
+      $("input[name='name']")
+        .focus()
+      ;
+    });
+    
+
+    // =================================================[ Options ]=====
+
+    // As opções para os checkbox
+    var checkboxOptions = {
+      // Dispara ao iniciar para definir o valor, se necessário
+      onChange   : function() {
+        var
+          checkbox = $(this).prop('name'),
+          // Invertemos o valor atual
+          checked = !($(this).attr('checked') !== undefined && $(this).attr('checked')),
+          boolValue = (checked
+            ? 'true'
+            : 'false'),
+          toggleField = checkbox.replace('_','')
+        ;
+
+        // Invertemos o checkbox fake
+        $(this)
+          .attr('checked', checked)
+        ;
+
+        // Alteramos o valor do verdadeiro input
+        $("input[name='" + toggleField + "']")
+          .val(boolValue)
+        ;
+      }
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

@@ -1,0 +1,64 @@
+{% extends 'templates/adm/layout.twig' %}
+{% block title %}{{ parent() }} - Acesso negado{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+  <style>
+    .ui.header {
+      color: DarkRed !important;
+      text-shadow: 0 2px 2px rgba(0,0,0,.5);
+    }
+    .black {
+      color: black;
+      font-weight: 700;
+    }
+    .ui.image.face {
+      width: 60%;
+    }
+    b {
+      font-weight: bold;
+      color: black;
+      background-color: #F9F5F5;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+    <main>
+      <section class="hero error">
+      </section>
+      <section class="description">
+        <div class="ui internally celled grid">
+          <div class="three wide column">
+            <img class="ui centered image face"
+                 src="/images/error/notallowed.png"
+                 alt="Acesso negado">
+          </div>
+          <div class="ten wide column">
+            <h1 class="ui header">
+              Seu acesso a este recurso foi negado!
+            </h1>
+            <h3 class="black">O que aconteceu?</h3>
+            <h3>{{ error|raw }}</h3>
+            <h3 class="black">E agora, o que devo fazer?</h3>
+            <h3>Você pode retornar à <a onclick="goHome();">página inicial</a>.
+              Caso realmente necessite deste recurso, solicite ao administrador
+              do sistema.</h3>
+            <br>
+            <button class="ui primary icon button" onclick="goHome();">
+              <i class="home icon"></i> Ir para a página inicial
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {% apply minify %}
+  <script>
+    function goHome() {
+      window.location.href="{{ homepage }}";
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

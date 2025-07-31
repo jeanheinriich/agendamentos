@@ -1,0 +1,500 @@
+{% extends 'templates/adm/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} característica técnica{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  {{ css('loading.min.css') }}
+  <style>
+    .ui.grid {
+      margin-right: -.5rem;
+      margin-bottom: .5rem;
+    }
+    .ui.list .list>.item .description,
+    .ui.list>.item .description {
+      position: relative;
+      padding-left: 1.85714em;
+      margin-top: .2em;
+      color: rgba(0,0,0,.5);
+    }
+
+    @media only screen and (max-width:767px) {    
+      .ui.list .list>.item,
+      .ui.list>.item {
+        margin-bottom: .5em;
+      }
+    }
+    .ui.grid>.plata.column,
+    .ui.grid>.plata.row,
+    .ui.grid>.row>.plata.column {
+      background-color: rgba(86, 61, 124, .1);
+    }
+
+    .ui.form .inline.field > .selection.dropdown,
+    .ui.form .inline.fields .field > .selection.dropdown {
+      min-width: 18em;
+    }
+    .ui.form .info.message {
+      margin: 0em 0em 2em;
+      display: block;
+    }
+    .ui.icon.message > .icon:not(.close) {
+      color: rgba(60,120,250, 1);
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ADM\\Parameterization\\Devices\\Features\\Add' %}
+  {% else %}
+    {% set URL = 'ADM\\Parameterization\\Devices\\Features\\Edit' %}
+  {% endif %}
+  {% set previous = 'ADM\\Parameterization\\Devices\\Features' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('adm/features.svg', 'Característica técnica') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if editMode %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} característica técnica
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar uma nova {% else %}modificar as informações cadastrais de uma {% endif %}
+                  característica técnica que um equipamento de
+                  rastreamento deve ter para que o mesmo atenda os
+                  requisitos de um contrato.
+                </div>
+              {% else %}
+                Visualizar característica técnica
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de uma
+                  característica técnica que um equipamento de
+                  rastreamento deve ter para que o mesmo atenda aos
+                  requisitos de um contrato.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <div class="loading hidden">Processando...&#8230;</div>
+      <form class="ui form" method="POST" autocomplete="off"
+            onsubmit="loading();"
+            action="{{ path_for(URL, { 'featureID': getValue('featureid') }) }}">
+        <div class="fields">
+          <div class="sixteen wide field{{ cssError('name') }}">
+            <label>Característica técnica</label>
+            <div class="ui input{{ readonly }}">
+              <input name="name" type="text" maxlength="30"
+                     placeholder="Informe o nome da característica técnica..."
+                     {{ readonly }}
+                     value="{{ getValue('name') }}">
+            </div>
+            {% if hasError('name') %}
+            <small class="helper">{{ getError('name') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <h3 class="ui header">Características que precisam estar presentes no equipamento</h3>
+
+        <div class="fields">
+          <div class="sixteen wide field">
+            <div class="ui list">
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="needanaloginput"
+                         value="{% if getValue('needanaloginput')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_needanaloginput"
+                         {% if getValue('needanaloginput')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Necessita de entrada analógica</label>
+                </div>
+                <div class="description">
+                  O equipamento precisa ter ao menos uma entrada
+                  analógica para conexão
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="needanalogoutput"
+                         value="{% if getValue('needanalogoutput')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_needanalogoutput"
+                         {% if getValue('needanalogoutput')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Necessita de saída analógica</label>
+                </div>
+                <div class="description">
+                  O equipamento precisa ter ao menos uma saída
+                  analógica para conexão
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="needdigitalinput"
+                         value="{% if getValue('needdigitalinput')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_needdigitalinput"
+                         {% if getValue('needdigitalinput')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Necessita de entrada digital</label>
+                </div>
+                <div class="description">
+                  O equipamento precisa ter ao menos uma entrada
+                  digital para conexão
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="needdigitaloutput"
+                         value="{% if getValue('needdigitaloutput')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_needdigitaloutput"
+                         {% if getValue('needdigitaloutput')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Necessita de saída digital</label>
+                </div>
+                <div class="description">
+                  O equipamento precisa ter ao menos uma saída
+                  digital para conexão
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="needrfmodule"
+                         value="{% if getValue('needrfmodule')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_needrfmodule"
+                         {% if getValue('needrfmodule')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Necessita de módulo RF</label>
+                </div>
+                <div class="description">
+                  O módulo de rádio frequência (RF) pode ser usado como
+                  redundância para a comunicação por GPRS tradicional,
+                  ou servindo como um sistema de localização em casos
+                  excepcionais. A radiofrequência tem um ponto positivo
+                  na questão de localização, porque permite determinar a
+                  posição onde o veículo está localizado sem a ameaça de
+                  ser bloqueado por Jammers.
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="needonoffbutton"
+                         value="{% if getValue('needonoffbutton')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_needonoffbutton"
+                         {% if getValue('needonoffbutton')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Necessita de botão liga/desliga</label>
+                </div>
+                <div class="description">
+                  O botão liga/desliga é utilizado em modelos de
+                  rastreadores de carga, permitindo uma maneira de ligar
+                  o equipamento apenas no momento do uso, preservando a
+                  bateria.
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="needboxopensensor"
+                         value="{% if getValue('needboxopensensor')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_needboxopensensor"
+                         {% if getValue('needboxopensensor')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Necessita de sensor de caixa aberta</label>
+                </div>
+                <div class="description">
+                  O sensor de caixa aberta permite determinar a
+                  ocorrência da violação do pacote em equipamentos
+                  utilizados no rastreamento de carga.
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="needrs232interface"
+                         value="{% if getValue('needrs232interface')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_needrs232interface"
+                         {% if getValue('needrs232interface')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Necessita de interface RS232</label>
+                </div>
+                <div class="description">
+                  A interface RS232 permite a conexão de periféricos,
+                  tais como teclados, ao equipamento de rastreamento.
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="needibuttoninput"
+                         value="{% if getValue('needibuttoninput')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_needibuttoninput"
+                         {% if getValue('needibuttoninput')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Necessita de entrada no padrão 1-Wire para iButton</label>
+                </div>
+                <div class="description">
+                  O padrão 1-Wire é utilizado em leitoras de iButton.
+                  O ibutton, nome inglês para denominar um “botão
+                  inteligente”, é basicamente um chip dentro de um botão
+                  de aço que consegue armazenar dados e serem carregados
+                  por qualquer pessoa, para qualquer lugar. São usados
+                  para identificação do motorista no veículo.
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="needantijammer"
+                         value="{% if getValue('needantijammer')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_needantijammer"
+                         {% if getValue('needantijammer')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Necessita de Anti Jammer</label>
+                </div>
+                <div class="description">
+                  O Jammer é um pequeno aparelho que cria um sinal capaz
+                  de interromper a frequência de comunicação do rastreador
+                  com as antenas celulares. Este sinal impede que a
+                  central receba o sinal de localização do veículo,
+                  facilitando o roubo. O Anti Jammer permite que o
+                  equipamento execute alguma ação em caso de perceber
+                  este tipo de sinal tentando bloquear a comunicação.
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="needrpminput"
+                         value="{% if getValue('needrpminput')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_needrpminput"
+                         {% if getValue('needrpminput')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Necessita de entrada para sensor RPM</label>
+                </div>
+                <div class="description">
+                  É uma entrada específica para acoplamento do sensor de
+                  pulsos da velocidade do motor (RPM). Permite determinar
+                  com precisão a velocidade do motor.
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="needodometerinput"
+                         value="{% if getValue('needodometerinput')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_needodometerinput"
+                         {% if getValue('needodometerinput')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Necessita de entrada para odômetro</label>
+                </div>
+                <div class="description">
+                  É uma entrada específica para acoplamento do odômetro.
+                  O odômetro permite determinar a distância percorrida
+                  (quilometragem) pelo veículo.
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="needaccelerometer"
+                         value="{% if getValue('needaccelerometer')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_needaccelerometer"
+                         {% if getValue('needaccelerometer')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Necessita de sensor de acelerômetro</label>
+                </div>
+                <div class="description">
+                  É um sensor específico que permite capturar acelerações,
+                  frenagens e curvas bruscas executadas pelo motorista
+                  durante a direção do veículo.
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="needaccessory"
+                         value="{% if getValue('needaccessory')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_needaccessory"
+                         {% if getValue('needaccessory')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Necessita de acessório</label>
+                </div>
+                <div class="description">
+                  Acessórios são componentes extras que precisam ser
+                  adicionados na instalação para que esta característica
+                  seja atendida.
+
+                  <div class="inline field{{ cssError('accessorytypeid') }}">
+                    <label>Informe o tipo do acessório necessário</label>
+                    {% if editMode %}
+                    <div class="ui search selection dropdown">
+                      <input name="accessorytypeid" type="hidden"
+                             value="{{ getValue('accessorytypeid') }}">
+                      <i class="dropdown icon"></i>
+                      <div class="default text">Informe o tipo</div>
+                      <div class="menu">
+                      {% set accessoryTypeID = getValue('accessorytypeid') %}
+                      {% for accessoryType in accessoryTypes %}
+                        <div class="item" {% if accessoryType.id == accessoryTypeID %}selected{% endif %}
+                             data-value="{{ accessoryType.id }}"
+                             data-text="{{ accessoryType.name }}">
+                          {{ accessoryType.name }}
+                        </div>
+                      {% endfor %}
+                      </div>
+                    </div>
+                    {% else %}
+                    <div class="field static">
+                      <span class="darking">{{ getValue('accessorytypename') }}&nbsp;</span>
+                    </div>
+                    {% endif %}
+                    {% if hasError('accessorytypeid') %}
+                    <small class="helper">{{ getError('accessorytypeid') }}</small>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ui icon blue message">
+          <i class="question circle outline icon"></i>
+          <div class="content">
+            <div class="header">
+              Você entende a questão da compatibilidade de um
+              acessório com um equipamento?
+            </div>
+            <p>
+              Ao marcar que um determinado tipo de acessório é necessário
+              (e escolher o respectivo tipo), isto apenas indica que este
+              acessório deve estar presente na instalação para que o
+              sistema considere que a característica técnica aqui descrita
+              esteja atendida. A escolha de um determinado tipo de
+              acessório necessário não é garantia de que ocorra
+              compatibilidade entre o acessório efetivamente instalado e
+              o equipamento de rastreamento escolhido na instalação.
+              Caberá ao técnico sempre decidir sobre estas questões.
+            </p>
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="featureid" value="{{ getValue('featureid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      $('.ui.checkbox')
+        .checkbox(checkboxOptions)
+      ;
+
+      // Coloca o foco no primeiro campo
+      $("input[name='name']")
+        .focus()
+      ;
+    });
+
+    var loading = function() {
+      $(document.body)
+        .css({
+          'cursor' : 'wait'
+        })
+      ;
+      $(".loading")
+        .removeClass("hidden")
+      ;
+    };
+    
+
+    // =================================================[ Options ]=====
+
+    // As opções para os checkbox
+    var checkboxOptions = {
+      // Dispara ao iniciar para definir o valor, se necessário
+      onChange   : function() {
+        var
+          checkbox = $(this).prop('name'),
+          // Invertemos o valor atual
+          checked = !($(this).attr('checked') !== undefined && $(this).attr('checked')),
+          boolValue = (checked
+            ? 'true'
+            : 'false'),
+          toggleField = checkbox.replace('_','')
+        ;
+
+        // Invertemos o checkbox fake
+        $(this)
+          .attr('checked', checked)
+        ;
+
+        // Alteramos o valor do verdadeiro input
+        $("input[name='" + toggleField + "']")
+          .val(boolValue)
+        ;
+      }
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

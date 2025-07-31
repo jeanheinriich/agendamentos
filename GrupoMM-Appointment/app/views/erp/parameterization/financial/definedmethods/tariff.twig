@@ -1,0 +1,47 @@
+          <div class="fields tariffEntry">
+            <div class="field percentage{{ cssError('tariffs[' ~ number ~ '][basicfare]') }}">
+              <label{% if not loop.first %} class="large monitor or widescreen hidden"{% endif %}>
+                Tarifa cobrada
+              </label>
+              <div class="ui input{{ readonly }}">
+                <div class="ui left labeled input{{ readonly }}">
+                  <div class="ui basic label">R$</div>
+                  <input name="tariffs[{{ number }}][basicfare]"
+                         placeholder="Desconto oferecido..." type="text"
+                         value="{{ tariff.basicfare }}"
+                         label="Tarifa cobrada"
+                         {{ readonly }}>
+                  <input name="tariffs[{{ number }}][definedmethodtariffid]"
+                         type="hidden"
+                         value="{{ tariff.definedmethodtariffid }}" />
+                </div>
+              </div>
+              {% if hasError('tariffs[' ~ number ~ '][basicfare]') %}
+              <small class="helper">{{ getError('tariffs[' ~ number ~ '][basicfare]') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="field amount{{ cssError('tariffs[' ~ number ~ '][validfrom]') }}">
+              <label{% if not loop.first %} class="large monitor or widescreen hidden"{% endif %}>
+                Vigente desde
+              </label>
+              <div class="ui action input{{ readonly }}">
+                <input name="tariffs[{{ number }}][validfrom]"
+                       placeholder="validfrom..." type="text"
+                       value="{{ tariff.validfrom }}"
+                       label="Vigente desde"
+                       {{ readonly }}
+                       maxlength="3">
+                <button class="ui tiny youtube icon button"
+                        data-tooltip="Remove esta tarifa"
+                        data-position="top right" type="button"
+                        tariff="{{ number }}"
+                        onclick="delTariff(this);">
+                  <i class="minus icon"></i>
+                </button>
+              </div>
+              {% if hasError('tariffs[' ~ number ~ '][validfrom]') %}
+              <small class="helper">{{ getError('tariffs[' ~ number ~ '][validfrom]') }}</small>
+              {% endif %}
+            </div>
+          </div>

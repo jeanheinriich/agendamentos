@@ -1,0 +1,464 @@
+{% extends 'templates/adm/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} feriado{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+  
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('form.min.css') }}
+  {{ css('loading.min.css') }}
+  <style>
+    .blue {
+      color: CornflowerBlue;
+      font-style: italic;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ADM\\Parameterization\\Holidays\\Add' %}
+  {% else %}
+    {% set URL = 'ADM\\Parameterization\\Holidays\\Edit' %}
+  {% endif %}
+  {% set previous = 'ADM\\Parameterization\\Holidays' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('adm/holidays.svg', 'Feriado') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if editMode %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} feriado
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  feriado.
+                </div>
+              {% else %}
+                Visualizar feriado
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um
+                  feriado.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início mensagem -->
+      <div class="ui message">
+        <div class="header">
+          Atenção
+        </div>
+        <p>
+          Os feriados nacionais móveis são fixos e não podem ser modificados
+          (tais como o Carnaval e a Páscoa) e as suas datas são calculadas
+          automaticamente. Devem-se lidar apenas com os demais feriados
+          (nacionais, estaduais ou municipais).
+        </p>
+      </div>
+      <!-- Fim mensagem -->
+
+      <!-- Início formulário -->
+      <div class="loading hidden">Processando...&#8230;</div>
+      <form class="ui form" method="POST" autocomplete="off"
+            onsubmit="loading();"
+            action="{{ path_for(URL, {'holidayID': getValue('holidayid') }) }}">
+        <div class="fields">
+          <div class="six wide field{{ cssError('geographicscope') }}">
+            <label>Abrangência</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="geographicscope" type="hidden"
+                     value="{{ getValue('geographicscope') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Informe a abrangência...</div>
+              <div class="menu">
+              {% set currentGeographicScope = getValue('geographicscope') %}
+              {% for geographicScope in geographicScopes %}
+                <div class="item"
+                     {% if geographicScope == currentGeographicScope %}
+                       selected
+                     {% endif %}
+                     data-value="{{ geographicScope }}"
+                     data-text="{{ geographicScope }}">
+                  {{ geographicScope }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('geographicscope') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('geographicscope') %}
+            <small class="helper">{{ getError('geographicscope') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="eight wide field{{ cssError('cityname') }}">
+            <label>Cidade</label>
+            <input name="cityname" type="text" class="search"
+                   maxlength="50"
+                   placeholder="Informe a cidade..."
+                   {{ readonly }}
+                   value="{{ getValue('cityname') }}">
+            <input name="cityid" type="hidden"
+                   value="{{ getValue('cityid') }}" >
+            {% if hasError('cityname') %}
+            <small class="helper">{{ getError('cityname') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('state') }}">
+            <label>UF</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="state" type="hidden"
+                     value="{{ getValue('state') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">--</div>
+              <div class="menu">
+              {% set stateID = getValue('state') %}
+              {% for state in states %}
+                <div class="item"
+                     {% if state.id == stateID %}
+                       selected
+                     {% endif %}
+                     data-value="{{ state.id }}"
+                     state-name="{{ state.name }}">
+                  <span class="tablet hidden">{{ state.name }}</span>
+                  <span class="tablet hidden blue"> ({{ state.id }})</span>
+                  <span class="tablet only">{{ state.id }}</span>
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('state') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('state') %}
+            <small class="helper">{{ getError('state') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="ten wide field{{ cssError('name') }}">
+            <label>Feriado</label>
+            <div class="ui input{{ readonly }}">
+              <input name="name" type="text" maxlength="100"
+                     placeholder="Informe o feriado..."
+                     {{ readonly }}
+                     value="{{ getValue('name') }}">
+            </div>
+            {% if hasError('name') %}
+            <small class="helper">{{ getError('name') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="two wide field{{ cssError('day') }}">
+            <label>Dia</label>
+            <div class="ui input{{ readonly }}">
+              <input name="day" type="text"
+                     placeholder="Dia..."
+                     {{ readonly }}
+                     value="{{ getValue('day') }}">
+            </div>
+            {% if hasError('day') %}
+            <small class="helper">{{ getError('day') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('month') }}">
+            <label>Mês</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="month" type="hidden"
+                     value="{{ getValue('month') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Informe o mês...</div>
+              <div class="menu">
+              {% set monthID = getValue('month') %}
+              {% for month in months %}
+                <div class="item"
+                     {% if month.id == monthID %}
+                       selected
+                     {% endif %}
+                     data-value="{{ loop.index }}"
+                     data-text="{{ month }}">
+                  {{ month }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('month') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('month') %}
+            <small class="helper">{{ getError('month') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="holidayid" value="{{ getValue('holidayid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+  
+  {% set getCityNameCompletion = { 'URL': 'ADM\\Parameterization\\Cadastral\\Cities\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    var defaultCityID    = {{ getValue('cityid')|default(0) }};
+    var defaultCityName  = "{{ getValue('cityname') }}";
+    var defaultState     = "{{ getValue('state') }}";
+
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      // Mascara os campos e habilita os eventos para tratamento da
+      // atualização na tela
+      $("input[name='cityname']")
+        .autocomplete(cityNameCompletionOptions)
+      ;
+      $("input[name='geographicscope']")
+        .change(geographicScopeHandler)
+        .trigger("change");
+      $("input[name='day']")
+        .mask({
+          type: 'number',
+          maxlength: 2
+        })
+      ;
+
+      // Coloca o foco no primeiro campo
+      $("input[name='geographicscope']")
+        .closest("div")
+        .children(".search")
+        .focus();
+    });
+
+    // =================================================[ Options ]=====
+
+    // As opções para o componente de autocompletar o nome da cidade
+    var cityNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      ajax: {
+        url: "{{ path_for(getCityNameCompletion.URL) }}",
+        type: "{{ getCityNameCompletion.method }}",
+        data: function(params, options) {
+          params.state = '';
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        return ''
+          + '<div class="content">'
+          +   '<div class="title">' + suggestion.name + ' / '
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       suggestion.state
+          +     '</span>'
+          +   '</div>'
+          + '</div>'
+        ;
+      },
+      onSelect: function(element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='cityid']")
+          .val(suggestion.id)
+        ;
+        $("input[name='state']")
+          .closest('div')
+          .dropdown('set selected', suggestion.state)
+        ;
+      },
+      onInvalidateSelection: function() {
+        // Limpa as informações de cidade selecionada
+        emptyCity(0, '', '');
+      }
+    };
+
+
+    // ==========================================[ Field Cleaners ]=====
+
+    // Limpa e/ou preenche os campos relacionados com a cidade
+    var emptyCity = function (cityID = 0, cityName = '', state = '') {
+      $("input[name='cityid']")
+        .val(cityID)
+      ;
+      $("input[name='cityname']")
+        .val(cityName)
+      ;
+      if (state === '') {
+        $("input[name='state']")
+          .closest('div')
+          .dropdown('clear')
+        ;
+      } else {
+        $("input[name='state']")
+          .closest('div')
+          .dropdown('set selected', state)
+        ;
+      }
+    };
+
+
+    // ================================================[ Handlers ]=====
+
+    // Faz o tratamento do campo abrangência para permitir alternar os
+    // campos necessários para preenchimento
+    function geographicScopeHandler()
+    {
+      var
+        geographicScope = $(this).val()
+      ;
+
+      switch (geographicScope) {
+        case 'Nacional':
+          // Limpa a informação de cidade e UF
+          emptyCity(0, 'Em todo território nacional', '');
+
+          // Não deve permitir preencher o nome da cidade e a UF
+          $("input[name='cityname']")
+            .autocomplete()
+            .disable()
+          ;
+          $("input[name='cityname']")
+            .prop('readonly', true)
+            .closest('div')
+            .addClass("readonly")
+          ;
+          $("input[name='state']")
+            .closest('div')
+            .addClass("disabled")
+            .addClass("readonly")
+            .find('input.search')
+            .prop('disabled', true)
+          ;
+
+          break;
+        case 'Estadual':
+          // Limpa a informação de cidade e preenche o valor default de
+          // UF
+          emptyCity(0, 'Qualquer cidade desta UF', defaultState);
+
+          // Deve permitir preencher o nome da UF apenas
+          $("input[name='cityname']")
+            .autocomplete()
+            .disable()
+          ;
+          $("input[name='cityname']")
+            .prop('readonly', true)
+            .closest('div')
+            .addClass("readonly")
+          ;
+          $("input[name='state']")
+            .closest('div')
+            .removeClass("disabled")
+            .removeClass("readonly")
+            .find('input.search')
+            .prop('disabled', false)
+          ;
+
+          break;
+        case 'Municipal':
+          // Preenche os valores default de cidade e UF
+          emptyCity(defaultCityID, defaultCityName, defaultState);
+
+          // Deve permitir preencher o nome da cidade mas não da UF, já
+          // que este é preenchido automaticamente ao selecionarmos a
+          // cidade
+          $("input[name='cityname']")
+            .autocomplete()
+            .enable()
+          ;
+          $("input[name='cityname']")
+            .prop('readonly', false)
+            .closest('div')
+            .removeClass("readonly")
+          ;
+          $("input[name='state']")
+            .closest('div')
+            .addClass("disabled")
+            .addClass("readonly")
+            .find('input.search')
+            .prop('disabled', true)
+          ;
+
+          break;
+        default:
+      }
+    }
+
+    var loading = function() {
+      $(document.body)
+        .css({
+          'cursor' : 'wait'
+        })
+      ;
+      $(".loading")
+        .removeClass("hidden")
+      ;
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

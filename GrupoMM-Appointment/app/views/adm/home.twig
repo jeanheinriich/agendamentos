@@ -1,0 +1,42 @@
+{% extends 'templates/adm/layout.twig' %}
+{% block title %}{{ parent() }} - In&iacute;cio{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+{% endblock stylesheets %}
+{% block content %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('adm/home.svg', 'Início') }}
+            </td>
+            <td>
+              <div class="content">
+                Início
+                <div class="sub header">
+                  Bem vindo à administração do sistema de ERP!
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {% apply minify %}
+  <script>
+    $(document).ready(function(){
+    });
+  </script>
+  {% endapply %}
+{% endblock scripts %}

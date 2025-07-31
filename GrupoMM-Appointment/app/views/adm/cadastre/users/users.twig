@@ -1,0 +1,1096 @@
+{% extends 'templates/adm/layout.twig' %}
+{% import "templates/adm/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento de usuários{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.adaptable.dropdown {
+      flex-basis: 7em;
+      min-width: 7em;
+    }
+    {% if authorization.user.groupid < 6 %}
+    .ui.main.basic.segment .searchbar.fields .field.contractor {
+      flex-grow: 1;
+      min-width: 236px;
+    }
+    {% else %}
+    .ui.main.basic.segment .searchbar.fields .field.searchbox {
+      min-width: 236px;
+      width: calc(100% - 47px);
+    }
+    {% endif %}
+    @media only screen and (max-width: 767px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 100px;
+        width: calc(100% - 47px);
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox input {
+        width: calc(100% - 140px);
+      }
+    }
+
+    @media only screen and (min-width: 920px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+      {% if authorization.user.groupid < 6 %}
+      {% else %}
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        width: 538px;
+      }
+      {% endif %}
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+
+    /* --------------------------------------------------------------
+     * Personalizações das linhas do datagrid apenas para este módulo
+     * -------------------------------------------------------------- */
+    .dataTables_wrapper i.fas {
+      margin: 0 .25rem 0 0;
+      color: #6495ed;
+    }
+    .ui.compact.table > tbody > tr.group > td:first-child {
+      padding-left: 1em;
+    }
+    .ui.compact.table > tbody > tr.odd > td:first-child,
+    .ui.compact.table > tbody > tr.even > td:first-child {
+      padding-left: 2em;
+    }
+    .ui.compact.table > tbody > tr.group > td:first-child::before {
+      content: '\25BE';
+      color: #404040;
+      font-weight: bold;
+      padding-right: .5em;
+    }
+
+    /* --------------------------------------------------------------
+       As cores das linhas
+       -------------------------------------------------------------- */
+    tr.master:not(.administrator) td {
+      background-color: #e4eff3;
+    }
+    tr.master:not(.administrator):hover td {
+      background-color: #d6e5eb;
+    }
+    tr.administrator td:nth-of-type(odd) {
+      background-color: rgba(255,153,0,.05);
+    }
+    tr.administrator td:nth-of-type(even) {
+      background-color: rgba(255,153,0,.07);
+    }
+    tr.administrator td {
+      color: #d68101;
+    }
+    tr.master.administrator td {
+      font-weight: bold;
+      color: #ff7b25;
+    }
+    tr.master.administrator td:first-child::before {
+      content: "\1f6e1";
+      margin-right: 6px;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set add = { 'URL': 'ADM\\Cadastre\\Users\\Add', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('adm/users.svg', 'Usuários') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento dos usuários
+                <div class="sub header">
+                  Permite gerenciar os usuários cadastrados no sistema.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(add.URL, add.method) %}
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Adiciona um usuário"
+                      data-position="top left" type="button"
+                      onclick="add();">
+                <i class="add icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            <div class="field contractor">
+              <input placeholder="Informe o contratante..." type="text"
+                     name="contractorName" id="contractorName"
+                     value="{{ user.contractor.name }}">
+              <input type="hidden" name="contractorID"
+                     value="{{ user.contractor.id }}" >
+            </div>
+          </div>
+
+          <div class="flex">
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite o que procura..."
+                       value="{{ user.searchValue }}">
+                <select class="ui searchfield adaptable selection dropdown button"
+                        id="searchField">
+                  <option value="name"{% if user.searchField == "name" %} selected{% endif %}>
+                    Nome
+                  </option>
+                  <option value="username"{% if user.searchField == "username" %} selected{% endif %}>
+                    Login
+                  </option>
+                  <option value="entityname"{% if user.searchField == "entityname" %} selected{% endif %}>
+                    Empresa
+                  </option>
+                </select>
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza um usuário"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>Nível</th>
+          <th>ID Contratante</th>
+          <th>Contratante</th>
+          <th>Situação do bloqueio do contratante</th>
+          <th>ID Entidade</th>
+          <th>Empresa</th>
+          <th>Situação do bloqueio da entidade</th>
+          <th>Tipo da entidade</th>
+          <th>ID Usuário</th>
+          <th>Nome</th>
+          <th>Nome de acesso</th>
+          <th>Nível de permissão</th>
+          <th {{ tooltip.add('left', 'Indicador de que a conta do usuário possuí uma data de expiração') }}><i class="calendar times darkred icon"></i></th>
+          <th>Expira em</th>
+          <th {{ tooltip.add('left', 'Indicador de que o usuário é forçado a trocar sua senha na próxima autenticação') }}><i class="history darkred icon"></i></th>
+          <th>Situação do bloqueio do usuário</th>
+          <th {{ tooltip.add('left', 'Indicador de usuário suspenso') }}><i class="pause darkred icon"></i></th>
+          <th {{ tooltip.add('left', 'Indicador de usuário bloqueado') }}><i class="lock darkred icon"></i></th>
+          <th {{ tooltip.add('left', 'Permite remover o usuário') }}><i class="remove darkred icon"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/adm/partials/dialogs/error.twig' %}
+  {% include 'templates/adm/partials/dialogs/info.twig' %}
+  {% include 'templates/adm/partials/dialogs/question.twig' %}
+  {% include 'templates/adm/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/ExpiresFormatter.min.js') }}  
+  {{ lib('datatables/formatters/DateFormatter.min.js') }}  
+  {{ lib('datatables/formatters/DeleteFormatter.min.js') }}  
+  {{ lib('datatables/formatters/ForceFormatter.min.js') }}  
+  {{ lib('datatables/formatters/IconFormatter.min.js') }}
+  
+  {% set getData                     = { 'URL': 'ADM\\Cadastre\\Users\\Get', 'method': 'PATCH' } %}
+  {% set add                         = { 'URL': 'ADM\\Cadastre\\Users\\Add', 'method': 'GET' } %}
+  {% set edit                        = { 'URL': 'ADM\\Cadastre\\Users\\Edit', 'method': 'GET' } %}
+  {% set remove                      = { 'URL': 'ADM\\Cadastre\\Users\\Delete', 'method': 'DELETE' } %}
+  {% set toggleForceNewPassword      = { 'URL': 'ADM\\Cadastre\\Users\\ToggleForceNewPassword', 'method': 'PUT' } %}
+  {% set toggleBlocked               = { 'URL': 'ADM\\Cadastre\\Users\\ToggleBlocked', 'method': 'PUT' } %}
+  {% set toggleSuspended             = { 'URL': 'ADM\\Cadastre\\Users\\ToggleSuspended', 'method': 'PUT' } %}
+
+  {% set getContractorNameCompletion = { 'URL': 'ADM\\Cadastre\\Contractors\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  {% set getCityNameCompletion       = { 'URL': 'ADM\\Parameterization\\Cities\\Autocompletion\\Get', 'method': 'PATCH' } %}
+
+  {% apply minify %}
+  <script>
+    var
+      table
+    ;
+
+    // Os formatadores de colunas
+    
+    // Um formatador para exibir um ícone indicativo de que o usuário
+    // está ou não suspenso
+    var suspendedFormatter = function (value, type, row, meta ) {
+      // Verifica se foi solicitada a exibição do valor
+      if ( type === 'display' ) {
+        if (value) {
+          // Retornamos um ícone de que o atributo está habilitado
+          return ''
+            + '<span data-position="left center"'
+            +       'data-blue data-inverted '
+            +       'data-tooltip="A conta deste usuário está suspensa">'
+            +   '<i class="pause darkred icon">'
+            +   '</i>'
+            + '</span>'
+          ;
+        } else {
+          // Retornamos um ícone de que o atributo está desabilitado
+          return ''
+            + '<span data-position="left center"'
+            +       'data-blue data-inverted '
+            +       'data-tooltip="A conta deste usuário está normal">'
+            +   '<i class="pause lightgrey icon">'
+            +   '</i>'
+            + '</span>'
+          ;
+        }
+      }
+
+      // Pesquisas, ordenamentos e tipos podem usar os dados originais
+      return value;
+    };
+
+    // Um formatador para exibir um ícone indicativo de que o usuário
+    // está ou não bloqueado
+    var blockedFormatter = function (value, type, row, meta ) {
+      var buildIcon = function (color, icon, title) {
+        return '<span data-position="left center"' +
+                     'data-blue data-inverted ' +
+                     'data-tooltip="' + title + '">' +
+                 '<i class="' + icon + ' ' + color + ' icon">' +
+                 '</i>' +
+               '</span>';
+      };
+
+      switch (value) {
+        case 1:
+          // Apenas o usuário está bloqueado
+          return buildIcon('lock', 'darkred', ''
+            + 'A conta deste usuário está bloqueada')
+          ;
+        case 2:
+          // O usuário está bloqueado em função do bloqueio na empresa
+          // à qual ele está associada
+          return buildIcon('lock', 'darkorange', ''
+            + 'A conta deste usuário está bloqueada em função do '
+            + 'bloqueio na conta da empresa/cliente na qual ele '
+            + 'está cadastrado')
+          ;
+        case 3:
+          // Tanto a empresa/cliente quanto o usuário estão bloqueados
+          return buildIcon('lock', 'darkred', ''
+            + 'As contas da empresa/cliente e deste usuário estão '
+            + 'bloqueadas')
+          ;
+        case 4:
+          // O contratante está bloqueado
+          return buildIcon('lock', 'darkorange', ''
+            + 'A conta deste usuário está bloqueada em função do '
+            + 'bloqueio na conta do contratante')
+          ;
+        case 5:
+          // Tanto o contratante quanto o usuário estão bloqueados
+          return buildIcon('lock', 'darkred', ''
+            + 'As contas do contratante e a deste usuário estão '
+            + 'bloqueadas')
+          ;
+        case 6:
+          // Tanto o contratante quanto a empresa/cliente estão
+          // bloqueados
+          return buildIcon('lock', 'darkorange', ''
+            + 'A conta deste usuário está bloqueada em função dos '
+            + 'bloqueios tanto na conta do contratante quando no da '
+            + 'empresa/cliente na qual ele está cadastrado')
+          ;
+        case 7:
+          // Tanto o contratante, quanto a empresa/cliente e o
+          // usuário estão bloqueados
+          return buildIcon('lock', 'darkred', ''
+            + 'As contas do contratante, empresa/cliente e a deste '
+            + 'usuário estão bloqueadas')
+          ;
+        default:
+          // Está livre
+          return buildIcon('unlock', 'lightgrey', ''
+            + 'A conta deste usuário está liberada')
+          ;
+      }
+    };
+    
+    $(document).ready(function() {
+      var
+        groupColumn = 3
+      ;
+
+      // --------------------------------[ Componentes da Searchbar ]---
+      $('.searchbar .ui.dropdown')
+        .dropdown()
+      ;
+      $("input[name='contractorName']")
+        .autocomplete(contractorNameCompletionOptions)
+      ;
+      $('#contractorNameClear')
+        .on('click', contractorNameClearHandler)
+      ;
+      $('#searchValue').keypress(function(e) {
+        if (e.which == 13) {
+          searchLoad();
+        }
+      });
+      $('#searchValue')
+        .keypress(forceSearch)
+      ;
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "level",
+            "data": "level",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "contractorid",
+            "data": "contractorid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 2,
+            "name": "contractorname",
+            "data": "contractorname",
+            "visible": false,
+            "orderable": false },
+          { "targets": 3,
+            "name": "contractorblocked",
+            "data": "contractorblocked",
+            "visible": false,
+            "orderable": false },
+          { "targets": 4,
+            "name": "entityid",
+            "data": "entityid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 5,
+            "name": "entities.name",
+            "data": "entityname",
+            "visible": false },
+          { "targets": 6,
+            "name": "entityblocked",
+            "data": "entityblocked",
+            "visible": false,
+            "orderable": false },
+          { "targets": 7,
+            "name": "entitytype",
+            "data": "entitytype",
+            "visible": false,
+            "orderable": false },
+          { "targets": 8,
+            "name": "id",
+            "data": "id",
+            "visible": false,
+            "orderable": false },
+          { "targets": 9,
+            "name": "contractorname, level, entityname, name",
+            "data": "name",
+            "visible": true,
+            "orderable": true },
+          { "targets": 10,
+            "name": "contractorname, level, entityname, username",
+            "data": "username",
+            "visible": true,
+            "orderable": true,
+            "width": "20px" },
+          { "targets": 11,
+            "name": "contractorname, level, entityname, groupname",
+            "data": "groupname",
+            "visible": true,
+            "orderable": true,
+            "width": "50px" },
+          { "targets": 12,
+            "name": "users.expires",
+            "data": "expires",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": expiresFormatter("A conta do usuário %s uma data de expiração", "possui", "não possui") },
+          { "targets": 13,
+            "name": "users.expiresat",
+            "data": "expiresat",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "20px",
+            "render": dateFormatter },
+          { "targets": 14,
+            "name": "forcenewpassword",
+            "data": "forcenewpassword",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": forceFormatter },
+          { "targets": 15,
+            "name": "userblocked",
+            "data": "userblocked",
+            "visible": false,
+            "orderable": false },
+          { "targets": 16,
+            "name": "suspended",
+            "data": "suspended",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": suspendedFormatter },
+          { "targets": 17,
+            "name": "blockedlevel",
+            "data": "blockedlevel",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": blockedFormatter },
+          { "targets": 18,
+            "name": "delete",
+            "data": "id",
+            "visible": {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}true{% else %}false{% endif %},
+            "orderable": false,
+            "width": "10px",
+            "render": deleteFormatter("Remover este usuário") }
+        ],
+        order: [[ 9, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.searchField    = $('#searchField').val();
+            params.searchValue    = $('#searchValue').val();
+            params.contractorID   = $("input[name='contractorID']").val();
+            params.contractorName = $("input[name='contractorName']").val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+          {% set colspan = 7 %}
+          
+          // Agrupamento de linhas
+          var
+            api            = this.api(),
+            rows           = api.rows( {page:'current'} ).nodes(),
+            lastContractor = 0,
+            lastEntity     = 0
+          ;
+          
+          api.column(groupColumn, {page:'current'} ).data().each(function( group, i ) {
+            // Verifica se estamos em um novo contratante
+            if (lastContractor !== rows.data()[i].contractorid ) {
+              // Adiciona uma linha de agrupamento com as informações do
+              // contratante. Primeiramente, cria as novas colunas com
+              // seus respectivos eventos de click
+              
+              // 1. Coluna expandida com os dados do contratante
+
+              // Monta os dados dos cabeçalhos das colunas
+              var
+                groupedCellData = ''
+                  + '<span {{ tooltip.add("right", "O contratante") }}>'
+                  +   '<i class="darkred globe icon"></i>'
+                  + '</span>' + rows.data()[i].contractorname
+                $column1 = $("<td colspan='{{ colspan }}'>")
+                  .html(groupedCellData)
+                  .css("font-weight", "600");
+              ;
+              
+              // 2. Coluna com informações de bloqueio
+              var
+                blockedCellData =  iconTitleFormatter("unlock", "lightgrey",
+                  "A conta do contratante está liberada")
+              ;
+              
+              if (rows.data()[i].contractorblocked) {
+                blockedCellData =  iconTitleFormatter("lock", "darkred",
+                  "A conta do contratante está bloqueada");
+              }
+
+              var
+                $column2 = $("<td>")
+                  .html(blockedCellData)
+              ;
+              
+              // 3. Coluna com o acesso à remoção
+              {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}
+              var
+                deleteCellData = iconTitleFormatter("minus", "lightgrey", ""),
+                $column3 = $("<td>")
+                  .html(deleteCellData)
+              ;
+              {% else %}
+                $column3 = '';
+              {% endif %}
+              
+              // Adiciona uma nova linha e, internamente, as colunas
+              var $newRow = $("<tr>")
+                .addClass('master')
+                .append($column1)
+                .append($column2)
+                .append($column3);
+
+              // Altera a cor da linha em função de bloqueio
+              if (rows.data()[i].blockedlevel > 3) {
+                $newRow.addClass('blocked');
+              }
+
+              // Adiciona a nova linha de agrupamento antes da linha
+              // atual
+              $(rows)
+                .eq( i )
+                .before(
+                  $newRow
+                )
+              ;
+
+              // Definimos o contratante atual como o último
+              lastContractor = rows.data()[i].contractorid;
+            }
+
+            // Verifica se estamos em uma nova empresa e a mesma não é o
+            // próprio contratante
+            if ((lastEntity !== rows.data()[i].entityid) &&
+                (rows.data()[i].contractorid !== rows.data()[i].entityid)) {
+              // Adiciona uma linha de agrupamento com as informações da
+              // empresa (cliente ou fornecedor). Primeiramente, cria as
+              // novas colunas com seus respectivos eventos de click
+              
+              // 1. Coluna expandida com os dados da empresa
+              // Determina o ícone em função do tipo
+              var
+                entityIcon,
+                entityType
+              ;
+              switch (rows.data()[i].entitytype) {
+                case 'Customer':
+                  entityIcon = 'house-user';
+                  entityType = 'Cliente';
+
+                  break;
+                case 'ServiceProvider':
+                  entityIcon = 'shipping-fast';
+                  entityType = 'Prestador de serviços';
+
+                  break;
+                case 'Supplier':
+                  entityIcon = 'truck-loading';
+                  entityType = 'Fornecedor';
+
+                  break;
+                default:
+                  entityIcon = 'home';
+                  entityType = 'Contratante';
+              }
+              var
+                groupedCellData = ''
+                  + '<span {{ tooltip.add("right", "' + entityType + '") }}>'
+                  +   '<i class="fas fa-' + entityIcon + '"></i> '
+                  + '</span>' + rows.data()[i].entityname,
+                $column1 = $("<td colspan='{{ colspan }}'>")
+                  .html(groupedCellData)
+                  .css("font-weight", "600")
+              ;
+              
+              // 2. Coluna com informações de bloqueio
+              var
+                blockedCellData =  iconTitleFormatter("unlock", "lightgrey",
+                  "A conta da empresa/cliente está liberada")
+              ;
+
+              if (rows.data()[i].supplierblocked) {
+                blockedCellData =  iconTitleFormatter("lock", "darkred",
+                  "A conta da empresa/cliente está bloqueada");
+              }
+
+              var
+                $column2 = $("<td>")
+                .html(blockedCellData)
+              ;
+
+              // 3. Coluna com o acesso à remoção
+              {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}
+              var
+                deleteCellData = iconTitleFormatter("minus", "lightgrey", ""),
+                $column3 = $("<td>")
+                  .html(deleteCellData)
+              ;
+              {% else %}
+                $column3 = '';
+              {% endif %}
+              
+              // Adiciona uma nova linha e, internamente, as colunas
+              var $newRow = $("<tr>")
+                .attr('role', 'group')
+                .addClass('group')
+                .append($column1)
+                .append($column2)
+                .append($column3)
+              ;
+
+              // Altera a cor da linha em função de bloqueio
+              if (rows.data()[i].blockedlevel > 3) {
+                $newRow.addClass('blocked');
+              }
+              
+              // Adiciona a nova linha de agrupamento antes da linha
+              // atual
+              $(rows)
+                .eq( i )
+                .before(
+                  $newRow
+                )
+              ;
+              
+              // Definimos a empresa atual como a última
+              lastEntity = rows.data()[i].entityid;
+            }
+          });
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        createdRow: function(row, data, dataIndex) {
+          // Deixa as linhas com cores diferentes para indicar bloqueio
+          if (data.blockedlevel > 0) {
+            $(row).addClass('blocked');
+          } else {
+            if (data.level <= 2) {
+              $(row).addClass('administrator');
+            } 
+            if (data.level === 1) {
+              $(row).addClass('master');
+            } 
+          }
+        }
+      });
+      
+      // Manipula os eventos de click
+      table
+        .on('user-select', function (e, dt, type, cell, originalEvent) {
+          if (type === 'cell') {
+            var
+              // Recupera os dados da célula selecionada
+              index   = cell[0][0],
+        
+              // Recupera os dados do usuário selecionado
+              user = dt.rows( index.row ).data().toArray()[0]
+            ;
+            
+            // Em função da coluna onde ocorreu o clique, executa a ação
+            // correspondente
+            switch (index.column) {
+              case 14:
+                {% if authorization.getAuthorizationFor(toggleForceNewPassword.URL, toggleForceNewPassword.method) %}
+                // Forçar usuário a alterar a senha
+                var
+                  action = (user.forcenewpassword === true)
+                    ? "não seja mais forçado"
+                    : "seja forçado"
+                ;
+                
+                questionDialog(
+                  action.charAt(0).toUpperCase() + action.slice(1), ''
+                   + 'Você deseja realmente que o usuário <b>&ldquo;'
+                   + user.username + '&rdquo;</b> ' + action + '  a '
+                   + 'alterar sua senha na próxima autenticação?',
+                  function() {
+                    // Alternar a situação de forçar nova senha da conta do usuário
+                    var url  = "{{ buildURL(toggleForceNewPassword.URL, {'userID': 'user.id'}) }}";
+
+                    putJSONData(url, [],
+                    function (data, params, message) {
+                      // Atualiza a tabela
+                      searchLoad();
+                    });
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  })
+                ;
+                {% endif %}
+            
+                break;
+              case 16:
+                {% if authorization.getAuthorizationFor(toggleSuspended.URL, toggleSuspended.method) %}
+                // Alterna a suspensão da conta do usuário
+                var
+                  action = (user.suspended === true)
+                    ? "liberar"
+                    : "suspender"
+                ;
+                
+                questionDialog(
+                  action.charAt(0).toUpperCase() + action.slice(1), ''
+                    + 'Você deseja realmente ' + action + ' a conta do '
+                    + 'usuário <b>&ldquo;' + user.username
+                    + '&rdquo;</b> pertencente à <b>&ldquo;' + user.entityname
+                    + '&rdquo;</b>?',
+                  function() {
+                    var
+                      // Alternar o bloqueio da conta do usuário
+                      url  = "{{ buildURL(toggleSuspended.URL, {'userID': 'user.id'}) }}"
+                    ;
+
+                    putJSONData(url, [],
+                    function (data, params, message) {
+                      // Atualiza a tabela
+                      searchLoad();
+                    });
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  }
+                );
+                {% endif %}
+                
+                break;
+              case 17:
+                {% if authorization.getAuthorizationFor(toggleBlocked.URL, toggleBlocked.method) %}
+                // Alterna o bloqueio da conta do usuário
+                var
+                  action = (user.userblocked === true)
+                    ? "desbloquear"
+                    : "bloquear"
+                ;
+                
+                questionDialog(
+                  action.charAt(0).toUpperCase() + action.slice(1), ''
+                    + 'Você deseja realmente ' + action + ' a conta do '
+                    + 'usuário <b>&ldquo;' + user.username
+                    + '&rdquo;</b> pertencente à <b>&ldquo;' + user.entityname
+                    + '&rdquo;</b>?',
+                  function() {
+                    var
+                      // Alternar o bloqueio da conta do usuário
+                      url  = "{{ buildURL(toggleBlocked.URL, {'userID': 'user.id'}) }}"
+                    ;
+
+                    putJSONData(url, [],
+                    function (data, params, message) {
+                      // Atualiza a tabela
+                      searchLoad();
+                    });
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  }
+                );
+                {% endif %}
+                
+                break;
+              {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}
+              case 18:
+                // Apaga o usuário selecionado
+                questionDialog(
+                  'Remover usuário', 
+                  'Você deseja realmente remover o usuário <b>&ldquo;' + user.name + ' [' + user.username + ']&rdquo;</b>?<br>Esta ação não poderá ser desfeita.',
+                  function() {
+                    var
+                      // Remove o usuário selecionado
+                      url  = "{{ buildURL(remove.URL, {'userID': 'user.id'}) }}";
+
+                    deleteJSONData(url, [],
+                    function (data, params, message) {
+                      // Atualiza a tabela
+                      searchLoad();
+                    });
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  }
+                );
+      
+                break;
+              {% endif %}
+              default:
+                // Coloca o usuário em edição
+                window.location.href = "{{ buildURL(edit.URL, {'userID': 'user.id'}) }}";
+            }
+      
+            e.preventDefault();
+          }
+        })
+      ;
+
+      // Força a atualização da tabela para reajustar as colunas após
+      // a carga
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 1500);
+    });
+
+
+    // =================================================[ Options ]=====
+
+    // As opções para o componente de autocompletar o nome do
+    // contratante
+    var contractorNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      showClearValue: true,
+      ajax: {
+        url: "{{ path_for(getContractorNameCompletion.URL) }}",
+        type: "{{ getContractorNameCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'contractor';
+          params.contractorID = 0;
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        if (suggestion.juridicalperson) {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     ( (suggestion.tradingname)
+                      ? '<span style="color: CornflowerBlue; font-style: italic;">' + suggestion.tradingname + '</span>'
+                      : '' )
+            +     ' (<span style="color: CornflowerBlue; font-style: italic;">' + suggestion.subsidiaryname + '</span>)'
+            +   '</div>'
+            + '</div>'
+          ;
+        } else {
+          if (suggestion.subsidiaryname == suggestion.name) {
+            return ''
+              + '<div class="content">'
+              +   '<div class="title">' + suggestion.name + '<br>'
+              +     '<span style="color: CornflowerBlue; font-style: italic;">Titular</span>'
+              +   '</div>'
+              + '</div>'
+            ;
+          } else {
+            return ''
+              + '<div class="content">'
+              +   '<div class="title">' + suggestion.name + '<br>'
+              +     '<span style="color: CornflowerBlue; font-style: italic;">Dependente: ' + suggestion.subsidiaryname + '</span>'
+              +   '</div>'
+              + '</div>'
+            ;
+          }
+        }
+      },
+      onSelect: function(element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='contractorID']")
+          .val(suggestion.id)
+        ;
+
+        searchLoad();
+      },
+      onInvalidateSelection: function() {
+        // Limpa os dados
+        $("input[name='contractorID']")
+          .val(0)
+        ;
+
+        searchLoad();
+      }
+    };
+
+
+    // ================================================[ Handlers ]=====
+    
+    // Executa a pesquisa
+    function searchLoad() {
+      table
+        .ajax
+        .reload()
+      ;
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 500);
+    }
+
+    // Força a atualização da tabela
+    function forceSearch(event) {
+      if (event.which == 13) {
+        searchLoad();
+      }
+    }
+
+    // Trata o botão de limpeza do contratante
+    var contractorNameClearHandler = function(event) {
+      var
+        contractorID = $("input[name='contractorID']").val()
+      ;
+
+      // Remove qualquer valor atual do campo de pesquisa
+      $("input[name='contractorName']")
+        .val('')
+      ;
+
+      // Verifica se temos algum contratante selecionado
+      if (contractorID > 0) {
+        // Limpa qualquer contratante selecionado
+        $("input[name='contractorID']")
+          .val(0)
+        ;
+
+        // Recarrega novamente os dados
+        searchLoad();
+      }
+
+      event.stopPropagation();
+    };
+
+    // Adiciona um usuário
+    function add() {
+      var
+        // Recupera os dados do contratante selecionado
+        data = {
+          'contractorID'   : $("input[name='contractorID']").val(),
+          'contractorName' : $("input[name='contractorName']").val()
+        }
+      ;
+      
+      const
+        url         = "{{ path_for(add.URL) }}",
+        queryString = encodeQueryData(data)
+      ;
+
+      window.location.href = url + '?' + queryString;
+    }
+
+    // Codifica elementos para envio na requisição
+    function encodeQueryData(data) {
+      const
+        ret = []
+      ;
+
+      for (let d in data) {
+        ret.push(encodeURIComponent(d) + '=' + encodeURIComponent(data[d]));
+      }
+      
+      return ret.join('&');
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

@@ -1,0 +1,437 @@
+{% extends 'templates/erp/layout.twig' %}
+{% import "templates/erp/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento de tipos de parcelamentos{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.main.basic.segment .searchbar.fields .field.searchbox {
+      flex-grow: 1;
+      min-width: 456px;
+    }
+    @media only screen and (min-width: 768px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+    }
+    @media only screen and (max-width: 767px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 100px;
+        width: calc(100% - 47px);
+      }
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+
+    /* --------------------------------------------------------------
+     * Personalizações das linhas do datagrid apenas para este módulo
+     * -------------------------------------------------------------- */
+    .blocked > td {
+      color: #7f7f7f
+    }
+    .blocked > td {
+      background-color: #fff6f6 !important;
+      color: DarkRed;
+    }
+    tr.blocked:hover > td {
+      background-color: #f6e7e7 !important;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set add  = { 'URL': 'ERP\\Parameterization\\Financial\\InstallmentTypes\\Add', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/installmenttypes.svg', 'Tipos de parcelamento') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento dos tipos de parcelamentos
+                <div class="sub header">
+                  Permite gerenciar os tipos de parcelamentos permitidos
+                  no sistema.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(add.URL, add.method) %}
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Adiciona um tipo de parcelamento"
+                      data-position="top left" type="button"
+                      onclick="location.href='{{ path_for(add.URL) }}'">
+                <i class="add icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite o tipo de parcelamento que procura..."
+                       value="{{ installmenttype.name }}">
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza um tipo de parcelamento"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Tipo de parcelamento</th>
+          <th>Disponível<br>desde</th>
+          <th>Nº máximo<br>de parcelas</th>
+          <th>Taxa de<br>juros</th>
+          <th>Parcela<br>mínima</th>
+          <th {{ tooltip.add('left', 'Indicador de tipo de parcelamento bloqueado para uso no sistema') }}><i class="lock darkred icon"></i></th>
+          <th {{ tooltip.add('left', 'Permite remover o tipo de parcelamento') }}><i class="remove darkred icon"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/info.twig' %}
+  {% include 'templates/erp/partials/dialogs/question.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/DateFormatter.min.js') }}
+  {{ lib('datatables/formatters/DeleteFormatter.min.js') }}
+  
+  {% set getData       = { 'URL': 'ERP\\Parameterization\\Financial\\InstallmentTypes\\Get', 'method': 'PATCH' } %}
+  {% set edit          = { 'URL': 'ERP\\Parameterization\\Financial\\InstallmentTypes\\Edit', 'method': 'GET' } %}
+  {% set remove        = { 'URL': 'ERP\\Parameterization\\Financial\\InstallmentTypes\\Delete', 'method': 'DELETE' } %}
+  {% set toggleBlocked = { 'URL': 'ERP\\Parameterization\\Financial\\InstallmentTypes\\ToggleBlocked', 'method': 'PUT' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      table
+    ;
+
+    // Um formatador para exibir um ícone indicativo de que o tipo de
+    // parcelamento está ou não bloqueado
+    var blockedFormatter = function ( value, type, row, meta ) {
+      var buildIcon = function (color, icon, title) {
+        return ''
+          + '<span data-position="left center"'
+          +       'data-blue data-inverted '
+          +       'data-tooltip="' + title + '">'
+          +   '<i class="' + icon + ' ' + color + ' icon"></i>'
+          + '</span>'
+        ;
+      };
+
+      switch (value) {
+        case true:
+          // O tipo de parcelamento está bloqueado
+          return buildIcon('lock', 'darkred',
+            'O tipo de parcelamento está bloqueado');
+        default:
+          // Está livre
+          return buildIcon('unlock', 'lightgrey',
+            'O tipo de parcelamento está liberado para uso');
+      }
+    };
+    
+    $(document).ready(function() {
+      // --------------------------------[ Componentes da Searchbar ]---
+      $('#searchValue').keypress(function(e) {
+        if(e.which == 13) {
+          searchLoad();
+        }
+      });
+
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "id",
+            "data": "id",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "installmenttypes.name",
+            "data": "name",
+            "visible": true,
+            "orderable": true },
+          { "targets": 2,
+            "name": "createdat",
+            "data": "createdat",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "50px",
+            "render": dateFormatter },
+          { "targets": 3,
+            "name": "maxnumberofinstallments",
+            "data": "maxnumberofinstallments",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true },
+          { "targets": 4,
+            "name": "interestrate",
+            "data": "interestrate",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true },
+          { "targets": 5,
+            "name": "minimuminstallmentvalue",
+            "data": "minimuminstallmentvalue",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true },
+          { "targets": 6,
+            "name": "blocked",
+            "data": "blocked",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": blockedFormatter },
+          { "targets": 7,
+            "name": "delete",
+            "data": "id",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": deleteFormatter("Remover este tipo de parcelamento") }
+        ],
+        order: [[ 1, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.searchValue = $('#searchValue').val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        createdRow: function(row, data, dataIndex) {
+          // Deixa as linhas com cores diferentes para indicar os
+          // bloqueios de tipos de parcelamentos
+          if (data.blocked) {
+            $(row)
+              .addClass('blocked')
+            ;
+          }
+        }
+      });
+      
+      // Manipula os eventos de click
+      table
+        .on('user-select', function (e, dt, type, cell, originalEvent) {
+          if (type === 'cell') {
+            var
+              // Recupera os dados da célula selecionada
+              index   = cell[0][0],
+
+              // Recupera o tipo de parcelamento selecionado
+              installmentType = dt.rows( index.row ).data().toArray()[0]
+            ;
+
+            // Em função da coluna onde ocorreu o clique, executa a ação
+            // correspondente
+            switch (index.column) {
+              {% if authorization.getAuthorizationFor(toggleBlocked.URL, toggleBlocked.method) %}
+              case 6:
+                var
+                  // Alterna o bloqueio da conta
+                  action = (installmentType.blocked === "true")
+                    ? "desbloquear"
+                    : "bloquear"
+                ;
+                
+                questionDialog(
+                  action.charAt(0).toUpperCase() + action.slice(1),
+                  'Você deseja realmente ' + action + ' o tipo de parcelamento <b>&ldquo;' +
+                  installmentType.name + '&rdquo;</b>?',
+                  function() {
+                    // Alternar o bloqueio do tipo de parcelamento
+                    var
+                      url = "{{ buildURL(toggleBlocked.URL, {'installmentTypeID': 'installmentType.id'}) }}"
+                    ;
+                    
+                    putJSONData(url, [],
+                    function (data, params, message) {
+                      // Atualiza a tabela
+                      searchLoad();
+                    });
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  }
+                );
+
+                break;
+              {% endif %}
+              {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}
+              case 7:
+                // Questiona se deve apagar o tipo de parcelamento selecionado
+                questionDialog(
+                  'Remover tipo de parcelamento',
+                  'Você deseja realmente remover o tipo de parcelamento <b>&ldquo;' + installmentType.name + '&rdquo;</b>? Esta ação não poderá ser desfeita.',
+                  function() {
+                    var
+                      // Remove o tipo de parcelamento selecionado
+                      url  = "{{ buildURL(remove.URL, {'installmentTypeID': 'installmentType.id'}) }}"
+                    ;
+                    
+                    deleteJSONData(url, [],
+                    function (data, params, message) {
+                      // Atualiza a tabela
+                      searchLoad();
+                    });
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  }
+                );
+
+                break;
+              {% endif %}
+              default:
+                {% if authorization.getAuthorizationFor(edit.URL, edit.method) %}
+                // Coloca o tipo de parcelamento em edição
+                window.location.href = "{{ buildURL(edit.URL, {'installmentTypeID': 'installmentType.id'}) }}";
+                {% endif %}
+            }
+
+            e.preventDefault();
+          }
+        }
+      );
+    });
+
+
+    // ================================================[ Handlers ]=====
+    
+    // Executa a pesquisa
+    function searchLoad() {
+      table.ajax.reload();
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

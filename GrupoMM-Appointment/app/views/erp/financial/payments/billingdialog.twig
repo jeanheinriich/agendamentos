@@ -1,0 +1,69 @@
+<div class="ui billing modal">
+  <i class="close icon"></i>
+  <div class="header">
+    <i class="fas fa-vote-yea"></i>
+    &nbsp;Novo lançamento
+  </div>
+  <div class="scrolling content">
+    <form class="ui form" method="POST" autocomplete="off"
+          action="{{ path_for(URL, { 'billingID': getValue('billingid') }) }}">
+      <h3 class="ui header">Informe a referência</h3>
+      <p class="description">
+        Informe em relação à qual instalação este valor está atrelado
+        ou, se for o caso, marque como "independente de instalação".
+      </p>
+      <div class="fields">
+        <div class="eight wide field">
+          <div class="ui search selection dropdown">
+            <input name="installationid" type="hidden"
+                   value="0">
+            <i class="dropdown icon"></i>
+            <div class="default text">Escolha uma instalação...</div>
+            <div class="menu">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="ui header">Informações do valor a ser lançado</h3>
+      <div class="fields">
+        <div class="twelve wide field{{ cssError('name') }}">
+          <label>Descrição</label>
+          <input name="name" type="text" class="search"
+                 maxlength="30"
+                 placeholder="Informe a cobrança..."
+                 value="{{ getValue('name') }}">
+          <input type="hidden" name="contractchargeid"
+                 value="{{ getValue('contractchargeid') }}">
+          {% if hasError('name') %}
+          <small class="helper">{{ getError('name') }}</small>
+          {% endif %}
+        </div>
+
+        <div class="four wide field{{ cssError('value') }}">
+          <label>Valor</label>
+          <div class="ui left labeled input{{ readonly }}">
+            <div class="ui basic label">R$</div>
+            <input name="value" type="text"
+                   placeholder="0,00"
+                   class="right" {{ readonly }}
+                   value="{{ getValue('value') }}">
+          </div>
+          {% if hasError('value') %}
+          <small class="helper">{{ getError('value') }}</small>
+          {% endif %}
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="actions">
+    <div class="ui negative right labeled icon button">
+      Cancelar
+      <i class="close icon"></i>
+    </div>
+    <div class="ui positive right labeled icon button">
+      Adicionar
+      <i class="checkmark icon"></i>
+    </div>
+  </div>
+</div>

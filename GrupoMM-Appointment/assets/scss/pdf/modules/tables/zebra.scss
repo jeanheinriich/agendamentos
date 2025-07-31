@@ -1,0 +1,77 @@
+/* -------------------------------------------[ Tabela zebrada ]-----
+   As definições de uma tabela com alternância entre as cores das
+   linhas, para facilitar a leitura
+   ------------------------------------------------------------------ */
+
+table.zebra {
+  border-top: 1px solid #103040;
+  border-bottom: 1px solid #103040;
+  border-right: 1px dotted #103040;
+  
+  tr {
+    &:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    
+    th, td {
+      border-left: 1px dotted #103040;
+      padding: 3px 3px;
+      font-size: 1.1em;
+    }
+
+    th {
+      color: $boldTextColor;
+      font-weight: bold;
+      border-bottom: 1px solid #103040;
+    }
+
+    th:first, td:first {
+      border-left: none;
+    }
+
+    td.noleftborder {
+      border-left: none !important;
+    }
+
+    &.none td {
+      background-color: white;
+      border: 1px solid white;
+      border-top: 1px solid #103040;
+    }
+
+    &.resume td {
+      background-color: white;
+      border: 1px solid white;
+    }
+
+    &.lastRow td {
+      border-bottom: 1px solid #103040;
+    }
+
+    &.bold td {
+      color: $boldTextColor;
+      background-color: #d7dee4;
+      font-size: 1.1em;
+      font-weight: bold;
+    }
+  }
+  
+  tfoot {
+    display: table-footer-group;
+    
+    tr {
+      &.bottomBorder td {
+        height: 1px;
+        padding: 0;
+        border-bottom: 1px solid #103040;
+      }
+
+      &.signature td {
+        background-color: white;
+        border: 1px solid white;
+        vertical-align: bottom;
+      }
+    }
+  }
+}
+

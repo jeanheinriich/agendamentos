@@ -1,0 +1,974 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} lançamento de cobrança{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('libs/semantic-ui/components/calendar.min.css') }}
+  {{ css('form.min.css') }}
+  <style>
+    /**
+     * Personaliza os dropdowns para permitir melhor seleção dos valores
+     */
+    .ui.dropdown .menu>.item.vertical {
+      display: -webkit-box;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: reverse;
+      -ms-flex-direction: column-reverse;
+      flex-direction: column-reverse;
+    }
+    .ui.dropdown .menu>.item.vertical>.description {
+      margin: 0;
+      color: CornflowerBlue;
+      font-style: italic;
+      border-top: 1px solid rgba(34,36,38,0.15);
+      line-height: 1.3em;
+    }
+    .ui.dropdown .menu>.item.vertical>.text {
+      margin-bottom: .25em;
+    }
+    .symbol {
+      color: gray;
+      font-size: .9em;
+    }
+    .plate,
+    .monetary {
+      color: DarkOrange;
+      font-size: 1em;
+    }
+    .ui.dropdown>.text>.description>.hidden {
+      display: none;
+    }
+
+    /**
+     * Personaliza os campos de valores para permitir exibir cores
+     * corretamente
+     */
+    .ui.input.info>input {
+      color: #276f86;
+      background: #f8ffff;
+      border-color: #a9d5de;
+      -webkit-box-shadow: none;
+      box-shadow: none;
+    }
+    .ui.form>.field.info>.ui.labeled.input:not(.right):not([class*="corner labeled"])>.ui.label,
+    .ui.form>.field.info>.ui.left.action.input>.ui.button,
+    .ui.labeled.input.info:not(.right):not([class*="corner labeled"])>.ui.label,
+    .ui.left.action.input.info>.ui.button,
+    .ui.action.input.info:not(.left)>input+.ui.button,
+    .ui.form>.field.info>.ui.action.input:not(.left)>input+.ui.button,
+    .ui.form>.field.info>.ui.right.labeled.input:not([class*="corner labeled"])>input+.ui.label,
+    .ui.right.labeled.input.info:not([class*="corner labeled"])>input+.ui.label {
+      color: #276f86;
+      background-color: #e1f7f7;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Financial\\MonthlyCalculations\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Financial\\MonthlyCalculations\\Edit' %}
+  {% endif %}
+  {% set previous = 'ERP\\Financial\\MonthlyCalculations' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/billings.svg', 'Lançamento de cobrança') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} lançamento de cobrança
+                <div class="sub header">
+                  Permite
+                    {% if formMethod == 'POST' %}
+                      adicionar um novo
+                    {% else %}
+                      modificar as informações cadastrais de um
+                    {% endif %}
+                    lançamento de cobrança em um item de contrato.
+                </div>
+              {% else %}
+                Visualizar lançamento de cobrança
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um
+                  lançamento de cobrança.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <div class="ui centered grid">
+        <!-- Dividimos a tela em duas partes. Na esquerda colocamos os
+             campos de preenchimento e na direita um exemplo de como
+             ficará o parcelamento.                                  -->
+        <!-- Início porção esquerda -->
+        <div class="sixteen wide tablet nine wide computer column">
+          <!-- Início formulário -->
+          <form class="ui form" method="POST" autocomplete="off"
+                action="{{ path_for(URL, { 'billingID': getValue('billingid') }) }}">
+            <h3 class="ui header">Informações do item de contrato</h3>
+
+            <div class="fields">
+              <div class="sixteen wide field{{ cssError('customername') }}">
+                <label>Cliente responsável pelo item de contrato</label>
+                <input name="customername" type="text" class="search"
+                       maxlength="100"
+                       placeholder="Informe o nome do cliente..."
+                       {{ readonly }}
+                       value="{{ getValue('customername') }}">
+                <input type="hidden" name="customerid"
+                       value="{{ getValue('customerid') }}">
+                {% if hasError('customername') %}
+                <small class="helper">{{ getError('customername') }}</small>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="fields">
+              <div class="sixteen wide field{{ cssError('subsidiaryname') }}">
+                {% if getValue('entitytypeid') == 2 %}
+                <label for="subsidiarytitle">Titular ou dependente</label>
+                {% else %}
+                <label for="subsidiarytitle">Unidade/filial</label>
+                {% endif %}
+                <input name="subsidiaryname" type="text" class="search"
+                       maxlength="50"
+                       placeholder="Informe a unidade/filial..."
+                       {{ readonly }}
+                       value="{{ getValue('subsidiaryname') }}">
+                <input name="subsidiaryid" type="hidden"
+                       value="{{ getValue('subsidiaryid') }}">
+                {% if hasError('subsidiaryname') %}
+                <small class="helper">{{ getError('subsidiaryname') }}</small>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="fields">
+              <div class="eight wide field{{ cssError('contractid') }}">
+                <label>Nº do contrato</label>
+                <div class="ui fluid long selection dropdown">
+                  <input name="contractid" type="hidden"
+                         value="{{ getValue('contractid') }}">
+                  <i class="dropdown icon"></i>
+                  <div class="default text">Escolha um contrato...</div>
+                  <div class="menu">
+                  {% set contractID = getValue('contractid') %}
+                  {% for contract in contracts %}
+                    <div class="vertical item"
+                         {% if contract.id == contractID %}
+                         selected
+                         {% endif %}
+                         data-value="{{ contract.id }}">
+                      <span class="description">
+                        <div class="hidden">
+                          {{ contract.description }}<br>
+                        </div>
+                        <span class="symbol">(R$ <span class="monetary">{{ contract.monthprice }}</span>)</span>
+                      </span>
+                      <span class="text">{{ contract.number }}</span>
+                    </div>
+                  {% endfor %}
+                  </div>
+                </div>
+                {% if hasError('contractnumber') %}
+                <small class="helper">{{ getError('contractnumber') }}</small>
+                {% endif %}
+              </div>
+
+              <div class="eight wide field{{ cssError('installationid') }}">
+                <label>Nº do item de contrato</label>
+                <div class="ui fluid search selection dropdown">
+                  <input name="installationid" type="hidden"
+                         value="{{ getValue('installationid') }}">
+                  <i class="dropdown icon"></i>
+                  <div class="default text">Escolha um item de contrato...</div>
+                  <div class="menu">
+                  {% set installationID = getValue('installationid') %}
+                  {% for installation in installations %}
+                    <div class="vertical item"
+                         {% if installation.id == installationID %}
+                         selected
+                         {% endif %}
+                         data-value="{{ installation.id }}">
+                      <span class="description">
+                        <div class="hidden">
+                          {{ installation.description }}<br>
+                        </div>
+                        <span class="plate">{{ installation.plate }}</span>
+                      </span>
+                      <span class="text">{{ installation.number }}</span>
+                    </div>
+                  {% endfor %}
+                  </div>
+                </div>
+                {% if hasError('installationnumber') %}
+                <small class="helper">{{ getError('installationnumber') }}</small>
+                {% endif %}
+              </div>
+            </div>
+
+            <h3 class="ui header">Informações do valor a ser lançado</h3>
+            <div class="fields">
+              <div class="sixteen wide field{{ cssError('name') }}">
+                <label>Descrição</label>
+                <input name="name" type="text" class="search"
+                       maxlength="60"
+                       placeholder="Informe a cobrança..."
+                       value="{{ getValue('name') }}">
+                <input type="hidden" name="contractchargeid"
+                       value="{{ getValue('contractchargeid') }}">
+                <input type="hidden" name="installmenttypeid"
+                       value="{{ getValue('installmenttypeid') }}">
+                {% if hasError('name') %}
+                <small class="helper">{{ getError('name') }}</small>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="fields">
+              <div class="eight wide field{{ cssError('billingdate') }}">
+                <label>
+                  Data da cobrança
+                </label>
+                <div class="ui calendar" id="billingdate">
+                  <div class="ui input left icon{{ readonly }}">
+                    <i class="calendar icon"></i>
+                    <input name="billingdate" type="text"
+                           placeholder="Ocorrido em..."
+                           {{ readonly }}
+                           value="{{ getValue('billingdate') }}">
+                  </div>
+                </div>
+                {% if hasError('billingdate') %}
+                <small class="helper">{{ getError('billingdate') }}</small>
+                {% endif %}
+              </div>
+
+              <div class="eight wide field{{ cssError('value') }}">
+                <label>Valor</label>
+                <div class="ui left labeled input{{ readonly }}">
+                  <div class="ui basic label">R$</div>
+                  <input name="value" type="text"
+                         placeholder="0,00"
+                         class="right" {{ readonly }}
+                         value="{{ getValue('value') }}">
+                </div>
+                {% if hasError('value') %}
+                <small class="helper">{{ getError('value') }}</small>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="fields">
+              <div class="eight wide field{{ cssError('numberofinstallments') }}">
+                <label>
+                  Número de parcelas
+                </label>
+                <div class="ui input info">
+                  <input name="numberofinstallments" type="text"
+                         placeholder="0"
+                         value="{{ getValue('numberofinstallments') }}">
+                </div>
+                {% if hasError('numberofinstallments') %}
+                <small class="helper">{{ getError('numberofinstallments') }}</small>
+                {% endif %}
+              </div>
+
+              <div class="eight wide field{{ cssError('installmentvalue') }}">
+                <label>Valor da parcela</label>
+                <div class="ui left labeled input info{{ readonly }}">
+                  <div class="ui basic label">R$</div>
+                  <input name="installmentvalue" type="text"
+                         placeholder="0,00"
+                         class="right" {{ readonly }}
+                         value="{{ getValue('installmentvalue') }}">
+                </div>
+                {% if hasError('installmentvalue') %}
+                <small class="helper">{{ getError('installmentvalue') }}</small>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="fields">
+              <div class="sixteen wide field buttons">
+                {% if editMode %}
+                <button type="button" class="ui youtube right labeled icon button"
+                        onclick="location.href='{{ path_for(previous) }}';">
+                  <i class="remove icon"></i> Cancelar
+                </button>
+                <button type="submit" class="ui submit primary right labeled icon button">
+                  <i class="checkmark icon"></i> {% if attached %}Modificar{% else %}Adicionar{% endif %}
+                </button>
+                {% else %}
+                <button type="button" class="ui blue labeled icon button"
+                        onclick="location.href='{{ path_for(previous) }}';">
+                  <i class="chevron left icon"></i> Retornar
+                </button>
+                {% endif %}
+              </div>
+            </div>
+
+            {{ csrf() }}
+
+            <input type="hidden" name="_method" value="{{ formMethod }}">
+            <input type="hidden" name="vehicleid" value="{{ getValue('vehicleid') }}">
+          </form>
+          <!-- Fim formulário -->
+        </div>
+        <!-- Fim porção esquerda -->
+
+        <!-- Início porção direita -->
+        <div class="sixteen wide tablet seven wide computer column">
+          <div class="ui message">
+            <div class="header">
+              <a class="ui blue circular label" onclick="refreshInstallmentPlan();" data-content="Clique para atualizar o exemplo de parcelamento"><i class="sync icon" style="margin:0 !important;"></i></a>
+              Simulação de parcelamento
+            </div>
+            <p>
+              Abaixo simulamos o parcelamento do valor em função do
+              estabelecido nas regras do contrato.
+              <div id="installmentPlanContent"></div>
+            </p>
+          </div>
+        </div>
+        <!-- Fim porção direita -->
+      </div>
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('semantic-ui/components/calendar.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+  
+  {% set getEntityDataCompletion = { 'URL': 'ERP\\Cadastre\\Entities\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  {% set getContractCompletion = { 'URL': 'ERP\\Financial\\Contracts\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  {% set getContracts = { 'URL': 'ERP\\Financial\\Contracts\\Get', 'method': 'PATCH' } %}
+  {% set getInstallations = { 'URL': 'ERP\\Financial\\Contracts\\Installations\\Get', 'method': 'PATCH' } %}
+  {% set getInstallmentPlan = { 'URL': 'ERP\\Parameterization\\Financial\\InstallmentTypes\\InstallmentPlan\\Get', 'method': 'GET' } %}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $("input[name='customername']")
+        .autocomplete(customerNameCompletionOptions)
+      ;
+      $("input[name='subsidiaryname']")
+        .autocomplete(subsidiaryNameCompletionOptions)
+      ;
+      $("input[name='contractid']")
+        .closest('div.ui.dropdown')
+        .dropdown(contractOptions)
+      ;
+
+      $("input[name='installationid']")
+        .closest('div.ui.dropdown')
+        .dropdown(installationOptions)
+      ;
+      $("#billingdate")
+        .calendar(calendarOptions)
+      ;
+      $("input[name='billingdate")
+        .mask({
+          type: 'date'
+        })
+      ;
+      $("input[name='name']")
+        .autocomplete(nameCompletionOptions)
+      ;
+      $("input[name='value']")
+        .mask({
+          type: 'monetary',
+          trim: true,
+          allowNegativeValues: false,
+          decimalsPlaces: 2,
+          maxLength: 15
+        })
+        .blur(monetaryHandler)
+        .blur(refreshInstallmentPlan)
+      ;
+      $("input[name='numberofinstallments']")
+        .mask({
+          type: 'number',
+          trim: true,
+          allowNegativeValues: false,
+          maxLength: 2
+        })
+        .change(numberOfInstallmentsHandler)
+      ;
+      $("input[name='installmentvalue']")
+        .mask({
+          type: 'monetary',
+          trim: true,
+          allowNegativeValues: false,
+          decimalsPlaces: 2,
+          maxLength: 15
+        })
+        .blur(monetaryHandler)
+      ;
+      refreshInstallmentPlan();
+
+      // Coloca o foco no primeiro campo
+      if ($("input[name='customerid']").val() > 0) {
+        $("input[name='name']")
+          .focus()
+        ;
+      } else {
+        $("input[name='customername']")
+          .focus()
+        ;
+      }
+    });
+
+    // =================================================[ Options ]=====
+
+    // As opções para o componente de autocompletar o nome do pagante
+    var customerNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      ajax: {
+        url: "{{ path_for(getEntityDataCompletion.URL) }}",
+        type: "{{ getEntityDataCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'customer';
+          params.detailed = true;
+          params.onlyCustomers = true;
+          params.notIncludeAnyRegister = true;
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        if (suggestion.juridicalperson) {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     (
+                    (suggestion.tradingname)
+                      ? '[<span style="color: #0256C4; font-style: italic;">' + suggestion.tradingname + '</span>]<br>'
+                      : ''
+                  )
+            +     (
+                    (suggestion.items > 1)
+                      ? (' (<span style="color: CornflowerBlue; font-style: italic;">' + suggestion.subsidiaryname + '</span>)')
+                      : ''
+                  )
+            +   '</div>'
+            + '</div>'
+          ;
+        } else {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     (
+                    (suggestion.tradingname)
+                      ? '[<span style="color: #0256C4; font-style: italic;">' + suggestion.tradingname + '</span>]<br>'
+                      : ''
+                  )
+            +     (
+                    (suggestion.items > 1)
+                      ? ( ''
+                          + '<span style="color: CornflowerBlue; font-style: italic;">'
+                          +     (
+                                  (suggestion.headoffice == true)
+                                    ? 'Titular'
+                                    : ('Dependente: ' + suggestion.subsidiaryname)
+                                )
+                          +     '</span>'
+                        )
+                      : ''
+                  )
+            +   '</div>'
+            + '</div>'
+          ;
+        }
+      },
+      onSelect: function (element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='customerid']")
+          .val(suggestion.id)
+        ;
+        $("input[name='subsidiaryid']")
+          .val(suggestion.subsidiaryid)
+        ;
+        $("input[name='subsidiaryname']")
+          .val(suggestion.subsidiaryname)
+        ;
+
+        // Limpamos os contratos e os itens de contratos
+        $("input[name='contractid']")
+          .closest('div.ui.dropdown')
+          .dropdown('clear')
+        ;
+        $("input[name='contractid']")
+          .closest('div.ui.dropdown')
+          .dropdown('change values', [])
+        ;
+        $("input[name='contractid']")
+          .closest('div.ui.dropdown')
+          .dropdown('refresh')
+        ;
+        $("input[name='installationid']")
+          .closest('div.ui.dropdown')
+          .dropdown('clear')
+        ;
+        $("input[name='installationid']")
+          .closest('div.ui.dropdown')
+          .dropdown('change values', [])
+        ;
+        $("input[name='installationid']")
+          .closest('div.ui.dropdown')
+          .dropdown('refresh')
+        ;
+
+        // Modifica o rótulo do campo unidade/filial/titular
+        if (suggestion.juridicalperson) {
+          $("label[for='subsidiarytitle']")
+            .text("Unidade/filial")
+          ;
+        } else {
+          $("label[for='subsidiarytitle']")
+            .text("Titular ou dependente")
+          ;
+        }
+      },
+      onInvalidateSelection: function () {
+        // Não conseguiu localizar um cliente com base nos valores
+        // informados, então limpa os dados atuais
+        $("input[name='customerid']")
+          .val(0)
+        ;
+        $("input[name='subsidiaryid']")
+          .val(0)
+        ;
+        $("input[name='subsidiaryname']")
+          .val("")
+        ;
+      }
+    };
+
+    // As opções para o componente de autocompletar a unidade/filial do
+    // cliente
+    var subsidiaryNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      ajax: {
+        url: "{{ path_for(getEntityDataCompletion.URL) }}",
+        type: "{{ getEntityDataCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'subsidiary';
+          params.onlyCustomers = true;
+          params.includeBlocked = 'true';
+          params.entityID = $("input[name='customerid']").val();
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        return ''
+          + '<div class="content">'
+          +   '<div class="title">'
+          +     suggestion.name + '<br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       (suggestion.nationalregister.length > 14?'CNPJ: ':'CPF: ') + suggestion.nationalregister
+          +     '</span><br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       suggestion.city + '/' + suggestion.state
+          +     '</span>'
+          +   '</div>'
+          + '</div>'
+        ;
+      },
+      onSelect: function (element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='subsidiaryid']")
+          .val(suggestion.id)
+        ;
+      },
+      onInvalidateSelection: function () {
+        // Não conseguiu localizar uma unidade/filial com base nos
+        // valores informados, então limpa os dados atuais
+        $("input[name='subsidiaryid']")
+          .val(0)
+        ;
+      }
+    };
+
+    // As opções para o componente de seleção do contrato
+    var contractOptions = {
+      apiSettings: {
+        cache: true,
+        url: "{{ path_for(getContracts.URL) }}",
+        method: "{{ getContracts.method }}",
+        data: {
+          'request': 'DropDownData',
+          'customerID': 0,
+          'subsidiaryID': 0,
+          'includeSuspended': 'true',
+          'includeFinish': 'true'
+        },
+        beforeSend: function(settings) {
+          var
+            $customerID = $("input[name='customerid']").val(),
+            $subsidiaryID = $("input[name='subsidiaryid']").val()
+          ;
+
+          // Cancela se não temos um ID de cliente
+          if (!$customerID) {
+            return false;
+          }
+          settings.data.customerID   = $customerID;
+          settings.data.subsidiaryID = $subsidiaryID;
+
+          return settings;
+        }
+      },
+      message: {
+        noResults : 'Nenhum contrato disponível.'
+      },
+      filterRemoteData: false,
+      saveRemoteData: false,
+      onChange: function(value, text, $choice) {
+        // Limpamos os dados dos itens de contrato para permitir a
+        // correta seleção dos itens de contrato deste contrato
+        $("input[name='installationid']")
+          .closest('div.ui.dropdown')
+          .dropdown('clear')
+        ;
+        $("input[name='installationid']")
+          .closest('div.ui.dropdown')
+          .dropdown('change values', [])
+        ;
+        $("input[name='installationid']")
+          .closest('div.ui.dropdown')
+          .dropdown('refresh')
+        ;
+      }
+    };
+
+    // As opções para o componente de seleção do item de contrato
+    var installationOptions = {
+      apiSettings: {
+        cache: true,
+        url: "{{ path_for(getInstallations.URL) }}",
+        method: "{{ getInstallations.method }}",
+        data: {
+          'request': 'DropDownData',
+          'includeInstalled': 'true',
+          'includeSuspended': 'true',
+          'includeFinish': 'true',
+          'contractID': 0
+        },
+        beforeSend: function(settings) {
+          var
+            $contractID = $("input[name='contractid']").val()
+          ;
+
+          // Cancela se não temos um ID de contrato
+          if (!$contractID) {
+            return false;
+          }
+          settings.data.contractID = $contractID;
+
+          return settings;
+        }
+      },
+      message: {
+        noResults : 'Nenhum item de contrato disponível.'
+      },
+      filterRemoteData: true,
+      fullTextSearch: 'exact',
+      ignoreDiacritics: true,
+      saveRemoteData: false
+    };
+
+    // As opções para o componente de exibição de calendário no campo de
+    // entrada de data
+    var calendarOptions = {
+      type: 'date',
+      formatInput: true,
+      monthFirst: false,
+      today: true,
+      text: {
+        days: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'],
+        months: [
+          'Janeiro', 'Fevereiro', 'Março', 'Abril',
+          'Maio', 'Junho', 'Julho', 'Agosto',
+          'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ],
+        monthsShort: [
+          'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+          'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+        ],
+        today: 'Hoje',
+        now: 'Agora',
+        am: 'AM',
+        pm: 'PM'
+      },
+      formatter: {
+        date: function (date, settings) {
+          if (!date) {
+            return '';
+          }
+
+          var
+            day   = date.getDate().toString().padLeftWithZeros(2),
+            month = (date.getMonth()+1).toString().padLeftWithZeros(2),
+            year  = date.getFullYear()
+          ;
+
+          return (settings.type === 'year')
+            ? year
+            : (
+                (settings.type === 'month')
+                  ? month + '/' + year
+                  : ( settings.monthFirst
+                      ? month + '/' + day
+                      : day + '/' + month
+                    ) + '/' + year
+              )
+          ;
+        }
+      }
+    };
+
+    // As opções para o componente de autocompletar o nome do que se
+    // está cobrando
+    var nameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      ajax: {
+        url: "{{ path_for(getContractCompletion.URL) }}",
+        type: "{{ getContractCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'charge';
+          params.contractID = $("input[name='contractid']").val();
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        return ''
+          + '<div class="content">'
+          +   '<div class="title">' + suggestion.name + '<br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">' + suggestion.chargevalue + '</span><br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">' + suggestion.installment + '</span>'
+          +   '</div>'
+          + '</div>'
+        ;
+      },
+      onSelect: function (element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='contractchargeid']")
+          .val(suggestion.id)
+        ;
+        $("input[name='value']")
+          .val(suggestion.chargevalue)
+        ;
+        $("input[name='installmenttypeid']")
+          .val(suggestion.installmenttypeid)
+        ;
+
+        refreshInstallmentPlan();
+      },
+      onInvalidateSelection: function () {
+        // Não conseguiu localizar um cliente com base nos valores
+        // informados, então limpa os dados atuais
+        $("input[name='contractchargeid']")
+          .val(0)
+        ;
+        $("input[name='value']")
+          .val("0,00")
+        ;
+        $("input[name='installmenttypeid']")
+          .val(0)
+        ;
+
+        refreshInstallmentPlan();
+      }
+    };
+
+
+    // ================================================[ Handlers ]=====
+
+    // Atualiza o exemplo de como fica o parcelamento
+    var refreshInstallmentPlan = function() {
+      var
+        // Converte um valor monetário em um número float
+        parseMonetary = function (value) {
+          // Remove qualquer caractere, deixando apenas os dígitos
+          value = value.replace(/\D/g,"");
+          
+          // Coloca o ponto decimal antes dos 2 últimos dígitos
+          value = value.replace(/(\d)(\d{2})$/,"$1.$2");
+          
+          return parseFloat(value);
+        },
+
+        // Recupera uma tabela de demonstração do cálculo dos juros
+        billingValue = parseMonetary($("input[name='value']").val()),
+        installmentTypeID = $("input[name='installmenttypeid']").val(),
+        url  = "{{ path_for(getInstallmentPlan.URL) }}"
+      ;
+
+      requestJSONData(url, {
+        value: billingValue,
+        installmentTypeID: installmentTypeID
+      },
+      function (data, params, message) {
+        $('#installmentPlanContent')
+          .html(data)
+          .trigger("change")
+        ;
+
+        $("tr.selectable").click(function() {
+          // Preenchemos os valores obtidos do parcelamento
+          $("input[name='numberofinstallments']")
+            .val($(this).children('td').eq(0).text().trim())
+          ;
+
+          $("input[name='installmentvalue']")
+            .val($(this).children('td').eq(2).text().trim().substring(3))
+          ;
+        });
+      },
+      function () {
+        // Limpa os dados em caso de erro
+        $('#installmentPlanContent')
+          .html("Erro")
+          .trigger("change")
+        ;
+      });
+    };
+
+    // Faz o tratamento de campos que informam um valor monetário para
+    // permitir corrigir valores inválidos
+    function monetaryHandler()
+    {
+      var
+        monetary = $(this).val()
+      ;
+
+      if (monetary.trim().isEmpty()) {
+        $(this)
+          .val('0,00')
+        ;
+      }
+    }
+
+    function numberOfInstallmentsHandler()
+    {
+      var
+        valueToPay = toFloat(
+          $('input[name="value"]').val()
+        ),
+        numberOfInstallments = $(this).val(),
+        installmentvalue = preciseRounding(
+          valueToPay/numberOfInstallments, 2
+        )
+      ;
+
+      $('input[name="installmentvalue"]')
+        .val(
+          toMoney(installmentvalue)
+        )
+      ;
+    }
+
+    /**
+     * Converte valores formatados no padrão monetário Brasileiro em um
+     * valor de ponto flutuante.
+     *
+     * @param string value
+     *   O valor a ser convertido
+     *
+     * @return float
+     */
+    function toFloat(value)
+    {
+      return parseFloat(
+        value
+          .replace(".", "")
+          .replace(",", ".")
+      );
+    }
+
+    /**
+     * Realiza o arredondamento preciso do valor
+     *
+     * @param float number
+     *   O número a ser arredondado
+     * @param int precision
+     *   O número de casas decimais a ser considerado
+     *
+     * @return float
+     *   O valora arredondado
+     */
+    function preciseRounding(number, precision) {
+      var
+        factor = Math.pow(10, precision),
+        tempNumber = number * factor,
+        roundedTempNumber = Math.round(tempNumber)
+      ;
+
+      return roundedTempNumber / factor;
+    };
+
+    /**
+     * Formata valores em float no padrão monetário Brasileiro.
+     * 
+     * @param float value
+     *   O valor a ser formatado
+     *
+     * @return string
+     */
+    function toMoney(value)
+    {
+      if (typeof value !== 'number') {
+        value = parseFloat(value);
+      }
+
+      return value
+        .toFixed(2)
+        .replace('.', ',')
+      ;
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

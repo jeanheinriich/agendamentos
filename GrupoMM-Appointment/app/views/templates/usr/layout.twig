@@ -1,0 +1,161 @@
+{# Layout para o site do USR #}
+{% extends 'templates/base.twig' %}
+{% block schema %}SoftwareApplication{% endblock schema %}
+{% block meta %}
+  <!-- Chrome, Firefox OS and Opera -->
+  <meta name="theme-color" content="#2e67fe">
+  <!-- Windows Phone -->
+  <meta name="msapplication-navbutton-color" content="#2e67fe">
+  <!-- iOS Safari -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="#2e67fe">
+  <!-- Windows Phone -->
+  <meta name="msapplication-navbutton-color" content="#2e67fe">
+  <!-- iOS Safari -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+{% endblock meta %}
+{% block title %}
+  Área do Cliente
+  {{ parent() }}
+{% endblock title %}
+{% block head %}
+  <meta name="description" content="Um sistema de gestão voltado especificamente para os controles de frotas e rastreadores." />
+  <meta name="keywords" content="ERP">
+  <meta name="author" content="Emerson Cavalcanti">
+  <meta itemprop="name" content="ERP de controle de frotas e rastreadores">
+  <meta itemprop="description" content="Um sistema de gestão voltado especificamente para os controles de frotas e rastreadores.">
+  <meta itemprop="applicationCategory" content="ERP">
+  <meta itemprop="author" content="Emerson Cavalcanti">
+{% endblock head %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/semantic-ui/semantic.min.css') }}
+
+  {{ css('clearfix.min.css') }}
+  {{ css('sidebar.min.css') }}
+  {{ css('breadcrumb.min.css') }}
+  {{ css('responsive.min.css') }}
+  {{ css('content.min.css') }}
+  {{ css('flash.min.css') }}
+  {{ css('footer.min.css') }}
+{% endblock stylesheets %}
+{% block body %}
+  <div class="ui wrapper">
+    <!-- Início barra lateral -->
+    <div class="ui lateralbar">
+      <!-- Início Logo -->
+      <div class="headerbox">
+        <h3>
+          <img src="/assets/icons/erp/erp.svg" alt="ERP" height="20" border="0" /> TrackerERP
+        </h3>
+        <div class="content mobile hidden">
+          <img src="/erp/resources/logo/inverted/{{ authorization.getContractorUUID('') }}"
+               alt="Logomarca contratante">
+        </div>
+      </div>
+      <!-- Fim Logo -->
+
+      <!-- Início Menu Sanfona -->
+      <div class="ui inverted vertical accordion menu">
+      {% include 'templates/usr/partials/sidebarMenu.twig' %}
+      </div>
+      <!-- Fim Menu Sanfona -->
+
+      <!-- Início Calendário -->
+      <div class="calendar wrap">
+      </div>
+      <!-- Fim Calendário -->
+    </div>
+    <!-- Fim barra lateral -->
+
+    <!-- Início corpo principal -->
+    <div class="pusher">
+      <!-- Início cabeçalho -->
+      {% include 'templates/usr/partials/header.twig' %}
+      <!-- Fim cabeçalho -->
+
+      <!-- Início Breadcrumb -->
+      {% if not haveErrors() %}
+        <ol class="breadcrumb breadcrumb-arrow">
+
+        {% for item in breadcrumb() %}
+          {% if loop.first %}
+            {% if loop.length > 1 %}
+            <li>
+              <a href="{{ path_for('USR\\Home') }}">
+                <i class="fas fa-home"></i><span> Início</span>
+              </a>
+            </li>
+            {% else %}
+            <li class="active">
+              <span>
+                <i class="fas fa-home"></i> Início
+              </span>
+            </li>
+            {% endif %}
+          {% elseif loop.last %}
+            <li class="active">
+              <span>{{ item.title }}</span>
+            </li>
+          {% else %}
+            {% if item.url is empty %}
+            <li>
+              <a>
+                <span>{{ item.title }}</span>
+              </a>
+            </li>
+            {% else %}
+            <li>
+              <a href="{{ item.url }}">
+                <span>{{ item.title }}</span>
+              </a>
+            </li>
+            {% endif %}
+          {% endif %}
+        {% else %}
+        <li class="active">
+          <span>
+            <i class="fas fa-home"></i> Início
+          </span>
+        </li>
+        {% endfor %}
+
+        </ol>
+      {% endif %}
+      <!-- Fim Breadcrumb -->
+
+      <!-- Início mensagens instantâneas -->
+      <div class="ui message-box">
+        {% block flash %}
+          {% include 'templates/usr/partials/flash.twig' %}
+        {% endblock %}
+      </div>
+      <!-- Fim mensagens instantâneas -->
+
+      <!-- Início conteúdo -->
+      {% block content %}
+      {% endblock content %}
+      <!-- Fim conteúdo -->
+    </div>
+    <!-- Fim corpo principal -->
+  </div>
+
+  <!-- Início rodapé -->
+  {% include 'templates/usr/partials/footer.twig' %}
+  <!-- Fim rodapé -->
+  
+  <!-- Início diálogos modais -->
+  {% block dialogs %}
+  {% endblock dialogs %}
+  <!-- Fim diálogos modais -->
+{% endblock body%}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('calendar/calendar.min.js') }}
+  {{ lib('accordion-menu/accordion-menu.min.js') }}
+  
+  {{ js('cookies.min.js') }}
+  {{ js('app.js') }}
+{% endblock scripts %}

@@ -1,0 +1,199 @@
+{% extends 'templates/basePDF.twig' %}
+{% block title %}
+  {% if content.cityName is empty %}
+    Relação dos feriados no ano de {{ content.year }}
+  {% else %}
+    Relação dos feriados na cidade de {{ content.cityName }} - {{ content.state }} no ano de {{ content.year }}
+  {% endif %}
+{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+  <style>
+    h1 {
+      font-weight: bold;
+      margin-bottom: 1.5em;
+    }
+
+    tr.bold,
+    tr.bold td {
+      font-weight: bold;
+    }
+    tr.gray,
+    tr.gray td {
+      color: #445566;
+    }
+    tr.darkred td {
+      color: darkred;
+      background-color: #ffd6cc;
+    }
+    tr.brown td {
+      color: #9e6e15;
+      background-color: #f9ebd2;
+    }
+    th.sun,
+    td.sun {
+      color: darkred;
+      background-color: #ffd6cc;
+    }
+    td.holiday {
+      font-weight: bold;
+    }
+    td.national {
+      color: SaddleBrown;
+      background-color: #cdc2b7;
+    }
+    td.regional {
+      color: darkgreen;
+      background-color: #b1cbbb;
+    }
+    td.local {
+      color: darkblue;
+      background-color: #b0cdff;
+    }
+    th.sat,
+    td.sat {
+      color: #9e6e15;
+      background-color: #f9ebd2;
+    }
+    .legend {
+      border: 1px solid #9badc4;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  <br>
+  {% if content.cityName is empty %}
+    <h1>Relação dos feriados no ano de {{ content.year }}</h1>
+  {% else %}
+    <h1>Relação dos feriados na cidade de {{ content.cityName }} - {{ content.state }} no ano de {{ content.year }}</h1>
+  {% endif %}
+  <table width="100%" class="zebra">
+    <thead>
+      <tr>
+        <th>Feriado</th>
+        <th>Abrangência</th>
+        <th>Mês</th>
+        <th>Dia</th>
+        <th>Dia da Semana</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for holiday in content.holidays %}
+      <tr  class="{% if holiday.dayofweek == 'Sábado' %} brown{% endif %}{% if holiday.dayofweek == 'Domingo' %} darkred{% endif %}">
+        <td width="350px">
+        {% if holiday.name == 'Aniversário da cidade' %}
+        Aniversário da cidade de {{ content.cityName }} - {{ content.state }}
+        {% else %}
+        {{ holiday.name }}
+        {% endif %}
+        </td>
+        <td class="center" width="90px">{{ holiday.geographicscope }}</td>
+        <td class="center" width="90px">{{ holiday.monthname }}</td>
+        <td class="center" width="50px">{{ holiday.day }}</td>
+        <td class="center" class="center">{{ holiday.dayofweek }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <pagebreak>
+  <table>
+    <tr>
+      <td colspan="3" class="center"><h1>Calendário {{ content.year }} - {{ content.cityName }} - {{ content.state }}</h1></td>
+    </tr>
+  {% set col = 0 %}
+  {% set monthName = [ 'None', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro' ] %}
+  {% for month in range(1, 12) %}
+    {% if col == 0 %}
+    <tr>
+      <td>
+    {% else %}
+      <td>
+    {% endif %}
+        <table class="calendar">
+          <thead>
+            <tr>
+              <th colspan="7" class="center">
+                {{ monthName[month] }}
+              </th>
+            </tr>
+            <tr>
+              <th class="center sun">Dom</th>
+              <th class="center day">Seg</th>
+              <th class="center day">Ter</th>
+              <th class="center day">Qua</th>
+              <th class="center day">Qui</th>
+              <th class="center day">Sex</th>
+              <th class="center sab">Sáb</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="bottomBorder">
+            {% set rows = 0 %}
+            {% set daysInMonth = date(content.year ~ '-' ~ month ~ '-01')|date('t') %}
+            {% set startDow = date(content.year ~ '-' ~ month ~ '-01')|date('F 1\\s\\t Y')|date('w') %}
+            {% set dow = startDow %}
+            {% for day in range(1, daysInMonth) %}
+              {% if loop.first and startDow != 0 %}
+                <td colspan="{{ startDow }}" class="day"></td>
+              {% endif %}
+              <td class="center{% if dow == 0 %} sun{% endif %}{% if dow > 0 and dow < 6 %} day{% endif %}{% if dow == 6 %} sat{% endif %}{% if content.calendar[month][day] is defined %} holiday {{ content.calendar[month][day] }}{% endif %}">
+                <div>
+                  <div>{{ day }}</div>
+                  <div>
+                   {# day content here #}
+                  </div>
+                </div>
+              </td>
+              {% if loop.last and dow != 6 %}
+                <td colspan="{{ 6 - dow }}">&nbsp;</td>
+                {% set rows = rows + 1 %}
+              {% endif %}
+              {% if dow == 6 %}
+                {% set dow = 0 %}
+                {% set rows = rows + 1 %}
+              </tr>
+              {% if rows < 5 %}
+              <tr class="bottomborder">
+              {% else %}
+              <tr>
+              {% endif %}
+              {% else %}
+                {% set dow = dow + 1 %}
+              {% endif %}
+            {% endfor %}
+            </tr>
+            {% if rows < 6 %}
+            <tr>
+             <td colspan="7">&nbsp;</td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+    {% if col == 0 %}
+      </td>
+    </tr>
+    {% else %}
+      </td>
+    {% endif %}
+    {% if col == 2 %}
+      {% set col = 0 %}
+    {% else %}
+      {% set col = col + 1 %}
+    {% endif %}
+  {% endfor %}
+  </table>
+  <table class="noborder">
+    <tbody>
+      <tr>
+        <td class="national legend" width="18px" height="18px"></td>
+        <td>&nbsp;Feriado nacional</td>
+        <td width="15px"></td>
+        <td class="regional legend" width="18px" height="18px"></td>
+        <td>&nbsp;Feriado estadual</td>
+        <td width="15px"></td>
+        <td class="local legend" width="18px" height="18px"></td>
+        <td>&nbsp;Feriado municipal</td>
+      </tr>
+    </tbody>
+  </table>
+{% endblock content %}

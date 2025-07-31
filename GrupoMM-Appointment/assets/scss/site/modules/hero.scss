@@ -1,0 +1,139 @@
+/* -----------------------------------------------------[ Hero ]-----
+   As definições da imagem grande de banner, colocada de forma
+   destacada na página inicial. Está imagem é o primeiro elemento
+   visual que um visitante encontra no site, e apresenta uma visão
+   geral do conteúdo mais importante do site.
+   ------------------------------------------------------------------ */
+
+.hero {
+  background-repeat: no-repeat;
+  background-size: cover;
+  padding: 0;
+  border-bottom: 2px solid rgba(34,36,38,.15);
+
+  &.home {  
+    background-position: right center;
+    background-image: url(/images/site/hero_home.png);
+    height: 600px;
+  }  
+  &.about {
+    background-position: right center;
+    background-image: url(/images/site/hero_about.png);
+    height: 250px;
+  }
+  &.fuelconsumption {
+    background-position: right center;
+    background-image: url(/images/site/hero_fuelconsumption.png);
+    height: 250px;
+  }
+  &.privacity {
+    background-position: left center;
+    background-image: url(/images/site/hero_privacity.png);
+    height: 250px;
+  }
+  &.tracking {
+    background-position: right center;
+    background-image: url(/images/site/hero_tracking.png);
+    height: 250px;
+  }
+  &.monitoring {
+    background-position: right center;
+    background-image: url(/images/site/hero_monitoring.png);
+    height: 250px;
+  }
+  &.camerasurveillance {
+    background-position: right center;
+    background-image: url(/images/site/hero_camerasurveillance.png);
+    height: 250px;
+  }
+  &.alarm {
+    background-position: right center;
+    background-image: url(/images/site/hero_alarm.png);
+    height: 250px;
+  }
+  &.contactus {
+    background-position: right center;
+    background-image: url(/images/site/hero_contactus.png);
+    height: 250px;
+  }
+  &.quotation {
+    background-position: right center;
+    background-image: url(/images/site/hero_quotation.png);
+    background-size: auto;
+    height: 350px;
+
+    > .banner {
+      width: 100%;
+      height: 100%;
+      display: block;
+      max-width: 100%;
+    }
+
+    .header {
+      font-family: Lato,'Helvetica Neue',Arial,Helvetica,sans-serif;
+      font-weight: 700;
+      line-height: 1.28571429em;
+      letter-spacing: 0.05em;
+      text-shadow: 0.05em 0.05em 0.05em #33333388;
+      color: #2092f9;
+
+      margin-left: calc(10pt + 4.45vw);
+      margin-top: 30px;
+
+      font-size: calc(10pt + 5.45vw);
+
+      @media screen and (max-width: 767px) {
+        font-size: calc(10pt + 8.45vw);
+        text-shadow: 0.08em 0.08em 0.1em #33333388;
+      }
+
+      &.sub {
+        font-size: calc(10pt + 3.45vw);
+        color: #00a8ff;
+      }
+    }
+  }
+  &.bankslip {
+    background-position: right center;
+    background-image: url(/images/site/hero_bankslip.png);
+    height: 250px;
+  }
+  &.error {
+    background-position: left center;
+    background-image: url(/images/site/hero_error.png);
+    height: 150px;
+  }
+  
+  .content {
+    padding: 120px 0;
+
+    .text {
+      padding: 0 30px;
+
+      h1 {
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.75);
+        color: #0066FF;
+        font-weight: 700;
+        font-size: 42px;
+      }
+
+      h2 {
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.75);
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 32px;
+        margin-top: 0;
+        width: 45%;
+        line-height: 38px;
+    
+        @media screen and (max-width: 767px) {
+          width: 100%;
+        }
+      }
+    }
+    
+    @media screen and (max-width: 767px) {
+      padding: 10px 10px;
+    }
+  }
+}

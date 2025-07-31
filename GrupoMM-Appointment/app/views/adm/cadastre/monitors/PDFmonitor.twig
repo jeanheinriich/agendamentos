@@ -1,0 +1,368 @@
+{% extends 'templates/basePDF.twig' %}
+{% block title %}
+  Dados cadastrais da empresa de monitoramento {{ seller.name }} ({{ seller.entitytypename }})
+{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+  <style>
+    table.noborder tr td {
+      vertical-align: bottom;
+    }
+
+    table.noborder.topalign tr td {
+      vertical-align: top !important;
+    }
+    table tr.space td {
+      height: .6em;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  <table width="100%" class="noborder topalign">
+    <tbody>
+      <tr class="title">
+        <td colspan="6">
+          <h1 class="title">
+            Dados básicos da empresa de monitoramento
+          </h1>
+        </td>
+      </tr>
+      <tr class="content">
+        <td colspan="3">
+          <span class="field">
+          {% if seller.juridicalperson %}
+            Razão Social:
+          {% else %}
+            Titular:
+          {% endif %}
+          </span><br>
+          <span class="content">{{ seller.name }}</span>
+        </td>
+        <td colspan="3">
+          {% if seller.tradingname %}
+          <span class="field">
+          {% if seller.juridicalperson %}
+            Nome fantasia:
+          {% else %}
+            Apelido:
+          {% endif %}
+          </span><br>
+          <span class="content">{{ seller.tradingname }}</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% if seller.blocked %}
+      <tr class="content">
+        <td colspan="6">
+          <span style="font-size: 1.2rem; background-color: #ffffee; border: 2px solid darkred; font-weight: bold; color: darkred;">
+            &nbsp;&times;
+          </span>
+          <span class="content danger">
+            &nbsp;Atenção: Este empresa de monitoramento encontra-se bloqueada
+          </span>
+        </td>
+      </tr>
+      {% endif %}
+      <tr class="space">
+        <td colspan="6">
+        </td>
+      </tr>
+      {% for subsidiary in seller.subsidiaries %}
+        {% if not loop.first %}
+        <tr class="title">
+          <td colspan="6">
+            <h1 class="title">
+              {% set subsidiaryNumber = ( subsidiaryNumber | default(0) ) %}
+              {% if seller.subsidiaries|length > 0 %}
+                {% if seller.entitytypeid == 2 %}
+                  Dados pessoais do {{ subsidiaryNumber }}&ordm; dependente
+                {% else %}
+                  Dados da {{ subsidiaryNumber }}&ordf; unidade/filial
+                {% endif %}
+              {% endif %}
+            </h1>
+          </td>
+        </tr>
+        {% endif %}
+        <tr class="content">
+          {% if not subsidiary.headoffice %}
+          <td colspan="3">
+            {% if seller.juridicalperson %}
+            <span class="field">Nome da unidade/filial:</span><br>
+            {% else %}
+            <span class="field">Nome do titular:</span><br>
+            {% endif %}
+            <span class="content">{{ subsidiary.name }}</span>
+          </td>
+          {% endif %}
+          <td colspan="2">
+            <span class="field">{{ subsidiary.regionaldocumentname }}:</span><br>
+            <span class="content">
+              {{ subsidiary.regionaldocumentnumber }}
+              {% if subsidiary.regionaldocumentnumber != 'Isento' %}
+                / {{ subsidiary.regionaldocumentstate }}
+              {% endif %}
+            </span>
+          </td>
+          <td>
+            <span class="field">
+            {% if seller.juridicalperson %}
+            CNPJ:
+            {% else %}
+            CPF:
+            {% endif %}
+            </span><br>
+            <span class="content">
+              {{ subsidiary.nationalregister }}&nbsp;
+            </span>
+          </td>
+          {% if not seller.juridicalperson %}
+          <td>
+            <span class="field">
+              Data de nascimento:
+            </span><br>
+            <span class="content">
+              {{ subsidiary.birthday }}&nbsp;
+            </span>
+          </td>
+          <td>
+            <span class="field">
+              Estado cívil:
+            </span><br>
+            <span class="content">
+              {{ subsidiary.maritalstatusname }}&nbsp;
+            </span>
+          </td>
+          <td>
+            <span class="field">
+              Sexo:
+            </span><br>
+            <span class="content">
+              {{ subsidiary.gendername }}&nbsp;
+            </span>
+          </td>
+          {% endif %}
+        </tr>
+        <tr class="space">
+          <td colspan="6">
+          </td>
+        </tr>
+        <tr class="content">
+          <td colspan="3">
+            <span class="field">Endereço:</span><br>
+            <span class="content">{{ subsidiary.address }}&nbsp;</span>
+          </td>
+          <td colspan="1">
+            <span class="field">N&ordm;:</span><br>
+            <span class="content">{{ subsidiary.streetnumber }}&nbsp;</span>
+          </td>
+          <td colspan="2">
+            <span class="field">Complemento:</span><br>
+            <span class="content">
+              {{ subsidiary.complement }}&nbsp;
+            </span>
+          </td>
+        </tr>
+        <tr class="content">
+          <td width="10%">
+            <span class="field">CEP:</span><br>
+            <span class="content">{{ subsidiary.postalcode }}&nbsp;</span>
+          </td>
+          <td colspan="2">
+            <span class="field">Bairro:</span><br>
+            <span class="content">{{ subsidiary.district }}&nbsp;</span>
+          </td>
+          <td colspan="3">
+            <span class="field">Cidade / UF:</span><br>
+            <span class="content">{{ subsidiary.cityname }} / {{ subsidiary.state }}</span>
+          </td>
+        </tr>
+        {% if seller.juridicalperson %}
+        <tr class="space">
+          <td colspan="6">
+          </td>
+        </tr>
+        <tr class="content">
+          <td colspan="3">
+            <span class="field">Contato:</span><br>
+            <span class="content">{{ subsidiary.personname }}&nbsp;</span>
+          </td>
+          <td colspan="3">
+            <span class="field">Departamento:</span><br>
+            <span class="content">{{ subsidiary.department }}&nbsp;</span>
+          </td>
+        </tr>
+        {% endif %}
+        <tr class="space">
+          <td colspan="6">
+          </td>
+        </tr>
+        {% for phone in subsidiary.phones %}
+          {% if loop.first %}
+          <tr class="header">
+            <td colspan="3">
+              {% if subsidiary.phones|length > 1 %}
+              <span class="header">Telefones:</span>
+              {% else %}
+              <span class="header">Telefone principal:</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endif %}
+          <tr class="content">
+            <td colspan="3">
+              <span class="content">
+                {% if subsidiary.phones|length > 1 %}
+                  {{ loop.index }}. 
+                {% endif %}
+                {{ phone.phonetypename }}: {{ phone.phonenumber }}
+              </span>
+            </td>
+          </tr>
+        {% endfor %}
+        <tr class="space">
+          <td colspan="6">
+          </td>
+        </tr>
+        {% for mailing in subsidiary.emails %}
+          {% if loop.first %}
+          <tr class="header">
+            <td colspan="3">
+              {% if subsidiary.emails|length > 1 %}
+              <span class="header">E-mails:</span>
+              {% else %}
+              <span class="header">Email:</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endif %}
+          <tr class="content">
+            <td colspan="6">
+              <span class="content">
+                {{ mailing.email }}
+              </span>
+            </td>
+          </tr>
+        {% endfor %}
+        <tr class="space">
+          <td colspan="6">
+          </td>
+        </tr>
+        <tr class="subtitle">
+          <td colspan="6">
+            <h2 class="subtitle">
+              Contatos adicionais
+            </h2>
+          </td>
+        </tr>
+        {% if subsidiary.contacts is empty %}
+          <tr class="content">
+            <td colspan="6">
+              <span class="content" style="color: #8fabcb;">
+                Nenhum outro contato
+              </span>
+            </td>
+          </tr>
+        {% endif %}
+        {% for contact in subsidiary.contacts %}
+          {% if loop.first %}
+          <tr class="header">
+            <td colspan="2">
+              <span class="header">Nome do contato</span>
+            </td>
+            <td colspan="2">
+              <span class="header">Departamento</span>
+            </td>
+            <td>
+              <span class="header">Perfil</span>
+            </td>
+            <td>
+              <span class="header">Telefone / E-mail</span>
+            </td>
+          </tr>
+          {% endif %}
+          <tr class="detail">
+            <td colspan="2">
+              <span class="content">
+                {% if contact.name is empty %}
+                  Não informado
+                {% else %}
+                  {{ contact.name }}
+                {% endif %}
+              </span>
+            </td>
+            <td colspan="2">
+              <span class="content">
+                {% if contact.attribute is empty %}
+                  &nbsp;
+                {% else %}
+                  {{ contact.attribute }}
+                {% endif %}
+              </span>
+            </td>
+            <td>
+              <span class="content">
+                {{ contact.mailingprofilename }}&nbsp;
+              </span>
+            </td>
+            <td>
+              <span class="content">
+                {% set content = '' %}
+                {% if contact.phonenumber is not empty %}
+                  {% set content = contact.phonetypename ~ ': ' ~ contact.phonenumber %}
+                {% endif %}
+                {% if contact.email is not empty %}
+                  {% if content is not empty %}
+                    {% set content = content ~ '<br>' %}
+                  {% endif %}
+                  {% set content = content ~ 'E-mail: ' ~ contact.email %}
+                {% endif %}
+                {% if content is not empty %}
+                  {{ content|raw }}
+                {% else %}
+                  &nbsp;
+                {% endif %}
+              </span>
+            </td>
+          </tr>
+        {% endfor %}
+        {% if subsidiary.blocked %}
+        <tr class="content">
+          <td colspan="6">
+            <span style="font-size: 1.2rem; background-color: #ffffee; border: 2px solid darkred; font-weight: bold; color: darkred;">
+              &nbsp;&times;
+            </span>
+            <span class="content danger">
+            {% if seller.juridicalperson %}
+            &nbsp;Atenção: Esta unidade/filial encontra-se bloqueada
+            {% else %}
+              {% if subsidiary.headoffice %}
+              &nbsp;Atenção: Este titular encontra-se bloqueado
+              {% else %}
+              &nbsp;Atenção: Este dependente encontra-se bloqueado
+              {% endif %}
+            {% endif %}
+            </span>
+          </td>
+        </tr>
+        {% endif %}
+      {% endfor %}
+      <tr class="space">
+        <td colspan="6">
+        </td>
+      </tr>
+        <tr class="content">
+          <td colspan="6">
+            <span class="field">Observações / Notas:</span><br>
+            <span class="content">
+              {% if subsidiary.note %}
+                {{ subsidiary.note }}&nbsp;
+              {% else %}
+                &mdash; x &mdash;
+              {% endif %}
+            </span>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+{% endblock content %}

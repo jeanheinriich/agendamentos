@@ -1,0 +1,650 @@
+{% extends 'templates/stc/layout.twig' %}
+{% import "templates/stc/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento de equipamentos{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.main.basic.segment .searchbar.fields .field.customer {
+      flex-grow: 1;
+      min-width: 236px;
+    }
+    @media only screen and (max-width: 767px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 100px;
+        width: calc(100% - 47px);
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox input {
+        width: calc(100% - 183px);
+      }
+    }
+
+    @media only screen and (min-width: 996px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set syncDevices = { 'URL': 'STC\\Cadastre\\Equipments\\Synchronize', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('stc/equipments.svg', 'Equipamentos') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento dos equipamentos
+                <div class="sub header">
+                  Permite gerenciar os equipamentos de rastreamento
+                  cadastrados no sistema STC.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(syncDevices.URL, syncDevices.method) %}
+            <div class="field button">
+              <button class="ui primary icon button" id="sync"
+                      data-tooltip="Sincroniza os equipamentos de rastreamento com o sistema STC"
+                      data-position="top left" type="button"
+                      onclick="synchronize();">
+                <i class="refresh icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            {% if authorization.user.groupid < 6 %}
+            <div class="field customer">
+              <input placeholder="Informe o cliente..." type="text"
+                     name="customerName"
+                     value="{{ equipment.customer.name }}">
+              <input type="hidden" name="customerID"
+                     value="{{ equipment.customer.id }}" >
+            </div>
+            {% endif %}
+          {% if authorization.user.groupid < 6 %}
+          </div>
+
+          <div class="flex">
+          {% endif %}
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite o que procura..."
+                       value="{{ equipment.searchValue }}">
+                <select class="ui searchfield adaptable selection dropdown button"
+                        id="searchField">
+                  <option value="deviceID"{% if equipment.searchField == "deviceID" %} selected{% endif %}>
+                    ID Dispositivo
+                  </option>
+                  <option value="plate"{% if equipment.searchField == "plate" %} selected{% endif %}>
+                    Placa
+                  </option>
+                </select>
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza um equipamento..."
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    {% if authorization.user.groupid < 6 %}
+    <!-- Início da barra de progresso -->
+    <div class="ui vertical flexBorderBottom segment">
+      <div class="ui indicating progress" data-value="1" data-total="100" id="progressbar">
+        <div class="bar">
+          <div class="progress"></div>
+        </div>
+        <div class="label" id="progressbartitle">Sincronizando os equipamentos de rastreamento...</div>
+      </div>
+    </div>
+    <!-- Fim da barra de progresso -->
+    {% endif %}
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID Dispositivo</th>
+          <th>ID Fabricante</th>
+          <th>Fabricante</th>
+          <th>Modelo</th>
+          <th class="dt-center" {{ tooltip.add('left', 'Permite sincronizar dados de motoristas (se disponível)') }}><i class="calendar check black icon"></i></th>
+          <th>Placa</th>
+          <th>Proprietário</th>
+          <th {{ tooltip.add('left', 'Indicador de dispositivo instalado em um veículo') }}><i class="truck black icon"></i></th>
+          <th>Última comunicação</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/stc/partials/dialogs/error.twig' %}
+  {% include 'templates/stc/partials/dialogs/info.twig' %}
+  {% include 'templates/stc/partials/dialogs/question.twig' %}
+  {% include 'templates/stc/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/DateTimeFormatter.min.js') }}
+
+  {% set getData     = { 'URL': 'STC\\Cadastre\\Equipments\\Get', 'method': 'PATCH' } %}
+  {% set syncDevices = { 'URL': 'STC\\Cadastre\\Equipments\\Synchronize', 'method': 'GET' } %}
+  {% set syncDrivers = { 'URL': 'STC\\Cadastre\\Equipments\\Drivers', 'method': 'GET' } %}
+  
+  {% set getCustomerNameCompletion = { 'URL': 'STC\\Cadastre\\Customers\\Autocompletion\\Get', 'method': 'PATCH' } %}
+
+  {% apply minify %}
+  <script>
+    var
+      table
+    ;
+
+    // Um formatador de coluna para exibir um ícone indicativo de que o
+    // equipamento possui um teclado e pode sincronizar informações de
+    // motoristas
+    var driverFormatter = function() {
+      return function ( value, type, row, meta ) {
+        // Verifica se foi solicitada a exibição do valor
+        if ( type === 'display' ) {
+          // Retornamos um ícone
+          if (value) {
+            if (row.ownertype.trim() === 'vehicle') {
+              return '<span data-position="left center"'
+                   +       'data-blue data-inverted '
+                   +       'data-tooltip="Permite sincronismo de dados de motoristas. Clique para sincronizar.">'
+                   +   '<i class="calendar check black icon">'
+                   +   '</i>'
+                   +   '</span>';
+            }
+          }
+
+          return '<span data-position="left center"'
+               +       'data-blue data-inverted '
+               +       'data-tooltip="Não possui teclado acoplado">'
+               +   '<i class="calendar times lightgrey icon">'
+               +   '</i>'
+               + '</span>';
+        }
+
+        // Pesquisas, ordenamentos e tipos podem usar os dados originais
+        return value;
+      }
+    };
+
+    // Um formatador de coluna para exibir um ícone indicativo de que o
+    // equipamento está vinculado à um carro
+    var managerFormatter = function() {
+      return function ( value, type, row, meta ) {
+        // Verifica se foi solicitada a exibição do valor
+        if ( type === 'display' ) {
+          // Retornamos um ícone
+          if (value.trim() === 'vehicle') {
+            return '<span data-position="left center"'
+                 +       'data-blue data-inverted '
+                 +       'data-tooltip="Está instalado em um veículo">'
+                 +   '<i class="truck black icon">'
+                 +   '</i>'
+                 +   '</span>';
+          } else {
+            return '<span data-position="left center"'
+                 +       'data-blue data-inverted '
+                 +       'data-tooltip="Não está instalado">'
+                 +   '<i class="truck lightgrey icon">'
+                 +   '</i>'
+                 + '</span>';
+          }
+        }
+
+        // Pesquisas, ordenamentos e tipos podem usar os dados originais
+        return value;
+      }
+    };
+
+
+    $(document).ready(function() {
+      // --------------------------------[ Componentes da Searchbar ]---
+      {% if authorization.user.groupid < 6 %}
+      $("input[name='customerName']")
+        .autocomplete(customerNameCompletionOptions)
+      ;
+      {% endif %}
+      $('.searchbar .ui.dropdown')
+        .dropdown()
+      ;
+      $('#searchValue')
+        .keypress(forceSearch)
+      ;
+
+      {% if authorization.user.groupid < 6 %}
+      // -----------------------[ Componentes da Barra de Progresso ]---
+      // Esconde a barra de progresso
+      $('.ui.progress')
+        .parent()
+        .hide()
+      ;
+      {% endif %}
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "devices.deviceid",
+            "data": "id",
+            "visible": true,
+            "orderable": true,
+            "width": "100px" },
+          { "targets": 1,
+            "name": "manufactureid",
+            "data": "manufactureid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 2,
+            "name": "manufactures.name, devices.deviceid",
+            "data": "manufacturename",
+            "visible": true,
+            "orderable": true },
+          { "targets": 3,
+            "name": "devicemodelname",
+            "data": "devicemodelname",
+            "visible": true,
+            "orderable": false },
+          { "targets": 4,
+            "name": "abletokeyboard",
+            "data": "abletokeyboard",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "20px",
+            "render": driverFormatter() },
+          { "targets": 5,
+            "name": "devices.plate, manufactures.name",
+            "data": "plate",
+            "visible": true,
+            "orderable": true,
+            "width": "70px" },
+          { "targets": 6,
+            "name": "ownername",
+            "data": "ownername",
+            "visible": true,
+            "orderable": false },
+          { "targets": 7,
+            "name": "ownertype",
+            "data": "ownertype",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "20px",
+            "render": managerFormatter() },
+          { "targets": 8,
+            "name": "lastcommunication",
+            "data": "lastcommunication",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "220px",
+            "render": datetimeFormatter }
+        ],
+        order: [[ 2, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.searchValue  = $('#searchValue').val();
+            params.searchField  = $('#searchField').val();
+            params.clientID     = $("input[name='customerID']").val();
+            params.customerName = $("input[name='customerName']").val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        }
+      });
+
+      // Manipula os eventos de click
+      table
+        .on('user-select', function (e, dt, type, cell, originalEvent) {
+          if (type === 'cell') {
+            var
+              // Recupera os dados da célula selecionada
+              index   = cell[0][0],
+
+              // Recupera os dados do equipamento selecionado
+              equipment = dt.rows( index.row ).data().toArray()[0]
+            ;
+
+            // Em função da coluna onde ocorreu o clique, executa a ação
+            // correspondente
+            switch (index.column) {
+              case 4:
+                {% if authorization.getAuthorizationFor(syncDrivers.URL, syncDrivers.method) %}
+                if (equipment.ownertype.trim() === 'vehicle') {
+                  if (equipment.abletokeyboard) {
+                    // Exibe a tela para sincronismo de informações de
+                    // motoristas neste dispositivo
+                    window.location.href = "{{ buildURL(syncDrivers.URL, {'equipmentID': 'equipment.id'}) }}";
+                  }
+                }
+                {% endif %}
+
+                break;
+              default:
+                // Não faz nada
+            }
+
+            e.preventDefault();
+          }
+        })
+      ;
+
+      // Força a atualização da tabela para reajustar as colunas após
+      // a carga
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 1500);
+    });
+
+
+    // =================================================[ Options ]=====
+
+    {% if authorization.user.groupid < 6 %}
+    // As opções para o componente de autocompletar o nome do cliente
+    var customerNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      showClearValue: true,
+      ajax: {
+        url: "{{ path_for(getCustomerNameCompletion.URL) }}",
+        type: "{{ getCustomerNameCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'customer';
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        return ''
+          + '<div class="content">'
+          +   '<div class="title">' + suggestion.name + '<br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       suggestion.nationalregister
+          +     '</span>'
+          +   '</div>'
+          + '</div>'
+        ;
+      },
+      onSelect: function(element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='customerID']")
+          .val(suggestion.id)
+        ;
+
+        searchLoad();
+      },
+      onInvalidateSelection: function() {
+        // Limpa os dados
+        $("input[name='customerID']")
+          .val(0)
+        ;
+
+        searchLoad();
+      }
+    };
+    {% endif %}
+
+
+    // ================================================[ Handlers ]=====
+
+    // Executa a pesquisa
+    function searchLoad() {
+      table
+        .ajax
+        .reload()
+      ;
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 500);
+    }
+
+    // Força a atualização da tabela
+    function forceSearch(event) {
+      if (event.which == 13) {
+        searchLoad();
+      }
+    }
+
+    // Sincroniza as informações de equipamentos com o sistema STC
+    function synchronize() {
+      var
+        $progress = $('#progressbar'),
+        url       = "{{ buildURL(syncDevices.URL, {}) }}",
+        evtSource = new EventSource(url),
+        $button   = $("#sync")
+      ;
+      
+      // Reinicia a contagem
+      $progress
+        .progress('reset')
+        .progress('set label', 'Solicitando...')
+        .progress('set total', 100)
+      ;
+      if ($progress.is(":hidden")) {
+        $progress
+          .parent()
+          .transition('slide down')
+        ;
+      }
+      if (!$button.prop('disabled')) {
+        $button
+          .prop('disabled', true)
+        ;
+      }
+
+      evtSource.onmessage = function(event)
+      {
+        syncData = JSON.parse(event.data);
+        
+        switch (syncData.result) {
+          case "START":
+            $progress
+              .progress('set active')
+              .progress('set label', syncData.message)
+              .progress('reset')
+              .progress('update progress', 0)
+            ;
+
+            break;
+          case "PROGRESS":
+            // Seta a barra de progresso
+            var
+              progress = Math.round((syncData.count/syncData.total) * 100)
+            ;
+            $progress
+              .progress('set label', syncData.message)
+              .progress('update progress', progress)
+            ;
+            
+            break;
+          case "END":
+            evtSource
+              .close()
+            ;
+            $progress
+              .progress('set label', syncData.message)
+              .progress('complete')
+            ;
+            setTimeout(function(){
+              $progress
+                .parent()
+                .transition('slide up')
+              ;
+            }, 2000);
+            $button
+              .prop('disabled', false)
+            ;
+
+            // Força a atualização dos dados
+            searchLoad();
+            
+            break;
+          case "ERROR":
+            console.error('Erro', syncData.message);
+            evtSource
+              .close()
+            ;
+            $progress
+              .progress('set error', syncData.message)
+            ;
+            $button
+              .prop('disabled', false)
+            ;
+
+            break;
+          default:
+            evtSource
+              .close()
+            ;
+            setTimeout(function(){
+              $progress
+                .parent()
+                .transition('slide up')
+              ;
+            }, 2000);
+            $button
+              .prop('disabled', false)
+            ;
+
+            break;
+        }
+      };
+      evtSource.onerror = function(error) {
+        console.error("Ocorreu um erro na sincronização:", error);
+
+        // Sempre força o encerramento da sincronização
+        evtSource
+          .close()
+        ;
+
+        // Atualiza o progresso, indicando o erro
+        $progress
+          .progress('set error', 'Erro interno do servidor')
+        ;
+        $button
+          .prop('disabled', false)
+        ;
+      };
+      
+      return false;
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

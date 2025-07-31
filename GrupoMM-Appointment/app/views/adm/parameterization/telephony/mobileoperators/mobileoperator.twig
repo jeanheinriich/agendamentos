@@ -1,0 +1,458 @@
+{% extends 'templates/adm/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} operadora de telefonia móvel{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  {{ css('loading.min.css') }}
+  {{ css('libs/jquery/plugins/logo.input/logo.input.min.css') }}
+  <style>
+    .logo {
+      border: 1px solid rgba(34,36,38,.15);
+    }
+    .tiny.form .header {
+      margin-bottom: .5em;
+    }
+    h3.ui.header .sub.header {
+      padding-top: .5em;
+    }
+    .ui.tiny.segment {
+      margin-bottom: .5em;
+    }
+    @media only screen and (max-width: 767px)
+      .tiny.form .fields {
+        margin-bottom: .5em;
+        border-bottom: 1px dotted rgba(34,36,38,.15);
+        padding: 5px;
+      }
+      .ui.tiny.segment {
+        margin-bottom: 0.2em;
+      }
+      .ui.cards {
+        margin-top: -.5em;
+        margin-bottom: -.7em;
+      }
+      .ui.form .fields >.buttons {
+        margin: 0.3em 0;
+      }
+      .ui.form .fields {
+        margin-bottom: 0.3em;
+      }
+    }
+    .ui.vertical.segment:first-child {
+      padding-top: 0;
+    }
+    @media only screen and (max-width: 400px) {
+      [class*="mobile hidden"] {
+        display: none !important;
+      }
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ADM\\Parameterization\\Telephony\\MobileOperators\\Add' %}
+  {% else %}
+    {% set URL = 'ADM\\Parameterization\\Telephony\\MobileOperators\\Edit' %}
+  {% endif %}
+  {% set previous = 'ADM\\Parameterization\\Telephony\\MobileOperators' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('adm/mobileoperators.svg', 'Operadora de telefonia móvel') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if editMode %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} operadora de telefonia móvel
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar uma nova {% else %}modificar as informações cadastrais de uma {% endif %}
+                  operadora de telefonia móvel.
+                </div>
+              {% else %}
+                Visualizar operadora de telefonia móvel
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de uma
+                  operadora de telefonia móvel.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <div class="loading hidden">Processando...&#8230;</div>
+      <form class="ui form" method="POST" autocomplete="off"
+            onsubmit="loading();" enctype="multipart/form-data"
+            action="{{ path_for(URL, { 'mobileOperatorID': getValue('mobileoperatorid') }) }}">
+        <div class="ui vertical segment">
+        <div class="fields">
+          <div class="eight wide field{{ cssError('name') }}">
+            <label>Nome da operadora de telefonia móvel</label>
+            <div class="ui input{{ readonly }}">
+              <input name="name" type="text" maxlength="20"
+                     placeholder="Informe o nome da operadora de telefonia móvel..."
+                     {{ readonly }}
+                     value="{{ getValue('name') }}">
+            </div>
+            {% if hasError('name') %}
+            <small class="helper">{{ getError('name') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="ui four piled cards">
+          <!-- O logotipo da operadora de telefonia móvel -->
+          <div class="ui preview card">
+            <div class="content">
+              <div class="close"
+                    data-tooltip="Restaura o conteúdo desta imagem..."
+                    data-content="Bottom Right" data-position="top right"
+                    data-blue data-inverted>
+                <i class="close icon"></i>
+              </div>
+              Logotipo da operadora
+            </div>
+            <div class="image">
+              <img src="{{ getValue('logo') }}">
+            </div>
+            <input type="file"
+                   name="logo"
+                   accept="image/png, image/jpeg">
+          </div>
+        </div>
+        </div>
+
+        <div class="ui vertical segment tiny form">
+          {% set networkCodes = getValue('networkcodes') %}
+          <h3 class="ui header">
+            Códigos de rede
+            <div class="sub header">
+              Relação dos códigos numéricos de país (MCC) e rede (MNC)
+              usados em conjunto para identificar respectivamente o país
+              e a operadora de telefonia móvel.
+            </div>
+          </h3>
+          <div id="networkCodeList" class="networkCodeList doubling column row">
+            {% for number, networkCode in networkCodes %}
+            {% include 'adm/parameterization/telephony/mobileoperators/networkcode.twig' with { networkCode: networkCode, number: number }  %}
+            {% else %}
+            <div class="fields">
+              <div class="field">
+              Nenhum código de rede informado
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <button type="button" class="ui mini green right labeled icon button"
+                  onclick="addNetworkCode();">
+            <i class="plus icon"></i> Novo código
+          </button>
+        </div>
+
+        <div class="ui vertical segment tiny form">
+          {% set accessPoints = getValue('accesspoints') %}
+          <h3 class="ui header">
+            Pontos de Acesso (APN)
+            <div class="sub header">
+              Relação dos parâmetros de configuração dos pontos de
+              acesso (APN) usados para conexão na operadora de
+              telefonia móvel.
+            </div>
+          </h3>
+          <div id="accessPointNameList" class="accessPointNameList doubling column row">
+            {% for number, accessPoint in accessPoints %}
+            {% include 'adm/parameterization/telephony/mobileoperators/accesspointname.twig' with { networkCode: networkCode, number: number }  %}
+            {% else %}
+            <div class="fields">
+              <div class="field">
+              Nenhuma configuração de ponto de acesso informada
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <button type="button" class="ui mini green right labeled icon button"
+                  onclick="addAPN();">
+            <i class="plus icon"></i> Nova APN
+          </button>
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="mobileoperatorid" value="{{ getValue('mobileoperatorid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+  
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('template-engine/template.engine.min.js') }}
+  {{ lib('jquery/plugins/logo.input/logo.input.js') }}
+  {{ lib('extension/extension.min.js') }}
+  
+  {% apply minify %}
+  <script>
+    {% set networkCodes = getValue('networkcodes') %}
+    {% set accessPoints = getValue('accesspoints') %}
+    var
+      // O índice de contagem dos códigos de redes
+      networkCodesCount = {{ networkCodes|length }},
+
+      // O índice de contagem das APNs
+      APNCount = {{ accessPoints|length }}
+    ;
+    
+    // Carrega o template de um novo código de rede
+    {% set networkCodeTemplate %}
+      {% include 'adm/parameterization/telephony/mobileoperators/networkcode.twig' with { networkCode: { mobilenetworkcodeid: 0, mcc: 724, mnc: 0 }, number: "<%=number%>" }  %}
+    {% endset %}
+    var networkCodeTemplate = '{{ networkCodeTemplate|escape('js') }}'.replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+
+    
+    // Carrega o template de um novo ponto de acesso
+    {% set accessPointTemplate %}
+      {% include 'adm/parameterization/telephony/mobileoperators/accesspointname.twig' with { accessPoint: { accesspointnameid: 0, name: '', address: '', login: '', password: '' }, number: "<%=number%>" }  %}
+    {% endset %}
+    var accessPointTemplate = '{{ accessPointTemplate|escape('js') }}'.replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+    
+    $(document).ready(function() {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      $("input[name='logo']")
+        .logoinput({
+          size: {
+            width: 250,
+            height: 80
+          },
+          emptyImage: "{{ getValue('logo') }}"
+        })
+      ;
+      
+      // Coloca o foco no primeiro campo
+      $("input[name='name']")
+        .focus()
+      ;
+    });
+    
+    // ================================================[ Handlers ]=====
+    
+    /* --------------------------------------[ Códigos de rede ]----- */
+
+    // Faz a adição de um código de rede
+    var addNetworkCode = function()
+    {
+      var
+        // Determina a quantidade de códigos de rede
+        networkCodeNumber = networkCodesCount
+      ;
+      networkCodesCount++;
+      
+      if (networkCodeNumber === 0) {
+        // Limpa qualquer conteúdo anterior
+        $(".networkCodeList")
+          .empty()
+        ;
+
+        // Cria um novo conjunto de campos
+        var
+          networkCodeEntry = TemplateEngine(networkCodeTemplate,
+            { number: networkCodeNumber })
+        ;
+
+        // Adiciona um conjunto de campos para o novo código de rede
+        networkCodeEntry = $(".networkCodeList").append(networkCodeEntry);
+
+        // Acrescenta os rótulos nos campos
+        $(networkCodeEntry)
+          .find("div.field")
+          .each(function() {
+            var
+              label = $(this).find('input[label]').attr('label')
+            ;
+
+            $(this)
+              .prepend('<label class="column mobile hidden">' + label + '</label>')
+            ;
+          })
+        ;
+      } else {
+        // Adiciona um conjunto de campos para o novo código de rede
+        $(".networkCodeList")
+          .append(TemplateEngine(networkCodeTemplate,
+            { number: networkCodeNumber }))
+        ;
+      }
+
+      // Mascara os campos de código
+      $("input[name='networkcodes[" + networkCodeNumber + "][mcc]']")
+        .mask({ type: 'number', maxlength: 3 })
+      ;
+      $("input[name='networkcodes[" + networkCodeNumber + "][mnc]']")
+        .mask({ type: 'number', maxlength: 3 })
+      ;
+      
+      // Coloca em foco o campo inicial do novo código de rede
+      $("input[name='networkcodes[" + networkCodeNumber + "][mcc]']")
+        .focus()
+      ;
+    };
+    
+    // Faz a remoção de um código de rede
+    var delNetworkCode = function(element)
+    {
+      var
+        // Determina o código de rede
+        networkCodeNumber = parseInt($(element).attr("networkcode"))
+      ;
+
+      $(element)
+        .closest('.networkCodeEntry')
+        .remove()
+      ;
+
+      // Decrementa o contador de códigos de rede
+      networkCodesCount--;
+
+      if (networkCodesCount === 0) {
+        // Adiciona uma mensagem que não temos mais informações
+        $(".networkCodeList")
+          .append('<div class="fields"><div class="field">Nenhum código de rede informado</div></div>')
+        ;
+      }
+    };
+
+    /* --------------------------------------------------[ APN ]----- */
+
+    // Faz a adição de uma APN
+    var addAPN = function()
+    {
+      var
+        // Determina a quantidade de APNs
+        APNNumber = APNCount
+      ;
+
+      APNCount++;
+      
+      if (APNNumber === 0) {
+        // Limpa qualquer conteúdo anterior
+        $(".accessPointNameList")
+          .empty()
+        ;
+
+        // Cria um novo conjunto de campos
+        var
+          accessPointEntry = TemplateEngine(accessPointTemplate,
+            { number: APNNumber })
+        ;
+
+        // Adiciona um conjunto de campos para o novo código de rede
+        accessPointEntry = $(".accessPointNameList").append(accessPointEntry);
+
+        // Acrescenta os rótulos nos campos
+        $(accessPointEntry)
+          .find("div.field")
+          .each(function() {
+            var
+              label = $(this).find('input[label]').attr('label')
+            ;
+            
+            $(this)
+              .prepend('<label class="column mobile hidden">' + label + '</label>')
+            ;
+          });
+      } else {
+        // Adiciona um conjunto de campos para o novo código de rede
+        $(".accessPointNameList")
+          .append(TemplateEngine(accessPointTemplate,
+            { number: APNNumber }))
+        ;
+      }
+      
+      // Coloca em foco o campo inicial do novo código de rede
+      $("input[name='accesspoints[" + APNNumber + "][name]']")
+        .focus()
+      ;
+    };
+    
+    // Faz a remoção de uma APN
+    var delAPN = function(element)
+    {
+      var
+        // Determina a quantidade de APNs
+        APNNumber = parseInt($(element).attr("accesspoint"))
+      ;
+
+      $(element)
+        .closest('.accessPointEntry')
+        .remove()
+      ;
+
+      // Decrementa o contador de APNs
+      APNCount--;
+
+      if (APNCount === 0) {
+        // Adiciona uma mensagem que não temos mais informações
+        $(".accessPointNameList")
+          .append('<div class="fields"><div class="field">Nenhuma configuração de ponto de acesso informada</div></div>')
+        ;
+      }
+    };
+
+    var loading = function() {
+      $(document.body)
+        .css({
+          'cursor' : 'wait'
+        })
+      ;
+      $(".loading")
+        .removeClass("hidden")
+      ;
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

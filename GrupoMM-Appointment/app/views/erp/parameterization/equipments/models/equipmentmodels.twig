@@ -1,0 +1,648 @@
+{% extends 'templates/erp/layout.twig' %}
+{% import "templates/erp/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento de modelos de equipamentos{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.main.basic.segment .searchbar.fields .field.brand {
+      flex-grow: 1;
+      min-width: 250px;
+    }
+    .ui.main.basic.segment .searchbar.fields .field.selectbox {
+      flex-grow: 1;
+      min-width: 190px;
+    }
+    @media only screen and (max-width: 767px) {
+      .ui.main.basic.segment .searchbar.fields .field.brand {
+        min-width: 100px;
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 100px;
+        width: calc(100% - 47px);
+      }
+    }
+
+    @media only screen and (min-width: 1055px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+    }
+    .ui.celled.table>tbody>tr>th.left-border,
+    .ui.celled.table>thead>tr>th.left-border,
+    .ui.celled.table>tr>th.left-border {
+      border-left: 1px solid rgba(34,36,38,.1) !important;
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set add  = { 'URL': 'ERP\\Parameterization\\Equipments\\Models\\Add', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/equipmentmodels.svg', 'Modelos de equipamentos') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento dos modelos de equipamentos
+                <div class="sub header">
+                  Permite gerenciar os modelos de equipamentos de
+                  rastreamento cadastrados no sistema.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(add.URL, add.method) %}
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Adiciona um modelo de equipamento"
+                      data-position="top left" type="button"
+                      onclick="add();">
+                <i class="add icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            <div class="field selectbox">
+              <select class="ui adaptable selection dropdown"
+                      name="protocolID" id="protocolID">
+                <option value="0"{% if equipment.protocol.id == 0 %} selected{% endif %}>
+                  Qualquer protocolo
+                </option>
+                {% for protocol in protocols %}
+                <option value="{{ protocol.id }}"{% if equipment.protocol.id == protocol.id %} selected{% endif %}>
+                  {{ protocol.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="field brand">
+              <input placeholder="Informe a marca..." type="text"
+                     name="brandName"
+                     value="{{ equipment.brand.name }}">
+              <input type="hidden" name="brandID"
+                     value="{{ equipment.brand.id }}" >
+            </div>
+          </div>
+
+          <div class="flex">
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite o modelo que procura..."
+                       value="{{ equipment.model.name }}">
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza um modelo de equipamento"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th rowspan="3">ID</th>
+          <th rowspan="3" class="dt-center">Modelo de<br>equipamento</th>
+          <th rowspan="3" class="dt-center">Marca</th>
+          <th rowspan="3" class="dt-center">Protocolo</th>
+          <th rowspan="3" class="dt-center">Slots de<br>Simcards<br>disponíveis</th>
+          <th rowspan="3" class="dt-center">Modelo<br>do Simcard</th>
+          <th colspan="4" class="dt-center left-border">Entradas e Saídas</th>
+          <th rowspan="3" class="dt-center">Módulo<br>RF</th>
+          <th rowspan="3" class="dt-center">Botão<br>Liga/Desliga</th>
+          <th rowspan="3" class="dt-center">Sensor<br>de caixa<br>aberta</th>
+          <th rowspan="3" class="dt-center">Interface<br>RS232</th>
+          <th rowspan="3" class="dt-center">Entrada<br>iButton</th>
+          <th rowspan="3" class="dt-center">Anti<br>Jammer</th>
+          <th rowspan="3" class="dt-center">Entrada<br>RPM</th>
+          <th rowspan="3" class="dt-center">Entrada<br>Odômetro</th>
+          <th rowspan="3" class="dt-center">Acelerômetro</th>
+          <th rowspan="3" class="dt-center" {{ tooltip.add('left', 'Permite remover o modelo de equipamento') }}><i class="remove darkred icon"></i></th>
+        </tr>
+        <tr>
+          <th colspan="2" class="dt-center left-border">Analógicas</th>
+          <th colspan="2" class="dt-center left-border">Digitais</th>
+        </tr>
+        <tr>
+          <th class="dt-center left-border">↙</th>
+          <th class="dt-center">↗</th>
+          <th class="dt-center">↙</th>
+          <th class="dt-center">↗</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/info.twig' %}
+  {% include 'templates/erp/partials/dialogs/question.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/AmountFormatter.min.js') }}
+  {{ lib('datatables/formatters/DeleteFormatter.min.js') }}
+  {{ lib('datatables/formatters/SimCardFormatter.min.js') }}
+  {{ lib('datatables/formatters/EnableFormatter.min.js') }}
+  
+  {% set getData = { 'URL': 'ERP\\Parameterization\\Equipments\\Models\\Get', 'method': 'PATCH' } %}
+  {% set add     = { 'URL': 'ERP\\Parameterization\\Equipments\\Models\\Add', 'method': 'GET' } %}
+  {% set edit    = { 'URL': 'ERP\\Parameterization\\Equipments\\Models\\Edit', 'method': 'GET' } %}
+  {% set remove  = { 'URL': 'ERP\\Parameterization\\Equipments\\Models\\Delete', 'method': 'DELETE' } %}
+
+  {% set getBrandNameCompletion = { 'URL': 'ERP\\Parameterization\\Equipments\\Brands\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      table
+    ;
+
+    // O ícone em SVG de um SIM Card
+    {% set SimCardSVG %}{% include 'svg/simcard.twig' with { color1: '<%=color1%>', color2: '<%=color2%>', value: "<%=value%>" }  %}{% endset %}
+    var SimCardSVG = '{{ SimCardSVG }}'.replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+    
+    // Sobrescreve o tratamento de erros
+    $.fn.dataTable.ext.errMode = function ( settings, helpPage, message ) {
+      var errorMessage = '';
+      if (typeof(message) != 'undefined' && message != null) {
+        if (message.length > 38) {
+          // Exibe a mensagem de erro
+          errorMessage = message.substring(38);
+        }
+      }
+
+      if (errorMessage === 'Não temos modelos de equipamentos cadastrados.') {
+        // Informa de maneira didática que não temos modelos de
+        // equipamentos cadastrados e pergunta ao usuário se o mesmo
+        // deseja cadastrar um neste momento
+        questionDialog(
+          'Gerenciamento de modelos de equipamentos',
+          'Ainda não há modelos de equipamentos de rastreamento ' +
+          'cadastrado no sistema. Deseja cadastrar um novo modelo ' +
+          'agora?<br>' +
+          '<span style="color: #89afd7;">Caso você não queira fazer ' +
+          'isto agora, pode cadastrá-lo em outro momento.<span>',
+          function() {
+            // Permite adicionar um novo modelo de equipamento
+            add();
+          });
+      } else {
+        // Exibe a mensagem de erro
+        if (errorMessage.length > 0) {
+          warningDialog('Desculpe', errorMessage);
+        }
+      }
+    };
+
+    $(document).ready(function() {
+      // --------------------------------[ Componentes da Searchbar ]---
+      $('#searchValue')
+        .keypress(forceSearch)
+      ;
+      $('.searchbar .ui.dropdown')
+        .dropdown({
+          onChange: function(value, text, $selectedItem) {
+            protocolHandler();
+          }
+        })
+      ;
+      $("input[name='brandName']")
+        .autocomplete(brandNameCompletionOptions)
+      ;
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "id",
+            "data": "id",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "equipmentmodels.name",
+            "data": "name",
+            "visible": true,
+            "orderable": true },
+          { "targets": 2,
+            "name": "equipmentbrands.name, equipmentmodels.name",
+            "data": "equipmentbrandname",
+            "visible": true,
+            "orderable": true },
+          { "targets": 3,
+            "name": "protocols.name",
+            "data": "protocol",
+            "visible": true,
+            "orderable": true },
+          { "targets": 4,
+            "name": "equipmentmodels.maxsimcards, equipmentmodels.name",
+            "data": "maxsimcards",
+            "className": "dt-center",
+            "visible": true,
+            "width": "60px",
+            "orderable": true,
+            "render": simcardFormatter(SimCardSVG) },
+          { "targets": 5,
+            "name": "equipmentmodels.name, simcardtypes.name",
+            "data": "simcardtypename",
+            "visible": true,
+            "width": "100px",
+            "orderable": true },
+          { "targets": 6,
+            "name": "equipmentmodels.analoginput, equipmentmodels.name, simcardtypes.name",
+            "data": "analoginput",
+            "className": "dt-center",
+            "visible": true,
+            "width": "30px",
+            "orderable": true,
+            "render": amountFormatter },
+          { "targets": 7,
+            "name": "equipmentmodels.analogoutput, equipmentmodels.name, simcardtypes.name",
+            "data": "analogoutput",
+            "className": "dt-center",
+            "visible": true,
+            "width": "30px",
+            "orderable": true,
+            "render": amountFormatter },
+          { "targets": 8,
+            "name": "equipmentmodels.digitalinput, equipmentmodels.name, simcardtypes.name",
+            "data": "digitalinput",
+            "className": "dt-center",
+            "visible": true,
+            "width": "30px",
+            "orderable": true,
+            "render": amountFormatter },
+          { "targets": 9,
+            "name": "equipmentmodels.digitaloutput, equipmentmodels.name, simcardtypes.name",
+            "data": "digitaloutput",
+            "className": "dt-center",
+            "visible": true,
+            "width": "30px",
+            "orderable": true,
+            "render": amountFormatter },
+          { "targets": 10,
+            "name": "equipmentmodels.hasrfmodule, equipmentmodels.name, simcardtypes.name",
+            "data": "hasrfmodule",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true,
+            "width": "10px",
+            "render": enableFormatter("Possui Módulo RF") },
+          { "targets": 11,
+            "name": "equipmentmodels.hasonoffbutton, equipmentmodels.name, simcardtypes.name",
+            "data": "hasonoffbutton",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true,
+            "width": "10px",
+            "render": enableFormatter("Possui botão liga/desliga") },
+          { "targets": 12,
+            "name": "equipmentmodels.hasboxopensensor, equipmentmodels.name, simcardtypes.name",
+            "data": "hasboxopensensor",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true,
+            "width": "10px",
+            "render": enableFormatter("Possui sensor de caixa aberta") },
+          { "targets": 13,
+            "name": "equipmentmodels.hasrs232interface, equipmentmodels.name, simcardtypes.name",
+            "data": "hasrs232interface",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true,
+            "width": "10px",
+            "render": enableFormatter("Possui interface RS232") },
+          { "targets": 14,
+            "name": "equipmentmodels.hasibuttoninput, equipmentmodels.name, simcardtypes.name",
+            "data": "hasibuttoninput",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true,
+            "width": "10px",
+            "render": enableFormatter("Possui entrada iButton") },
+          { "targets": 15,
+            "name": "equipmentmodels.hasantijammer, equipmentmodels.name, simcardtypes.name",
+            "data": "hasantijammer",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true,
+            "width": "10px",
+            "render": enableFormatter("Possui Anti Jammer") },
+          { "targets": 16,
+            "name": "equipmentmodels.hasrpminput, equipmentmodels.name, simcardtypes.name",
+            "data": "hasrpminput",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true,
+            "width": "10px",
+            "render": enableFormatter("Possui entrada para sensor RPM") },
+          { "targets": 17,
+            "name": "equipmentmodels.hasodometerinput, equipmentmodels.name, simcardtypes.name",
+            "data": "hasodometerinput",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true,
+            "width": "10px",
+            "render": enableFormatter("Possui entrada para odômetro") },
+          { "targets": 18,
+            "name": "equipmentmodels.hasaccelerometer, equipmentmodels.name, simcardtypes.name",
+            "data": "hasaccelerometer",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true,
+            "width": "10px",
+            "render": enableFormatter("Possui acelerômetro") },
+          { "targets": 19,
+            "name": "delete",
+            "data": "id",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": deleteFormatter("Remover este modelo de equipamento") }
+        ],
+        order: [[ 1, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.searchValue  = $('#searchValue').val();
+            params.brandID      = $("input[name='brandID']").val();
+            params.brandName    = $("input[name='brandName']").val();
+            params.protocolID   = $('#protocolID').val();
+            params.protocolName = $('#protocolID option:selected').text();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        }
+      });
+
+      // Manipula os eventos de click
+      table
+        .on('user-select', function (e, dt, type, cell, originalEvent) {
+          if (type === 'cell') {
+            var
+              // Recupera os dados da célula selecionada
+              index   = cell[0][0],
+
+              // Recupera o modelo de equipamento selecionado
+              equipmentModel = dt.rows( index.row ).data().toArray()[0]
+            ;
+
+            // Em função da coluna onde ocorreu o clique, executa a ação
+            // correspondente
+            switch (index.column) {
+              {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}
+              case 19:
+                // Apaga o modelo de equipamento selecionado
+                questionDialog(
+                  'Remover modelo de equipamento',
+                  'Você deseja realmente remover o modelo de equipamento <b>&ldquo;' + equipmentModel.name + '&rdquo;</b>?<br>Esta ação não poderá ser desfeita.',
+                  function() {
+                    // Remove o modelo de equipamento selecionado
+                    var
+                      url  = "{{ buildURL('ERP\\Parameterization\\Equipments\\Models\\Delete', {'equipmentModelID': 'equipmentModel.id'}) }}"
+                    ;
+
+                    deleteJSONData(url, [],
+                    function (data, params, message) {
+                      // Atualiza a tabela
+                      searchLoad();
+                    });
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  }
+                );
+
+                break;
+              {% endif %}
+              default:
+                {% if authorization.getAuthorizationFor(edit.URL, edit.method) %}
+                // Coloca o modelo de equipamento em edição
+                window.location.href = "{{ buildURL(edit.URL, {'equipmentModelID': 'equipmentModel.id'}) }}";
+                {% endif %}
+            }
+
+            e.preventDefault();
+          }
+        }
+      );
+
+      // Força a atualização da tabela para reajustar as colunas após
+      // a carga
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 1500);
+    });
+
+
+    // =================================================[ Options ]=====
+
+    // Faz o tratamento da seleção do protocolo
+    function protocolHandler() {
+      console.log('Protocolo modificado');
+      searchLoad();
+    }
+
+    // As opções para o componente de autocompletar o nome da marca do
+    // equipamento
+    var brandNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      showClearValue: true,
+      ajax: {
+        url: "{{ path_for(getBrandNameCompletion.URL) }}",
+        type: "{{ getBrandNameCompletion.method }}"
+      },
+      onSelect: function (element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='brandID']")
+          .val(suggestion.id)
+        ;
+
+        searchLoad();
+      },
+      onInvalidateSelection: function() {
+        // Limpa os dados
+        $("input[name='brandID']")
+          .val(0)
+        ;
+
+        searchLoad();
+      }
+    };
+
+
+    // ================================================[ Handlers ]=====
+
+    // Executa a pesquisa
+    function searchLoad() {
+      table
+        .ajax
+        .reload()
+      ;
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 500);
+    }
+
+    // Força a atualização da tabela
+    function forceSearch(event) {
+      if (event.which == 13) {
+        searchLoad();
+      }
+    }
+
+    // Codifica elementos para envio na requisição
+    function encodeQueryData(data) {
+      const
+        ret = []
+      ;
+
+      for (let d in data) {
+        ret
+          .push(encodeURIComponent(d) + '=' + encodeURIComponent(data[d]))
+        ;
+      }
+
+      return ret.join('&');
+    }
+
+    // Permite adicionar um modelo de equipamento
+    function add() {
+      var
+        data = {
+          'brandID'   : $("input[name='brandID']").val(),
+          'brandName' : $("input[name='brandName']").val()
+        }
+      ;
+
+      const
+        url         = "{{ buildURL(add.URL, {}) }}",
+        queryString = encodeQueryData(data)
+      ;
+
+      window.location.href = url + '?' + queryString;
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

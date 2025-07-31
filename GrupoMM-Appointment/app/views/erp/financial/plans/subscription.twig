@@ -1,0 +1,87 @@
+          <div class="fields subscriptionEntry">
+            <div class="field amount{{ cssError('subscriptions[' ~ number ~ '][numberofmonths]') }}">
+              <label{% if not loop.first %} class="large monitor or widescreen hidden"{% endif %}>
+                Período
+              </label>
+              <div class="ui right labeled input{{ readonly }}{% if loop.first %} readonly{% endif %}">
+                <input name="subscriptions[{{ number }}][numberofmonths]"
+                       placeholder="numberofmonths..." type="text"
+                       value="{{ subscription.numberofmonths }}"
+                       {% if loop.first %} readonly{% endif %}
+                       {{ readonly }}
+                       maxlength="3">
+                <div class="ui basic label">{% if loop.first %}mês{% else %}meses{% endif %}</div>
+              </div>
+              <input name="subscriptions[{{ number }}][subscriptionplanid]"
+                     type="hidden"
+                     value="{{ subscription.subscriptionplanid }}" />
+              {% if hasError('subscriptions[' ~ number ~ ']') %}
+              <small class="helper">{{ getError('subscriptions[' ~ number ~ '][numberofmonths]') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="field percentage{{ cssError('subscriptions[' ~ number ~ '][discountrate]') }}">
+              <label{% if not loop.first %} class="large monitor or widescreen hidden"{% endif %}>
+                Desconto oferecido
+              </label>
+              {% if loop.first %}
+              <div class="ui input readonly">
+                <input type="text" value="Sem desconto" readonly>
+                <input name="subscriptions[{{ number }}][discountrate]"
+                       type="hidden" value="{{ subscription.discountrate }}">
+              </div>
+              {% else %}
+              <div class="ui action input">
+                <div class="ui right labeled input{{ readonly }}">
+                  <input name="subscriptions[{{ number }}][discountrate]"
+                         placeholder="Desconto oferecido..." type="text"
+                         value="{{ subscription.discountrate }}"
+                         {{ readonly }}>
+                  <div class="ui basic label">%</div>
+                </div>
+              </div>
+              {% endif %}
+              {% if hasError('subscriptions[' ~ number ~ ']') %}
+              <small class="helper">{{ getError('subscriptions[' ~ number ~ '][discountrate]') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="field monetary">
+              <label{% if not loop.first %} class="large monitor or widescreen hidden"{% endif %}>
+                Mensalidade
+              </label>
+              <div class="ui left labeled input readonly">
+                <div class="ui basic label">R$</div>
+                <input name="subscriptions[{{ number }}][monthprice]"
+                       placeholder="Valor da mensalidade..." type="text"
+                       value="{{ subscription.monthprice }}"
+                       readonly>
+              </div>
+              {% if hasError('subscriptions[' ~ number ~ ']') %}
+              <small class="helper">{{ getError('subscriptions[' ~ number ~ '][mnc]') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="field monetarytotal">
+              <label{% if not loop.first %} class="large monitor or widescreen hidden"{% endif %}>
+                Valor pago
+              </label>
+              <div class="ui left labeled action input readonly">
+                <div class="ui basic label">R$</div>
+                <input name="subscriptions[{{ number }}][total]"
+                       placeholder="Valor da mensalidade..." type="text"
+                       value="{{ subscription.total }}"
+                       readonly>
+                <button class="ui tiny youtube icon button"
+                        data-tooltip="Remove este plano de assinatura"
+                        data-position="top right" type="button"
+                        subscription="{{ number }}"
+                        onclick="delSubscription(this);">
+                  <i class="minus icon"></i>
+                </button>
+              </div>
+              {% if hasError('subscriptions[' ~ number ~ ']') %}
+              <small class="helper">{{ getError('subscriptions[' ~ number ~ '][mnc]') }}</small>
+              {% endif %}
+            </div>
+          </div>

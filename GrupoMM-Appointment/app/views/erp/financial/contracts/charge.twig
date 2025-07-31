@@ -1,0 +1,103 @@
+                <div class="fields chargeEntry">
+                  <div class="field name{{ cssError('charges[' ~ chargeNumber ~ '][name]') }}">
+                    <label{% if not loop.first %} class="large monitor or widescreen hidden"{% endif %}>
+                      Nome da cobrança
+                    </label>
+                    <div class="ui input{{ readonly }}">
+                      <input name="charges[{{ chargeNumber }}][name]" type="text" maxlength="30"
+                             placeholder="Nome do valor cobrado..."
+                             {{ readonly }}
+                             value="{{ charge.name }}">
+                      <input name="charges[{{ chargeNumber }}][contractchargeid]"
+                             type="hidden"
+                             value="{{ charge.contractchargeid }}" />
+                      <input name="charges[{{ chargeNumber }}][planchargeid]"
+                             type="hidden"
+                             value="{{ charge.planchargeid }}" />
+                    </div>
+                    {% if hasError('charges[' ~ chargeNumber ~ '][name]') %}
+                    <small class="helper">{{ getError('charges[' ~ chargeNumber ~ '][name]') }}</small>
+                    {% endif %}
+                  </div>
+                  <div class="field name field{{ cssError('charges[' ~ chargeNumber ~ '][billingtypeid]') }}">
+                    <label{% if not loop.first %} class="large monitor or widescreen hidden"{% endif %}>
+                      Tipo de cobrança
+                    </label>
+                    {% if editMode %}
+                    <div class="ui search selection dropdown">
+                      <input name="charges[{{ chargeNumber }}][billingtypeid]"
+                             type="hidden" charge="{{ chargeNumber }}"
+                             value="{{ charge.billingtypeid }}">
+                      <i class="dropdown icon"></i>
+                      <div class="default text"></div>
+                      <div class="menu">
+                        {% for billingType in billingTypes %}
+                          <div class="item"
+                               {% if billingType.id == charge.billingtypeid %}
+                               selected
+                               {% endif %}
+                               data-value="{{ billingType.id }}"
+                               data-text="{{ billingType.name }}"
+                               data-installment="{{ billingType.installment }}">
+                            {{ billingType.name }}
+                          </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+                    {% else %}
+                    <div class="field static">
+                      <span class="darking">{{ charge.billingtypename }}&nbsp;</span>
+                    </div>
+                    {% endif %}
+                    {% if hasError('charges[' ~ chargeNumber ~ '][billingtypeid]') %}
+                    <small class="helper">{{ getError('charges[' ~ chargeNumber ~ '][billingtypeid]') }}</small>
+                    {% endif %}
+                  </div>
+                  <div class="field monetary">
+                    <label{% if not loop.first %} class="large monitor or widescreen hidden"{% endif %}>
+                      Valor no plano
+                    </label>
+                    <div class="ui left labeled input success">
+                      <div class="ui basic label"
+                            name="charges[{{ chargeNumber }}][label]">R$</div>
+                      <input name="charges[{{ chargeNumber }}][planvalue]"
+                             type="text" class="right" readonly
+                             value="{{ charge.planvalue|replace({'.': ','}) }}">
+                    </div>
+                  </div>
+                  <div class="field monetary{{ cssError('charges[' ~ chargeNumber ~ '][chargevalue]') }}">
+                    <label{% if not loop.first %} class="large monitor or widescreen hidden"{% endif %}>
+                      Valor cobrado
+                    </label>
+                    <div class="ui left labeled input{{ readonly }}">
+                      <div class="ui basic label"
+                            name="charges[{{ chargeNumber }}][label]">R$</div>
+                      <input name="charges[{{ chargeNumber }}][chargevalue]"
+                             placeholder="Valor cobrado" type="text"
+                             class="right"
+                             value="{{ charge.chargevalue|replace({'.': ','}) }}">
+                    </div>
+                    {% if hasError('charges[' ~ chargeNumber ~ '][chargevalue]') %}
+                    <small class="helper">{{ getError('charges[' ~ chargeNumber ~ '][chargevalue]') }}</small>
+                    {% endif %}
+                  </div>
+                  <div class="field monetarytotal">
+                    <label{% if not loop.first %} class="large monitor or widescreen hidden"{% endif %}>
+                      Parcelamento
+                    </label>
+                    <div class="ui {% if editMode %} action{% endif %} input readonly">
+                      <input name="charges[{{ chargeNumber }}][installment]"
+                             placeholder="Valor cobrado" type="text"
+                             value="{{ charge.installment }}">
+                      {% if editMode %}
+                      <button class="ui tiny youtube icon button"
+                              data-tooltip="Remove este valor cobrado"
+                              data-position="top right" type="button"
+                              charge="{{ chargeNumber }}"
+                              onclick="delCharge(this);">
+                        <i class="minus icon"></i>
+                      </button>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>

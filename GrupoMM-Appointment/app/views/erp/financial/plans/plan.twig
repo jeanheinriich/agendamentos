@@ -1,0 +1,1393 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} plano de serviço{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  <style>
+    /* Realiza ajustes nos dropdowns */
+    .ui.selection.dropdown {
+      line-height: 1.1em;
+    }
+    .medium {
+      min-width: 9em !important;
+      max-width: 9em;
+    }
+
+    /* Realiza ajustes no miniform */
+    .ui.form .fields:not(.grouped):not(.inline) .field:not(:only-child) .ui.checkbox {
+      margin-top: 0.3em;
+    }
+
+    /* Realiza ajustes nos detalhes */
+    .ui.mini.form {
+      margin-bottom: 0.7em;
+    }
+    .ui.basic.label {
+      text-align: center;
+      min-width: 3.2em;
+    }
+    .subscriptionEntry:first-child button {
+      background-color: #c8c8c8 !important;
+    }
+    .ui.vertical.segment:first-child {
+      padding-top: 0;
+    }
+
+    /**
+     * Criamos um grid especial para exibir campos agrupados no
+     * formulário e que precisam estar realçados de forma a se entender
+     * que ambos se relacionam entre si, e que de outra forma ficariam
+     * em algumas resoluções com tamanho muito reduzido e em outras
+     * exagerado.
+     */
+    .grouped {
+      display: -webkit-box;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-orient: horizontal;
+      -webkit-box-direction: normal;
+      -ms-flex-direction: row;
+      flex-direction: row;
+      -ms-flex-wrap: wrap;
+      flex-wrap: wrap;
+      -webkit-box-align: stretch;
+      -ms-flex-align: stretch;
+      align-items: stretch;
+      width: calc(100% + .5em);
+      margin-left: -.5em;
+      margin-right: -.5em;
+      padding: 0;
+    }
+    .grouped > .column {
+      position: relative;
+      display: inline-block;
+      width: 50%;
+      vertical-align: top;
+      padding-left: .5em;
+    }
+    @media only screen and (max-width: 767.98px) {
+      .grouped > .column {
+        width: 100%;
+        flex-wrap: wrap;
+        margin-top: .38571429em;
+      }
+      .ui.message .fields {
+        flex-direction: row;
+      }
+      .ui.message .fields>.wide.field {
+        width: 50% !important;
+      }
+    }
+    @media only screen and (min-width: 768px) and (max-width: 991px) {
+      .ui.message .fields {
+        flex-direction: column;
+      }
+      .ui.message .fields>.wide.field {
+        width: 100% !important;
+        flex-wrap: wrap;
+      }
+    }
+    @media only screen and (min-width: 992px) {
+      .ui.message .fields>.wide.field {
+        width: 50%;
+      }
+    }
+    .grouped > .column .ui.message {
+      height: 100%;
+    }
+    .ui.coffe.message {
+      -webkit-box-shadow: 0 0 0 1px #d6aea3 inset, 0 0 0 0 transparent;
+      box-shadow: 0 0 0 1px #d6aea3 inset, 0 0 0 0 transparent;
+      background-color: #f4eae4;
+    }
+
+    /**
+     * Criamos um grid especial para exibir campos no formulário que de
+     * outra forma ficariam em algumas resoluções com tamanho muito
+     * reduzido e em outras exagerado.
+     */
+    .ui.special.grid {
+      margin-top: .38571429em;
+      margin-bottom: .38571429em;
+      margin-left: -.5rem;
+      margin-right: -.5rem;
+    }
+    .ui.special.grid>.column:not(.row),
+    .ui.special.grid>.row>.column {
+      padding-left: .5rem;
+      padding-right: .5rem;
+    }
+    @media only screen and (max-width: 767.98px) {
+      .ui.special.grid {
+        margin-top: .38571429em;
+      }
+    }
+
+    /**
+     * As formatações para os campos de formulário dinâmicos
+     */
+    .ui.vertical.segment.noBottomBorder,
+    .ui.vertical.segment.form {
+      margin-top: .38571429em;
+    }
+    .tiny.form .header {
+      margin-bottom: .5em;
+    }
+    h3.ui.header .sub.header {
+      padding-top: .5em;
+    }
+    .ui.tiny.segment {
+      margin-bottom: .5em;
+    }
+    @media only screen and (max-width: 767px) {
+      .tiny.form .fields {
+        margin-left: -1em;
+        margin-right: -1em;
+        margin-bottom: .5em;
+        border-bottom: 1px dotted rgba(34,36,38,.15);
+        padding: 5px;
+      }
+      .ui.tiny.segment {
+        margin-bottom: 0.2em;
+      }
+      .ui.form .fields>.buttons {
+        margin: 0.3em 0;
+      }
+      .ui.form .fields {
+        margin-bottom: 0.3em;
+      }
+    }
+    .ui.tiny.form .fields.hidden {
+      visibility: hidden;
+      display: none;
+    }
+    .ui.tiny.form .fields .field {
+      flex-basis: 25%;
+    }
+    @media only screen and (max-width: 479px) {
+      .ui.tiny.form .fields .field {
+        flex-basis: 50%;
+      }
+      .ui.tiny.form .fields .field .ui.input {
+        flex-basis: 50%;
+      }
+      .ui.tiny.form .fields .field.amount .ui.input input{
+        width: calc(42vw - 42px);
+      }
+      .ui.tiny.form .fields .field.percentage .ui.input input{
+        width: calc(42vw - 24px);
+      }
+      .ui.tiny.form .fields .field.monetary .ui.input input{
+        width: calc(42vw - 24px);
+      }
+      .ui.tiny.form .fields .field.monetarytotal .ui.input input{
+        width: calc(42vw - 58px);
+      }
+    }
+    @media only screen and (min-width: 480px) and (max-width: 767px) {
+      .ui.tiny.form .fields .field {
+        flex-basis: 50%;
+      }
+    }
+    @media only screen and (min-width: 768px) and (max-width: 1200px) {
+      .ui.tiny.form .fields {
+        -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
+      }
+      .tiny.form .fields {
+        margin-left: -1em;
+        margin-right: -1em;
+        margin-bottom: .5em;
+        border-bottom: 1px dotted rgba(34,36,38,.15);
+        padding: 5px;
+      }
+      .ui.tiny.form .fields .field {
+        flex-basis: 50%;
+      }
+    }
+    @media only screen and (min-width: 1201px) {
+      /* Large monitor or widescreen */
+      [class*="large monitor or widescreen hidden"] {
+        display: none !important;
+      }
+    }
+    .tiny.form .ui.selection.dropdown {
+      padding: .60857143em 1.8em .60857143em 1em;
+    }
+    .tiny.form .fields:not(:first-child) .ui.tiny.button {
+      pointer-events: all !important;
+    }
+
+    /**
+     * Definições para as linhas da tabela
+     */
+    .ui.table tr td.unselected,
+    .ui.table tr.unselected td,
+    .ui.table tr.unselected:hover,
+    .ui.table tr:hover td.unselected {
+      color: rgba(40,40,40,.3);
+    }
+
+    .ui.table.features tr.selected td {
+      font-weight: bold;
+    }
+
+    @media only screen and (max-width: 767.98px) {
+      .ui[class*="very basic"].table:not(.sortable):not(.striped) > tbody > tr > td {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Financial\\Plans\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Financial\\Plans\\Edit' %}
+  {% endif %}
+  {% set previous = 'ERP\\Financial\\Plans' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/plans.svg', 'Plano de serviço') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} plano de serviço
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  plano de serviço.
+                </div>
+              {% else %}
+                Visualizar plano de serviço
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um plano de serviço.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL, { 'planID': getValue('planid') }) }}">
+        <div class="ui vertical segment">
+          <div class="fields">
+            <div class="sixteen wide field{{ cssError('name') }}">
+              <label>Nome do plano</label>
+              <div class="ui input{{ readonly }}">
+                <input name="name" type="text" maxlength="30"
+                       placeholder="Informe o nome do plano de serviço..."
+                       {{ readonly }}
+                       value="{{ getValue('name') }}">
+              </div>
+              {% if hasError('name') %}
+              <small class="helper">{{ getError('name') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="sixteen wide field{{ cssError('description') }}">
+              <label>Descrição</label>
+              <div class="ui input{{ readonly }}">
+                <textarea name="description" rows="8" {{ readonly }}
+                          placeholder="Descreva o plano...">{{ getValue('description') }}</textarea>
+              </div>
+              {% if hasError('description') %}
+              <small class="helper">{{ getError('description') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="ui special grid">
+            <div class="eight wide mobile eight wide tablet four wide computer four wide large screen column{{ cssError('monthprice') }}">
+              <label>Mensalidade</label>
+              <div class="ui left labeled input{{ readonly }}">
+                <div class="ui basic label">R$</div>
+                <input name="monthprice" type="text"
+                       placeholder="0,00"
+                       {{ readonly }}
+                       value="{{ getValue('monthprice') }}">
+              </div>
+              {% if hasError('monthprice') %}
+              <small class="helper">{{ getError('monthprice') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="eight wide mobile eight wide tablet four wide computer four wide large screen column{{ cssError('duration') }}">
+              <label>
+                Duração do contrato
+                <span data-tooltip="Contados à partir da data de instalação do equipamento"
+                      data-content="Top Left" data-position="top left"
+                      data-inverted="">
+                  <i class="question circle olive outline icon"></i>
+                </span>
+              </label>
+              <div class="ui right labeled input{{ readonly }}">
+                <input name="duration" type="text" maxlength="2"
+                       placeholder="0"
+                       {{ readonly }}
+                       value="{{ getValue('duration') }}">
+                <div class="ui basic label">meses</div>
+              </div>
+              {% if hasError('duration') %}
+              <small class="helper">{{ getError('duration') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="eight wide mobile eight wide tablet four wide computer four wide large screen column{{ cssError('indicatorid') }}">
+              <label>
+                Indicador financeiro
+                <span data-tooltip="O indicador financeiro utilizado para reajuste deste plano"
+                      data-content="Top Left" data-position="top left"
+                      data-inverted="">
+                  <i class="question circle olive outline icon"></i>
+                </span>
+              </label>
+              {% if editMode %}
+              <div class="ui search selection dropdown">
+                <input name="indicatorid" type="hidden"
+                       value="{{ getValue('indicatorid') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text">Informe o indicador</div>
+                <div class="menu">
+                {% set indicatorID = getValue('indicatorid') %}
+                {% for indicator in indicators %}
+                  <div class="item" {% if indicator.id == indicatorID %}selected{% endif %}
+                       data-value="{{ indicator.id }}"
+                       data-text="{{ indicator.name }}">
+                    {{ indicator.name }}
+                  </div>
+                {% endfor %}
+                </div>
+              </div>
+              {% else %}
+              <div class="field static">
+                <span class="darking">{{ getValue('indicatorname') }}</span>
+                <input name="indicatorid" type="hidden"
+                       value="{{ getValue('indicatorid') }}">
+              </div>
+              {% endif %}
+              {% if hasError('indicatorid') %}
+              <small class="helper">{{ getError('indicatorid') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="eight wide mobile eight wide tablet four wide computer four wide large screen column{{ cssError('readjustmentperiod') }}">
+              <label>
+                Reajuste a cada
+                <span data-tooltip="Contados à partir da instalação do equipamento"
+                      data-content="Top Left" data-position="top left"
+                      data-inverted="">
+                  <i class="question circle olive outline icon"></i>
+                </span>
+              </label>
+              <div class="ui right labeled input{{ readonly }}">
+                <input name="readjustmentperiod" type="text" maxlength="2"
+                       placeholder="0"
+                       {{ readonly }}
+                       value="{{ getValue('readjustmentperiod') }}">
+                <div class="ui basic label">meses</div>
+              </div>
+              {% if hasError('readjustmentperiod') %}
+              <small class="helper">{{ getError('readjustmentperiod') }}</small>
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="fields">
+            <div class="eight wide field{{ cssError('active') }}">
+              <div class="ui checkbox{{ readonly }}">
+                <input type="hidden" name="active"
+                       value="{% if getValue('active')|toBoolean %}true{% else %}false{% endif %}">
+                <input class="hidden" type="checkbox"
+                       name="_active"
+                       {{ readonly }}
+                       {% if getValue('active')|toBoolean %}checked="checked"{% endif %}>
+                <label>Plano de serviço ativo</label>
+              </div>
+              {% if hasError('active') %}
+              <small class="helper">{{ getError('active') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="ui vertical segment tiny form">
+            {% set subscriptions = getValue('subscriptions') %}
+            <h3 class="ui header">
+              Planos de assinatura
+              <div class="sub header">
+                Os descontos oferecidos ao cliente pela contratação do
+                serviço por períodos maiores com pagamento antecipado.
+              </div>
+            </h3>
+            <div id="subscriptionList" class="subscriptionList column row">
+              {% for number, subscription in subscriptions %}
+                {% include 'erp/financial/plans/subscription.twig' with { subscription: subscription, number: number }  %}
+              {% endfor %}
+            </div>
+            {% if editMode %}
+            <button type="button" class="ui mini green right labeled icon button"
+                    onclick="addSubscription();">
+              <i class="plus icon"></i> Novo plano de assinatura
+            </button>
+            {% endif %}
+          </div>
+
+          <div class="grouped">
+            <div class="column">
+              <div class="ui coffe message">
+                <div class="header">
+                  Período de fidelidade
+                </div>
+                <p>
+                  O período de fidelidade indica o tempo mínimo que o cliente
+                  se compromete a permanecer com o serviço. A multa consiste
+                  em uma penalização caso ele decida cancelar o serviço antes
+                  deste prazo.
+                </p>
+                <div class="ui compact grid">
+                  <div class="sixteen wide mobile sixteen wide tablet six wide computer column{{ cssError('loyaltyperiod') }}">
+                    <label>
+                      Duração
+                      <span data-tooltip="Contados à partir da instalação do equipamento"
+                            data-content="Top Left" data-position="top left"
+                            data-inverted="">
+                        <i class="question circle olive outline icon"></i>
+                      </span>
+                    </label>
+                    <div class="ui right labeled input{{ readonly }}">
+                      <input name="loyaltyperiod" type="text" maxlength="2"
+                             placeholder="0"
+                             {{ readonly }}
+                             value="{{ getValue('loyaltyperiod') }}">
+                      <div class="ui basic label">meses</div>
+                    </div>
+                    {% if hasError('loyaltyperiod') %}
+                    <small class="helper">{{ getError('loyaltyperiod') }}</small>
+                    {% endif %}
+                  </div>
+
+                  <div class="sixteen wide mobile sixteen wide tablet ten wide computer column{{ cssError('loyaltyfine') }}">
+                    <label>
+                      Multa
+                      <span data-tooltip="Multa cobrada em caso de término do contrato antes do fim do período de fidelidade"
+                            data-content="Top Left" data-position="top left"
+                            data-inverted="">
+                        <i class="question circle olive outline icon"></i>
+                      </span>
+                    </label>
+                    <div class="ui right labeled input{{ readonly }}">
+                      <input name="loyaltyfine" type="text"
+                             placeholder="0.000" {{ readonly }}
+                             value="{{ getValue('loyaltyfine') }}">
+                      <div class="ui basic label">%</div>
+                    </div>
+                    {% if hasError('loyaltyfine') %}
+                    <small class="helper">{{ getError('loyaltyfine') }}</small>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="column">
+              <div class="ui coffe message">
+                <div class="header">
+                  Multa por atraso no pagamento
+                </div>
+                <p>
+                  A multa independe do tempo que o cliente demora para
+                  realizar o pagamento depois do vencimento, ou seja, se
+                  o atraso for de 1 ou 30 dias, ela será cobrada e seu
+                  valor não muda. Já a mora é uma taxa de juros que cresce
+                  a cada dia de atraso.
+                </p>
+
+                <div class="ui compact grid">
+                  <div class="sixteen wide mobile sixteen wide tablet six wide computer column{{ cssError('finevalue') }}">
+                    <label>
+                      Multa
+                      <span data-tooltip="Multa cobrada em caso de atraso no pagamento"
+                            data-content="Top Left" data-position="top left"
+                            data-inverted="">
+                        <i class="question circle olive outline icon"></i>
+                      </span>
+                    </label>
+                    <div class="ui right labeled input{{ readonly }}">
+                      <input name="finevalue" type="text"
+                             placeholder="0.0000" {{ readonly }}
+                             value="{{ getValue('finevalue') }}">
+                      <div class="ui basic label">%</div>
+                    </div>
+                    {% if hasError('finevalue') %}
+                    <small class="helper">{{ getError('finevalue') }}</small>
+                    {% endif %}
+                  </div>
+                  
+                  <div class="sixteen wide mobile sixteen wide tablet ten wide computer column{{ cssError('arrearinterest') }}">
+                    <label>
+                      Mora
+                      <span data-tooltip="Juros de mora cobrados por dia de atraso no pagamento"
+                            data-content="Top Left" data-position="top left"
+                            data-inverted="">
+                        <i class="question circle olive outline icon"></i>
+                      </span>
+                    </label>
+                    <div class="ui left labeled{% if editMode %} action{% endif %} input{{ readonly }}">
+                      <div class="ui basic label"
+                           name="arrearInterestTypeLabel">%</div>
+                      <input name="arrearinterest" type="text"
+                             placeholder="0.0000" {{ readonly }}
+                             value="{{ getValue('arrearinterest') }}">
+                      {% if editMode %}
+                      <select class="ui dropDownLabel medium selection dropdown"
+                              name="arrearinteresttype"
+                              label="arrearInterestTypeLabel">
+                        {% set interestType = getValue('arrearinteresttype') %}
+                        {% for measureType in measureTypes %}
+                          <option value="{{ measureType.id }}"
+                                  {% if interestType == measureType.id %}
+                                    selected
+                                  {% endif %}
+                                  label="{{ measureType.symbol }}">
+                            {{ measureType.name }}
+                          </option>
+                        {% endfor %}
+                      </select>
+                      {% endif %} 
+                    </div>
+                    {% if hasError('arrearinterest') %}
+                    <small class="helper">{{ getError('arrearinterest') }}</small>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="fields">
+            <div class="sixteen wide mobile sixteen wide tablet sixteen wide computer sixteen wide large screen column }}">
+              <h3 class="ui header" style="margin-top: .5em; margin-left: .3em;">
+                Configurações específicas
+              </h3>
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="eight wide field{{ cssError('readjustwithsinglevalue') }}">
+              <div class="ui checkbox{{ readonly }}">
+                <input type="hidden" name="readjustwithsinglevalue"
+                       value="{% if getValue('readjustwithsinglevalue')|toBoolean %}true{% else %}false{% endif %}">
+                <input class="hidden" type="checkbox"
+                       name="_readjustwithsinglevalue"
+                       {{ readonly }}
+                       {% if getValue('readjustwithsinglevalue')|toBoolean %}checked="checked"{% endif %}>
+                <label>Reajustar instalações com um valor único</label>
+              </div>
+              {% if hasError('readjustwithsinglevalue') %}
+              <small class="helper">{{ getError('readjustwithsinglevalue') }}</small>
+              {% endif %}
+            </div>
+            
+            <div class="eight wide field{{ cssError('allowextendingdeadline') }}">
+              <div class="ui checkbox{{ readonly }}">
+                <input type="hidden" name="allowextendingdeadline"
+                       value="{% if getValue('allowextendingdeadline')|toBoolean %}true{% else %}false{% endif %}">
+                <input class="hidden" type="checkbox"
+                       name="_allowextendingdeadline"
+                       {{ readonly }}
+                       {% if getValue('allowextendingdeadline')|toBoolean %}checked="checked"{% endif %}>
+                <label>Permitir estender prazo de boletos vencidos</label>
+              </div>
+              {% if hasError('allowextendingdeadline') %}
+              <small class="helper">{{ getError('allowextendingdeadline') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="eight wide field{{ cssError('prorata') }}">
+              <div class="ui checkbox{{ readonly }}">
+                <input type="hidden" name="prorata"
+                       value="{% if getValue('prorata')|toBoolean %}true{% else %}false{% endif %}">
+                <input class="hidden" type="checkbox"
+                       name="_prorata"
+                       {{ readonly }}
+                       {% if getValue('prorata')|toBoolean %}checked="checked"{% endif %}>
+                <label>Permitir cobrança proporcional aos dias contratados (Prorata)</label>
+              </div>
+              {% if hasError('prorata') %}
+              <small class="helper">{{ getError('prorata') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="eight wide field{{ cssError('duedateonlyinworkingdays') }}">
+              <div class="ui checkbox{{ readonly }}">
+                <input type="hidden" name="duedateonlyinworkingdays"
+                       value="{% if getValue('duedateonlyinworkingdays')|toBoolean %}true{% else %}false{% endif %}">
+                <input class="hidden" type="checkbox"
+                       name="_duedateonlyinworkingdays"
+                       {{ readonly }}
+                       {% if getValue('duedateonlyinworkingdays')|toBoolean %}checked="checked"{% endif %}>
+                <label>Vencimento apenas em dias úteis</label>
+              </div>
+              {% if hasError('duedateonlyinworkingdays') %}
+              <small class="helper">{{ getError('duedateonlyinworkingdays') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <h3 class="ui header">
+            Valores cobrados
+            <div class="sub header">
+              Os valores de serviços, taxas e outras cobranças
+              realizadas ao longo do período contratado.
+            </div>
+          </h3>
+          <table class="ui definition celled selectable compact charges table tiny form">
+            <thead>
+              <tr>
+                <th></th>
+                <th class="center aligned">Nome da cobrança</th>
+                <th class="center aligned three wide">Valor cobrado</th>
+                <th class="center aligned">Parcelamento do valor cobrado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% set charges = getValue('charges') %}
+              {% set lastGroup = 0 %}
+              {% for billingType in billingTypes %}
+                {% if charges[billingType.id] is defined %}
+                  {% if charges[billingType.id].added == 'true' %}
+                    {% set class="selected" %}
+                    {% set readonlyfield = '' %}
+                    {%
+                      set charge = {
+                        'icon': 'green checkmark'
+                      }
+                    %}
+                  {% else %}
+                    {% set class="unselected" %}
+                    {% set readonlyfield = ' readonly' %}
+                    {%
+                      set charge = {
+                        'planchargeid': 0,
+                        'icon': 'red times'
+                      }
+                    %}
+                  {% endif %}
+                  {% set charge = charge|merge(charges[billingType.id]) %}
+                {% else %}
+                  {% set class="unselected" %}
+                  {% set readonlyfield = ' readonly' %}
+                  {%
+                    set charge = {
+                      'added': 'false',
+                      'planchargeid': 0,
+                      'icon': 'red times',
+                      'chargevalue': '0,00'
+                    }
+                  %}
+                {% endif %}
+              {% if lastGroup != billingType.group %}
+              <tr>
+                <td class="left aligned" colspan="4">
+                  <i class="check circle orange icon"></i>
+                  {% if billingType.group == 2 %}
+                  Serviços realizados por técnico e lançado em ordem de serviço
+                  {% else %}
+                  Produtos, serviços ou acessórios cobrados do cliente
+                  {% endif %}
+                </td>
+              </tr>
+              {% set lastGroup = billingType.group %}
+              {% endif %}
+              <tr class="{{ class }}">
+                <td class="center aligned toggle"
+                    style="max-width: 20px; padding: .5em 0;" 
+                    added="{{ charge.added }}"
+                    elementID="{{ billingType.id }}">
+                  <i class="large {{ charge.icon }} icon"></i>
+                  <input type="hidden"
+                         name="charges[{{ billingType.id }}][added]"
+                         value="{{ charge.added }}">
+                </td>
+                <td>{{ billingType.name }}</td>
+                <td>
+                  <div class="ui left labeled input{{ readonlyfield }}">
+                    <div class="ui basic label"
+                         name="charges[{{ billingType.id }}][label]">R$</div>
+                    <input type="hidden"
+                           name="charges[{{ billingType.id }}][planchargeid]"
+                           value="{{ charge.planchargeid }}">
+                    <input type="hidden"
+                           name="charges[{{ billingType.id }}][billingtypeid]"
+                           value="{{ billingType.id }}">
+                    <input name="charges[{{ billingType.id }}][chargevalue]"
+                           class="right aligned"
+                           {{ readonlyfield }}
+                           style="width: calc(100% - 3.2em); -webkit-box-flex: 1; -ms-flex: 1 0 auto; flex: 1 0 auto; border-top-left-radius: 0; border-bottom-left-radius: 0; border-left-color: transparent;"
+                           placeholder="Valor cobrado" type="text"
+                           value="{{ charge.chargevalue }}">
+                  </div>
+                </td>
+                <td>
+                  {{ billingType.installment }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          <h3 class="ui header">
+            Características técnicas
+            <div class="sub header">
+              As características técnicas necessárias nos equipamentos
+              de rastreamento utilizados em instalações de contratos
+              baseados neste plano que precisam ser atendidas para
+              estarem em conformidade com o que foi ofertado.
+            </div>
+          </h3>
+          <table class="ui very basic table">
+            <tbody>
+              <tr>
+                {% set features = getValue('features') %}
+                {% for featuresColumn in featuresTable %}
+                <td class="five wide">
+                  <table class="ui definition celled selectable compact unstackable features table tiny form">
+                    <thead>
+                      <tr>
+                        <th class="two wide"></th>
+                        <th class="center aligned fourteen wide">Característica</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for technicalFeature in featuresColumn %}
+                        {% if features[technicalFeature.id] is defined %}
+                          {% if features[technicalFeature.id].added == 'true' %}
+                            {% set class="selected" %}
+                            {%
+                              set feature = {
+                                'added': 'true',
+                                'planfeatureid': features[technicalFeature.id].planfeatureid,
+                                'icon': 'green checkmark'
+                              }
+                            %}
+                          {% else %}
+                            {% set class="unselected" %}
+                            {%
+                              set feature = {
+                                'added': 'false',
+                                'planfeatureid': 0,
+                                'icon': 'red times'
+                              }
+                            %}
+                          {% endif %}
+                        {% else %}
+                          {% set class="unselected" %}
+                          {%
+                            set feature = {
+                              'added': 'false',
+                              'planfeatureid': 0,
+                              'icon': 'red times'
+                            }
+                          %}
+                        {% endif %}
+                      <tr class="{{ class }}">
+                        <td class="center aligned toggle"
+                            added="{{ feature.added }}"
+                            elementID="{{ technicalFeature.id }}">
+                          <i class="large {{ feature.icon }} icon"></i>
+                          <input type="hidden"
+                                 name="features[{{ technicalFeature.id }}][added]"
+                                 value="{{ feature.added }}">
+                        </td>
+                        <td>
+                          {{ technicalFeature.name }}
+                          <input type="hidden" name="features[{{ technicalFeature.id }}][planfeatureid]" value="{{ feature.planfeatureid }}">
+                          <input type="hidden" name="features[{{ technicalFeature.id }}][featureid]" value="{{ technicalFeature.id }}">
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </td>
+                {% endfor %}
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="ui special grid">
+            <div class="sixteen wide mobile sixteen wide tablet sixteen wide computer sixteen wide large screen column{{ cssError('drivingpositioninginterval') }}">
+              <h3 class="ui header" style="margin-bottom: .5em;">
+                Intervalo de transmissão
+                <div class="sub header">
+                  O intervalo de tempo entre cada envio da localização
+                  pelo equipamento de rastreamento, informando sua
+                  posição. Este valor varia quando o veículo está com a
+                  ignição ligada e desligada de forma a economizar o uso
+                  de dados.
+                </div>
+              </h3>
+            </div>
+            <div class="eight wide mobile eight wide tablet four wide computer four wide large screen column{{ cssError('drivingpositioninginterval') }}">
+              <label>Ignição ligada</label>
+              <div class="ui right labeled input{{ readonly }}">
+                <input name="drivingpositioninginterval" type="text"
+                       placeholder="0"
+                       {{ readonly }}
+                       value="{{ getValue('drivingpositioninginterval') }}">
+                <div class="ui basic label">seg.</div>
+              </div>
+              {% if hasError('drivingpositioninginterval') %}
+              <small class="helper">{{ getError('drivingpositioninginterval') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="eight wide mobile eight wide tablet four wide computer four wide large screen column{{ cssError('stoppedpositioninginterval') }}">
+              <label>Ignição desligada</label>
+              <div class="ui right labeled input{{ readonly }}">
+                <input name="stoppedpositioninginterval" type="text"
+                       placeholder="0"
+                       {{ readonly }}
+                       value="{{ getValue('stoppedpositioninginterval') }}">
+                <div class="ui basic label">seg.</div>
+              </div>
+              {% if hasError('stoppedpositioninginterval') %}
+              <small class="helper">{{ getError('stoppedpositioninginterval') }}</small>
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="fields">
+          </div>
+
+          <div class="fields">
+            <div class="sixteen wide field buttons">
+              {% if editMode %}
+              <button type="button" class="ui youtube right labeled icon button"
+                      onclick="location.href='{{ path_for(previous) }}';">
+                <i class="remove icon"></i> Cancelar
+              </button>
+              <button type="submit" class="ui submit primary right labeled icon button">
+                <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+              </button>
+              {% else %}
+              <button type="button" class="ui blue labeled icon button"
+                      onclick="location.href='{{ path_for(previous) }}';">
+                <i class="chevron left icon"></i> Retornar
+              </button>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="planid" value="{{ getValue('planid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+      {% if formMethod == 'PUT' %}
+      <!-- Start status panel -->
+      <div class="ui segments">
+        <div class="ui grey inverted segment">
+          <h5>
+            Histórico de modificações:
+          </h5>
+          Cadastrado {{ getValue('createdat')|localizedDate('long') }} por {{ getValue('createdbyusername') }}
+          <div class="ui divider"></div>
+          Modificado {{ getValue('updatedat')|localizedDate('long') }} por {{ getValue('updatedbyusername') }}
+        </div>
+      </div>
+      <!-- End status panel -->
+      {% endif %}
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('template-engine/template.engine.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+  
+  {% apply minify %}
+  <script>
+    /* ---------------------------------[ Planos de assinatura ]----- */
+
+    {% set subscriptions = getValue('subscriptions') %}
+    // O índice de contagem dos planos de assinatura
+    var subscriptionsCount = {{ subscriptions|length }};
+    
+    // O template de um novo plano de assinatura
+    {% set subscriptionTemplate %}
+      {% include 'erp/financial/plans/subscription.twig' with { number: '<%=number%>', subscription: { subscriptionplanid: 0, numberofmonths: 2, discountrate: '0.000', monthprice: '0.000', total: '0.000' }, editMode: true, readonly: '' }  %}
+    {% endset %}
+    var subscriptionTemplate = '{{ subscriptionTemplate|escape('js') }}'.replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      $('.ui.checkbox')
+        .checkbox(checkboxOptions)
+      ;
+      $("input[name='monthprice']")
+        .mask({
+          type: 'monetary',
+          trim: true,
+          allowNegativeValues: false,
+          decimalsPlaces: 2,
+          maxLength: 15
+        })
+        .blur(monetaryHandler)
+        .blur(function() {
+          refreshAllSubscriptionValues();
+        })
+      ;
+      $("input[name='duration']")
+        .mask({
+          type: 'number'
+        })
+        .blur(amountOfMonthsHandler)
+        .trigger("blur")
+      ;
+      $("input[name='readjustmentperiod']")
+        .mask({
+          type: 'number'
+        })
+        .blur(amountOfMonthsHandler)
+        .trigger("blur")
+      ;
+
+      // Força o mascaramento dos campos dos planos de assinatura
+      for (var subscriptionNumber = 0; subscriptionNumber < subscriptionsCount; subscriptionNumber++) {
+        $("input[name='subscriptions[" + subscriptionNumber + "][numberofmonths]']")
+          .mask({
+            type: 'number'
+          })
+          .blur(numberOfMonthsHandler)
+          .blur(subscriptionNumber, function(event) {
+            refreshSubscriptionValue(event.data);
+          })
+          .trigger("blur")
+        ;
+        $("input[name='subscriptions[" + subscriptionNumber + "][discountrate]']")
+          .mask({
+            type: 'percentage',
+            trim: true,
+            allowNegativeValues: false,
+            maxLength: 10,
+            decimalsPlaces: 4
+          })
+          .blur(percentageHandler)
+          .blur(subscriptionNumber, function(event) {
+            refreshSubscriptionValue(event.data);
+          })
+        ;
+      }
+
+      $("input[name='loyaltyperiod']")
+        .mask({
+          type: 'number'
+        })
+        .blur(amountOfMonthsHandler)
+        .trigger("blur")
+      ;
+      $("input[name='loyaltyfine']")
+        .mask({
+          type: 'percentage',
+          trim: true,
+          allowNegativeValues: false,
+          decimalsPlaces: 4,
+          maxLength: 10
+        })
+        .blur(percentageHandler)
+      ;
+      $("input[name='finevalue']")
+        .mask({
+          type: 'percentage',
+          trim: true,
+          allowNegativeValues: false,
+          decimalsPlaces: 4,
+          maxLength: 10
+        })
+        .blur(percentageHandler)
+      ;
+      $("input[name='arrearinterest']")
+        .mask({
+          type: 'percentage',
+          trim: true,
+          allowNegativeValues: false,
+          decimalsPlaces: 4,
+          maxLength: 10
+        })
+        .blur(percentageHandler)
+      ;
+      $("select[name='arrearinteresttype']")
+        .change(updateMeasureLabel)
+        .trigger("change")
+      ;
+
+      // Realiza o tratamento do clique na tabela de tipos de cobranças
+      // para permitir marcar/desmarcar quais cobranças serão permitidas
+      $("table.charges tbody tr td.toggle").click(toggleCell);
+
+      // Força o mascaramento dos campos dos valores cobrados para cada
+      // tipo de cobrança
+      $("input[name*='chargevalue']")
+        .mask({
+          type: 'monetary',
+          trim: true,
+          allowNegativeValues: false,
+          decimalsPlaces: 2,
+          maxLength: 15
+        })
+        .blur(monetaryHandler)
+      ;
+
+      // Realiza o tratamento do clique na tabela de características
+      // técnicas para permitir marcar/desmarcar quais características
+      // serão exigidas
+      $("table.features tbody tr td.toggle").click(toggleCell);
+
+      // Formata os campos de tempo de transmissão
+      $("input[name='drivingpositioninginterval']")
+        .mask({
+          type: 'number'
+        })
+        .blur(amountOfMonthsHandler)
+        .trigger("blur")
+      ;
+      $("input[name='stoppedpositioninginterval']")
+        .mask({
+          type: 'number'
+        })
+        .blur(amountOfMonthsHandler)
+        .trigger("blur")
+      ;
+
+      // Coloca o foco no primeiro campo
+      $("input[name='name']")
+        .focus()
+      ;
+    });
+
+    // =================================================[ Options ]=====
+
+    // As opções para os checkbox
+    var checkboxOptions = {
+      // Dispara ao iniciar para definir o valor, se necessário
+      onChange   : function() {
+        var
+          checkbox = $(this).prop('name'),
+          // Invertemos o valor atual
+          checked = !($(this).attr('checked') !== undefined && $(this).attr('checked')),
+          boolValue = (checked
+            ? 'true'
+            : 'false'),
+          toggleField = checkbox.replace('_','')
+        ;
+
+        // Invertemos o checkbox fake
+        $(this)
+          .attr('checked', checked)
+        ;
+
+        // Alteramos o valor do verdadeiro input
+        $("input[name='" + toggleField + "']")
+          .val(boolValue)
+        ;
+      }
+    };
+
+    // ================================================[ Handlers ]=====
+
+    // Trata o clique na tabela para seleção ou não do item
+    function toggleCell(element) {
+      var
+        id = $(this).attr('id')
+      ;
+
+      // Altera o símbolo no campo
+      if ($(this).attr('added') == "true") {
+        $(this)
+          .attr('added', "false")
+        ;
+        $(this)
+          .children('i')
+          .removeClass('green')
+          .removeClass('checkmark')
+          .addClass('red')
+          .addClass('times')
+        ;
+        $(this)
+          .closest('tr')
+          .removeClass('selected')
+          .addClass('unselected')
+        ;
+        // Desabilita a entrada do valor a ser cobrado
+        $(this)
+          .closest('tr')
+          .find("input[type='text']")
+          .prop('readonly', true)
+          .closest('div')
+          .addClass("readonly")
+        ;
+        $(this)
+          .children("input")
+          .val("false")
+        ;
+      } else {
+        $(this)
+          .attr('added', "true")
+        ;
+        $(this)
+          .children('i')
+          .removeClass('red')
+          .removeClass('times')
+          .addClass('green')
+          .addClass('checkmark')
+        ;
+        $(this)
+          .closest('tr')
+          .removeClass('unselected')
+          .addClass('selected')
+        ;
+        // Habilita a entrada do valor a ser cobrado
+        $(this)
+          .closest('tr')
+          .find("input[type='text']")
+          .prop('readonly', false)
+          .closest('div')
+          .removeClass("readonly")
+        ;
+        $(this)
+          .children("input")
+          .val("true")
+        ;
+      }
+    }
+
+    // Atualiza o rótulo da unidade de medida
+    function updateMeasureLabel(event)
+    {
+      var
+        labelText  = $('option:selected', this).attr('label'),
+        labelField = $(this).attr('label')
+      ;
+      
+      $("div[name='" + labelField + "']")
+        .text(labelText)
+      ;
+    }
+
+    // Faz o tratamento do campo duração para permitir corrigir valores
+    // zerados
+    function amountOfMonthsHandler()
+    {
+      var
+        duration = $(this).val()
+      ;
+
+      if (duration.trim().isEmpty()) {
+        $(this)
+          .val(1)
+        ;
+      } else {
+        if (parseInt(duration) < 1) {
+          $(this)
+            .val(1)
+          ;
+        }
+      }
+    }
+
+    /* ---------------------------------[ Planos de assinatura ]----- */
+
+    // Faz o tratamento de campos que informam uma quantidade de meses
+    // para permitir corrigir valores inválidos
+    function numberOfMonthsHandler()
+    {
+      var
+        numberOfMonths = $(this).val()
+      ;
+
+      if (numberOfMonths.trim().isEmpty()) {
+        $(this)
+          .val(1)
+        ;
+      } else {
+        if (parseInt(numberOfMonths) < 1) {
+          $(this)
+            .val(1)
+          ;
+        }
+      }
+    }
+
+    // Faz o tratamento de campos que informam um valor de percentagem
+    // para permitir corrigir valores inválidos
+    function percentageHandler()
+    {
+      var
+        percentage = $(this).val()
+      ;
+
+      if (percentage.trim().isEmpty()) {
+        $(this)
+          .val('0,0000')
+        ;
+      }
+    }
+
+    // Faz o tratamento de campos que informam um valor monetário para
+    // permitir corrigir valores inválidos
+    function monetaryHandler()
+    {
+      var
+        monetary = $(this).val()
+      ;
+
+      if (monetary.trim().isEmpty()) {
+        $(this)
+          .val('0,00')
+        ;
+      }
+    }
+
+    /* ---------------------------------[ Planos de Assinatura ]----- */
+
+    // Faz a atualização dos valores dos planos em caso de alteração do
+    // valor da mensalidade
+    function refreshAllSubscriptionValues()
+    {
+      // Percorremos cada plano de assinatura e atualizamos
+      for (var subscriptionNumber = 0; subscriptionNumber < subscriptionsCount; subscriptionNumber++) {
+        refreshSubscriptionValue(subscriptionNumber);
+      }
+    }
+
+    // Faz a atualização dos valores do plano em caso de alteração
+    function refreshSubscriptionValue(subscriptionNumber)
+    {
+      var
+        // Determina os valores
+        numberOfMonths = $("input[name='subscriptions[" + subscriptionNumber + "][numberofmonths]']").val(),
+        discountrate   = $("input[name='subscriptions[" + subscriptionNumber + "][discountrate]']")
+          .val()
+          .replace('.', '')
+          .replace(',', '.'),
+        monthPrice = $("input[name='monthprice']")
+          .val()
+          .replace('.', '')
+          .replace(',', '.'),
+        total
+      ;
+
+      // Convertemos os valores para float
+      discountrate = parseFloat(discountrate);
+      monthPrice = parseFloat(monthPrice);
+
+      if (discountrate > 0.00) {
+        // Calcula a mensalidade com desconto
+        monthPrice =  monthPrice - monthPrice * discountrate/100;
+      }
+      total = parseInt(numberOfMonths) * monthPrice;
+
+      $("input[name='subscriptions[" + subscriptionNumber + "][monthprice]']")
+        .val(monthPrice.toFixed(2).replace(/\./g,','))
+      ;
+      $("input[name='subscriptions[" + subscriptionNumber + "][total]']")
+        .val(total.toFixed(2).replace(/\./g,','))
+      ;
+    }
+
+    // Faz a adição de um plano de assinatura
+    var addSubscription = function()
+    {
+      var
+        // Determina a quantidade de planos existentes
+        subscriptionNumber = subscriptionsCount
+      ;
+      subscriptionsCount++;
+      
+      // Adiciona um conjunto de campos para o novo plano de assinatura
+      $(".subscriptionList")
+        .append(TemplateEngine(subscriptionTemplate,
+          { number: subscriptionNumber }))
+      ;
+
+      // Mascara os campos
+      $("input[name='subscriptions[" + subscriptionNumber + "][numberofmonths]']")
+        .mask({
+          type: 'number'
+        })
+        .blur(numberOfMonthsHandler)
+        .blur(subscriptionNumber, function(event) {
+          refreshSubscriptionValue(event.data);
+        })
+      ;
+      $("input[name='subscriptions[" + subscriptionNumber + "][discountrate]']")
+        .mask({
+          type: 'percentage',
+          trim: true,
+          allowNegativeValues: false,
+          maxLength: 10,
+          decimalsPlaces: 4
+        })
+        .blur(function() {
+          refreshSubscriptionValue(subscriptionNumber);
+        })
+      ;
+      
+      // Coloca em foco o campo inicial do novo plano de assinatura
+      $("input[name='subscriptions[" + subscriptionNumber + "][numberofmonths]']")
+        .focus()
+      ;
+    };
+    
+    // Faz a remoção de um plano de assinatura
+    var delSubscription = function(element)
+    {
+      var
+        // Determina o plano de assinatura selecionado
+        subscriptionNumber = parseInt($(element).attr("subscription"))
+      ;
+
+      $(element)
+        .closest('.subscriptionEntry')
+        .remove()
+      ;
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

@@ -1,0 +1,37 @@
+              <tr>
+                <td>
+                  Até
+                </td>
+                <td>
+                  <div class="ui input{{ readonly }}">
+                    <input name="displacements[{{ number }}][distance]"
+                           placeholder="distance..." type="text"
+                           value="{{ displacement.distance }}"
+                           {{ readonly }}
+                           maxlength="4">
+                    <input name="displacements[{{ number }}][displacementfeeid]"
+                           type="hidden"
+                           value="{{ displacement.displacementfeeid }}" />
+                  </div>
+                </td>
+                <td>
+                  km:
+                </td>
+                <td style="max-width: 16em; padding-right: 6.4em;">
+                  <div class="ui left labeled action input{{ readonly }}">
+                    <div class="ui basic label" name="displacements[{{ number }}][label]">R$</div>
+                    <input name="displacements[{{ number }}][value]"
+                           class="right aligned"
+                           placeholder="Valor cobrado..." type="text"
+                           value="{{ displacement.value }}"
+                           {{ readonly }}>
+                    <button class="ui tiny youtube icon button"
+                            data-tooltip="Remove esta faixa"
+                            data-position="top right" type="button"
+                            displacement="{{ number }}"
+                            onclick="delDisplacement(this);">
+                      <i class="minus icon"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>

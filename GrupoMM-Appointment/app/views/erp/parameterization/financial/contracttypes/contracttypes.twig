@@ -1,0 +1,406 @@
+{% extends 'templates/erp/layout.twig' %}
+{% import "templates/erp/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento de tipos de contratos{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.main.basic.segment .searchbar.fields .field.searchbox {
+      flex-grow: 1;
+      min-width: 456px;
+    }
+    @media only screen and (min-width: 768px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+    }
+    @media only screen and (max-width: 767px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 100px;
+        width: calc(100% - 47px);
+      }
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+
+    /* --------------------------------------------------------------
+     * Personalizações das linhas do datagrid apenas para este módulo
+     * -------------------------------------------------------------- */
+    .blocked > td {
+      color: #7f7f7f
+    }
+    .blocked > td {
+      background-color: #fff6f6 !important;
+      color: DarkRed;
+    }
+    tr.blocked:hover > td {
+      background-color: #f6e7e7 !important;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set add  = { 'URL': 'ERP\\Parameterization\\Financial\\ContractTypes\\Add', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/contracttypes.svg', 'Tipos de contrato') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento dos tipos de contratos
+                <div class="sub header">
+                  Permite gerenciar os tipos de contratos permitidos
+                  no sistema. Cada tipo de contrato especifica parâmetros
+                  nos quais o contrato do cliente será baseado.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(add.URL, add.method) %}
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Adiciona um tipo de contrato"
+                      data-position="top left" type="button"
+                      onclick="location.href='{{ path_for(add.URL) }}'">
+                <i class="add icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite o tipo de contrato que procura..."
+                       value="{{ contracttype.name }}">
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza um tipo de contrato"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Tipo de contrato</th>
+          <th>Duração</th>
+          <th>Disponível<br>desde</th>
+          <th {{ tooltip.add('left', 'Indicador de tipo de contrato ativo') }}><i class="check darkgreen icon"></i></th>
+          <th {{ tooltip.add('left', 'Permite remover o tipo de contrato') }}><i class="remove darkred icon"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/info.twig' %}
+  {% include 'templates/erp/partials/dialogs/question.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/DateFormatter.min.js') }}
+  {{ lib('datatables/formatters/DeleteFormatter.min.js') }}
+  {{ lib('datatables/formatters/EnableFormatter.min.js') }}
+  
+  {% set getData      = { 'URL': 'ERP\\Parameterization\\Financial\\ContractTypes\\Get', 'method': 'PATCH' } %}
+  {% set edit         = { 'URL': 'ERP\\Parameterization\\Financial\\ContractTypes\\Edit', 'method': 'GET' } %}
+  {% set remove       = { 'URL': 'ERP\\Parameterization\\Financial\\ContractTypes\\Delete', 'method': 'DELETE' } %}
+  {% set toggleActive = { 'URL': 'ERP\\Parameterization\\Financial\\ContractTypes\\ToggleActive', 'method': 'PUT' } %}
+  
+  {% apply minify %}
+  <script>
+    var table;
+    
+    // Um formatador de tempo de duração de contrato
+    var durationFormatter = function ( value, type, row, meta ) {
+      if (value > 0) {
+        return value + '<span class="silver"> meses</span>';
+      }
+      
+      return '<span class="silver">---</span>';
+    };
+    
+    $(document).ready(function() {
+      // --------------------------------[ Componentes da Searchbar ]---
+      $('#searchValue').keypress(function(e) {
+        if(e.which == 13) {
+          searchLoad();
+        }
+      });
+
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "id",
+            "data": "id",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "contracttypes.name",
+            "data": "name",
+            "visible": true,
+            "orderable": true },
+          { "targets": 2,
+            "name": "duration",
+            "data": "duration",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "80px",
+            "render": durationFormatter },
+          { "targets": 3,
+            "name": "createdat",
+            "data": "createdat",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "80px",
+            "render": dateFormatter },
+          { "targets": 4,
+            "name": "contracttypes.active, contracttypes.name",
+            "data": "active",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": enableFormatter("O tipo de contrato está ativo") },
+          { "targets": 5,
+            "name": "delete",
+            "data": "id",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": deleteFormatter("Remover este tipo de contrato") }
+        ],
+        order: [[ 1, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.searchValue = $('#searchValue').val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        createdRow: function(row, data, dataIndex) {
+          // Deixa as linhas com cores diferentes para indicar os
+          // tipos de contratos não ativos
+          if (!data.active) {
+            $(row)
+              .addClass('blocked')
+            ;
+          }
+        }
+      });
+      
+      // Manipula os eventos de click
+      table
+        .on('user-select', function (e, dt, type, cell, originalEvent) {
+          if (type === 'cell') {
+            var
+              // Recupera os dados da célula selecionada
+              index   = cell[0][0],
+
+              // Recupera o tipo de contrato selecionado
+              contractType = dt.rows( index.row ).data().toArray()[0]
+            ;
+
+            // Em função da coluna onde ocorreu o clique, executa a ação
+            // correspondente
+            switch (index.column) {
+              {% if authorization.getAuthorizationFor(toggleActive.URL, toggleActive.method) %}
+              case 4:
+                var
+                  // Alterna o bloqueio da conta
+                  action = (contractType.active === "true")
+                    ? "desativar"
+                    : "ativar"
+                ;
+                
+                questionDialog(
+                  action.charAt(0).toUpperCase() + action.slice(1),
+                  'Você deseja realmente ' + action + ' o tipo de contrato <b>&ldquo;' +
+                  contractType.name + '&rdquo;</b>?',
+                  function() {
+                    // Alternar a ativação do tipo de contrato
+                    var
+                      url  = "{{ buildURL(toggleActive.URL, {'contractTypeID': 'contractType.id'}) }}"
+                    ;
+                    
+                    putJSONData(url, [],
+                    function (data, params, message) {
+                      // Atualiza a tabela
+                      searchLoad();
+                    });
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  });
+    
+                break;
+              {% endif %}
+              {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}
+              case 5:
+                // Questiona se deve apagar o tipo de contrato selecionado
+                questionDialog(
+                  'Remover tipo de contrato',
+                  'Você deseja realmente remover o tipo de contrato <b>&ldquo;' + contractType.name + '&rdquo;</b>? Esta ação não poderá ser desfeita.',
+                  function() {
+                    // Remove o tipo de contrato selecionado
+                    var url  = "{{ buildURL(remove.URL, {'contractTypeID': 'contractType.id'}) }}";
+                    
+                    deleteJSONData(url, [],
+                    function (data, params, message) {
+                      // Atualiza a tabela
+                      searchLoad();
+                    });
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  }
+                );
+
+                break;
+              {% endif %}
+              default:
+                {% if authorization.getAuthorizationFor(edit.URL, edit.method) %}
+                // Coloca o tipo de contrato em edição
+                window.location.href = "{{ buildURL(edit.URL, {'contractTypeID': 'contractType.id'}) }}";
+                {% endif %}
+            }
+
+            e.preventDefault();
+          }
+        }
+      );
+    });
+
+
+    // ================================================[ Handlers ]=====
+    
+    // Executa a pesquisa
+    function searchLoad() {
+      table.ajax.reload();
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

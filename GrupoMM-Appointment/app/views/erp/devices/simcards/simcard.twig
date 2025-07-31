@@ -1,0 +1,1298 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} sim card{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('form.min.css') }}
+  <style>
+    .ui.dropdown .menu>.item>.image,
+    .ui.dropdown .menu>.item>img {
+      width: 50px !important;
+      height:16px;
+      margin-top: 0;
+      margin-bottom: 0;
+      padding-right: 5px;
+      border-right: 1px dotted rgba(34,36,38,.15);
+    }
+
+    p.accessPointName
+    {
+      margin: 5px 0px;
+      font-size: 12px;
+      line-height: 1.4em;
+      font-weight: bold;
+    }
+
+    .ui.main.basic.segment h2.ui.header+.ui.vertical.module.segment {
+      margin-top: 1em;
+    }
+
+    @media only screen and (max-width: 991.98px) {
+      .ui.grid>[class*="sixteen wide tablet"].column:first-child {
+        padding-bottom: 0;
+      }
+      .ui.grid>[class*="sixteen wide tablet"].column:not(:first-child) {
+        padding-top: 0;
+      }
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Devices\\SimCards\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Devices\\SimCards\\Edit' %}
+  {% endif %}
+  {% set toggleBlocked = { 'URL': 'ERP\\Devices\\SimCards\\ToggleBlocked', 'method': 'PUT' } %}
+  {% set previous = 'ERP\\Devices\\SimCards' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  {% set enableToggleBlocked = authorization.getAuthorizationFor(toggleBlocked.URL, toggleBlocked.method) %}
+  {% if getValue('isleasedsimcard') %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/simcards.svg', 'SIM Card') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} SIM Card
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  SIM Card.
+                </div>
+              {% else %}
+                Visualizar SIM Card
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um SIM Card.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <div class="ui centered grid">
+        <div class="sixteen wide tablet eight wide computer column">
+          <!-- Start Form -->
+          <form class="ui form" method="POST" autocomplete="off"
+                action="{{ path_for(URL, {'simcardID': getValue('simcardid') }) }}">
+            <h3 class="ui header">Dados básicos do SIM Card</h3>
+            <div class="fields">
+              <div class="eight wide field{{ cssError('iccid') }}">
+                <label>
+                  N&ordm; de série (ICCID)
+                  <span data-tooltip="Integrated Circuit Card ID"
+                        data-content="Top Left" data-position="top left"
+                        data-inverted="">
+                    <i class="question circle olive outline icon"></i>
+                  </span>
+                </label>
+                <div class="ui icon input{{ readonly }}">
+                  <input name="iccid" type="text"
+                         placeholder="ICCID..."
+                         {{ readonly }}
+                         value="{{ getValue('iccid') }}">
+                  <i class="icon"></i>
+                </div>
+                {% if hasError('iccid') %}
+                <small class="helper">{{ getError('iccid') }}</small>
+                {% endif %}
+              </div>
+
+              <div class="eight wide field{{ cssError('imsi') }}">
+                <label>
+                  IMSI
+                  <span data-tooltip="International Mobile Suscriber Identity"
+                        data-content="Top Left" data-position="top left"
+                        data-inverted="">
+                    <i class="question circle olive outline icon"></i>
+                  </span>
+                </label>
+                <div class="ui icon input{{ readonly }}">
+                  <input name="imsi" type="text"
+                         placeholder="IMSI..."
+                         {{ readonly }}
+                         value="{{ getValue('imsi') }}">
+                  <i class="icon"></i>
+                </div>
+                {% if hasError('imsi') %}
+                <small class="helper">{{ getError('imsi') }}</small>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="fields">
+              <div class="eight wide field{{ cssError('phonenumber') }}">
+                <label>Telefone</label>
+                <div class="ui input{{ readonly }}">
+                  <input name="phonenumber" type="text"
+                         placeholder="Telefone..."
+                         {{ readonly }}
+                         value="{{ getValue('phonenumber') }}">
+                </div>
+                {% if hasError('phonenumber') %}
+                <small class="helper">{{ getError('phonenumber') }}</small>
+                {% endif %}
+              </div>
+              
+              <div class="eight wide field{{ cssError('mobileoperatorid') }}">
+                <label>Operadora de telefonia</label>
+                {% if editMode %}
+                <div class="ui search selection dropdown">
+                  <input name="mobileoperatorid" type="hidden"
+                         value="{{ getValue('mobileoperatorid') }}">
+                  <i class="dropdown icon"></i>
+                  <div class="default text">Informe a operadora</div>
+                  <div class="menu">
+                  {% set mobileOperatorID = getValue('mobileoperatorid') %}
+                  {% for mobileOperator in mobileOperators %}
+                    <div class="item" {% if mobileOperator.id == mobileOperatorID %}selected{% endif %}
+                         data-value="{{ mobileOperator.id }}"
+                         data-text="{{ mobileOperator.name }}">
+                      <img class="ui mini image" src="{{ mobileOperator.logo }}">
+                      {{ mobileOperator.name }}
+                    </div>
+                  {% endfor %}
+                  </div>
+                </div>
+                {% else %}
+                <div class="field static">
+                  <span class="darking">{{ getValue('mobileoperatorname') }}</span>
+                  <input name="mobileoperatorid" type="hidden"
+                         value="{{ getValue('mobileoperatorid') }}">
+                </div>
+                {% endif %}
+                {% if hasError('mobileoperatorid') %}
+                <small class="helper">{{ getError('mobileoperatorid') }}</small>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="fields">
+              <div class="eight wide field{{ cssError('simcardtypeid') }}{{ readonly }}">
+                <label>Modelo de SIM Card</label>
+                {% if editMode %}
+                <div class="ui search selection dropdown">
+                  <input name="simcardtypeid" type="hidden"
+                         value="{{ getValue('simcardtypeid') }}">
+                  <i class="dropdown icon"></i>
+                  <div class="default text">Informe o tipo (modelo)</div>
+                  <div class="menu">
+                  {% set simcardTypeID = getValue('simcardtypeid') %}
+                  {% for simcardType in simcardTypes %}
+                    <div class="item"
+                         {% if simcardType.id == simcardTypeID %}
+                           selected
+                         {% endif %}
+                         data-value="{{ simcardType.id }}"
+                         data-text="{{ simcardType.name }}">
+                      {{ simcardType.name }}
+                    </div>
+                  {% endfor %}
+                  </div>
+                </div>
+                {% else %}
+                <div class="field static">
+                  <span class="darking">{{ getValue('simcardtypename') }}</span>
+                  <input name="simcardtypeid" type="hidden"
+                         value="{{ getValue('simcardtypeid') }}">
+                </div>
+                {% endif %}
+                {% if hasError('simcardtypeid') %}
+                <small class="helper">{{ getError('simcardtypeid') }}</small>
+                {% endif %}
+              </div>
+
+              
+              <div class="eight wide field{{ cssError('depositid') }}">
+                {% if formMethod == 'POST' %}
+                  <label>Onde se encontra</label>
+                  {% if deposits|length > 1 %}
+                  <div class="ui search selection dropdown">
+                    <input name="depositid" type="hidden"
+                           value="{{ getValue('depositid') }}">
+                    <i class="dropdown icon"></i>
+                    <div class="default text">Informe o depósito</div>
+                    <div class="menu">
+                    {% set depositID = getValue('depositid') %}
+                    {% for deposit in deposits %}
+                      <div class="item" {% if deposit.id == depositID %}selected{% endif %}
+                           data-value="{{ deposit.id }}"
+                           data-text="{{ deposit.name }}">
+                        {{ deposit.name }}
+                      </div>
+                    {% endfor %}
+                    </div>
+                  </div>
+                  {% else %}
+                  <div class="field static">
+                    <span class="lighting">{{ deposits[0].name }}</span>
+                    <input name="depositid" type="hidden"
+                           value="{{ deposits[0].id }}">
+                  </div>
+                  {% endif %}
+                {% else %}
+                  <label>Situação atual</label>
+                  <div class="field static">
+                    <span style="display: inline-flex; align-items: center; justify-items: center; white-space: break-spaces; padding: 0.06em 1em; background-color: #fafad2; color: #a0522d; border: 1px solid rgba(34, 36, 38, 0.15); height: 37px;">{{ getValue('storedlocationname') }}</span>
+                    <input name="storedlocationname" type="hidden"
+                           value="{{ getValue('storedlocationname') }}">
+                    <input name="storagelocation" type="hidden"
+                          value="{{ getValue('storagelocation') }}">
+                  </div>
+                {% endif %}
+                {% if hasError('depositid') %}
+                <small class="helper">{{ getError('depositid') }}</small>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="fields">
+              <div class="eight wide field{{ cssError('pincode') }}">
+                <label>
+                  PIN
+                  <span data-tooltip="Personal Identification Number"
+                        data-content="Top Left" data-position="top left"
+                        data-inverted="">
+                    <i class="question circle olive outline icon"></i>
+                  </span>
+                </label>
+                <div class="ui input{{ readonly }}">
+                  <input name="pincode" type="text"
+                         placeholder="Informe o código PIN..."
+                         {{ readonly }}
+                         value="{{ getValue('pincode') }}">
+                </div>
+                {% if hasError('pincode') %}
+                <small class="helper">{{ getError('pincode') }}</small>
+                {% endif %}
+              </div>
+
+              <div class="eight wide field{{ cssError('pukcode') }}">
+                <label>
+                  PUK
+                  <span data-tooltip="PIN Unblocking Key (PUK)"
+                        data-content="Top Left" data-position="top left"
+                        data-inverted="">
+                    <i class="question circle olive outline icon"></i>
+                  </span>
+                </label>
+                <div class="ui input{{ readonly }}">
+                  <input name="pukcode" type="text"
+                         placeholder="Informe o código PUK..."
+                         {{ readonly }}
+                         value="{{ getValue('pukcode') }}">
+                </div>
+                {% if hasError('pukcode') %}
+                <small class="helper">{{ getError('pukcode') }}</small>
+                {% endif %}
+              </div>
+            </div>
+
+            <h3 class="ui header">Dados da propriedade</h3>
+            <div class="fields">
+              <div class="six wide field{{ cssError('ownershiptypeid') }}">
+                <label>Tipo de propriedade</label>
+                {% if editMode %}
+                <div class="ui search selection dropdown">
+                  <input name="ownershiptypeid" type="hidden"
+                         value="{{ getValue('ownershiptypeid') }}">
+                  <i class="dropdown icon"></i>
+                  <div class="default text">Informe o tipo de propriedade</div>
+                  <div class="menu">
+                  {% set ownershipTypeID = getValue('ownershiptypeid') %}
+                    <div class="item"
+                         {% if ownershipTypeID == 0 %}
+                           selected
+                         {% endif %}
+                         data-value="0"
+                         data-text="Não informado">
+                      Não informado
+                    </div>
+                  {% for ownershipType in ownershipTypes %}
+                    <div class="item" {% if ownershipType.id == ownershipTypeID %}selected{% endif %}
+                         data-value="{{ ownershipType.id }}"
+                         data-text="{{ ownershipType.name }}">
+                      {{ ownershipType.name }}
+                    </div>
+                  {% endfor %}
+                  </div>
+                </div>
+                {% else %}
+                <div class="field static">
+                  <span class="darking">{{ getValue('ownershiptypename') }}</span>
+                  <input name="ownershiptypeid" type="hidden"
+                         value="{{ getValue('ownershiptypeid') }}">
+                </div>
+                {% endif %}
+                {% if hasError('ownershiptypeid') %}
+                <small class="helper">{{ getError('ownershiptypeid') }}</small>
+                {% endif %}
+              </div>
+
+              <div class="ten wide field{{ cssError('suppliername') }}">
+                <label>Nome do fornecedor</label>
+                <input name="suppliername" type="text" maxlength="100"
+                       placeholder="Informe o nome do cliente..."
+                       {{ readonly }}
+                       value="{{ getValue('suppliername') }}">
+                <input type="hidden" name="supplierid"
+                       value="{{ getValue('supplierid') }}">
+                {% if hasError('suppliername') %}
+                <small class="helper">{{ getError('suppliername') }}</small>
+                {% endif %}
+              </div>
+            </div>
+
+            {% if not getValue('isleasedsimcard') %}
+            <div class="fields">
+              <div class="eight wide field{{ cssError('subsidiaryname') }}">
+                <label>Unidade/Filial</label>
+                <input name="subsidiaryname" type="text" maxlength="50"
+                       placeholder="Informe a unidade/filial..."
+                       {{ readonly }}
+                       value="{{ getValue('subsidiaryname') }}">
+                <input name="subsidiaryid" type="hidden"
+                       value="{{ getValue('subsidiaryid') }}">
+                {% if hasError('subsidiaryname') %}
+                <small class="helper">{{ getError('subsidiaryname') }}</small>
+                {% endif %}
+              </div>
+
+              <div class="eight wide field{{ cssError('assetnumber') }}">
+                <label>N&ordm; de patrimônio</label>
+                <div class="ui input{{ readonly }}">
+                  <input name="assetnumber" type="text" maxlength="20"
+                         placeholder="Informe o n&ordm; de patrimônio..."
+                         {{ readonly }}
+                         value="{{ getValue('assetnumber') }}">
+                </div>
+                {% if hasError('assetnumber') %}
+                <small class="helper">{{ getError('assetnumber') }}</small>
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+
+            {% if enableToggleBlocked %}
+              {% if formMethod == 'PUT' %}
+              <div class="fields">
+                <div class="sixteen wide field">
+                  <div class="ui checkbox{{ readonly }}">
+                    <input name="blocked" type="hidden"
+                           value="{% if getValue('blocked')|toBoolean %}true{% else %}false{% endif %}">
+                    <input name="_blocked" type="checkbox"
+                           class="hidden" toggle="none" {{ readonly }}
+                           {% if getValue('blocked')|toBoolean %}checked="checked"{% endif %}>
+                    <label>Bloquear este SIM Card para uso no sistema</label>
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+            {% else %}
+              {% if getValue('blocked')|toBoolean %}
+              <div class="fields">
+                <div class="eight wide darkred field">
+                  <i class="lock icon"
+                     style="font-size: 1.8em; line-height: 1em; vertical-align: middle;"></i>
+                  Este SIM Card está bloqueado para uso no sistema.
+                </div>
+              </div>
+              {% endif %}
+            {% endif %}
+            
+            {% if not getValue('isleasedsimcard') %}
+              {% if formMethod == 'PUT' %}
+              {% set leasedsimcard = getValue('leasedsimcard')|first %}
+              <h3 class="ui header">Dados de comodato</h3>
+              <div class="fields">
+                <div class="sixteen wide field">
+                  <div class="ui checkbox{{ readonly }}" style="margin-top: 0;">
+                    <input name="leasedingsimcard" type="hidden"
+                          value="{% if getValue('leasedingsimcard')|toBoolean %}true{% else %}false{% endif %}">
+                    <input name="_leasedingsimcard" type="checkbox"
+                          class="hidden" {{ readonly }}
+                          {% if getValue('leasedingsimcard')|toBoolean %}checked="checked"{% endif %}>
+                    <label>Realizar comodato deste SIM Card</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="leasedingsimcard block">
+                <div class="fields">
+                  <div class="sixteen wide field{{ cssError('leasedsimcard[0][assignedtoname]') }}">
+                    <label>Nome do comodatário</label>
+                    <input name="leasedsimcard[0][assignedtoname]" type="text" maxlength="100"
+                          placeholder="Informe o nome do comodatário..."
+                          {{ readonly }}
+                          value="{{ leasedsimcard.assignedtoname }}">
+                    <input name="leasedsimcard[0][assignedto]" type="hidden"
+                          value="{{ leasedsimcard.assignedto }}">
+                    <input name="leasedsimcard[0][leasedsimcardid]" type="hidden"
+                          value="{{ leasedsimcard.leasedsimcardid }}">
+                    {% if hasError('leasedsimcard[0][assignedtoname]') %}
+                    <small class="helper">{{ getError('leasedsimcard[0][assignedtoname]') }}</small>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="fields">
+                  <div class="eight wide field{{ cssError('leasedsimcard[0][startdate]') }}">
+                    <label>Data de início</label>
+                    <div class="ui calendar" id="leasedsimcard[0][startdate]">
+                      <div class="ui input left icon{{ readonly }}">
+                        <i class="calendar icon"></i>
+                        <input name="leasedsimcard[0][startdate]" type="text"
+                              placeholder="Quando ocorreu o ínício do comodato..."
+                              {{ readonly }}
+                              value="{{ leasedsimcard.startdate }}">
+                      </div>
+                    </div>
+                    {% if hasError('leasedsimcard[0][startdate]') %}
+                    <small class="helper">{{ getError('leasedsimcard[0][startdate]') }}</small>
+                    {% endif %}
+                  </div>
+
+                  <div class="eight wide field{{ cssError('leasedsimcard[0][graceperiod]') }}">
+                    <label>
+                      Tempo de carência
+                      <span data-tooltip="Contados à partir do início do comodato"
+                            data-content="Top Left" data-position="top left"
+                            data-inverted="">
+                        <i class="question circle olive outline icon"></i>
+                      </span>
+                    </label>
+                    <div class="ui right labeled input">
+                      <input name="leasedsimcard[0][graceperiod]" type="text"
+                            class="right"
+                            {{ readonly }}
+                            value="{{ leasedsimcard.graceperiod }}">
+                      <div class="ui basic label">meses</div>
+                    </div>
+                    {% if hasError('leasedsimcard[0][graceperiod]') %}
+                    <small class="helper">{{ getError('leasedsimcard[0][graceperiod]') }}</small>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="fields">
+                  <div class="eight wide field">
+                    <label>Término da carência</label>
+                    <div class="ui input readonly">
+                      <input name="leasedsimcard[0][endofgraceperiod]" type="text"
+                            readonly tabindex="-1"
+                            value="{{ leasedsimcard.endofgraceperiod }}">
+                    </div>
+                  </div>
+
+                  <div class="eight wide field{{ cssError('leasedsimcard[0][enddate]') }}">
+                    <label>Data de término</label>
+                    <div class="ui calendar" id="leasedsimcard[0][enddate]">
+                      <div class="ui input left icon{{ readonly }}">
+                        <i class="calendar icon"></i>
+                        <input name="leasedsimcard[0][enddate]" type="text"
+                              placeholder="Quando ocorreu o término do comodato..."
+                              {{ readonly }}
+                              value="{{ leasedsimcard.enddate }}">
+                      </div>
+                    </div>
+                    {% if hasError('leasedsimcard[0][enddate]') %}
+                    <small class="helper">{{ getError('leasedsimcard[0][enddate]') }}</small>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+            {% endif %}
+
+            <div class="fields">
+              <div class="sixteen wide field buttons">
+                {% if editMode %}
+                <button type="button" class="ui youtube right labeled icon button"
+                        onclick="location.href='{{ path_for(previous) }}';">
+                  <i class="remove icon"></i> Cancelar
+                </button>
+                <button type="submit" class="ui submit primary right labeled icon button">
+                  <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+                </button>
+                {% else %}
+                <button type="button" class="ui blue labeled icon button"
+                        onclick="location.href='{{ path_for(previous) }}';">
+                  <i class="chevron left icon"></i> Retornar
+                </button>
+                {% endif %}
+              </div>
+            </div>
+
+            {{ csrf() }}
+
+            <input type="hidden" name="_method" value="{{ formMethod }}">
+            <input type="hidden" name="simcardid" value="{{ getValue('simcardid') }}">
+          </form>
+          <!-- End Form -->
+        </div>
+        <div class="sixteen wide tablet eight wide computer column">
+          <div class="ui message">
+            <div class="header">
+              <a class="ui blue circular label" onclick="refreshAPNInfo();" data-content="Clique para atualizar as informações de APN"><i class="sync icon" style="margin:0 !important;"></i></a>
+              Informações de APN (Access Point Name)
+            </div>
+            <p>
+               A APN é uma configuração que permite que o seu equipamento
+               tenha acesso à Internet através de sua operadora de
+               telefonia móvel. Siga as instruções do fabricante para
+               configurar o equipamento.
+              <div id="APNContent"></div>
+            </p>
+          </div>
+        </div>
+      </div>
+      {% if formMethod == 'PUT' %}
+      <!-- Start status panel -->
+      <div class="ui segments">
+        <div class="ui grey inverted segment">
+          <h5>
+            Histórico de modificações:
+          </h5>
+          Cadastrado {{ getValue('createdat')|localizedDate('long') }} por {{ getValue('createdbyusername') }}
+          <div class="ui divider"></div>
+          Modificado {{ getValue('updatedat')|localizedDate('long') }} por {{ getValue('updatedbyusername') }}
+        </div>
+      </div>
+      <!-- End status panel -->
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/question.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+  
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Devices\\SimCards\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Devices\\SimCards\\Edit' %}
+  {% endif %}
+  
+  {% set getEntityDataCompletion = { 'URL': 'ERP\\Cadastre\\Entities\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  {% set getAPNData              = { 'URL': 'ERP\\Parameterization\\MobileOperators\\APN\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      $('.ui.checkbox')
+        .checkbox(checkboxOptions)
+      ;
+      $("input[name='iccid']")
+        .mask({
+          type: 'iccid',
+          validate: true
+        })
+      ;
+      $("input[name='imsi']")
+        .mask({
+          type: 'imsi',
+          validate: true
+        })
+        .blur(IMSIHandler)
+        .trigger("blur")
+      ;
+      $("input[name='phonenumber']")
+        .mask({
+          type: 'phoneNumber'
+        })
+      ;
+      $("input[name='mobileoperatorid']")
+        .change(refreshAPNInfo)
+      ;
+      $("input[name='pincode']")
+        .mask({
+          type: 'number',
+          maxlength: 4
+        })
+      ;
+      $("input[name='pukcode']")
+        .mask({
+          type: 'number',
+          maxlength: 8
+        })
+      ;
+
+      // Faz o tratamento da seleção do tipo de propriedade
+      //toggleOwnerData($("input[name='ownershiptypeid']"));
+      $("input[name='suppliername']")
+        .autocomplete(supplierNameCompletionOptions);
+      $("input[name='subsidiaryname']")
+        .autocomplete(subsidiaryNameCompletionOptions);
+      $("input[name='ownershiptypeid']")
+        .change(ownershipTypeHandler)
+        .trigger("change")
+      ;
+
+      {% if formMethod == 'PUT' %}
+        {% if not getValue('isleasedsimcard') %}
+        $("input[name='_leasedingsimcard']")
+          .change(leasedingSimcardHandler)
+        ;
+        toggleLeasedingSimcardData($("input[name='_leasedingsimcard']").is(":checked"));
+
+        $("input[name='leasedsimcard[0][assignedtoname]']")
+          .autocomplete(assignedToNameCompletionOptions)
+        ;
+        $("input[name='leasedsimcard[0][startdate]']")
+          .closest('div')
+          .calendar(calendarOptions)
+        ;
+        $("input[name='leasedsimcard[0][graceperiod']")
+          .mask({
+            type: 'integer',
+            validate: true
+          })
+        ;
+        $("input[name='leasedsimcard[0][graceperiod]']")
+          .change(gracePeriodHandler)
+          .trigger('change')
+        ;
+        $("input[name='leasedsimcard[0][enddate]']")
+          .closest('div')
+          .calendar(calendarOptions)
+        ;
+
+        {% endif %}
+      {% endif %}
+
+      // Força a atualização das informações de APN's
+      refreshAPNInfo();
+
+      // Coloca o foco no primeiro campo
+      $("input[name='iccid']")
+        .focus()
+      ;
+    });
+
+    // =================================================[ Options ]=====
+
+    // As opções para os checkbox
+    var checkboxOptions = {
+      // Dispara ao iniciar para definir o valor, se necessário
+      onChange   : function() {
+        var
+          checkbox = $(this).prop('name'),
+          // Invertemos o valor atual
+          checked = !($(this).attr('checked') !== undefined && $(this).attr('checked')),
+          boolValue = (checked
+            ? 'true'
+            : 'false'),
+          toggleField = checkbox.replace('_','')
+        ;
+
+        // Invertemos o checkbox fake
+        $(this)
+          .attr('checked', checked)
+        ;
+
+        // Alteramos o valor do verdadeiro input
+        $("input[name='" + toggleField + "']")
+          .val(boolValue)
+        ;
+      }
+    };
+
+    // As opções para o componente de autocompletar o nome do fornecedor
+    var supplierNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      ajax: {
+        url: "{{ path_for(getEntityDataCompletion.URL) }}",
+        type: "{{ getEntityDataCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'supplier';
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        if (suggestion.juridicalperson) {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     (
+                    (suggestion.tradingname)
+                      ? '[<span style="color: #0256C4; font-style: italic;">' + suggestion.tradingname + '</span>]<br>'
+                      : ''
+                  )
+            +     (
+                    (suggestion.items > 1)
+                      ? (' (<span style="color: CornflowerBlue; font-style: italic;">' + suggestion.subsidiaryname + '</span>)')
+                      : ''
+                  )
+            +   '</div>'
+            + '</div>'
+          ;
+        } else {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     (
+                    (suggestion.tradingname)
+                      ? '[<span style="color: #0256C4; font-style: italic;">' + suggestion.tradingname + '</span>]<br>'
+                      : ''
+                  )
+            +     (
+                    (suggestion.items > 1)
+                      ? ( ''
+                          + '<span style="color: CornflowerBlue; font-style: italic;">'
+                          +     (
+                                  (suggestion.headoffice == true)
+                                    ? 'Titular'
+                                    : ('Dependente: ' + suggestion.subsidiaryname)
+                                )
+                          +     '</span>'
+                        )
+                      : ''
+                  )
+            +   '</div>'
+            + '</div>'
+          ;
+        }
+      },
+      onSelect: function (element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='supplierid']")
+          .val(suggestion.id)
+        ;
+        $("input[name='subsidiaryid']")
+          .val(suggestion.subsidiaryid)
+        ;
+        $("input[name='subsidiaryname']")
+          .val(suggestion.subsidiaryname)
+        ;
+      },
+      onInvalidateSelection: function ()
+      {
+        // Não conseguiu localizar um fornecedor com base nos valores
+        // informados, então limpa os dados atuais
+        $("input[name='supplierid']")
+          .val(0)
+        ;
+        $("input[name='subsidiaryid']")
+          .val(0)
+        ;
+        $("input[name='subsidiaryname']")
+          .val("")
+        ;
+      }
+    };
+
+    // As opções para o componente de autocompletar a unidade/filial do
+    // cliente
+    var subsidiaryNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      ajax: {
+        url: "{{ path_for(getEntityDataCompletion.URL) }}",
+        type: "{{ getEntityDataCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'subsidiary';
+          params.entityID = $("input[name='supplierid']").val();
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        return ''
+          + '<div class="content">'
+          +   '<div class="title">' + suggestion.name + '<br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       (suggestion.nationalregister.length > 14?'CNPJ: ':'CPF: ') + suggestion.nationalregister
+          +     '</span><br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       suggestion.city + '/' + suggestion.state
+          +     '</span>'
+          +   '</div>'
+          + '</div>'
+        ;
+      },
+      onSelect: function (element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='subsidiaryid']")
+          .val(suggestion.id)
+        ;
+      },
+      onInvalidateSelection: function () {
+        // Não conseguiu localizar uma unidade/filial com base nos
+        // valores informados, então limpa os dados atuais
+        $("input[name='subsidiaryid']")
+          .val(0)
+        ;
+      }
+    };
+
+    // As opções para o componente de autocompletar o nome do fornecedor
+    var assignedToNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      ajax: {
+        url: "{{ path_for(getEntityDataCompletion.URL) }}",
+        type: "{{ getEntityDataCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'contractor';
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        if (suggestion.juridicalperson) {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     (
+                    (suggestion.tradingname)
+                      ? '[<span style="color: #0256C4; font-style: italic;">' + suggestion.tradingname + '</span>]<br>'
+                      : ''
+                  )
+            +     (
+                    (suggestion.items > 1)
+                      ? (' (<span style="color: CornflowerBlue; font-style: italic;">' + suggestion.subsidiaryname + '</span>)')
+                      : ''
+                  )
+            +   '</div>'
+            + '</div>'
+          ;
+        } else {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     (
+                    (suggestion.tradingname)
+                      ? '[<span style="color: #0256C4; font-style: italic;">' + suggestion.tradingname + '</span>]<br>'
+                      : ''
+                  )
+            +     (
+                    (suggestion.items > 1)
+                      ? ( ''
+                          + '<span style="color: CornflowerBlue; font-style: italic;">'
+                          +     (
+                                  (suggestion.headoffice == true)
+                                    ? 'Titular'
+                                    : ('Dependente: ' + suggestion.subsidiaryname)
+                                )
+                          +     '</span>'
+                        )
+                      : ''
+                  )
+            +   '</div>'
+            + '</div>'
+          ;
+        }
+      },
+      onSelect: function (element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='leasedsimcard[0][assignedto]']")
+          .val(suggestion.id)
+        ;
+      },
+      onInvalidateSelection: function ()
+      {
+        // Não conseguiu localizar um contratante com base nos valores
+        // informados, então limpa os dados atuais
+        $("input[name='leasedsimcard[0][assignedto]']")
+          .val(0)
+        ;
+      }
+    };
+
+    // As opções para o componente de exibição de calendário
+    var calendarOptions = {
+      type: 'date',
+      formatInput: true,
+      monthFirst: false,
+      today: true,
+      text: {
+        days: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'],
+        months: [
+          'Janeiro', 'Fevereiro', 'Março', 'Abril',
+          'Maio', 'Junho', 'Julho', 'Agosto',
+          'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ],
+        monthsShort: [
+          'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+          'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+        ],
+        today: 'Hoje',
+        now: 'Agora',
+        am: 'AM',
+        pm: 'PM'
+      },
+      formatter: {
+        date: function (date, settings) {
+          if (!date) {
+            return '';
+          }
+
+          var
+            day   = date.getDate().toString().padLeftWithZeros(2),
+            month = (date.getMonth()+1).toString().padLeftWithZeros(2),
+            year  = date.getFullYear()
+          ;
+
+          return (settings.type === 'year')
+            ? year
+            : (settings.type === 'month')
+              ? month + '/' + year
+              : ( settings.monthFirst
+                  ? month + '/' + day
+                  : day + '/' + month
+                ) + '/' + year
+          ;
+        }
+      }
+    };
+
+    // ================================================[ Handlers ]=====
+
+    // Faz o tratamento do campo IMSI para permitir sinalizar
+    // corretamente valores inválidos
+    function IMSIHandler()
+    {
+      var
+        imsi = $(this).val()
+      ;
+      
+      // Atualiza o estado do campo para indicar se o valor for válido
+      // ou inválido
+      if (!imsi.isEmpty()) {
+        if (isValidIMSI(imsi)) {
+          // Recupera a informação da operadora de telefonia móvel pelo
+          // IMSI
+          getMobileOperatorDataHandler(imsi);
+        }
+      }
+    }
+    
+    // Faz o tratamento do campo Mobile Operator para permitir exibir as
+    // informações de APN para a operadora
+    function refreshAPNInfo()
+    {
+      var
+        field        = $("input[name='mobileoperatorid']").closest('div'),
+        operatorID   = $(field).dropdown('get value'),
+        operatorName = $(field).dropdown('get text'),
+        url          = "{{ buildURL(getAPNData.URL, {}) }}"
+      ;
+      
+      // Recupera as informações de APN para esta operadora
+      requestJSONData(url, {
+        id: operatorID,
+        name: operatorName
+      },
+      function (data, params, message) {
+        $('#APNContent')
+          .html(data)
+          .trigger("change")
+        ;
+      },
+      function (message) {
+        // Limpa os dados em caso de erro
+        $('#APNContent')
+          .html('<div id="errorMessage" class="ui error message"><div class="header">Ocorreu um erro ao tentar obter as informações de APN da operadora de telefonia móvel</div></div>')
+          .trigger("change")
+        ;
+      });
+    }
+
+
+    // O recuperador dos dados da operadora de telefonia móvel quando o
+    // usuário informa um código IMSI válido
+    function getMobileOperatorDataHandler(imsi)
+    {
+      var
+        mobileOperatorID = $("input[name='mobileoperatorid']").val()
+      ;
+
+      // Verifica se foi selecionado uma operadora de telefonia móvel
+      if ((parseInt(mobileOperatorID) === 0) ||
+          (mobileOperatorID === '')) {
+        // Consulta o Web Service para obter os dados da operadora de
+        // telefonia móvel através do IMSI
+        var url  = "{{ path_for('ERP\\Parameterization\\MobileOperators\\IMSI\\Get') }}";
+        requestJSONData(url, { imsi: imsi },
+        function (mobileOperatorID, params, message)
+        {
+          // Conseguiu recuperar os dados da operadora de telefonia
+          // móvel, então atualiza o formulário
+          $("input[name='mobileoperatorid']")
+            .closest('div')
+            .dropdown('set selected', mobileOperatorID);
+          $("input[name='mobileoperatorid']")
+            .closest('div')
+            .find('input.search')
+            .val("")
+            .trigger("change");
+        },
+        function (data, params, message)
+        {
+          // Não conseguiu localizar os dados da operadora de telefonia
+          // móvel com base do IMSI informado, então não faz nada
+        });
+      } else {
+        // O usuário já selecionou a operadora de telefonia móvel, então
+        // não altera
+      }
+    }
+
+    // Faz o tratamento da seleção do tipo de propriedade
+    function ownershipTypeHandler() {
+      const ownershipType = $(this).val();
+      const enable = !(ownershipType == 0);
+
+      toggleOwnerSelection(enable);
+    }
+
+    function toggleOwnerSelection(enable) {
+      if (enable) {
+        console.log('Habilitando campos de fornecedor');
+        console.log(
+          $("input[name='suppliername']")
+          .closest('div')
+        );
+        $("input[name='suppliername']")
+          .closest('div')
+          .removeClass("disabled")
+          .removeClass("blocked")
+          .find('input.search')
+          .prop('readonly', false)
+        ;
+        $("input[name='subsidiaryname']")
+          .closest('div')
+          .removeClass("disabled")
+          .removeClass("blocked")
+          .find('input.search')
+          .prop('readonly', false)
+        ;
+      } else {
+        console.log('Desabilitando campos de fornecedor');
+        console.log(
+          $("input[name='suppliername']")
+          .closest('div')
+        );
+        $("input[name='suppliername']")
+          .closest('div')
+          .addClass("disabled")
+          .addClass("blocked")
+          .find('input.search')
+          .prop('readonly', true)
+        ;
+        console.log(
+          $("input[name='suppliername']")
+          .closest('div')
+        );
+        $("input[name='subsidiaryname']")
+          .closest('div')
+          .addClass("disabled")
+          .addClass("blocked")
+          .find('input.search')
+          .prop('readonly', true)
+        ;
+
+        $("input[name='supplierid']").val(0);
+        $("input[name='subsidiaryid']").val(0);
+      }
+    }
+
+    // ------------------------------[ Leaseding Simcard Handlers ]-----
+
+    /**
+     * Faz o tratamento do campo que indica se o simcard será
+     * emprestado em comodato.
+     *
+     * @return void
+     */
+    function leasedingSimcardHandler() {
+      const leasedingSimcard = $(this).is(":checked");
+      const storageLocation = $("input[name='storagelocation']").val();
+
+      if (storageLocation === 'Installed') {
+        const action = leasedingSimcard
+          ? 'comodatar'
+          : 'descomodatar'
+        ;
+        // Precisamos alertar o usuário que o simcard está
+        // instalado e que a mudança irá fazer com que ele seja
+        // desinstalado, questionando se ele deseja prosseguir
+        questionDialog(
+          'Comodato de SIM Card',
+          'O SIM Card que você deseja ' + action + ' está instalado '
+          + 'em um equipamento. Se prosseguir, o vínculo com este<br />'
+          + 'equipamento será encerrado. Tem certeza de que deseja continuar?',
+          function() {
+            toggleLeasedingSimcardData(leasedingSimcard);
+          },
+          function() {
+            $("input[name='_leasedingsimcard']")
+              .prop('checked', !leasedingSimcard)
+            ;
+          }
+        );
+      } else {
+        toggleLeasedingSimcardData(leasedingSimcard);
+      }
+    }
+
+    /**
+     * Lida com a exibição dos campos do comodatário e das condições de
+     * empréstimo.
+     *
+     * @param bool leasedingSimcard
+     *   O indicativo se o equipamento será emprestado em comodato.
+     *
+     * @return void
+     */
+    function toggleLeasedingSimcardData(leasedingSimcard) {
+      if (leasedingSimcard) {
+        // Exibe os campos com os números de telefone
+        $("div.leasedingsimcard.block")
+          .show()
+        ;
+
+        // Habilita a entrada dos dados do comodatário
+        $("div.leasedingsimcard")
+          .find('div.field')
+          .removeClass("disabled")
+          .removeClass("blocked")
+        ;
+
+        $("div.leasedingsimcard")
+          .find("input[type='text']")
+          .prop('readonly', false)
+          .closest('div')
+          .removeClass("readonly")
+        ;
+
+        // Mantém a entrada da data de término da carência como somente
+        // leitura
+        $("div.leasedingsimcard")
+          .find("input[name='leasedsimcard[0][endofgraceperiod]']")
+          .prop('readonly', true)
+          .closest('div')
+          .addClass("readonly")
+        ;
+        $("input[name='leasedsimcard[0][assignedtoname]']")
+          .closest('div')
+          .find('i.search.icon')
+          .removeClass("hidden")
+        ;
+      } else {
+        // Esconde os campos com os números de telefone
+        $("div.leasedingsimcard.block")
+          .hide()
+        ;
+
+        // Desabilita a entrada dos dados do comodatário
+        $("div.leasedingsimcard")
+          .find('div.field')
+          .addClass("disabled")
+          .addClass("blocked")
+        ;
+
+        $("div.leasedingsimcard")
+          .find("input[type='text']")
+          .prop('readonly', true)
+          .closest('div')
+          .addClass("readonly")
+        ;
+        $("input[name='leasedsimcard[0][assignedtoname]']")
+          .closest('div')
+          .find('i.search.icon')
+          .addClass("hidden")
+        ;
+      }
+    }
+
+    // O manipulador do campo tempo de carência
+    function gracePeriodHandler() {
+      console.log('Grace period handler');
+      // Ignora qualquer modificação se estivermos em um campo somente
+      // leitura
+      if ($(this).prop('readonly')) {
+        return;
+      }
+
+      let
+        startDate = $("input[name='leasedsimcard[0][startdate]']").val(),
+        gracePeriod = parseInt($(this).val())
+      ;
+
+      if (gracePeriod > 0) {
+        // Verifica se a data é válida
+        if (startDate.length === 10) {
+          let
+            parts    = startDate.split("/"),
+            day      = parseInt(parts[0]),
+            month    = parseInt(parts[1]),
+            year     = parseInt(parts[2]),
+            startday = new Date(year, month-1, day),
+            // Calcula a data de término da carência que é a quantidade de
+            // meses somados à data de início
+            endday   = new Date(startday.setMonth(startday.getMonth() + parseInt(gracePeriod))),
+            enddate  = endday.toLocaleDateString('pt-BR')
+          ;
+
+          // Coloca a data calculada no campo de término de carência
+          $("input[name='leasedsimcard[0][endofgraceperiod]']")
+            .val(enddate)
+            .trigger("change")
+          ;
+        } else {
+          // Não foi fornecida uma data de início, então ignora
+          $("input[name='leasedsimcard[0][endofgraceperiod]']")
+            .val('')
+            .trigger("change")
+          ;
+        }
+      } else {
+        // Não foi fornecido um período de carência, então ignora
+        $("input[name='leasedsimcard[0][endofgraceperiod]']")
+          .val('')
+          .trigger("change")
+        ;
+      }
+    }
+
+  </script>
+  {% endapply %}
+{% endblock scripts %}

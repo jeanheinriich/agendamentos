@@ -1,0 +1,591 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - Associar SIM Card com o slot de um equipamento{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('form.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    .ui.dropdown .menu>.item>.image,
+    .ui.dropdown .menu>.item>img {
+      width: 50px !important;
+      height:16px;
+      margin-top: 0;
+      margin-bottom: 0;
+      padding-right: 5px;
+      border-right: 1px dotted rgba(34,36,38,.15);
+    }
+
+    .ui.dropdown .menu .actual.item {
+      background: rgba(0,0,0,.03);
+      background: GhostWhite;
+      color: DodgerBlue;
+    }
+
+    .ui.dropdown .menu .item span.description {
+      font-style: italic;
+    }
+
+    .ui.dropdown .menu .actual.item span.description {
+      color: LightSteelBlue;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set URL = 'ERP\\Devices\\SimCards\\Attach' %}
+  {% set previous = 'ERP\\Devices\\SimCards' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/insertsimcard.svg', 'Associar SIM Card com o slot de um equipamento') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if editMode %}
+                Associar SIM Card a um slot
+                <div class="sub header">
+                  Permite selecionar um equipamento (e o respectivo slot)
+                  para associá-lo com este SIM Card
+                </div>
+              {% else %}
+                Visualizar associação de slot
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um
+                  SIM Card inserido num Slot
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL, {'simcardID': getValue('simcardid') }) }}">
+        <h3 class="ui header">Dados do SIM Card</h3>
+        <div class="fields">
+          <div class="four wide field">
+            <label>
+              N&ordm; de série (ICCID)
+              <span data-tooltip="Integrated Circuit Card ID"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui input readonly">
+              <input name="iccid" type="text" readonly
+                     value="{{ getValue('iccid') }}">
+            </div>
+          </div>
+
+          <div class="four wide field">
+            <label>Telefone</label>
+            <div class="ui input readonly">
+              <input name="phonenumber" type="text" readonly
+                     value="{{ getValue('phonenumber') }}">
+            </div>
+          </div>
+
+          <div class="four wide field{{ cssError('mobileoperatorid') }}">
+            <label>Operadora de telefonia</label>
+            <div class="ui input readonly">
+              <input name="mobileoperatorname" type="text" readonly
+                     value="{{ getValue('mobileoperatorname') }}">
+            </div>
+            <input type="hidden"
+                   name="mobileoperatorid"
+                   value="{{ getValue('mobileoperatorid') }}" >
+          </div>
+
+          <div class="four wide field{{ cssError('simcardtypeid') }}">
+            <label>Modelo de SIM Card</label>
+            <div class="ui icon input readonly">
+              <input name="simcardtypename" type="text" readonly
+                     value="{{ getValue('simcardtypename') }}">
+              <i class="icon"></i>
+            </div>
+            <input type="hidden"
+                   name="simcardtypeid"
+                   value="{{ getValue('simcardtypeid') }}" >
+          </div>
+        </div>
+
+        <h3 class="ui header">Dados do equipamento</h3>
+        <div class="fields">
+          <div class="four wide field{{ cssError('serialnumber') }}">
+            <label>Número de série</label>
+            <input name="serialnumber" type="text" class="search"
+                   placeholder="Informe o nº de série do equipamento..."
+                   {{ readonly }}
+                   value="{{ getValue('serialnumber')|trim }}">
+            <input type="hidden"
+                   name="equipmentid"
+                   value="{{ getValue('equipmentid') }}" >
+            {% if hasError('serialnumber') %}
+            <small class="helper">{{ getError('serialnumber') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field">
+            <label>Modelo de equipamento</label>
+            <div class="ui icon input readonly">
+              <input name="equipmentmodelname" type="text" readonly
+                     value="{{ getValue('equipmentmodelname') }}">
+              <i class="icon"></i>
+            </div>
+            <input type="hidden"
+                   name="equipmentmodelid"
+                   value="{{ getValue('equipmentmodelid') }}" >
+          </div>
+
+          <div class="four wide field{{ cssError('slotnumber') }}">
+            <label>Número do slot</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="slotnumber" type="hidden"
+                     value="{{ getValue('slotnumber') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Informe o número do slot</div>
+              <div class="menu">
+              {% set slotnumber = getValue('slotnumber') %}
+              {% for slot in slots %}
+                {% if slot.simcardid > 0 %}
+                  {% if slot.number == slotnumber %}
+                    {% set classOfItem = 'actual' %}
+                  {% else %}
+                    {% set classOfItem = 'disabled' %}
+                  {% endif %}
+                {% else %}
+                  {% set classOfItem = '' %}
+                {% endif %}
+                <div class="item {{ classOfItem }}"
+                     data-value="{{ slot.number }}"
+                     data-text="{{ slot.number }}">
+                  <span class="description">
+                    {% if slot.simcardid > 0 %}
+                      {% if slot.number == slotnumber %}
+                        (atual)
+                      {% endif %}
+                    {% else %}
+                      (livre)
+                    {% endif %}
+                  </span>
+                  <span class="text">
+                    {{ slot.number }}
+                  </span>
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('slotnumber') }}</span>
+              <input name="slotnumber" type="hidden"
+                     value="{{ getValue('slotnumber') }}">
+            </div>
+            {% endif %}
+            {% if hasError('slotnumber') %}
+            <small class="helper">{{ getError('slotnumber') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('slottypeid') }}">
+            <label>
+              Modelo do Slot
+              <span data-tooltip="Modelo de SIM Card exigido no equipamento"
+                    data-content="Top Left" data-position="top right"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui icon input readonly">
+              <input name="slottypename" type="text" readonly
+                     value="{{ getValue('slottypename') }}">
+              <i class="icon"></i>
+            </div>
+            <input type="hidden"
+                   name="slottypeid"
+                   value="{{ getValue('slottypeid') }}" >
+            {% if hasError('slottypeid') %}
+            <small class="helper">{{ getError('slottypeid') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> Associar
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        <input type="hidden" name="simcardid" value="{{ getValue('simcardid') }}">
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+  
+  {% set getEquipmentCompletion = { 'URL': 'ERP\\Devices\\Equipments\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      $("input[name='serialnumber']")
+        .autocomplete(SerialNumberCompletionOptions)
+      ;
+      $("input[name='slotnumber']")
+        .closest('div')
+        .children('div.menu')
+        .dropdown('clear')
+      ;
+
+      forceSimCardType();
+
+      // Coloca o foco no primeiro campo
+      $("input[name='serialnumber']")
+        .focus()
+      ;
+    });
+
+    // =================================================[ Options ]=====
+
+    // As opções para o componente de autocompletar o número de série do
+    // equipamento
+    var SerialNumberCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      ajax: {
+        url: "{{ path_for(getEquipmentCompletion.URL) }}",
+        type: "{{ getEquipmentCompletion.method }}",
+        data: function(params, options) {
+          params.mode = 'toSimCard';
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        var
+          imei = ''
+        ;
+
+        if (suggestion.imei.trim() !== '') {
+          imei = suggestion.imei.trim();
+        }
+
+        return ''
+          + '<div class="content">'
+          +   '<div class="title">Nº de série: ' + suggestion.name + '<br>'
+          +     (imei==''?'':'<span style="color: #609f9f; font-style: italic;">IMEI: ' + imei + '</span><br>')
+          +     '<span style="color: #1858cd; font-style: italic;">' + suggestion.equipmentmodelname + '</span><br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">' + suggestion.equipmentbrandname + '</span><span style="color: #9cadcd; font-style: italic;"> (' + suggestion.maxsimcards + ' slots para SIM Card)</span>'
+          +   '</div>'
+          + '</div>'
+        ;
+      },
+      onSelect: function (element, suggestion) {
+        // Armazena o ID do item selecionado e atualiza os demais campos
+        $("input[name='equipmentid']")
+          .val(suggestion.id)
+        ;
+        $("input[name='equipmentmodelid']")
+          .val(suggestion.equipmentmodelid)
+        ;
+        $("input[name='equipmentmodelname']")
+          .val(suggestion.equipmentmodelname)
+        ;
+
+        var
+          analyze = false
+        ;
+
+        if ($("input[name='slottypeid']").val() != suggestion.simcardtypeid) {
+          analyze = true;
+        }
+
+        $("input[name='slottypeid']")
+          .val(suggestion.simcardtypeid)
+        ;
+        $("input[name='slottypename']")
+          .val(suggestion.simcardtypename)
+        ;
+
+        var
+          slotnumber = $("input[name='slotnumber']")
+            .closest('div')
+            .children('div.menu')
+        ;
+        
+        $(slotnumber)
+          .empty()
+        ;
+
+        for (var slot = 0; slot < suggestion.maxsimcards; slot++) {
+          var
+            slotNumber = slot + 1,
+            comment    = '(livre)',
+            className = ''
+          ;
+          
+          if (suggestion.simcarddata[slot].simcardid > 0) {
+            comment   = '(em uso)';
+            className = ' disabled';
+          }
+          
+          $(slotnumber)
+            .append(''
+              + '<div class="item' + className + '" '
+              +      'data-value="' + slotNumber + '" '
+              +      'data-text="' + slotNumber + '">'
+              +   '<span class="description">'
+              +     comment
+              +   '</span>'
+              +   '<span class="text">'
+              +     slotNumber
+              +   '</span>'
+              +   '</div>'
+            )
+          ;
+        }
+        $(slotnumber)
+          .dropdown('clear')
+        ;
+
+        // Por último, analisa divergências dos modelos de SIM Card
+        if (analyze) {
+          forceSimCardType();
+        }
+      },
+      onInvalidateSelection: function() {
+        // Não conseguiu localizar equipamentos com base nos valores
+        // informados, então limpa os dados atuais
+        $("input[name='equipmentid']")
+          .val(0)
+        ;
+        $("input[name='equipmentmodelid']")
+          .val(0)
+        ;
+        $("input[name='equipmentmodelname']")
+          .val('')
+        ;
+        $("input[name='slottypeid']")
+          .val(0)
+        ;
+        $("input[name='slottypename']")
+          .val('')
+        ;
+        $("input[name='slotnumber']")
+          .closest('div')
+          .children('div.menu')
+          .empty()
+        ;
+        $("input[name='slotnumber']")
+          .closest('div')
+          .dropdown('clear')
+        ;
+
+        forceSimCardType();
+      }
+    };
+
+
+    // ================================================[ Handlers ]=====
+    
+    // Força o estado dos campos de modelos de SIM Cards
+    var forceSimCardType = function () {
+      function updateInput(element, icon, state) {
+        switch (state) {
+          case 'neutral' :
+            element
+              .closest("div.field")
+              .removeClass("error")
+              .removeClass("success")
+              .removeClass("warning")
+            ;
+            icon
+              .removeClass("check")
+              .removeClass("exclamation")
+              .removeClass("triangle")
+              .removeClass("question")
+              .removeClass("circle")
+              .css('color', 'rgba(0,0,0,.87)')
+              .css('opacity', '1')
+            ;
+
+            break;
+          case 'warning' :
+            element
+              .closest("div.field")
+              .removeClass("error")
+              .removeClass("success")
+              .addClass("warning")
+            ;
+            icon
+              .removeClass("check")
+              .removeClass("exclamation")
+              .removeClass("triangle")
+              .addClass("question")
+              .addClass("circle")
+              .css('color', '#ff8c00')
+              .css('opacity', '1')
+            ;
+
+            break;
+          case 'success' :
+            element
+              .closest("div.field")
+              .removeClass("error")
+              .removeClass("warning")
+              .addClass("success")
+            ;
+            icon
+              .removeClass("question")
+              .removeClass("circle")
+              .removeClass("exclamation")
+              .removeClass("triangle")
+              .addClass("check")
+              .css('color', '#006400')
+              .css('opacity', '1')
+            ;
+
+            break;
+          case 'error' :
+            element
+              .closest("div.field")
+              .removeClass("success")
+              .removeClass("warning")
+              .addClass("error")
+            ;
+            icon
+              .removeClass("question")
+              .removeClass("circle")
+              .removeClass("check")
+              .addClass("exclamation")
+              .addClass("triangle")
+              .css('color', '#cc0000')
+              .css('opacity', '1')
+            ;
+
+            break;
+        }
+      }
+
+      var
+        simcardType    = $("input[name='simcardtypename']"),
+        simcardTypeID  = $("input[name='simcardtypeid']").val(),
+        simcardIcon    = simcardType.next(),
+        slotType       = $("input[name='slottypename']"),
+        slotTypeID     = $("input[name='slottypeid']").val(),
+        slotIcon       = slotType.next(),
+        warning        = false
+      ;
+
+      if (slotTypeID == 0) {
+        updateInput(simcardType, simcardIcon, 'neutral');
+        updateInput(slotType, slotIcon, 'warning');
+      } else {
+        if ( (simcardTypeID == 1) ||
+             (slotTypeID == 1) ) {
+          // Um dos modelos não foi especificado, então coloca em atenção
+          if (simcardTypeID == 1) {
+            updateInput(simcardType, simcardIcon, 'warning');
+            updateInput(slotType, slotIcon, 'neutral');
+            warningDialog('Atenção', 'Não temos a informação do ' +
+              'tamanho do SIM Card, então verifique se não será ' +
+              'necessário utilizar um adaptador ou se o modelo é ' +
+              'compatível neste caso.');
+          } else {
+            updateInput(simcardType, simcardIcon, 'neutral');
+            updateInput(slotType, slotIcon, 'warning');
+            warningDialog('Atenção', 'Não temos a informação do ' +
+              'tamanho do slot do equipamento, então verifique se ' +
+              'não será necessário utilizar um adaptador ou se o ' +
+              'modelo é compatível neste caso.');
+          }
+        } else {
+          if (simcardTypeID == slotTypeID) {
+            // O SIM Card é do mesmo modelo do slot
+            updateInput(simcardType, simcardIcon, 'neutral');
+            updateInput(slotType, slotIcon, 'success');
+          } else {
+            // O SIM Card não é do mesmo modelo do slot
+            if (simcardTypeID > slotTypeID) {
+              // O SIM Card é de um tamanho menor do que o disponível no
+              // slot do equipamento, então alerta a necessidade de
+              // utilizar um adaptador
+              updateInput(simcardType, simcardIcon, 'neutral');
+              updateInput(slotType, slotIcon, 'warning');
+              warningDialog('Atenção', 'O SIM Card é de um tamanho ' +
+                'diferente do exigido pelo slot do equipamento, então ' +
+                'será necessário utilizar um adaptador.');
+            } else {
+              // O SIM Card é de um tamanho maior do que o disponível no
+              // slot do equipamento, então exibe o erro
+              updateInput(simcardType, simcardIcon, 'neutral');
+              updateInput(slotType, slotIcon, 'error');
+              errorDialog('Atenção', 'O SIM Card é de um tamanho ' +
+                'diferente do exigido pelo slot do equipamento e ' +
+                'você não terá como utilizar um adaptador neste caso.');
+            }
+          }
+        }
+      }
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

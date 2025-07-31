@@ -1,0 +1,39 @@
+/* -------------------------------------------[ Tabela calendário ]-----
+   As definições de uma tabela com formatação para calendário, para
+   facilitar a leitura.
+   ------------------------------------------------------------------ */
+
+table.calendar {
+  border: 1px solid #9badc4;
+
+  tr th,
+  tr td {
+    padding: 7px 5px;
+    font-size: 1.1em;
+  }
+
+  tr.bottomborder td {
+    border-bottom: 1px solid #e9eaea;
+  }
+
+  tr th.sun,
+  tr th.day,
+  tr td.sun,
+  tr td.day {
+    border-right: 1px solid #e9eaea;
+  }
+
+  tr th {
+    color: $boldTextColor;
+    font-weight: bold;
+    border-bottom: 1px solid #9badc4;
+  }
+
+  tr.bold td {
+    color: $boldTextColor;
+    background-color: #d7dee4;
+    font-size: 1.1em;
+    font-weight: bold;
+  }
+}
+

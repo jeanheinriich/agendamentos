@@ -1,0 +1,28 @@
+            <div class="ui compact grid mailing">
+              <div class="sixteen wide mobile sixteen wide tablet eight wide computer six wide large screen column{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][emails][' ~ emailNumber ~ '][email]') }}">
+                <div class="ui action input{{ readonly }}">
+                  <input name="subsidiaries[{{ subsidiaryNumber }}][emails][{{ emailNumber }}][email]"
+                         type="text" maxlength="100" {{ readonly }}
+                         placeholder="Endereço de e-mail..."
+                         value="{{ mailing.email }}">
+                  <input name="subsidiaries[{{ subsidiaryNumber }}][emails][{{ emailNumber }}][mailingid]"
+                         type="hidden"
+                         value="{{ mailing.mailingid }}" />
+                  {% if editMode %}
+                  <button class="ui mini youtube icon button"
+                          data-tooltip="Remove este e-mail"
+                          data-position="top right" type="button"
+                          emailNumber="{{ emailNumber }}"
+                          {% if loop.first %}
+                          disabled
+                          {% endif %}
+                          onclick="delEmail(this);">
+                    <i class="minus icon"></i>
+                  </button>
+                  {% endif %}
+                </div>
+                {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][emails][' ~ emailNumber ~ '][email]') %}
+                <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][emails][' ~ emailNumber ~ '][email]') }}</small>
+                {% endif %}
+              </div>
+            </div>

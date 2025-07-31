@@ -1,0 +1,1051 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - Transferência entre locais{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+  {% if getValue('step') == 1 %}
+  {% elseif getValue('step') == 2 %}
+    {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+    {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {% elseif getValue('step') == 3 %}
+  {% endif %}
+  {{ css('dialog.min.css') }}
+  {{ css('form.min.css') }}
+  <style>
+    .module {
+      max-width: 900px;
+    }
+    h3.ui.header {
+      color: #4183c4;
+      padding-bottom: .3rem;
+      border-bottom: 1px dotted rgba(34,36,38,.15);
+    }
+
+    @media only screen and (max-width:767px) {
+      h3.ui.header {
+        margin-top: .3rem !important;
+      }
+
+      .ui.main.basic.segment h2.ui.header {
+        margin-bottom: 1rem;
+      }
+
+      .ui.stackable.grid {
+        width: auto;
+        margin-top: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+      }
+    }
+
+    span.select-info {
+      display: none;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set URL = 'ERP\\Devices\\Movimentations\\Transfer' %}
+  {% set previous = 'ERP\\Home' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/transfer.svg', 'Transferência entre locais') }}
+            </td>
+            <td>
+              <div class="content">
+                Transferência entre locais
+                <div class="sub header">
+                  Permite transferir dispositivos (SIM Cards e/ou
+                  equipamentos) entre depósitos e/ou de um depósito para
+                  um técnico ou prestador de serviços.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module stackable segment">
+      <!-- Início dos passos de progresso -->
+      <div class="ui three top ordered attached steps">
+        <div class="{{ cssStep('step', 1) }}">
+          <div class="content">
+            <div class="title">Preparação</div>
+            <div class="description">Definir o que estamos transferindo</div>
+          </div>
+        </div>
+        <div class="{{ cssStep('step', 2) }}">
+          <div class="content">
+            <div class="title">Seleção</div>
+            <div class="description">Informar quais itens serão transferidos</div>
+          </div>
+        </div>
+        <div class="{{ cssStep('step', 3) }}">
+          <div class="content">
+            <div class="title">Confirmação</div>
+            <div class="description">Informar o destino</div>
+          </div>
+        </div>
+      </div>
+      <!-- Fim dos passos de progresso -->
+
+      <!-- Início conteúdo dos passos de progresso -->
+      <div class="ui attached segment">
+        <!-- Início formulário -->
+        <form class="ui form" method="POST" autocomplete="off"
+              {% if getValue('step') == 2 %}onsubmit="return validateForm(this);"{% endif %}
+              action="{{ path_for(URL) }}">
+          {% if getValue('step') == 1 %}
+          <h3 class="ui header">
+            Dados da transferência
+            <div class="sub header">
+              Definir quais os tipos de dispositivos estamos transferindo
+              e onde eles se encontram.
+            </div>
+          </h3>
+          <div class="fields">
+            <div class="sixteen wide field{{ cssError('deviceType') }}">
+              <label>Qual o tipo dos dispositivos a serem transferidos</label>
+              <div class="ui search selection dropdown">
+                <input name="deviceType" type="hidden"
+                       value="{{ getValue('deviceType') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text">Informe o tipo de dispositivo</div>
+                <div class="menu">
+                {% set deviceTypeID = getValue('deviceType') %}
+                {% for deviceType in deviceTypes %}
+                  <div class="item" {% if deviceType.id == deviceTypeID %}selected{% endif %}
+                       data-value="{{ deviceType.id }}"
+                       data-text="{{ deviceType.name }}">
+                    {{ deviceType.name }}
+                  </div>
+                {% endfor %}
+                </div>
+              </div>
+              {% if hasError('deviceType') %}
+              <small class="helper">{{ getError('deviceType') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="sixteen wide field{{ cssError('storageLocation') }}">
+              <label>Estes dispositivos estão</label>
+              <div class="ui search selection dropdown">
+                <input name="storageLocation" type="hidden"
+                       value="{{ getValue('storageLocation') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text">Informe onde estão os dispositivos</div>
+                <div class="menu">
+                {% set storageLocationID = getValue('storageLocation') %}
+                {% for storageLocation in storageLocations %}
+                  <div class="item" {% if storageLocation.id == storageLocationID %}selected{% endif %}
+                       data-value="{{ storageLocation.id }}"
+                       data-text="{{ storageLocation.name }}">
+                    {{ storageLocation.name }}
+                  </div>
+                {% endfor %}
+                </div>
+              </div>
+              {% if hasError('storageLocation') %}
+              <small class="helper">{{ getError('storageLocation') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fields">
+            {% if deposits|length > 0 %}
+            <div class="sixteen wide field{{ cssError('depositID') }}"
+                 id="depositSelection">
+              <label>Informe o depósito:</label>
+              {% if deposits|length > 1 %}
+              <div class="ui selection dropdown">
+                <input name="depositID" type="hidden"
+                       value="{{ getValue('depositID') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text">Informe o depósito</div>
+                <div class="menu">
+                {% set depositID = getValue('depositID') %}
+                {% for deposit in deposits %}
+                  <div class="item" {% if deposit.id == depositID %}selected{% endif %}
+                       data-value="{{ deposit.id }}"
+                       data-text="{{ deposit.name }}">
+                    {{ deposit.name }}
+                  </div>
+                {% endfor %}
+                </div>
+              </div>
+              {% else %}
+              <div class="field static">
+                <span class="darking">{{ deposits[0].name }}</span>
+                <input name="depositID" type="hidden"
+                       value="{{ deposits[0].id }}">
+              </div>
+              {% endif %}
+              {% if hasError('depositID') %}
+              <small class="helper">{{ getError('depositID') }}</small>
+              {% endif %}
+            </div>
+            {% endif %}
+            
+            {% if technicians|length > 0 %}
+            <div class="sixteen wide field{{ cssError('technicianID') }}"
+                 id="technicianSelection">
+              <label>Informe o técnico</label>
+              {% if technicians|length > 1 %}
+              <div class="ui search selection dropdown">
+                <input name="technicianID" type="hidden"
+                       value="{{ getValue('technicianID') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text">Informe o técnico</div>
+                <div class="menu">
+                {% set technicianID = getValue('technicianID') %}
+                {% for technician in technicians %}
+                  <div class="item" {% if technician.id == technicianID %}selected{% endif %}
+                       data-value="{{ technician.id }}"
+                       data-text="{{ technician.name }}">
+                    {{ technician.name }}
+                  </div>
+                {% endfor %}
+                </div>
+              </div>
+              {% else %}
+                <div class="field static">
+                  <span class="darking">{{ technicians[0].name }}</span>
+                  <input name="technicianID" type="hidden"
+                         value="{{ technicians[0].id }}">
+                </div>
+              {% endif %}
+              {% if hasError('technicianID') %}
+              <small class="helper">{{ getError('technicianID') }}</small>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            {% if serviceproviders|length > 0 %}
+            <div class="sixteen wide field{{ cssError('serviceProviderID') }}"
+                 id="serviceProviderSelection">
+              <label>Informe o prestador de serviços</label>
+              {% if serviceproviders|length > 1 %}
+              <div class="ui search selection dropdown">
+                <input name="serviceProviderID" type="hidden"
+                       value="{{ getValue('serviceProviderID') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text">Informe o prestador de serviços</div>
+                <div class="menu">
+                {% set serviceProviderID = getValue('serviceProviderID') %}
+                {% for serviceprovider in serviceproviders %}
+                  <div class="item" {% if serviceprovider.id == serviceProviderID %}selected{% endif %}
+                       data-value="{{ serviceprovider.id }}"
+                       data-text="{{ serviceprovider.name }}">
+                    {{ serviceprovider.name }}
+                  </div>
+                {% endfor %}
+                </div>
+              </div>
+              {% else %}
+                <div class="field static">
+                  <span class="darking">{{ serviceproviders[0].name }}</span>
+                  <input name="serviceProviderID" type="hidden"
+                         value="{{ serviceproviders[0].id }}">
+                </div>
+              {% endif %}
+              {% if hasError('serviceProviderID') %}
+              <small class="helper">{{ getError('serviceProviderID') }}</small>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+          <input name="newDepositID" type="hidden"
+                 value="{{ getValue('newDepositID') }}">
+          <input name="newTechnicianID" type="hidden"
+                 value="{{ getValue('technicianID') }}">
+          <input name="newServiceProviderID" type="hidden"
+                 value="{{ getValue('serviceProviderID') }}">
+
+          {% elseif getValue('step') == 2 %}
+          <h3 class="ui header">
+            Seleção
+            <div class="sub header">
+              Selecionar quais
+              {% if getValue('deviceType') == 'SimCard' %}
+                SIM Cards
+              {% else %}
+                equipamentos
+              {% endif %} serão transferidos.
+            </div>
+          </h3>
+          <input name="deviceType" type="hidden"
+                 value="{{ getValue('deviceType') }}">
+          <input name="storageLocation" type="hidden"
+                 value="{{ getValue('storageLocation') }}">
+          <input name="depositID" type="hidden"
+                 value="{{ getValue('depositID') }}">
+          <input name="technicianID" type="hidden"
+                 value="{{ getValue('technicianID') }}">
+          <input name="serviceProviderID" type="hidden"
+                 value="{{ getValue('serviceProviderID') }}">
+          <div class="fields">
+            <div class="sixteen wide field{{ cssErrors() }}">
+              <!-- Início tabela -->
+              <table id="result"
+                     class="ui unstackable compact selectable striped celled table nowrap"
+                     width="100%" cellspacing="0">
+                <thead>
+                  <tr>
+                    {% if getValue('deviceType') == 'SimCard' %}
+                    <th></th>
+                    <th>ID do SIM Card</th>
+                    <th>ICCID</th>
+                    <th>IMSI</th>
+                    <th>Telefone</th>
+                    <th>Operadora</th>
+                    <th>Modelo</th>
+                    <th>N&ordm; Patrimônio</th>
+                    {% else %}
+                    <th></th>
+                    <th>ID do equipamento</th>
+                    <th>IMEI</th>
+                    <th>N&ordm; de série</th>
+                    <th>Marca</th>
+                    <th>Modelo</th>
+                    <th>ID da situação</th>
+                    <th>Situação</th>
+                    <th>N&ordm; Patrimônio</th>
+                    {% endif %}
+                  </tr>
+                </thead>
+                <tbody>
+                </tbody>
+              </table>
+              <!-- Fim tabela -->
+              {% if hasErrors() %}
+                {% set errors = getErrors() %}
+                {% for field, fieldErrors in errors %}
+                  <div class="ui negative message">
+                    <i class="close icon"></i>
+                    {% if field == 'devices' %}
+                      <div class="header">
+                        Lamentamos, mas não conseguimos identificar os
+                        dispositivos selecionados.
+                      </div>
+                      <p>
+                        Selecione novamente os dispositivos.
+                      </p>
+                    {% else %}
+                      <div class="header">
+                        Erro
+                      </div>
+                      <ul class="list">
+                      {% for error in fieldErrors %}
+                        <li>{{ error }}</li>
+                      {% endfor %}
+                      </ul>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              {% endif %}
+            </div>
+          </div>
+          <input name="newDepositID" type="hidden"
+                 value="{{ getValue('newDepositID') }}">
+          <input name="newTechnicianID" type="hidden"
+                 value="{{ getValue('technicianID') }}">
+          <input name="newServiceProviderID" type="hidden"
+                 value="{{ getValue('serviceProviderID') }}">
+          {% elseif getValue('step') == 3 %}
+          <h3 class="ui header">
+            Dados da destinação
+            <div class="sub header">
+              Definir onde eles serão armazenados após a transferência.
+            </div>
+          </h3>
+          <input name="deviceType" type="hidden"
+                 value="{{ getValue('deviceType') }}">
+          <input name="storageLocation" type="hidden"
+                 value="{{ getValue('storageLocation') }}">
+          <input name="depositID" type="hidden"
+                 value="{{ getValue('depositID') }}">
+          <input name="technicianID" type="hidden"
+                 value="{{ getValue('technicianID') }}">
+          <input name="serviceProviderID" type="hidden"
+                 value="{{ getValue('serviceProviderID') }}">
+          {% set devices = getValue('devices') %}
+          {% for device in devices %}
+          <input type="hidden" name="devices[]" value="{{ device }}">
+          {% endfor %}
+          <div class="fields">
+            <div class="sixteen wide field{{ cssError('newStorageLocation') }}">
+              <label>Estes dispositivos estarão</label>
+              <div class="ui search selection dropdown">
+                <input name="newStorageLocation" type="hidden"
+                       value="{{ getValue('newStorageLocation') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text">Informe o novo local para os dispositivos</div>
+                <div class="menu">
+                {% set storageLocationID = getValue('newStorageLocation') %}
+                {% for storageLocation in storageLocations %}
+                  <div class="item" {% if storageLocation.id == storageLocationID %}selected{% endif %}
+                       data-value="{{ storageLocation.id }}"
+                       data-text="{{ storageLocation.name }}">
+                    {{ storageLocation.name }}
+                  </div>
+                {% endfor %}
+                </div>
+              </div>
+              {% if hasError('newStorageLocation') %}
+              <small class="helper">{{ getError('newStorageLocation') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fields">
+            {% if deposits|length > 0 %}
+            <div class="sixteen wide field{{ cssError('newDepositID') }}"
+                 id="depositSelection">
+              <label>Informe o depósito:</label>
+              {% if deposits|length > 1 %}
+              <div class="ui selection dropdown">
+                <input name="newDepositID" type="hidden"
+                       value="{{ getValue('newDepositID') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text">Informe o depósito</div>
+                <div class="menu">
+                {% set depositID = getValue('newDepositID') %}
+                {% for deposit in deposits %}
+                  <div class="item" {% if deposit.id == depositID %}selected{% endif %}
+                       data-value="{{ deposit.id }}"
+                       data-text="{{ deposit.name }}">
+                    {{ deposit.name }}
+                  </div>
+                {% endfor %}
+                </div>
+              </div>
+              {% else %}
+              <div class="field static">
+                {% for deposit in deposits %}
+                <span class="darking">{{ deposit.name }}&nbsp;</span>
+                <input name="newDepositID" type="hidden"
+                       value="{{ deposit.id }}">
+                {% endfor %}
+              </div>
+              {% endif %}
+              {% if hasError('newDepositID') %}
+              <small class="helper">{{ getError('newDepositID') }}</small>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            {% if technicians|length > 0 %}
+            <div class="sixteen wide field{{ cssError('newTechnicianID') }}"
+                 id="technicianSelection">
+              <label>Informe o técnico</label>
+              {% if technicians|length > 1 %}
+              <div class="ui search selection dropdown">
+                <input name="newTechnicianID" type="hidden"
+                       value="{{ getValue('newTechnicianID') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text">Informe o técnico</div>
+                <div class="menu">
+                {% set technicianID = getValue('newTechnicianID') %}
+                {% for technician in technicians %}
+                  <div class="item" {% if technician.id == technicianID %}selected{% endif %}
+                       data-value="{{ technician.id }}"
+                       data-text="{{ technician.name }}">
+                    {{ technician.name }}
+                  </div>
+                {% endfor %}
+                </div>
+              </div>
+              {% else %}
+                <div class="field static">
+                {% for technician in technicians %}
+                  <span class="darking">{{ technician.name }}</span>
+                  <input name="newTechnicianID" type="hidden"
+                         value="{{ technician.id }}">
+                {% endfor %}
+                </div>
+              {% endif %}
+              {% if hasError('newTechnicianID') %}
+              <small class="helper">{{ getError('newTechnicianID') }}</small>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            {% if serviceproviders|length > 0 %}
+            <div class="sixteen wide field{{ cssError('newServiceProviderID') }}"
+                 id="serviceProviderSelection">
+              <label>Informe o prestador de serviços</label>
+              {% if serviceproviders|length > 0 %}
+              <div class="ui search selection dropdown">
+                <input name="newServiceProviderID" type="hidden"
+                       value="{{ getValue('newServiceProviderID') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text">{{ serviceproviders[0].name }}</div>
+                <div class="menu">
+                {% set serviceProviderID = getValue('newServiceProviderID') %}
+                {% for serviceprovider in serviceproviders %}
+                  <div class="item" {% if serviceprovider.id == serviceProviderID %}selected{% endif %}
+                       data-value="{{ serviceprovider.id }}"
+                       data-text="{{ serviceprovider.name }}">
+                    {{ serviceprovider.name }}
+                  </div>
+                {% endfor %}
+                </div>
+              </div>
+              {% else %}
+                <div class="field static">
+                {% for serviceprovider in serviceproviders %}
+                  <span class="darking">{{ serviceprovider.name }}</span>
+                  <input name="newServiceProviderID" type="hidden"
+                         value="{{ serviceprovider.id }}">
+                {% endfor %}
+                </div>
+              {% endif %}
+              {% if hasError('newServiceProviderID') %}
+              <small class="helper">{{ getError('newServiceProviderID') }}</small>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          <div class="fields">
+            <div class="sixteen wide field buttons">
+              {% if getValue('step') > 1 %}
+              <button type="submit" name="action" value="Previous"
+                      onclick="this.form.submitted=this.value;"
+                      class="ui primary left floated labeled icon button">
+                <i class="angle left icon"></i> Voltar
+              </button>
+              {% else %}
+              <button type="button" class="ui youtube right labeled icon button"
+                      onclick="location.href='{{ path_for(previous) }}';">
+                <i class="remove icon"></i> Cancelar
+              </button>
+              {% endif %}
+              {% if getValue('step') < 3 %}
+              <button type="submit" name="action" value="Next"
+                      onclick="this.form.submitted=this.value;"
+                      class="ui submit primary right floated right labeled icon button">
+                <i class="angle right icon"></i> Avançar
+              </button>
+              {% else %}
+              <button type="submit" name="action" value="Transfer"
+                      onclick="this.form.submitted=this.value;"
+                      class="ui submit primary right floated right labeled icon button">
+                <i class="angle right icon"></i> Transferir
+              </button>
+              {% endif %}
+            </div>
+          </div>
+
+          {{ csrf() }}
+
+          <input type="hidden" name="_method" value="{{ formMethod }}">
+          <input type="hidden" name="step" value="{{ getValue('step') }}">
+        </form>
+        <!-- Fim formulário -->
+      </div>
+      <!-- Fim conteúdo dos passos de progresso -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/info.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  
+  {% if getValue('step') == 1 %}
+  {% elseif getValue('step') == 2 %}
+    {{ lib('datatables/jquery.dataTables.min.js') }}
+    {{ lib('datatables/dataTables.semanticui.min.js') }}
+    {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+    {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+    {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+    {{ lib('datatables/formatters/ImageFormatter.min.js') }}
+  {% elseif getValue('step') == 3 %}
+  {% endif %}
+  
+  {% set URL     = 'ERP\\Devices\\Movimentations\\Transfer' %}
+  {% set getData = { 'URL': 'ERP\\Devices\\Movimentations\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      deviceName = "{% if getValue('deviceType') == 'SimCard' %}SIM Card{% else %}equipamento{% endif %}"
+    ;
+
+    {% if getValue('step') == 2 %}
+      var
+        table,
+        selected = []
+      ;
+      
+      {% if getValue('deviceType') == 'Equipment' %}
+      // Um formatador de colunas para exibir a situação de um equipamento
+      var stateFormatter = function ( value, type, row, meta ) {
+        var color, icon;
+
+        switch (row.stateid) {
+          case 1: color = 'green'; icon = 'check'; break;
+          case 2: color = 'red'; icon = 'exclamation triangle orange'; break;
+          case 3: color = 'darkorange'; icon = 'exclamation triangle blue'; break;
+          case 4: color = 'darkred'; icon = 'close red'; break;
+          
+          default:
+            color = 'darkred';
+        }
+
+        return ''
+          + '<span style="color: ' + color + '">'
+          +   '<i class="' + icon + ' icon"></i>' + value
+          + '</span>'
+        ;
+      };
+      {% endif %}
+
+    {% endif %}
+
+    $(document).ready(function()
+    {
+      {% if getValue('step') == 1 %}
+        // -----------------------------[ Componentes do formulário ]---
+        $('.form .ui.dropdown')
+          .dropdown()
+        ;
+        $("input[name='storageLocation']")
+          .change(refreshFields)
+        ;
+
+        // Força a atualização dos campos em exibição conforme as
+        // seleções
+        refreshFields();
+
+        // Coloca o foco no primeiro campo
+        $("input[name='deviceType']")
+          .closest('div')
+          .find('input.search')
+          .focus()
+        ;
+      {% elseif getValue('step') == 2 %}
+
+        // --------------------------------------------[ Datatables ]---
+
+        // Atualiza a tabela para reajustar as colunas em caso de
+        // alternância da barra lateral
+        $('#ResizeSidebarMenu').click(function() {
+          setTimeout(function() {
+            table
+              .columns
+              .adjust()
+            ;
+          }, 500);
+        });
+
+        // Atualiza a tabela para reajustar as colunas em caso de
+        // redimensionamento da janela
+        $(window).resize(function() {
+          setTimeout(function() {
+            table
+              .columns
+              .adjust()
+            ;
+          }, 500);
+        });
+
+        table = $('#result').DataTable({
+          pagingType: "first_last_numbers",
+          lengthChange: false,
+          searching: false,
+          scrollX: true,
+          language: {
+            url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+          },
+          columnDefs: [
+          {% if getValue('deviceType') == 'SimCard' %}
+            { "targets": 0,
+              "name": "selected",
+              "data": "selected",
+              "orderable": false, className: 'select-checkbox' },
+            { "targets": 1,
+              "name": "id",
+              "data": "id",
+              "visible": false,
+              "orderable": false },
+            { "targets": 2,
+              "name": "simcards.iccid",
+              "data": "iccid",
+              "visible": true,
+              "orderable": true },
+            { "targets": 3,
+              "name": "simcards.imsi",
+              "data": "imsi",
+              "visible": true,
+              "width": "150px",
+              "orderable": true },
+            { "targets": 4,
+              "name": "simcards.phonenumber",
+              "data": "phonenumber",
+              "visible": true,
+              "width": "100px",
+              "orderable": true },
+            { "targets": 5,
+              "name": "simcards.mobileoperatorname",
+              "data": "mobileoperatorlogo",
+              "visible": true,
+              "orderable": false,
+              "width": "50px",
+              "render": imageFormatter(50, 16) },
+            { "targets": 6,
+              "name": "simcardtypes.name",
+              "data": "simcardtypename",
+              "visible": true,
+              "width": "100px",
+              "orderable": true },
+            { "targets": 7,
+              "name": "simcards.assetnumber",
+              "data": "assetnumber",
+              "visible": true,
+              "width": "100px",
+              "orderable": true },
+          {% else %}
+            { "targets": 0,
+              "name": "selected",
+              "data": "selected",
+              "orderable": false, className: 'select-checkbox' },
+            { "targets": 1,
+              "name": "id",
+              "data": "id",
+              "visible": false,
+              "orderable": false },
+            { "targets": 2,
+              "name": "equipments.imei",
+              "data": "imei",
+              "visible": true,
+              "orderable": true },
+            { "targets": 3,
+              "name": "equipments.serialnumber",
+              "data": "serialnumber",
+              "visible": true,
+              "orderable": true },
+            { "targets": 4,
+              "name": "equipmentbrands.name, equipments.imei",
+              "data": "brandname",
+              "visible": true,
+              "width": "100px",
+              "orderable": true },
+            { "targets": 5,
+              "name": "equipmentmodels.name, equipments.imei",
+              "data": "modelname",
+              "visible": true,
+              "width": "100px",
+              "orderable": true },
+            { "targets": 6,
+              "name": "stateid",
+              "data": "stateid",
+              "visible": false,
+              "orderable": false },
+            { "targets": 7,
+              "name": "equipments.equipmentstateid, equipments.imei",
+              "data": "statename",
+              "visible": true,
+              "width": "100px",
+              "orderable": true,
+              "render": stateFormatter },
+            { "targets": 8,
+              "name": "equipments.assetnumber",
+              "data": "assetnumber",
+              "visible": true,
+              "width": "60px",
+              "orderable": true },
+          {% endif %}
+          ],
+          order: [[ 2, 'asc' ]],
+          select: {
+            style: 'multi',
+            items: 'row'
+          },
+          dom:
+            "<'ui grid'"+
+              "<'row'"+
+                "<'sixteen wide column'"+
+                  "<'toolbar'>"+
+                ">"+
+              ">"+
+              "<'row dt-table'"+
+                "<'sixteen wide column'tr>"+
+              ">"+
+              "<'row'"+
+                "<'seven wide column'i>"+
+                "<'right aligned nine wide column'p>"+
+              ">"+
+            ">",
+          processing: true,
+          serverSide: true,
+          ajax: {
+            url: "{{ path_for(getData.URL) }}",
+            type: "{{ getData.method }}",
+            data: function ( params ) {
+              params.deviceType          = $('input[name="deviceType"]').val();
+              params.storageLocation     = $('input[name="storageLocation"]').val();
+              params.depositID           = $('input[name="depositID"]').val();
+              
+              if (typeof params.depositID === 'undefined') {
+                params.depositID = 0;
+              }
+              
+              params.technicianID        = $('input[name="technicianID"]').val();
+              
+              if (typeof params.technicianID === 'undefined') {
+                params.technicianID = 0;
+              }
+              
+              params.serviceProviderID   = $('input[name="serviceProviderID"]').val();
+              
+              if (typeof params.serviceProviderID === 'undefined') {
+                params.serviceProviderID = 0;
+              }
+            },
+            error: handleAjaxError
+          },
+          responsive: true,
+          initComplete: function(settings, json) {
+            // Unstack Pagination
+            $('div.ui.pagination.menu')
+              .removeClass('stackable')
+              .addClass('unstackable')
+            ;
+          },
+          rowCallback: function(row, data) {
+            // Força a seleção dos ítens em caso de mudança de página
+            if ( $.inArray(data.id, selected) !== -1 ) {
+              $(row)
+                .addClass('selected')
+              ;
+              table
+                .row(row)
+                .select()
+              ;
+            }
+          }
+        });
+
+        // Manipula os eventos de click
+        table
+          .on('user-select', function (e, dt, type, cell, originalEvent) {
+            if (type === 'row') {
+              var
+                // Recupera os dados da linha selecionada
+                index  = cell[0][0],
+                device = dt.rows( index.row ).data().toArray()[0],
+                pos    = $.inArray(device.id, selected)
+              ;
+
+              // Verifica se o dispositivo está na lista de seleção
+              if (pos == -1) {
+                // Adiciona o dispositivo na lista de seleção
+                selected
+                  .push(device.id)
+                ;
+              } else {
+                // Remove o dispositivo da lista de seleção
+                selected
+                  .splice(pos, 1)
+                ;
+              }
+
+              if (selected.length > 0) {
+                if (selected.length > 1) {
+                  $("div.toolbar")
+                    .html('<b>Selecionados ' + selected.length + ' ' + deviceName + 's</b>')
+                  ;
+                } else {
+                  $("div.toolbar")
+                    .html('<b>Selecionado ' + selected.length + ' ' + deviceName + '</b>')
+                  ;
+                }
+              } else {
+                $("div.toolbar")
+                  .html('<b></b>')
+                ;
+              }
+            }
+          }
+        );
+      {% elseif getValue('step') == 3 %}
+        // -----------------------------[ Componentes do formulário ]---
+        $('.form .ui.dropdown')
+          .dropdown()
+        ;
+        $("input[name='newStorageLocation']")
+          .change(refreshFields)
+        ;
+
+        // Força a atualização dos campos em exibição conforme as
+        // seleções
+        refreshFields();
+
+        // Coloca o foco no primeiro campo
+        $("input[name='newStorageLocation']")
+          .closest('div')
+          .find('input.search')
+          .focus();
+      {% endif %}
+    });
+
+
+    // ================================================[ Handlers ]=====
+
+    {% if getValue('step') == 1 %}
+    // Faz o tratamento do campo storage location para permitir exibir
+    // os campos apropriados de seleção do local onde os dispositivos
+    // estão armazenados
+    function refreshFields() {
+      var
+        storageLocation = $("input[name='storageLocation']").val()
+      ;
+
+      $('#depositSelection')
+        .hide()
+      ;
+      $('#technicianSelection')
+        .hide()
+      ;
+      $('#serviceProviderSelection')
+        .hide()
+      ;
+
+      switch (storageLocation) {
+        case 'StoredOnDeposit':
+          $('#depositSelection')
+            .show()
+          ;
+
+          break;
+        case 'StoredWithTechnician':
+          $('#technicianSelection')
+            .show()
+          ;
+
+          break;
+        case 'StoredWithServiceProvider':
+          $('#serviceProviderSelection')
+            .show()
+          ;
+
+          break;
+      }
+    }
+    {% elseif getValue('step') == 2 %}
+    // Valida a seleção de dispositivos e anexa no formulário àqueles
+    // selecionados
+    function validateForm(form)
+    {
+      switch (form.submitted) {
+        case 'Next':
+        case 'Transfer':
+          // Verifica se selecionamos ao menos um dispositivo
+          if (selected.length == 0) {
+            warningDialog(
+              'Atenção',
+              'Selecione ao menos um ' + deviceName +
+              ' antes de prosseguir.'
+            );
+
+            return false;
+          }
+
+          // Percorremos os dispositivos selecionados e acrescentamos
+          // no nosso formulário
+          $.each(selected, function(key, value) {
+            // Para cada dispositivo, acrescentamos um input com o
+            // respectivo valor
+            var
+              newInput = $("<input>")
+                .attr({"type":"hidden","name":"devices[]"})
+                .val(value)
+            ;
+
+            $(form)
+              .append(newInput)
+            ;
+          });
+        default:
+          // Não faz nada
+          // 
+      }
+
+      return true;
+    }
+    {% elseif getValue('step') == 3 %}
+    // Faz o tratamento do campo storage location para permitir exibir
+    // os campos apropriados de seleção do local onde os dispositivos
+    // serão armazenados
+    function refreshFields() {
+      var
+        storageLocation = $("input[name='newStorageLocation']").val()
+      ;
+
+      $('#depositSelection')
+        .hide()
+      ;
+      $('#technicianSelection')
+        .hide()
+      ;
+      $('#serviceProviderSelection')
+        .hide()
+      ;
+
+      switch (storageLocation) {
+        case 'StoredOnDeposit':
+          $('#depositSelection')
+            .show()
+          ;
+
+          break;
+        case 'StoredWithTechnician':
+          $('#technicianSelection')
+            .show()
+          ;
+
+          break;
+        case 'StoredWithServiceProvider':
+          $('#serviceProviderSelection')
+            .show()
+          ;
+
+          break;
+      }
+    }
+    {% endif %}
+  </script>
+  {% endapply %}
+{% endblock scripts %}

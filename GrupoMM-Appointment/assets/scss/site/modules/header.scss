@@ -1,0 +1,162 @@
+/* ---------------------------------------------------[ Header ]-----
+   As definições do título (cabeçalho) da página.
+   ------------------------------------------------------------------ */
+
+header {
+  display: block;
+  
+  .segment {
+    &.top {
+      padding: 5px 0;
+      margin: 0;
+      @include border-radius(0);
+      
+      .list-inline {
+        padding-left: 0;
+        margin-left: -5px;
+        list-style: none;
+        margin-top: 0;
+        margin-bottom: 0px;
+        
+        li {
+          display: inline-block;
+          padding-right: 5px;
+          padding-left: 5px;
+
+          @media screen and (max-width: 450px) {
+            &:first-child {
+              display: none;
+            }
+          }
+          
+          a {
+            color: $invertedActiveTextColor;
+            &:hover {
+              color: #1993FF;
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  .ui.main.menu {
+    margin: 0;
+    @include border-radius(0);
+
+    a {
+      @media screen and (max-width: 767px) {
+        padding-top: 0px;
+        padding-bottom: 0px;
+        line-height: 1;
+      }
+    }
+    
+    .menu {
+      .current.item {
+        color: #005FA6;
+        @include background-linear(top, #dbdbdb 0%, #e2e2e2 100%);
+        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffdbdbdb', endColorstr='#ffe2e2e2', GradientType=0);
+        background-repeat: repeat-x;
+        -webkit-box-shadow: inset 0 3px 9px rgba(0, 0, 0, .075);
+        box-shadow: inset 0 3px 9px rgba(0, 0, 0, .075);
+
+        &:hover {
+          color: #005FA6;
+        }
+      }
+
+      .dropdown .menu .current.item {
+        color: #005FA6 !important;
+        @include background-linear(top, #dbdbdb 0%, #e2e2e2 100%);
+        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffdbdbdb', endColorstr='#ffe2e2e2', GradientType=0) !important;
+        background-repeat: repeat-x;
+        -webkit-box-shadow: inset 0 3px 9px rgba(0, 0, 0, .075) !important;
+        box-shadow: inset 0 3px 9px rgba(0, 0, 0, .075) !important;
+        
+        &:hover {
+          color: #005FA6 !important;
+        }
+      }
+    }
+    
+    &.stackable {
+      .header{
+        &.item {
+          padding-top: 0;
+          padding-bottom: 0;
+        }
+        
+        .item.trigger {
+          display: none;
+          @media screen and (max-width: 767px) {
+            display: flex;
+          }
+        }
+      }
+      .right.menu {
+        display: flex;
+        @media screen and (max-width: 767px) {
+          &.hide {
+            display: none !important;
+          }
+        }
+      }
+      .item {
+        line-height: 1;
+        padding: .92857143em 1.14285714em;
+        border-top: 1px solid rgba(34,36,38,.1);
+        &.dropdown {
+          border-top: none;
+          &:hover {
+            color: #005FA6;
+          }
+        }
+        &.blue {
+          color: White !important;
+          background-color: #0066ff;
+          font-weight: bold;
+
+          &:hover {
+            background-color: #0052cc;
+          }
+        }
+        &.orange {
+          color: White !important;
+          background-color: #ff5500;
+          font-weight: bold;
+          
+          &.current {
+            color: #005FA6 !important;
+          }
+          &:hover {
+            background-color: #cc4400;
+          }
+        }
+        &:first-child {
+          &::before {
+            position: absolute;
+            content: '';
+            top: 0;
+            right: 0;
+            height: 100%;
+            width: 1px;
+            background: none;
+          }
+        }
+
+        .trigger {
+          width: 60px !important;
+          margin-left: auto !important;
+          height: 65px;
+          border-left: 1px solid rgba(34,36,38,.1);
+          border-right: 1px solid rgba(34,36,38,.1);
+
+          i {
+            padding: 0px 10px;
+          }
+        }
+      }
+    }
+  }
+}

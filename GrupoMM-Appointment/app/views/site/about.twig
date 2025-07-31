@@ -1,0 +1,61 @@
+{% extends 'templates/site/layout.twig' %}
+{% block title %}{{ parent() }} - Sobre{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+{% endblock stylesheets %}
+{% block content %}
+    <main>
+      <section class="hero about">
+      </section>
+      <section class="description">
+        <div class="ui basic segment">
+          <!-- Início cabeçalho módulo -->
+          <h2 class="ui blue header">
+            <table cellspacing="0" cellpadding="0">
+              <tbody>
+                <tr>
+                  <td class="mobile hidden">
+                    {{ icon('site/about.svg', 'Sobre') }}
+                  </td>
+                  <td>
+                    <div class="content">
+                      Sobre o Grupo M&amp;M
+                      <div class="sub header">
+                        Conheça um pouco mais sobre nossa empresa.
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </h2>
+          <!-- Fim cabeçalho módulo -->
+
+          <p>
+            Somos uma empresa jovem, mas que busca excelência em tudo o
+            que faz. Através da melhor tecnologia, proporcionamos a você
+            qualidade, segurança e tranquilidade em nossos produtos e
+            serviços. Estamos focados na segurança, pois hoje o alto
+            índice de furtos e roubos no Brasil justificam o investimento
+            em sistemas e equipamentos que ofereçam o melhor para você e
+            sua família.
+          </p>
+          <h3 class="ui black header">
+            Benefícios
+          </h3>
+          <p>
+            Buscamos oferecer sempre produtos de alta tecnologia,
+            aliados a profissionais capacitados para executar a
+            instalação. Além disto, temos a disposição uma equipe sempre
+            pronta para solucionar suas dúvidas e atender você em suas
+            expectativas.
+          </p>
+          
+          <button type="button" class="ui blue labeled icon button"
+                  onclick="location.href='{{ path_for('Home') }}';">
+            <i class="home icon"></i> Retornar para a página inicial
+          </button>
+        </div>
+      </section>
+    </main>
+{% endblock %}

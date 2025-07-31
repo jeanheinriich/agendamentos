@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   viewBox="0 0 400 400"
+   version="1.1"
+   id="svg4"
+   sodipodi:docname="vehicles.svg"
+   width="400"
+   height="400"
+   inkscape:version="0.92.4 5da689c313, 2019-01-14">
+  <metadata
+     id="metadata10">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs8" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="960"
+     inkscape:window-height="1017"
+     id="namedview6"
+     showgrid="false"
+     inkscape:zoom="0.6046875"
+     inkscape:cx="320"
+     inkscape:cy="256"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg4" />
+  <path
+     d="M 390,260 H 380 V 192.4375 C 380,184.5 376.8125,176.875 371.1875,171.25 L 308.75,108.8125 C 303.125,103.1875 295.5,100 287.5625,100 H 260 V 70 C 260,53.4375 246.5625,40 230,40 H 30 C 13.4375,40 0,53.4375 0,70 v 200 c 0,16.5625 13.4375,30 30,30 h 10 c 0,33.125 26.875,60 60,60 33.125,0 60,-26.875 60,-60 h 80 c 0,33.125 26.875,60 60,60 33.125,0 60,-26.875 60,-60 h 30 c 5.5,0 10,-4.5 10,-10 v -20 c 0,-5.5 -4.5,-10 -10,-10 z m -290,70 c -16.5625,0 -30,-13.4375 -30,-30 0,-16.5625 13.4375,-30 30,-30 16.5625,0 30,13.4375 30,30 0,16.5625 -13.4375,30 -30,30 z m 200,0 c -16.5625,0 -30,-13.4375 -30,-30 0,-16.5625 13.4375,-30 30,-30 16.5625,0 30,13.4375 30,30 0,16.5625 -13.4375,30 -30,30 z m 50,-130 h -90 v -70 h 27.5625 L 350,192.4375 Z"
+     id="path2"
+     inkscape:connector-curvature="0"
+     style="stroke-width:0.625" />
+</svg>

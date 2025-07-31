@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<!--
+ * This file is part of Extension Library.
+ *
+ * (c) Emerson Cavalcanti
+ *
+ * LICENSE: The MIT License (MIT)
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the 
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject
+ * to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * 
+ * ---------------------------------------------------------------------
+ * Descrição:
+ * 
+ * Layout para formatação de boleto no padrão da Caixa Econômica Federal
+ * - CEF.
+ */
+
+/**
+ * @author Emerson Cavalcanti <emersoncavalcanti@gmail.com>
+ */
+-->
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <style type="text/css">
+      /* Embed the CSS content here */
+      <?php include $resourcePath . '/css/styles.css' ?>
+    </style>
+  </head>
+  <body>
+    <div style="width: 666px">
+      <div class="noprint info">
+        <h2>Instruções de Impressão</h2>
+        <ul>
+          <li>Imprima em impressora jato de tinta (ink jet) ou laser em qualidade normal ou alta (Não use modo econômico).</li>
+          <li>Utilize folha A4 (210 x 297 mm) ou Carta (216 x 279 mm) e margens mínimas à esquerda e à direita do formulário.</li>
+          <li>Corte na linha indicada. Não rasure, risque, fure ou dobre a região onde se encontra o código de barras.</li>
+          <li>Caso tenha problemas ao imprimir, copie a sequencia numérica abaixo e pague no caixa eletrônico ou no internet banking:</li>
+        </ul>
+        <span class="header">Linha Digitável: <?php echo $digitableLine; ?></span>
+        <?php if ($documentValue) : ?><span class="header">Valor: R$ <?php echo $documentValue; ?></span><?php endif ?>
+        <?php if ($minimumPayment) : ?><span class="header">Pagamento mínimo: R$ <?php echo $minimumPayment; ?></span><?php endif ?>
+        <br>
+        <div class="linha-pontilhada" style="margin-bottom: 20px;">Recibo do sacado</div>
+      </div>
+      
+      <div class="info-empresa">
+        <?php if ($emitter['logo']) : ?>
+        <div style="display: inline-block;">
+          <img alt="logotipo" src="<?php echo $emitter['logo']; ?>" />
+        </div>
+        <?php endif ?>
+        <div style="display: inline-block; vertical-align: super;">
+          <div><strong><?php echo $emitter['name']; ?></strong></div>
+          <div><?php echo $emitter['documentNumber']; ?></div>
+          <div><?php echo $emitter['addressLine1']; ?></div>
+          <div><?php echo $emitter['addressLine2']; ?></div>
+        </div>
+      </div>
+      <br>
+      
+      <table class="table-boleto" cellpadding="0" cellspacing="0" border="0">
+        <tbody>
+          <tr>
+            <td valign="bottom" colspan="8" class="noborder nopadding">
+              <div class="logocontainer">
+                <div class="logobanco">
+                  <img src="<?php echo $bank['logo']; ?>" alt="logotipo do banco">
+                </div>
+                <div class="codbanco">
+                  <?php echo $bank['code']; ?>
+                </div>
+              </div>
+              <div class="linha-digitavel">
+                <?php echo $digitableLine; ?>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="4" width="520">
+              <div class="titulo">Pagador</div>
+              <div class="conteudo">
+                <?php echo $payer['name']; ?>
+              </div>
+            </td>
+            <td>
+              <div class="titulo">CPF/CNPJ do Pagador</div>
+              <div class="conteudo rtl">
+                <?php echo $payer['documentNumber']; ?>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td width="130">
+              <div class="titulo">Nosso Número</div>
+              <div class="conteudo">
+                <?php echo $bankIdentificationNumber; ?>
+              </div>
+            </td>
+            <td width="130">
+              <div class="titulo">Nº documento</div>
+              <div class="conteudo">
+                <?php echo $documentNumber; ?>
+              </div>
+            </td>
+            <td colspan="2">
+              <div class="titulo">Agência/Código do Beneficiário</div>
+              <div class="conteudo">
+                <?php echo $emitter['agencyAndAccount']; ?>
+              </div>
+            </td>
+            <td width="130" class="caixa-gray-bg">
+              <div class="titulo">Vencimento</div>
+              <div class="conteudo rtl">
+                <?php echo $dateOfExpiration; ?>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2">
+              <div class="titulo">Beneficiário</div>
+              <div class="conteudo">
+                <?php echo $emitter['name']; ?>
+              </div>
+            </td>
+            <td colspan="2">
+              <div class="titulo">CPF/CNPJ do Beneficiário</div>
+              <div class="conteudo">
+                <?php echo $emitter['documentNumber']; ?>
+              </div>
+            </td>
+            <td width="130" class="caixa-gray-bg">
+              <div class="titulo">Valor do Documento</div>
+              <div class="conteudo rtl">
+                <?php echo $documentValue; ?>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="4">
+              <div class="titulo">Endereço do Beneficiário</div>
+              <div class="conteudo">
+                <?php echo $emitter['Address1'] . ' | ' . $emitter['Address1']; ?>
+              </div>
+            </td>
+            <td width="130">
+              <div class="titulo">(-) Descontos / Abatimentos</div>
+              <div class="conteudo rtl">
+                <?php echo $discounts; ?>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="4" rowspan="3" style="vertical-align: top;">
+              <div class="titulo"><b>Demonstrativo</b></div>
+              <div style="margin-top: 10px" class="conteudo">
+                <?php echo $demonstrativeText[0]; ?>
+              </div>
+              <div class="conteudo">
+                <?php echo $demonstrativeText[1]; ?>
+              </div>
+              <div class="conteudo">
+                <?php echo $demonstrativeText[2]; ?>
+              </div>
+              <div class="conteudo">
+                <?php echo $demonstrativeText[3]; ?>
+              </div>
+              <div style="margin-bottom: 10px;" class="conteudo">
+                <?php echo $demonstrativeText[4]; ?>
+              </div>
+            </td>
+            <td width="130">
+              <div class="titulo">(-) Outras deduções</div>
+              <div class="conteudo rtl">
+                <?php echo $otherDeductions; ?>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td width="130">
+              <div class="titulo">(+) Outros acréscimos</div>
+              <div class="conteudo rtl">
+                <?php echo $otherAdditions; ?>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td width="130">
+              <div class="titulo">(=) Valor cobrado</div>
+              <div class="conteudo rtl">
+                <?php echo $paidValue; ?>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="3" class="bottomborder">
+              <b>SAC CAIXA</b>: 0800 726 0101 (informações, reclamações, sugestões e elogios)<br>
+              <b>Para pessoas com deficiência auditiva ou de fala</b>: 0800 726 2492 <br>
+              <b>Ouvidoria</b>: 0800 725 7474 <br>
+              <b>caixa.gov.br</b>
+            </td>
+            <td width="400" colspan="2" style="vertical-align: top;" class="bottomborder">
+              <div class="titulo">
+                <center>
+                  Autenticação Mecânica - <b>Recibo do Pagador</b>
+                </center>
+              </div>
+              <div class="conteudo"></div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="linha-pontilhada">Corte na linha pontilhada</div>
+      <br>
+      
+      <!-- Ficha de compensação -->
+      <?php include(__DIR__ . '/partials/CompensationForm.phtml') ?>
+    </div>
+  </body>
+</html>

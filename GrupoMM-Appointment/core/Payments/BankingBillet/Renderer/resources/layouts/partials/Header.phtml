@@ -1,0 +1,208 @@
+      <!-- Informações da empresa beneficiária -->
+      <table class="header default" style="margin-bottom: 5px;">
+        <tbody>
+          <tr>
+            <?php if ($emitter['logo']) : ?>
+            <td rowspan="4" valign="top" width="50px" class="left smallFont">
+              <div style="display: inline-block; padding-right: 10px;">
+                <img alt="logotipo" src="<?php echo $emitter['logo']; ?>" style="max-height: 50px;" />
+              </div>
+            </td>
+
+            <td rowspan="4" valign="top" width="10px">
+            </td>
+            <?php endif ?>
+
+            <td colspan="2">
+              <strong><?php echo $emitter['name']; ?></strong>
+            </td>
+
+            <td rowspan="2" width="130" class="withBorder lastBorder lavender">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      Data de Vencimento
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content largeFont bold center">
+                      <?php echo $dateOfExpiration; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td colspan="2">
+              <?php echo $emitter['document']; ?>
+            </td>
+          </tr>
+
+          <tr>
+            <td colspan="2">
+              <?php echo $emitter['addressLine1']; ?>
+            </td>
+
+            <td rowspan="2" width="130" class="withBorder lastBorder simpleBorderBottom">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      Valor Total
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content largeFont right">
+                      R$ <?php echo $documentValue; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td colspan="2">
+              <?php echo $emitter['addressLine2']; ?>
+            </td>
+          </tr>
+
+          <tr>
+            <td colspan="4" class="withBorder simpleBorderBottom">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      Cliente
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content">
+                      <?php echo $payer['name']; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+
+            <td width="130" class="withBorder lastBorder simpleBorderBottom">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      <?php echo $payer['documentType']; ?>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content right">
+                      <?php echo $payer['documentNumber']; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <?php
+              // Determinamos as colunas adicionais
+              $colSpan = 5;
+              if ($totalizer) {
+                $colSpan--;
+              }
+              if (($referenceMonth) || ($parcel)) {
+                $colSpan--;
+              }
+            ?>
+            <td colspan="<?php echo $colSpan; ?>" class="withBorder simpleBorderBottom<?php if( $colSpan==4 ): ?> lastBorder<?php endif; ?>">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      Endereço
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content">
+                      <?php echo $payer['addressLine1']; ?><br>
+                      <?php echo $payer['addressLine2']; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+
+            <?php if( $totalizer ): ?>
+            <td class="withBorder simpleBorderBottom<?php if( $colSpan==4 ): ?> lastBorder<?php endif; ?>" width="130">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      <?php if( $referenceMonth ): ?>
+                      Total de veículos
+                      <?php else: ?>
+                      Total de itens
+                      <?php endif; ?>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content mediumFont center">
+                      <?php echo $totalizer; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+            <?php endif; ?>
+
+            <?php if( $referenceMonth ): ?>
+            <td class="withBorder lastBorder simpleBorderBottom" width="130">
+              <table width="100%" class="noBorder">
+                <tbody>
+                  <tr>
+                    <td height="10px" valign="bottom" width="100%" class="label">
+                      Mês de referência
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td height="20px" width="100%" class="content mediumFont center">
+                      <?php echo $referenceMonth; ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+            <?php else: ?>
+              <?php if( $parcel ): ?>
+              <td class="withBorder lastBorder simpleBorderBottom" width="130">
+                <table width="100%" class="noBorder">
+                  <tbody>
+                    <tr>
+                      <td height="10px" valign="bottom" width="100%" class="label">
+                        Parcela
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td height="20px" width="100%" class="content mediumFont center">
+                        <?php echo $parcel; ?>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+              <?php endif; ?>
+            <?php endif; ?>
+          </tr>
+        </tbody>
+      </table>

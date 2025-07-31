@@ -1,0 +1,255 @@
+{% extends 'templates/site/layout.twig' %}
+{% block title %}{{ parent() }} - Cotação{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  {{ css('flash.min.css') }}
+  <style>
+    .insurance.floating {
+      display: none;
+    }
+    .segment.form {
+      margin-top: 0;
+    }
+    @media only screen and (max-width: 767.98px) {
+      .ui.stackable.marginless.grid>.row>.column,
+      .ui.stackable.marginless.grid>.row>.wide.column {
+        padding: 0 0 1rem 0;
+      }
+      .ui.form .fields .field {
+        margin-bottom: 1em;
+      }
+    }
+    label.nowrap {
+      white-space: nowrap; 
+      width: 100%; 
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ui.address.list {
+      font-size: 1em;
+      line-height: 1.4285em;
+      color: #303030;
+    }
+    .ui.address.list .whatsapp {
+      padding-left: 10px;
+      color: Green;
+    }
+    .ui.header {
+      margin-bottom: calc(-0.142857em + 1rem);
+    }
+    .ui.list > .item {
+      padding: .6em 0;
+      transform: rotateY(0deg);
+    }
+    .ui.list > .item > i.icon:hover {
+      transform: rotateY(360deg);
+      transition: .8s;
+      transform-style: preserve-3d;
+      position: relative;
+    }
+    a {
+      color: DimGray;
+    }
+    .item a:hover {
+      text-decoration: underline;
+      color: Dodger;
+    }
+    .item a {
+      font-weight: bold;
+    }
+    .ui.medium.form,
+    .ui.medium.form .field .dropdown,
+    .ui.medium.form .field .dropdown .menu>.item {
+      /*font-size: .92857143rem;*/
+      font-size: 1.0857143rem;
+    }
+    .ui.form .field>label {
+      font-weight: 500;
+    }
+    .item a {
+      font-family: Hind,Lato,"Helvetica Neue","Open Sans",Arial,Helvetica,sans-serif;
+      font-weight: 400;
+    }
+    .flash.message {
+      max-width: 100% !important;
+      margin-bottom: 1em;
+    }
+
+    h3.ui.header {
+      font-size: 1.68571429rem;
+    }
+
+    .hero {
+      border-bottom: 2px none;
+    }
+    .ui.form .field.error button[type="button"]:not(.green) {
+      color: #9f3a38;
+      background: #f4e0e0;
+    }
+
+    @media screen and (max-width: 768px) {
+      .ui.ui.ui.ui.massive.button {
+        width: 100%;
+        margin-bottom: 10px;
+      }
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+    <main>
+      <section class="hero quotation">
+        <!-- The CSS grid area that displays the content (layer 3) -->
+        <div class=banner">
+          <div class="header">
+            Seguro veicular
+          </h3>
+          <div class="sub header" style="padding-bottom: 10px;">
+            Solicite já sua cotação!
+          </div>
+        </div>
+      </section>
+      <section class="description">
+        <div class="ui basic segment">
+          <div class="ui vertical segment">
+            <div class="ui marginless stackable grid">
+              <div class="row">
+                <article class="centered ten wide column">
+                  <!-- Start flash messages -->
+                  {% include 'templates/adm/partials/flash.twig' %}
+                  <!-- End flash messages -->
+                  
+                  <!-- Start Form -->
+                  <form class="ui blue secondary segment large form" method="POST"
+                        action="{{ path_for('RequestQuotation') }}">
+                    <h3 class="ui dividing header">
+                      Faça a sua cotação agora mesmo
+                    </h3>
+                    <div class="sub header" style="padding-bottom: 10px;">
+                      Preencha o formulário abaixo e em breve estaremos
+                      respondendo com a cotação de um seguro sob medida
+                      para proteger seu carro ou sua moto, com ampla
+                      cobertura e inúmeras vantagens.
+                    </div>
+                    <div class="fields">
+                      <div class="ten wide field{{ cssError('name') }}">
+                        <label>Nome</label>
+                        <input name="name" placeholder="Informe o seu nome..." type="text"
+                               value="{{ getValue('name') }}" maxlength="50">
+                        {% if hasError('name') %}
+                        <small class="helper">{{ getError('name') }}</small>
+                        {% endif %}
+                      </div>
+                      <div class="six wide field{{ cssError('phonenumber') }}">
+                        <label class="nowrap">Telefone de contato</label>
+                        <input name="phonenumber" placeholder="Informe o seu telefone..." type="text"
+                               value="{{ getValue('phonenumber') }}" maxlength="20">
+                        {% if hasError('phonenumber') %}
+                        <small class="helper">{{ getError('phonenumber') }}</small>
+                        {% endif %}
+                      </div>
+                    </div>
+
+                    <div class="field{{ cssError('email') }}">
+                      <label>E-mail</label>
+                      <input name="email" placeholder="Informe o endereço do seu e-mail..." type="text"
+                             value="{{ getValue('email') }}" maxlength="100">
+                      {% if hasError('email') %}
+                      <small class="helper">{{ getError('email') }}</small>
+                      {% endif %}
+                    </div>
+                    
+                    <div class="field{{ cssError('vehicleType') }}">
+                      <label>Indique o tipo do veículo</label>
+                      {% if getValue('motorcycle', 'vehicleType') == 'true' %}
+                        {% set class = ' green' %}
+                      {% else %}
+                        {% set class = '' %}
+                      {% endif %}
+                      <button name="motorcycle" value="motorcycle"
+                              type="button"
+                              class="ui gray toggle massive icon button{{ class }}">
+                        <i class="motorcycle icon"></i>
+                        <br>Motocicleta
+                      </button>
+                      {% if getValue('car', 'vehicleType') == 'true' %}
+                        {% set class = ' green' %}
+                      {% else %}
+                        {% set class = '' %}
+                      {% endif %}
+                      <button name="car" value="car"
+                              type="button"
+                              class="ui gray toggle massive icon button{{ class }}">
+                        <i class="car icon"></i>
+                        <br>Carro
+                      </button>
+                      {% if getValue('truck', 'vehicleType') == 'true' %}
+                        {% set class = ' green' %}
+                      {% else %}
+                        {% set class = '' %}
+                      {% endif %}
+                      <button name="truck" value="truck"
+                              type="button"
+                              class="ui gray toggle massive icon button{{ class }}">
+                        <i class="truck icon"></i>
+                        <br>Caminhão
+                      </button>
+                      <input type="hidden" name="vehicleType[motorcycle]" value="{{ getValue('motorcycle', 'vehicleType') }}">
+                      <input type="hidden" name="vehicleType[car]" value="{{ getValue('car', 'vehicleType') }}">
+                      <input type="hidden" name="vehicleType[truck]" value="{{ getValue('truck', 'vehicleType') }}">
+                      {% if hasError('vehicleType') %}
+                      <br>
+                      <small class="helper">{{ getError('vehicleType') }}</small>
+                      {% endif %}
+                    </div>
+                    
+                    <button type="submit" class="ui submit primary right labeled icon button">
+                      <i class="checkmark icon"></i> Solicitar agora
+                    </button>
+                    
+                    <input type="hidden" name="_method" value="POST">
+                  </form>
+                  <!-- End Form -->
+                </article>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // Mascara os campos
+      $("input[name='phonenumber']")
+        .mask({ type: 'phoneNumber' });
+      $('.ui.toggle.button')
+        .state({
+          className: {
+            active   : 'green'
+          },
+          onActivate: function() {
+            $vehicleType = $(this).val();
+            $("input[name='vehicleType[" + $vehicleType + "]']").val(true);
+          },
+          onDeactivate: function() {
+            $vehicleType = $(this).val();
+            $("input[name='vehicleType[" + $vehicleType + "]']").val(false);
+          }
+        })
+      ;
+      
+      // Coloca o foco no primeiro campo
+      $("input[name='name']").focus();
+    });
+  </script>
+  {% endapply %}
+{% endblock scripts %}

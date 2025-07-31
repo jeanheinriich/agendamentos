@@ -1,0 +1,43 @@
+      <!-- Start of Header -->
+      <header>
+        <div class="ui top inverted right aligned segment">
+          <ul class="list-inline pull-right">
+            <li>Entre em contato conosco:</li>
+            <li><a href="https://www.facebook.com/grupommrastreamentoealarme"><i class="facebook f icon"></i></a></li>
+            <li><a href="https://www.instagram.com/grupomm.rastreamento"><i class="instagram f icon"></i></a></li>
+            <li><a href="mailto:{{ address('contact').email }}"><i class="mail icon"></i></a></li>
+            <!--<li><a href="tel:+{{ address('fixo').phone }}"><i class="call icon"></i> {{ address('fixo').number }}</a></li>-->
+            <li><a href="tel:+{{ address('whatsapp').phone }}"><i class="call icon"></i></i> <i class="whatsapp icon"></i> {{ address('whatsapp').number }}</a></li>
+          </ul>                        
+        </div>
+        <!-- Navbar fixed top area -->
+        <div class="ui stackable main menu">
+          <div class="header item">
+            <a href="{{ path_for('Home') }}" class="navbar-brand">
+              <img src="/images/logoGrupoMM.png"
+                   alt="Logo Grupo M&M">
+            </a>
+            <a class="item trigger logo" id="trigger">
+              <i class="sidebar icon"></i>
+            </a>
+          </div>
+          <div class="right menu hide" id="mainMenu">
+            <a href="{{ path_for('Home') }}" class="item{% if path_for('Home') == CurrentURL %} current{% endif %}">Home</a>
+            <a href="{{ path_for('About') }}" class="item{% if path_for('About') == CurrentURL %} current{% endif %}">Sobre</a>
+            <div class="ui dropdown item{% if CurrentURL in [path_for('Tracking'), path_for('Monitoring'), path_for('CameraSurveillance'), path_for('Alarm')] %} current{% endif %}">
+              Servi&ccedil;os <i class="dropdown icon"></i>
+              <div class="menu">
+                <a href="{{ path_for('Tracking') }}" class="item{% if path_for('Tracking') == CurrentURL %} current{% endif %}">Rastreamento</a>
+                <a href="{{ path_for('Monitoring') }}" class="item{% if path_for('Monitoring') == CurrentURL %} current{% endif %}">Monitoramento 24h</a>
+                <a href="{{ path_for('CameraSurveillance') }}" class="item{% if path_for('CameraSurveillance') == CurrentURL %} current{% endif %}">Vigil&acirc;ncia por C&acirc;meras</a>
+                <a href="{{ path_for('Alarm') }}" class="item{% if path_for('Alarm') == CurrentURL %} current{% endif %}">Alarmes</a>
+              </div>
+            </div>
+            <a href="{{ path_for('ContactUs') }}" class="item{% if path_for('ContactUs') == CurrentURL %} current{% endif %}">Contato</a>
+            <a href="{{ path_for('USR\\Login') }}" class="item orange{% if path_for('USR\\Login') == CurrentURL %} current{% endif %}">2ª via de boletos</a>
+            <a href="https://mrfleet.com.br/#/app/mirandarastreamento" class="item blue">Área do Cliente</a>
+          </div>
+        </div>
+      </header>
+      <!-- End of Header -->
+      

@@ -1,0 +1,124 @@
+                <div class="fields subsidyEntry">
+                  <div class="field date{{ cssError('subsidies[' ~ subsidyNumber ~ '][periodstartedat]') }}">
+                    <input name="subsidies[{{ subsidyNumber }}][subsidyid]"
+                           value="{{ subsidy.subsidyid }}"
+                           type="hidden">
+                    {% if loop.first %}
+                    <label>
+                      Iníciando em
+                    </label>
+                    {% endif %}
+                    <div class="ui calendar">
+                      <div class="ui input left icon {{ color }}">
+                        <i class="calendar icon"></i>
+                        <input name="subsidies[{{ subsidyNumber }}][periodstartedat]" type="text"
+                               placeholder="Início do período..."
+                               label="Iniciando em"
+                               value="{{ subsidy.periodstartedat }}">
+                      </div>
+                    </div>
+                    {% if hasError('subsidies[' ~ subsidyNumber ~ '][periodstartedat]') %}
+                    <small class="helper">{{ getError('subsidies[' ~ subsidyNumber ~ '][periodstartedat]') }}</small>
+                    {% endif %}
+                  </div>
+                  <div class="field date{{ cssError('subsidies[' ~ subsidyNumber ~ '][periodendedat]') }}">
+                    {% if loop.first %}
+                    <label>
+                      Terminando em
+                    </label>
+                    {% endif %}
+                    <div class="ui calendar">
+                      <div class="ui input left icon {{ color }}">
+                        <i class="calendar icon"></i>
+                        <input name="subsidies[{{ subsidyNumber }}][periodendedat]" type="text"
+                               placeholder="Início do período..."
+                               label="Terminando em"
+                               value="{{ subsidy.periodendedat }}">
+                      </div>
+                    </div>
+                    {% if hasError('subsidies[' ~ subsidyNumber ~ '][periodendedat]') %}
+                    <small class="helper">{{ getError('subsidies[' ~ subsidyNumber ~ '][periodendedat]') }}</small>
+                    {% endif %}
+                  </div>
+                  <div class="field checkbox{{ cssError('subsidies[' ~ subsidyNumber ~ '][bonus]') }}">
+                    {% if loop.first %}
+                    <label>
+                      Bonificação
+                    </label>
+                    {% endif %}
+                    <div class="ui toggle checkbox">
+                      <input type="hidden" name="subsidies[{{ subsidyNumber }}][bonus]"
+                             label="Bonificação"
+                             value="{% if subsidy.bonus|toBoolean %}true{% else %}false{% endif %}">
+                      <input class="hidden" type="checkbox"
+                             label="Bonificação"
+                             subsidy="{{ subsidyNumber }}"
+                             {% if subsidy.bonus %}checked="checked"{% endif %}
+                             name="subsidies[{{ subsidyNumber }}][_bonus]">
+                      <label></label>
+                    </div>                    
+                    {% if hasError('subsidies[' ~ subsidyNumber ~ '][bonus]') %}
+                    <small class="helper">{{ getError('subsidies[' ~ subsidyNumber ~ '][bonus]') }}</small>
+                    {% endif %}
+                  </div>
+                  <div class="field value{{ cssError('subsidies[' ~ subsidyNumber ~ '][discounttype]') }}">
+                    {% if loop.first %}
+                    <label>
+                      Tipo de desconto
+                    </label>
+                    {% endif %}
+                    <div class="ui search selection dropdown">
+                      <input name="subsidies[{{ subsidyNumber }}][discounttype]"
+                             label="Tipo de desconto"
+                             type="hidden" subsidy="{{ subsidyNumber }}"
+                             value="{{ subsidy.discounttype }}">
+                      <i class="dropdown icon"></i>
+                      <div class="default text"></div>
+                      <div class="menu">
+                        {% for measureType in measureTypes %}
+                          <div class="item"
+                               {% if measureType.id == subsidy.discounttype %}
+                               selected
+                               {% endif %}
+                               data-value="{{ measureType.id }}"
+                               data-symbol="{{ measureType.symbol }}"
+                               data-text="{{ measureType.name }}">
+                            {{ measureType.name }}
+                          </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+                    {% if hasError('subsidies[' ~ subsidyNumber ~ '][discounttype]') %}
+                    <small class="helper">{{ getError('subsidies[' ~ subsidyNumber ~ '][discounttype]') }}</small>
+                    {% endif %}
+                  </div>
+                  <div class="field value{{ cssError('subsidies[' ~ subsidyNumber ~ '][discountvalue]') }}">
+                    {% if loop.first %}
+                    <label>
+                      Valor do desconto
+                    </label>
+                    {% endif %}
+                    <div class="ui left labeled input{{ readonly }}">
+                      <div class="ui basic label"
+                           label="Valor do desconto"
+                           name="subsidies[{{ subsidyNumber }}][discountlabel]">
+                          {{ subsidy.discountlabel }}
+                      </div>
+                      <input name="subsidies[{{ subsidyNumber }}][discountvalue]"
+                             placeholder="Valor do desconto..." type="text"
+                             class="right"
+                             label="Valor do desconto"
+                             value="{{ subsidy.discountvalue|replace({'.': ','}) }}">
+                      <button class="ui tiny youtube icon button"
+                              data-tooltip="Remove este valor cobrado"
+                              data-position="top right" type="button"
+                              subsidy="{{ subsidyNumber }}"
+                              onclick="delSubsidy(this);">
+                        <i class="minus icon"></i>
+                      </button>
+                    </div>
+                    {% if hasError('subsidies[' ~ subsidyNumber ~ '][discountvalue]') %}
+                    <small class="helper">{{ getError('subsidies[' ~ subsidyNumber ~ '][discountvalue]') }}</small>
+                    {% endif %}
+                  </div>
+                </div>

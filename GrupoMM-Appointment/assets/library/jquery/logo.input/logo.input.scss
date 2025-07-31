@@ -1,0 +1,140 @@
+/* ---------------------------------------------------------------------
+ * logo.input.scss
+ * 
+ * This file is part of Extension Library.
+ *
+ * (c) Emerson Cavalcanti
+ *
+ * LICENSE: The MIT License (MIT)
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the 
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject
+ * to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * 
+ * ---------------------------------------------------------------------
+ * Descrição:
+ * 
+ * O css para o componente de entrada de logotipo com pré-visualização.
+ * --------------------------------------------------------------------
+ * Controle de Modificações
+ * 
+ * 2020-03-27 - Emerson Cavalcanti
+ *   - Versão inicial
+ * ---------------------------------------------------------------------
+ */
+
+// Definições globais de variáveis
+$sizeOfPreview: 225;
+
+.ui.piled.cards .card {
+  min-width: $sizeOfPreview + 0px;
+  max-width: $sizeOfPreview + 75px;
+}
+
+.ui.preview.card {
+  .content {
+    padding: .7em 1em;
+    font-weight: bold;
+
+    .close {
+      font-size: 1em;
+      position: absolute;
+      right: 0;
+      top: .9em;
+      width: 2.25em;
+      cursor: pointer;
+      height: 14px;
+      transform: translateY(-50%);
+
+      .icon {
+        color: #a9a9a9;
+
+        &:hover {
+          color: #000000;
+        }
+      }
+    }
+  }
+
+  .image {
+    img {
+      padding: 5px;
+    }
+  }
+
+  .extra.input {
+    padding: 0 0;
+    display: flex;
+
+    input {
+      flex: 1;
+      border-radius: 0;
+      border-bottom-left-radius: .28571429rem;
+      border: none;
+      border-top: 1px solid #d4d4d5;
+      background: #f4f4f5;
+    }
+
+    button {
+      margin: 0 0;
+      border-radius: 0;
+      border-bottom-right-radius: .28571429rem;
+    }
+  }
+
+  &.inverted {
+    color: rgba(255,255,255,.9);
+    background: #081118;
+
+    .content {
+      .close {
+        .icon {
+          color: #a9a9a9;
+
+          &:hover {
+            color: #ffffff;
+          }
+        }
+      }
+    }
+
+    .image {
+      background: #10222c;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .extra {
+      input {
+        color: inherit;
+        border-color: transparent!important;
+        background-color: transparent!important;
+
+      }
+      
+      button {
+        color: inherit;
+        border-color: transparent!important;
+        background-color: #303030aa;
+
+        &:hover {
+          background-color: #404040aa;
+        }
+      }
+    }
+  }
+}

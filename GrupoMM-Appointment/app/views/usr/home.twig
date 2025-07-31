@@ -1,0 +1,449 @@
+{% extends 'templates/usr/layout.twig' %}
+{% block title %}{{ parent() }} - Área do cliente{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+  <style>
+    .ui.blue.toast {
+      background-color: #0261ed;
+      color: rgba(255,255,255,1);
+    }
+
+    .emphase {
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    .highlight {
+      font-size: 1.1em;
+      color: royalblue;
+    }
+    .paid.highlight {
+      color: darkgreen;
+      font-weight: bold;
+    }
+    .unpaid {
+      font-size: 1.1em;
+      color: #6a6a6a;
+      font-weight: bold;
+    }
+    .italic {
+      font-style: italic;
+    }
+
+    .ui.success.bold.text {
+      color: DarkGreen;
+    }
+
+    .canceled {
+      background-color: #f3f3f3;
+      color: darkgray;
+    }
+    .negociated {
+      background-color: #ece9ed;
+      color: #660066;
+    }
+
+    .negociated .unpaid {
+      color: #660066;
+    }
+
+    .ui.table [class*="responsive aligned"],
+    .ui.table[class*="responsive aligned"] {
+      text-align: left;
+    }
+    @media screen and (max-width: 767px) {
+      .ui.table [class*="responsive aligned"],
+      .ui.table[class*="responsive aligned"] {
+        text-align: right;
+      }
+    }
+
+    .break.before:before {
+      content: ' ';
+      clear: right;
+      display: block;
+    }
+    @media screen and (max-width: 767px) {
+      .break.before:before {
+        content: '';
+        clear: none;
+        display: inline;
+      }
+    }
+
+    .welcome {
+      margin-top: 1em;
+      font-size: 1.5rem;
+      line-height: 2.2rem;
+      font-weight: bold;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('site/bankslip.svg', 'Boleto de cobrança') }}
+            </td>
+            <td>
+              <div class="content">
+                Informações de cobrança
+                <div class="sub header">
+                  Aqui você consulta as informações sobre os seus
+                  boletos, podendo emitir a segunda via e/ou visualizar
+                  quais já foram pagos.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+
+    <!-- Início cabeçalho módulo -->
+    <div class="welcome">
+      {{ customer.name }}&nbsp;&nbsp;&mdash;&nbsp;&nbsp;
+      {% if customer.juridicalperson %}CNPJ{% else %}CPF{% endif %}:
+      {{ customer.nationalregister }}
+    </div>
+    <!-- Fim cabeçalho módulo -->
+
+    <!-- Início conteúdo do módulo -->
+    <div class="ui segments">
+      <table class="ui celled padded stackable table">
+        <thead>
+          <tr>
+            <th colspan="5" class="single line">
+              Resumo de cobranças
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for payment in payments %}
+            {% if payment.paymentsituationid == 1 %}
+            <tr>
+              <td class="center aligned">
+                {% if payment.overdue %}
+                {% set color = 'red' %}
+                <div class="ui red circular icon massive label">
+                  <i class="times icon"></i>
+                </div>
+                {% else %}
+                {% set color = 'orange' %}
+                <div class="ui yellow circular icon massive label">
+                  <i class="calendar check icon"></i>
+                </div>
+                {% endif %}
+              </td>
+              <td class="">
+                Nº do {{ payment.methodname }}:
+                <b class="space before break">{{ payment.invoiceid }}</b>
+              </td>
+              <td class="">
+                <span class="highlight">{{ payment.paymentmethodname }}</span>
+                {% if payment.referencemonthyear is not empty %}
+                &nbsp;&nbsp;&mdash;&nbsp;&nbsp;
+                Ref: <span class="highlight space before">{{ payment.referencemonthyear }}</span>
+                <span class="mobile hidden">&nbsp;&nbsp;&mdash;&nbsp;&nbsp;</span>
+                {% else %}
+                <span class="mobile hidden">&nbsp;&nbsp;&mdash;&nbsp;&nbsp;</span>
+                {% endif %}
+                <span class="mobile only"><br></span>
+                Vencimento: <span class="emphase space before">{{ payment.duedate }}</span><br>
+                <span class="ui {{ color }} italic text">
+                  {% if payment.paymentmethodid == 6 %}
+                    {% if payment.diffindays > 0 %}
+                    Sua transferência deve ser feita até daqui à <b class="space before">{{ payment.diffindays }} {% if payment.diffindays > 1 %}dias{% else %}dia{% endif %}</b>
+                    {% elseif payment.diffindays == 0 %}
+                    Sua transferência deve ser feita <b class="space before">hoje</b>
+                    {% else %}
+                    Sua transferência deveria ter sido realizada à <b class="space before">{{ payment.diffindays|abs }} {% if payment.diffindays|abs > 1 %}dias{% else %}dia{% endif %}</b>
+                    {% endif %}
+                  {% elseif payment.paymentmethodid == 5 %}
+                    {% if payment.diffindays > 0 %}
+                    Seu boleto irá vencer daqui a <b class="space before">{{ payment.diffindays }} {% if payment.diffindays > 1 %}dias{% else %}dia{% endif %}</b>
+                    {% elseif payment.diffindays == 0 %}
+                    Seu boleto vence <b class="space before">hoje</b>
+                    {% else %}
+                    Seu boleto venceu há <b class="space before">{{ payment.diffindays|abs }} {% if payment.diffindays|abs > 1 %}dias{% else %}dia{% endif %}</b>
+                    {% endif %}
+                  {% else %}
+                    {% if payment.diffindays > 0 %}
+                    Seu pagamento deve ser feito até daqui à <b class="space before">{{ payment.diffindays }} {% if payment.diffindays > 1 %}dias{% else %}dia{% endif %}</b>
+                    {% elseif payment.diffindays == 0 %}
+                    Seu pagamento deve ser feito <b class="space before">hoje</b>
+                    {% else %}
+                    Seu pagamento deveria ter sido realizado à <b class="space before">{{ payment.diffindays|abs }} {% if payment.diffindays|abs > 1 %}dias{% else %}dia{% endif %}</b>
+                    {% endif %}
+                  {% endif %}
+                </span>
+              </td>
+              <td class="right aligned">
+                <span class="emphase">{{ payment.valuetopay }}</span><br>
+                {% if payment.paymentmethodid == 6 %}
+                <span class="ui {{ color }} italic text">Aguardando transferência</span>
+                {% else %}
+                <span class="ui {{ color }} italic text">Aguardando pagamento</span>
+                {% endif %}
+              </td>
+              <td class="">
+                {% if payment.paymentmethodid == 5 %}
+                  {% if payment.droppedtypeid in [ 4, 5 ] %}
+                  <div class="ui yellow message">Por favor, entre em contato com nosso atendimento</div>
+                  {% else %}
+                  <button class="ui primary labeled icon button"
+                          type="button"
+                          data-position="left center" data-blue=""
+                          data-tooltip="Gera um PDF com o conteúdo desta cobrança para impressão"
+                          onclick="getPDF({{ payment.id }});">
+                    <i class="print icon"></i>
+                    Imprimir
+                  </button>
+                  <button class="ui primary labeled icon button"
+                          type="button"
+                          data-position="left center" data-blue=""
+                          data-tooltip="Copia a linha digitável do boleto para a área de transferência"
+                          onclick="copyDigitableLineToClipboard('{{ payment.invoiceid }}', '{{ payment.duedate }}', '{{ payment.digitableline }}');">
+                    <i class="copy outline icon"></i>
+                    Copiar código de barras
+                  </button>
+                  {% endif %}
+                {% endif %}
+              </td>
+            </tr>
+            {% elseif payment.paymentsituationid == 2 %}
+            <tr class="positive">
+              <td class="center aligned">
+                <div class="ui green circular icon massive label">
+                  <i class="check icon"></i>
+                </div>
+              </td>
+              <td class="">
+                Nº do {{ payment.methodname }}:
+                <b class="space before break">{{ payment.invoiceid }}</b>
+              </td>
+              <td class="">
+                <span class="paid highlight">{{ payment.paymentmethodname }}</span>
+                {% if payment.referencemonthyear is not empty %}
+                &nbsp;&nbsp;&mdash;&nbsp;&nbsp;
+                Ref: <span class="highlight space before">{{ payment.referencemonthyear }}</span>
+                <span class="mobile hidden">&nbsp;&nbsp;&mdash;&nbsp;&nbsp;</span>
+                {% else %}
+                <span class="mobile hidden">&nbsp;&nbsp;&mdash;&nbsp;&nbsp;</span>
+                {% endif %}
+                <span class="mobile only"><br></span>
+                Vencimento: <span class="emphase space before">{{ payment.duedate }}</span><br>
+                {% if payment.paymentmethodid == 6 %}
+                <span class="ui success bold italic text">Sua transferência foi realizada em {{ payment.paiddate }}</span>
+                {% elseif payment.paymentmethodid == 5 %}
+                <span class="ui success bold italic text">Seu boleto foi pago em {{ payment.paiddate }}</span>
+                {% elseif payment.paymentmethodid == 2 %}
+                <span class="ui success bold italic text">Seu cheque foi compensado em {{ payment.paiddate }}</span>
+                {% else %}
+                <span class="ui success bold italic text">Seu pagamento foi realizado em {{ payment.paiddate }}</span>
+                {% endif %}
+              </td>
+              <td class="right aligned">
+                <span class="emphase">{{ payment.paidvalue }}</span><br>
+                <span class="ui success bold italic text">Pago</span>
+              </td>
+              <td class="responsive aligned">
+                {% if payment.discountgranted %}
+                Desconto concedido: <span class="ui success bold italic space before text">{{ payment.abatementvalue }}</span><br>
+                {% endif %}
+                {% if payment.additionals > 0 %}
+                  Valor original: <span class="ui success bold italic space before text">{{ payment.valuetopay }}</span><br>
+                  {% if payment.additionals == 1 %}
+                  Aplicada multa de <span class="ui success bold italic space both text">{{ payment.finevalue }}
+                  e juros de mora de <span class="ui success bold italic space before text">{{ payment.latepaymentinterest }}</span>
+                  {% elseif payment.additionals == 2 %}
+                  Aplicada multa de <span class="ui success bold italic space before text">{{ payment.finevalue }}
+                  {% else %}
+                  Aplicado juros de mora de <span class="ui success bold italic space before text">{{ payment.latepaymentinterest }}</span>
+                  {% endif %}
+                {% else %}
+                <br>
+                {% endif %}
+              </td>
+            </tr>
+            {% elseif payment.paymentsituationid == 3 %}
+            <tr class="canceled">
+              <td class="center aligned">
+                <div class="ui grey circular icon massive label">
+                  <i class="minus icon"></i>
+                </div>
+              </td>
+              <td class="">
+                Nº do {{ payment.methodname }}:
+                <b class="space before break">{{ payment.invoiceid }}</b>
+              </td>
+              <td class="">
+                <span class="unpaid">{{ payment.paymentmethodname }}</span>
+                {% if payment.referencemonthyear is not empty %}
+                &nbsp;&nbsp;&mdash;&nbsp;&nbsp;
+                Ref: <span class="highlight space before">{{ payment.referencemonthyear }}</span>
+                <span class="mobile hidden">&nbsp;&nbsp;&mdash;&nbsp;&nbsp;</span>
+                {% else %}
+                <span class="mobile hidden">&nbsp;&nbsp;&mdash;&nbsp;&nbsp;</span>
+                {% endif %}
+                <span class="mobile only"><br></span>
+                Vencimento: <span class="unpaid space before">{{ payment.duedate }}</span><br>
+                &nbsp;
+              </td>
+              <td class="right aligned">
+                <span class="unpaid">{{ payment.valuetopay }}</span><br>
+                <span class="ui bold italic text">Cancelado</span>
+              </td>
+              <td class="responsive aligned">
+              </td>
+            </tr>
+            {% else %}
+            <tr class="negociated">
+              <td class="center aligned">
+                <div class="ui purple circular icon massive label">
+                  <i class="sync icon"></i>
+                </div>
+              </td>
+              <td class="">
+                Nº do {{ payment.methodname }}:
+                <b class="space before break">{{ payment.invoiceid }}</b>
+              </td>
+              <td class="">
+                <span class="unpaid">{{ payment.paymentmethodname }}</span>
+                {% if payment.referencemonthyear is not empty %}
+                &nbsp;&nbsp;&mdash;&nbsp;&nbsp;
+                Ref: <span class="highlight space before">{{ payment.referencemonthyear }}</span>
+                <span class="mobile hidden">&nbsp;&nbsp;&mdash;&nbsp;&nbsp;</span>
+                {% else %}
+                <span class="mobile hidden">&nbsp;&nbsp;&mdash;&nbsp;&nbsp;</span>
+                {% endif %}
+                <span class="mobile only"><br></span>
+                Vencimento: <span class="unpaid space before">{{ payment.duedate }}</span><br>
+                &nbsp;
+              </td>
+              <td class="right aligned">
+                <span class="unpaid">{{ payment.valuetopay }}</span><br>
+                <span class="ui bold italic text">Negociado</span>
+              </td>
+              <td class="responsive aligned">
+              </td>
+            </tr>
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {% set getPDF = { 'URL': 'USR\\Payments\\Get\\PDF', 'method': 'GET' } %}
+
+  {% apply minify %}
+  <script>
+    $(document).ready(function() {
+      // Faz o refresh da página a cada 20 minutos e 10 segundos:
+      //   20 * 60 * 1000 + 10 * 1000
+      window.setInterval('refresh()', (20 * 60 * 1000 + 10000));
+    });
+
+    /**
+     * Recarrega a página.
+     *
+     * @return void
+     */
+    function refresh() {
+      window.location.reload();
+    }
+
+    /**
+     * Exibe o PDF da cobrança para impressão.
+     *
+     * @param int paymentID
+     *   O ID do pagamento
+     *
+     * @return void
+     */
+    function getPDF(paymentID)
+    {
+      var
+        url = "{{ buildURL(getPDF.URL, { 'paymentID': 'paymentID' }) }}"
+      ;
+
+      window.open(url, '_blank');
+    }
+
+    /**
+     * Copia a linha digitável de um boleto para a área de transferência
+     *
+     * @param string documentNumber
+     *   O número do documento
+     * @param string dueDate
+     *   A data de vencimento
+     * @param string digitableLine
+     *   O conteúdo da linha digitável
+     *
+     * @return void
+     */
+    function copyDigitableLineToClipboard(
+      documentNumber,
+      dueDate,
+      digitableLine
+    )
+    {
+      copyTextToClipboard(digitableLine);
+    }
+
+    /**
+     * Copia o conteúdo informado para a área de transferência.
+     *
+     * @param string content
+     *   O conteúdo a ser copiado
+     * @param string message (opcional)
+     *   Uma mensagem para alertar o usuário
+     *
+     * @return void
+     */
+    async function copyTextToClipboard(content, message = '') {
+      if (message == '') {
+        message = 'Conteúdo copiado com sucesso';
+      }
+
+      // Sempre acrescenta o ícone de cópia
+      message = '<i class="copy outline large icon"></i> ' + message;
+
+      try {
+        await navigator.clipboard.writeText(content);
+
+        $('body')
+          .toast({
+            message: message,
+            class : 'blue',
+            showProgress: 'bottom'
+          })
+        ;
+      } catch (error) {
+        message = '<i class="copy outline large icon"></i> Não foi '
+         + 'possível copiar o conteúdo'
+        ;
+
+        $('body')
+          .toast({
+            message: message,
+            class : 'red',
+            showProgress: 'bottom'
+          })
+        ;
+      }
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

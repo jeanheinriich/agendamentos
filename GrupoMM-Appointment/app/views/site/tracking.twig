@@ -1,0 +1,525 @@
+{% extends 'templates/site/layout.twig' %}
+{% block title %}{{ parent() }} - Rastreamento{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('tabularmenu.min.css') }}
+  <style>
+    .ui.attached.segment {
+      margin-bottom: 1em;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+    <main>
+      <section class="hero tracking">
+      </section>
+      <section class="description">
+        <div class="ui basic segment">
+          <!-- Início cabeçalho módulo -->
+          <h2 class="ui blue header">
+            <table cellspacing="0" cellpadding="0">
+              <tbody>
+                <tr>
+                  <td class="mobile hidden">
+                    {{ icon('site/tracking.svg', 'Rastreamento') }}
+                  </td>
+                  <td>
+                    <div class="content">
+                      Rastreamento
+                      <div class="sub header">
+                        Soluções perfeitas e exclusivas para gerenciar
+                        seu carro, moto ou frota.
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </h2>
+          <!-- Fim cabeçalho módulo -->
+
+          <p>
+            Uma empresa inovadora no gerenciamento de frotas de GPS, o
+            Grupo M&amp;M oferece uma combinação incomparável de
+            tecnologia superior e conhecimento abrangente. Nosso software
+            de última geração é incrivelmente poderoso e fácil de usar,
+            colocando dados vitais sobre seu veículo literalmente na
+            ponta dos seus dedos. Escolha a seguir o tipo de veículo e
+            conheça as vantagens que oferecemos para você.
+          </p>
+
+          <div class="ui top attached unstackable tabular steps menu">
+            <a class="active step item" target="car">
+              <i class="car icon"></i>
+              <div class="content">
+                <div class="title">Para seu carro</div>
+                <div class="description">Segurança para você e sua família</div>
+              </div>
+            </a>
+            <a class="step item" target="motorcycle">
+              <i class="motorcycle icon"></i>
+              <div class="content">
+                <div class="title">Para sua moto</div>
+                <div class="description">Segurança para a sua moto</div>
+              </div>
+            </a>
+            <a class="step item" target="truck">
+              <i class="truck icon"></i>
+              <div class="content">
+                <div class="title">Para sua frota</div>
+                <div class="description">Segurança para seu carro ou caminhão</div>
+              </div>
+            </a>
+          </div>
+          <div class="ui attached segment" id="car">
+            <img class="ui small left floated rounded image"
+                 src="/images/site/family-car.jpg"
+                 alt="Para seu carro">
+            <p>
+              Todos devemos nos proteger contra o aumento crescente no
+              número de furtos e roubos à automóveis de passeio e na
+              criminalidade em geral. A a evolução da tecnologia empregada
+              neste tipo de equipamento de proteção automotiva tem sido
+              crescente e visível. Na tentativa de impedir que a ação de
+              criminosos afete a proteção do seu veículo e a segurança
+              de você e de sua família, o rastreamento veicular é um ótimo
+              aliado. O sistema fica ativo o tempo todo, permitindo que
+              você fique tranquilo, mesmo à distância, enquanto ele opera.
+              E o controle do usuário pode ser feito pelo smartphone ou
+              tablet, de qualquer lugar, desde que estejam conectados à
+              internet.
+            </p>
+            <br>
+            <div class="ui list">
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Localize-se</div>
+                  <div class="description">
+                    Você fica sabendo onde seu veículo está a qualquer
+                    momento. Nossos equipamentos enviam sua localização
+                    com periodicidades entre 60 segundos, possibilitando
+                    assim o cliente ter o rastreamento do veículo com mais
+                    precisão entre uma posição e outra. Além disto, todos
+                    os percursos realizados pelo carro ficam armazenados
+                    em nosso banco de dados sem período de expiração.
+                    Você pode consultar os locais por onde o veículo
+                    passou por tempo indeterminado. Isso significa que,
+                    caso seu marido, filhos ou esposa saiam com o carro,
+                    você tem total controle da segurança deles, mesmo se
+                    não estiver junto. O acesso ao monitoramento é
+                    ilimitado.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Previna-se</div>
+                  <div class="description">
+                    Você fica sabendo quando a carga da bateria do seu
+                    veículo está baixa, possibilitando tomar medidas
+                    rápidas e não ser surpreendido com o veículo sem
+                    bateria. Também é possível estabelecer ao equipamento
+                    uma velocidade máxima e caso o condutor ultrapasse
+                    essa velocidade, será gerado um alerta, permitindo
+                    evitar multas e acidentes.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Central de emergência 24h</div>
+                  <div class="description">
+                    Caso haja uma suspeita de roubo ou furto você pode
+                    comunicar a central de emergência que poderá parar o
+                    veículo (bloqueio) em um momento oportuno e com
+                    segurança, facilitando a recuperação do carro. Nossa
+                    <b>Central de Emergência</b> funciona 24 horas por
+                    dia 7 dias por semana, com 0800, possibilitando
+                    efetuar o chamado de emergência de qualquer telefone
+                    público, celular ou fixo.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Cerca eletrônica</div>
+                  <div class="description">
+                    Com nosso sistema de cerca eletrônica é possível
+                    determinar, via sistema, perímetros de controle onde
+                    o sistema gera alertas e relatórios de chegada e saída
+                    desses locais pré-determinados. Essa função garante
+                    que atividades comuns do dia a dia, como levar os
+                    filhos à escola ou ir ao supermercado, sejam realizadas
+                    com segurança. Em caso de qualquer anormalidade, se o
+                    veículo deixar esta área delimitada, você fica sabendo
+                    imediatamente, atrás do aplicativo instalado em seu
+                    celular ou tablet.
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p>
+              Com nossas soluções para rastreamento de veículos, você
+              pode economizar dinheiro e criar oportunidades para aumentar
+              a segurança sua e de sua família, preservando seu patrimônio.
+            </p>
+          </div>
+          <div class="ui attached segment" id="motorcycle">
+            <img class="ui small left floated rounded image"
+                 src="/images/site/motorcycle.jpg"
+                 alt="Para sua moto">
+            <p>
+              Ainda mais proteção para sua moto, assim você pode pilotar
+              tranquilo por aí e fazer o que mais gosta. O aumento
+              crescente no número de furtos e roubos à motos e na
+              criminalidade em geral nos faz nos preocupar em se proteger
+              contra imprevistos. O sistema de rastreamento de motos do
+              Grupo M&amp;M ajuda você a proteger o seu patrimônio
+              rastreando sua moto o tempo todo, permitindo que você fique
+              tranquilo, mesmo à distância. E o controle do usuário pode
+              ser feito pelo smartphone ou tablet, de qualquer lugar,
+              desde que estejam conectados à internet.
+            </p>
+            <br>
+            <div class="ui list">
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Localize-se</div>
+                  <div class="description">
+                    Você fica sabendo onde sua moto está a qualquer
+                    momento. Nossos equipamentos enviam sua localização
+                    com periodicidades entre 60 segundos, possibilitando
+                    assim o cliente ter o rastreamento do veículo com
+                    mais precisão entre uma posição e outra. Além disto,
+                    todos os percursos realizados pela moto ficam
+                    armazenados em nosso banco de dados sem período de
+                    expiração. Você pode consultar os locais por onde a
+                    sua moto passou por tempo indeterminado. Isso significa
+                    que, caso seu marido, filhos ou esposa saiam com a
+                    moto, você tem total controle da segurança deles,
+                    mesmo se não estiver junto. O acesso ao monitoramento
+                    é ilimitado.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Previna-se</div>
+                  <div class="description">
+                    Você fica sabendo quando a carga da bateria da sua
+                    moto está baixa, possibilitando tomar medidas rápidas
+                    e não ser surpreendido com a moto sem bateria. Nosso
+                    equipamento foi projetado especialmente para poupar
+                    ao máximo a bateria de sua moto. Seu sistema de
+                    adormecimento impede que o equipamento descarregue a
+                    carga da bateria, garantindo sua potência no momento
+                    da partida. Além disto, nossos técnicos, são treinados
+                    para efetuar as instalações de forma que o equipamento
+                    não entre em contato com a água. Utilizamos exclusiva
+                    proteção desenvolvida com os maiores rigores de testes,
+                    aprovando assim a instalação em todos as marcas e
+                    modelos, independente do terreno onde a moto seja
+                    utilizada. Também é possível estabelecer ao equipamento
+                    uma velocidade máxima e caso o condutor ultrapasse
+                    essa velocidade, será gerado um alerta, permitindo
+                    evitar multas e acidentes. E o exclusivo sistema de
+                    anti-furto que impede o funcionamento do motor, caso
+                    o botão segredo não seja pressionado antes da partida
+                    do motor fazem do nosso equipamento a solução mais
+                    adequada para sua segurança.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Central de emergência 24h</div>
+                  <div class="description">
+                    Caso haja uma suspeita de roubo ou furto você pode
+                    comunicar a central de emergência que poderá parar a
+                    moto (bloqueio) em um momento oportuno e com segurança,
+                    facilitando a recuperação da moto. Nossa <b>Central
+                    de Emergência</b> funciona 24 horas por dia 7 dias
+                    por semana, com 0800, possibilitando efetuar o
+                    chamado de emergência de qualquer telefone público,
+                    celular ou fixo.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Cerca eletrônica</div>
+                  <div class="description">
+                    Com nosso sistema de cerca eletrônica é possível
+                    determinar, via sistema, perímetros de controle onde
+                    o sistema gera alertas e relatórios de chegada e saída
+                    desses locais pré-determinados. Essa função garante
+                    que atividades comuns do dia a dia, como ir à academia
+                    ou ao trabalho, sejam realizadas com segurança. Em
+                    caso de qualquer anormalidade, se a moto deixar esta
+                    área delimitada, você fica sabendo imediatamente,
+                    atrás do aplicativo instalado em seu celular ou tablet.
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p>
+              Com nossas soluções para rastreamento de motos, você pode
+              economizar dinheiro e criar oportunidades para aumentar a
+              segurança sua e de sua família, preservando seu patrimônio.
+            </p>
+          </div>
+          <div class="ui attached segment" id="truck">
+            <img class="ui small left floated rounded image"
+                 src="/images/site/truck.jpg"
+                 alt="Para sua frota">
+            <p>
+              Hoje, quem trabalha com caminhões ou frotas, precisa estar
+              constantemente preocupado com sua eficiência sem descuidar
+              da segurança. O sistema de rastreamento do Grupo M&amp;M
+              ajuda você a estar sempre por dentro de onde estão
+              localizados seus veículos, além de proteger o seu patrimônio
+              contra furtos e roubos e também outras situações inesperadas.
+              Além disso, nosso sistema disponibiliza informações em
+              tempo real sobre diversas atividades envolvendo o seu
+              veículo e seus colaboradores, tornando sua gerência mais
+              eficiente e melhorando a qualidade do seu serviço. Com isto,
+              você consegue um melhor controle operacional e reduz seus
+              custos.
+            </p>
+            <br>
+            <div class="ui list">
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Localize-se</div>
+                  <div class="description">
+                    Você fica sabendo onde seu veículo está a qualquer
+                    momento. Nossos equipamentos enviam sua localização
+                    com periodicidades entre 60 segundos, possibilitando
+                    assim o cliente ter o rastreamento do veículo com
+                    mais precisão entre uma posição e outra. E como
+                    sabemos que em determinadas regiões o sinal de
+                    telefonia móvel celular pode sofrer variações,
+                    impedindo a comunicação com a central (áreas de
+                    sombra ou sem sinal de celular), nossos equipamentos
+                    armazenam até 5000 posições, o que equivale a uma
+                    média de 7 dias de gravação dos posicionamentos,
+                    fazendo com que você não perca informações. Além
+                    disto, todos os percursos realizados pelo veículo
+                    ficam armazenados em nosso banco de dados sem período
+                    de expiração. Você pode consultar os locais por onde
+                    o veículo passou por tempo indeterminado. E o acesso
+                    ao monitoramento é ilimitado. E, se você realiza
+                    entregas e coletas, como nos casos de empresas de
+                    Taxi ou Delivery, disponibilizamos um sistema de
+                    busca de endereços, onde você entra com o endereço
+                    de coleta ou entrega e nosso sistema irá buscar
+                    automaticamente os veículos que estão mais próximos
+                    deste local. Este processo facilita a comunicação
+                    e gera muito mais economia com telefonia, tempo e
+                    combustível. E nosso sistema permite inserir no mapa
+                    pontos de referências, tais como: postos de combustíveis,
+                    borracharias, postos de molas, delegacias, oficinas,
+                    clientes ou qualquer outra informação que achar
+                    relevante. O sistema irá mostrar qual veículo e a
+                    que distância está de cada ponto de referência.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Previna-se</div>
+                  <div class="description">
+                    Você fica sabendo quando a carga da bateria do seu
+                    caminhão está baixa, possibilitando tomar medidas
+                    rápidas e não ser surpreendido com o veículo sem
+                    bateria. Também é possível estabelecer ao equipamento
+                    uma velocidade máxima e caso o condutor ultrapasse
+                    essa velocidade, será gerado um alerta, permitindo
+                    evitar multas e acidentes.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Central de emergência 24h</div>
+                  <div class="description">
+                    Caso haja uma suspeita de roubo ou furto você pode
+                    comunicar a central de emergência que poderá parar o
+                    veículo (bloqueio) em um momento oportuno e com
+                    segurança, facilitando a recuperação do caminhão.
+                    Nossa <b>Central de Emergência</b> funciona 24 horas
+                    por dia 7 dias por semana, com 0800, possibilitando
+                    efetuar o chamado de emergência de qualquer telefone
+                    público, celular ou fixo.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Cerca eletrônica</div>
+                  <div class="description">
+                    Com nosso sistema de cerca eletrônica é possível
+                    determinar, via sistema, perímetros de controle onde
+                    o sistema gera alertas e relatórios de chegada e
+                    saída desses locais pré-determinados. Você pode até
+                    controlar de áreas de risco, locais de pernoite ou
+                    qualquer outra situação. Essa função garante que as
+                    atividades comuns do dia a dia sejam realizadas com
+                    segurança. Em caso de qualquer anormalidade, se o
+                    caminhão deixar esta área delimitada, você fica
+                    sabendo imediatamente, atrás do aplicativo instalado
+                    em seu celular ou tablet.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Redução de uso de combustíveis</div>
+                  <div class="description">
+                    Com o uso inteligente de sua frota, e o auxílio de
+                    nossas ferramentas, você pode reduzir o consumo de
+                    combustíveis em até 30%. Com a nossa ferramenta, você
+                    pode verificar se o veículo transitou em velocidades
+                    aceitáveis para maximizar o uso dos combustíveis.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Melhore a performance</div>
+                  <div class="description">
+                    Compreenda sua frota, otimize as suas operações e
+                    obtenha melhores resultados, refletindo diretamente
+                    em mais clientes satisfeitos. O nosso software de
+                    gerenciamento pode melhorar imediatamente a
+                    produtividade de toda a sua frota. E isso pode ser
+                    uma boa notícia para seus lucros. Por exemplo, você
+                    pode otimizar as rotas dos veículos para economizar
+                    tempo e reduzir a necessidade de dispendiosos custos
+                    extras, e garantindo também o cumprimento de horários
+                    de entrega. Relatórios de viagem exibem o total de
+                    km e tempo gasto em cada percurso realizada pelo
+                    veículo, velocidade média, velocidade máxima atingida
+                    e endereço de destino da viagem. E além de monitorar
+                    e proteger os veículos, nosso sistema permite
+                    cadastrar os dados dos seus motoristas (como nome,
+                    RG, CPF, registro de empregado, endereço, telefone,
+                    etc), facilitando a busca desses dados em qualquer
+                    computador e em qualquer parte do mundo, sem a
+                    necessidade de instalação de softwares adicionais. E
+                    frotas que detêm uma rotatividade grande de motoristas
+                    entre o os veículos da empresa, pode optar pela
+                    instalação de um dispositivo que identifica
+                    automaticamente qual o motorista está conduzindo o
+                    veículo naquele momento, através do sistema via
+                    internet.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Obtenha relatórios facilmente</div>
+                  <div class="description">
+                    Todos os relatórios gerados pelo sistema (velocidade,
+                    km, posicionamento, etc) estão disponíveis para
+                    exportação em planilhas do Excel, facilitando a
+                    visualização ou complementação de qualquer tipo de
+                    informação, permitindo o envio seguro a outras
+                    pessoas sem a permissão de alteração destes relatórios.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Diminua manutenções</div>
+                  <div class="description">
+                    Você pode reduzir os custos de manutenção através do
+                    uso de nosso sistema, obtendo as informações
+                    necessárias sobre cada veículo. Com elas, você pode
+                    reduzir os custos com manutenções e desgastes de peças
+                    e pneus, por exemplo.
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p>
+              Com nossas soluções para rastreamento de veículos, você
+              pode economizar dinheiro e criar oportunidades para aumentar
+              sua lucratividade. E estamos ansiosos para trabalhar de
+              perto com você para orientar no gerenciamento de sua frota,
+              atendendo suas necessidades.
+            </p>
+          </div>
+          <button type="button" class="ui blue labeled icon button"
+                  onclick="location.href='{{ path_for('Home') }}';">
+            <i class="home icon"></i> Retornar para a página inicial
+          </button>
+        </div>
+      </section>
+    </main>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {% apply minify %}
+  <script>
+    $(document).ready(function() {
+      var
+        // Localiza e inicializa os elementos de nosso sistema de passos
+        allContents = $('.ui.attached.segment').hide(),
+        allSteps    = $('.ui.steps > .step').removeClass('active');
+      ;
+
+      // Inicialmente exibimos o primeiro passo
+      allContents
+        .first()
+        .show()
+      ;
+      allSteps
+        .first()
+        .addClass('active')
+      ;
+      
+      // Lidamos com os cliques de nosso sistema de passos
+      $('.ui.steps > a.step')
+        .click(function() {
+          var
+            // Localiza e inicializa os elementos de nosso sistema de
+            // passos
+            allContents = $('.ui.attached.segment').hide(),
+            allSteps    = $('.ui.steps > .step').removeClass('active'),
+            target      = $(this).prop("target")
+          ;
+
+          // Ativamos o item selecionado
+          $(this)
+            .addClass('active')
+          ;
+          $('#' + target)
+            .show()
+          ;
+        
+          return false;
+        })
+      ;
+    });
+  </script>
+  {% endapply %}
+{% endblock %}

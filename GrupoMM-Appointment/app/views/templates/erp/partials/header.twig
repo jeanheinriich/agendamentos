@@ -1,0 +1,51 @@
+      <div class="ui top inverted attached menu">
+        <!-- Botão para dispositivos móveis -->
+        <a id="ToggleSidebarMenu"
+           class="view-ui item toggle mobile only">
+          <i class="sidebar icon"></i>
+        </a>
+
+        <!-- Botão para computadores -->
+        <a id="ResizeSidebarMenu"
+           class="view-ui item toggle mobile hidden">
+          <i class="sidebar icon"></i>
+        </a>
+
+        <!-- Início menu à direita -->
+        <div class="right menu">
+          <!-- Início menu usuário -->
+          {% if authorization.hasLoggedIn() %}
+          <div class="ui dropdown item" tabindex="0">
+            <i class="user circle large icon"></i>
+            <div class="mobile hidden">
+              {{ authorization.user.name }}
+            </div>
+            <div class="menu" tabindex="-1">
+              <div class="ui header mobile only">
+                {{ authorization.user.name }}
+              </div>
+              <div class="ui divider mobile only"></div>
+              <a class="item"
+                 href="{{ path_for('ERP\\Account') }}">
+                Minha conta
+              </a>
+              <a class="item"
+                 href="{{ path_for('ERP\\Password') }}">
+                Mudar senha
+              </a>
+              <div class="ui divider"></div>
+              <a class="item"
+                 href="{{ path_for('ERP\\Logout') }}">
+                Sair
+              </a>
+            </div>
+          </div>
+          {% else %}
+          <a class="ui item" href="{{ path_for('ERP\\Login') }}">
+            <i class="user circle large icon"></i> Entrar
+          </a>
+          {% endif %}
+          <!-- Fim menu usuário -->
+        </div>
+        <!-- Fim menu à direita -->
+      </div>

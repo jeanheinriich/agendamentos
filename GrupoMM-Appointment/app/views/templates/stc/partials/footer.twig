@@ -1,0 +1,24 @@
+      <footer>
+        <div class="copyright">
+          {% set startYear = 2018 %}
+          {% set currentYear = "now"|date('Y') %}
+          {% if startYear == currentYear %}
+            {% set copyrightYears = startYear %}
+          {% else %}
+            {% set copyrightYears = startYear ~ ' - ' ~ currentYear %}
+          {% endif %}
+          <p class="pull-left">
+            <span class="mobile hidden">
+              Sistema para controle de frotas e rastreadores -
+            </span>
+            Copyright &copy; {{ copyrightYears }} - Grupo M&amp;M.
+            <i class="br flag"></i>
+            <span class="mobile hidden">
+              <a style="display: inline-block;" class="privacity"
+                 href="{{ path_for('STC\\Privacity') }}">
+                Pol&iacute;tica de privacidade
+              </a>
+            </span>
+          </p>
+        </div>
+      </footer>

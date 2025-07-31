@@ -1,0 +1,100 @@
+{% extends 'templates/basePDF.twig' %}
+{% block title %}
+  Relação dos veículos do cliente {{ vehicles[0].customername }}
+{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  <style>
+    span.status {
+      font-weight: bold;
+    }
+    span.status.darkgreen {
+      color: darkgreen;
+    }
+    span.status.darkred {
+      color: darkred;
+    }
+    span.status.darkorange {
+      color: darkorange;
+    }
+  </style>
+{% endblock %}
+{% block content %}
+  <h5>Cliente:<br><b>{{ vehicles[0].customername }}</b></h5>
+  <p>Total de veículos: <span style="font-weight: bold;">{{ vehicles|length }}</span></p>
+  <table width="100%" cellpadding="5" class="zebra">
+    <tbody>
+      <thead>
+        <tr>
+          <th width="50px">Placa</th>
+          <th width="150px">Marca</th>
+          <th>Modelo</th>
+          <th width="50px">Data de<br>Instalação</th>
+          <th>Pagante</th>
+        </tr>
+      </thead>
+      {% set customerID = 0 %}
+      {% set subsidiaryID = 0 %}
+      {% for vehicle in vehicles %}
+      {% if subsidiaryID != vehicle.subsidiaryid %}
+        {# Inclui a linha com a informação da unidade/filial #}
+        {% set subsidiaryID = vehicle.subsidiaryid %}
+      <tr>
+        <td colspan="5" style="font-size: 1.3em; padding-top: .5em; padding-bottom: .5em;">
+          {% if vehicle.cooperative == true %}
+            {% if vehicle.affiliated == true %}
+            Associado:
+            {% else %}
+            Unidade/filial:
+            {% endif %}
+          {% else %}
+            {% if vehicle.juridicalperson == true %}
+            Unidade/filial:
+            {% else %}
+              {% if vehicle.customername == vehicle.subsidiaryname %}
+              Titular: 
+              {% else %}
+              Dependente: 
+              {% endif %}
+            {% endif %}
+          {% endif %}
+          <b>{{ vehicle.subsidiaryname }}</b>
+          {% set amount = vehiclesPerSubsidiary[vehicle.subsidiaryid] %}
+          &nbsp;&nbsp;<i style="font-size: .9em;">
+          ({{ amount }}
+          {% if amount > 1 %}
+           veículos)
+          {% else %}
+           veículo)
+          {% endif %}
+          </i>
+        </td>
+      </tr>
+      {% endif %}
+      <tr>
+        <td align="center">
+          {{ vehicle.plate }}
+        </td>
+        <td align="center">
+          {{ vehicle.vehiclebrandname }}
+        </td>
+        <td align="center">
+          {{ vehicle.vehiclemodelname }}
+        </td>
+        <td align="center">
+          {{ vehicle.installedat }}
+        </td>
+        <td align="center">
+          {% if vehicle.customerid != vehicle.customerpayerid %}
+          {{ vehicle.customerpayername }}
+          {% else %}
+          ⁕
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p>⁕ O pagante é o próprio cliente</p>
+{% endblock %}

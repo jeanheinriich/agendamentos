@@ -1,0 +1,186 @@
+<div class="ui uninstall form">
+  <div class="fields">
+    <div class="sixteen wide field">
+      <label>
+        Informe a data em que ocorreu a desinstalação do equipamento:
+      </label>
+    </div>
+    <div class="six wide field">
+      <div class="ui calendar" id="uninstalledat">
+        <div class="ui input left icon{{ readonly }}">
+          <i class="calendar icon"></i>
+          <input name="uninstalledat" type="text"
+                 placeholder="Quando ocorreu a desinstalação..."
+                 {{ readonly }}
+                 value="{{ getValue('uninstalledat') }}">
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="fields">
+    <div class="sixteen wide field">
+      <div class="ui checkbox">
+        <input type="hidden" name="terminate"
+               value="{% if getValue('terminate')|toBoolean %}true{% else %}false{% endif %}">
+        <input class="hidden" type="checkbox"
+               name="_terminate"
+               {% if getValue('terminate')|toBoolean %}checked="checked"{% endif %}>
+        <label>Encerrar prestação de serviço</label>
+      </div>
+    </div>
+  </div>
+  <div class="grouped fields">
+    <div class="sixteen wide field">
+      <label>
+        Informe a situação do equipamento após a desinstalação:
+      </label>
+    </div>
+    <div class="sixteen wide field">
+      {% if groupid < 5 %}
+      <div class="ui radio checkbox">
+        <input type="radio" name="storageLocation"
+               value="StoredOnDeposit" checked=""
+               tabindex="0">
+        <label>Será armazenado em:</label>
+        {% if deposits|length > 1 %}
+        <div class="ui selection dropdown">
+          <input name="depositid" type="hidden"
+                 value="{{ defaultDepositID }}">
+          <i class="dropdown icon"></i>
+          <div class="default text">Informe o depósito</div>
+          <div class="menu">
+          {% for deposit in deposits %}
+            <div class="item" {% if deposit.id == defaultDepositID %}selected{% endif %}
+                 data-value="{{ deposit.id }}"
+                 data-text="{{ deposit.name }}">
+              {{ deposit.name }}
+            </div>
+          {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <div class="field static">
+          <span class="darking">{{ deposits[0].name }}</span>
+          <input name="depositid" type="hidden"
+                 value="{{ deposits[0].id }}">
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+    {% if groupid < 5 %}
+      {% if technicians|length > 1 %}
+      <div class="field">
+        <div class="ui radio checkbox">
+          <input type="radio" name="storageLocation"
+                 value="StoredWithTechnician"
+                 tabindex="0">
+          <label>Estará de posse do técnico:</label>
+          <div class="ui search selection dropdown">
+            <input name="technicianid" type="hidden"
+                   value="{{ technicians[0].id }}">
+            <i class="dropdown icon"></i>
+            <div class="default text">technicians[0].name</div>
+            <div class="menu">
+            {% for technician in technicians %}
+              <div class="item" {% if loop.first %}selected{% endif %}
+                   data-value="{{ technician.id }}"
+                   data-text="{{ technician.name }}">
+                {{ technician.name }}
+              </div>
+            {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% else %}
+        {% if technicians|length == 1 %}
+        <div class="field static">
+          <span class="darking">{{ technicians[0].name }}</span>
+          <input name="technicianid" type="hidden"
+                 value="{{ technicians[0].id }}">
+        </div>
+        {% else %}
+        <div class="field static">
+          <span class="darking">Nenhum técnico disponível</span>
+          <input name="technicianid" type="hidden"
+                 value="0">
+        </div>
+        {% endif %}
+      {% endif %}
+    {% else %}
+      <div class="field">
+        <div class="ui radio checkbox">
+          <input type="radio" name="storageLocation"
+                 value="StoredWithTechnician" checked=""
+                 tabindex="0">
+          <label>Estará em minha posse</label>
+          <div class="field static">
+            <div class="field static">
+              <span class="darking">{{ authorization.user.name }}</span>
+              <input name="technicianid" type="hidden"
+                     value="{{ authorization.user.userid }}">
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+    {% if groupid < 5 %}
+      {% if serviceproviders|length > 0 %}
+      <div class="field">
+        <div class="ui radio checkbox">
+          <input type="radio" name="storageLocation"
+                 value="StoredWithServiceProvider"
+                 tabindex="0">
+          <label>Está de posse do prestador de serviços:</label>
+          <div class="ui search selection dropdown">
+            <input name="serviceproviderid" type="hidden"
+                   value="{{ serviceproviders[0].id }}">
+            <i class="dropdown icon"></i>
+            <div class="default text">{{ serviceproviders[0].name }}</div>
+            <div class="menu">
+            {% for serviceprovider in serviceproviders %}
+              <div class="item" {% if loop.first %}selected{% endif %}
+                   data-value="{{ serviceprovider.id }}"
+                   data-text="{{ serviceprovider.name }}">
+                {{ serviceprovider.name }}
+              </div>
+            {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% else %}
+        {% if serviceproviders|length == 1 %}
+        <div class="field static">
+          <span class="darking">{{ serviceproviders[0].name }}</span>
+          <input name="serviceproviderid" type="hidden"
+                 value="{{ serviceproviders[0].id }}">
+        </div>
+        {% else %}
+        <div class="field static">
+          <span class="darking">Nenhum prestador de serviços disponível</span>
+          <input name="serviceproviderid" type="hidden"
+                 value="0">
+        </div>
+        {% endif %}
+      {% endif %}
+    {% else %}
+      <div class="field">
+        <div class="ui radio checkbox">
+          <input type="radio" name="storageLocation"
+                 value="StoredWithTechnician"
+                 tabindex="0">
+          <label>Estará de posse do prestador de serviços no qual trabalho:</label>
+          <div class="field static">
+            <div class="field static">
+              <span class="darking">{{ serviceproviders[0].name }}</span>
+              <input name="technicianid" type="hidden"
+                     value="{{ serviceproviders[0].id }}">
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>

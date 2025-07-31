@@ -1,0 +1,116 @@
+<div class="account entry">
+  <div class="ui vertical segment noBottomBorder noTopPadding attachedBottomPadding">
+    <div class="fields">
+      <input name="accounts[{{ number }}][accountid]" type="hidden"
+             value="{{ account.accountid }}">
+      <div class="eight wide field{{ cssError('accounts[' ~ number ~ '][bankid]') }}">
+        <label class="nowrap">
+          Banco
+        </label>
+        {% if editMode %}
+        <div class="ui search selection dropdown">
+          <input name="accounts[{{ number }}][bankid]" type="hidden"
+                 value="{{ account.bankid }}">
+          <i class="dropdown icon"></i>
+          <div class="default text">Informe o banco</div>
+          <div class="menu">
+          {% for bank in banks %}
+            <div class="vertical item" {% if bank.id == account.bankid %}selected{% endif %}
+                 data-value="{{ bank.id }}">
+              <span class="description">
+                <div class="hidden">
+                  {{ bank.name }}
+                </div>
+              </span>
+              <span class="text">
+                {{ bank.id }} - {{ bank.shortname }}
+              </span>
+            </div>
+          {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <div class="field static">
+          <span class="darking">{{ account.bankname }}&nbsp;</span>
+        </div>
+        {% endif %}
+        {% if hasError('accounts[' ~ number ~ '][bankid]') %}
+        <small class="helper">{{ getError('accounts[' ~ number ~ '][bankid]') }}</small>
+        {% endif %}
+      </div>
+
+      <div class="three wide field{{ cssError('accounts[' ~ number ~ '][agencynumber]') }}">
+        <label>Agência</label>
+        <div class="ui input{{ readonly }}">
+          <input name="accounts[{{ number }}][agencynumber]"
+                 type="text" {{ readonly }}
+                 placeholder="Número da agência..."
+                 value="{{ account.agencynumber }}">
+        </div>
+        {% if hasError('accounts[' ~ number ~ '][agencynumber]') %}
+        <small class="helper">{{ getError('accounts[' ~ number ~ '][agencynumber]') }}</small>
+        {% endif %}
+      </div>
+
+      <div class="five wide field{{ cssError('accounts[' ~ number ~ '][accountnumber]') }}">
+        <label class="nowrap">Número da conta</label>
+        <div class="ui input{{ readonly }}">
+          <input name="accounts[{{ number }}][accountnumber]"
+                 type="text" {{ readonly }}
+                 placeholder="Número da conta..."
+                 value="{{ account.accountnumber }}">
+        </div>
+        {% if hasError('accounts[' ~ number ~ '][accountnumber]') %}
+        <small class="helper">{{ getError('accounts[' ~ number ~ '][accountnumber]') }}</small>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="fields">
+      <div class="four wide field{{ cssError('accounts[' ~ number ~ '][pixkeytypeid]') }}">
+        <label class="nowrap">
+          Tipo da chave PIX
+        </label>
+        {% if editMode %}
+        <div class="ui search selection dropdown">
+          <input name="accounts[{{ number }}][pixkeytypeid]" type="hidden"
+                 value="{{ account.pixkeytypeid }}">
+          <i class="dropdown icon"></i>
+          <div class="default text">Informe o tipo da chave</div>
+          <div class="menu">
+          {% for pixKeyType in pixKeyTypes %}
+            <div class="item" {% if pixKeyType.id == account.pixkeytypeid %}selected{% endif %}
+                 data-value="{{ pixKeyType.id }}"
+                 data-text="{{ pixKeyType.name }}">
+              {{ pixKeyType.name }}
+            </div>
+          {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <div class="field static">
+          <span class="darking">{{ account.pixkeytypename }}&nbsp;</span>
+        </div>
+        {% endif %}
+        {% if hasError('accounts[' ~ number ~ '][pixkeytypeid]') %}
+        <small class="helper">{{ getError('accounts[' ~ number ~ '][pixkeytypeid]') }}</small>
+        {% endif %}
+      </div>
+
+      <div class="five wide field{{ cssError('accounts[' ~ number ~ '][pixkey]') }}">
+        <label for="pixkey">
+          Chave PIX
+        </label>
+        <div class="ui input{{ readonly }}">
+          <input name="accounts[{{ number }}][pixkey]"
+                 type="text" maxlength="72" {{ readonly }}
+                 placeholder="Chave PIX..."
+                 value="{{ account.pixkey }}">
+        </div>
+        {% if hasError('accounts[' ~ number ~ '][pixkey]') %}
+        <small class="helper">{{ getError('accounts[' ~ number ~ '][pixkey]') }}</small>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>

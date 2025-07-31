@@ -1,0 +1,73 @@
+/*!
+ * CSS do Site do Grupo M&M
+ * 
+ * Code licensed under the Apache License v2.0.
+ * For details, see http://www.apache.org/licenses/LICENSE-2.0.
+ */
+
+@import '../mixin.scss';
+@import '../themes/default.scss';
+
+
+/* --------------------------------------------------[ Content ]-----
+   As definições do conteúdo da página
+   ------------------------------------------------------------------ */
+
+// Importamos a família Hind
+@font-face {
+  font-family: "Hind";
+  src: url("/assets/fonts/Hind-Light.ttf");
+  font-weight: 300;
+  font-style: normal;  
+}
+@font-face {
+  font-family: "Hind";
+  src: url("/assets/fonts/Hind-Regular.ttf");
+  font-weight: 400;
+  font-style: normal;  
+}
+@font-face {
+  font-family: "Hind";
+  src: url("/assets/fonts/Hind-Medium.ttf");
+  font-weight: 500;
+  font-style: normal;  
+}
+@font-face {
+  font-family: "Hind";
+  src: url("/assets/fonts/Hind-Semibold.ttf");
+  font-weight: 600;
+  font-style: normal;  
+}
+@font-face {
+  font-family: "Hind";
+  src: url("/assets/fonts/Hind-Bold.ttf");
+  font-weight: 700;
+  font-style: normal;  
+}
+$fontBase: Hind, Lato, 'Helvetica Neue', "Open Sans", Arial, Helvetica, sans-serif;
+
+body {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: #8c8c8c;
+  font-family: $fontBase;
+}
+
+main {
+  display: block;
+}
+
+.container {
+  padding-right: 15px;
+  padding-left: 15px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+
+@import 'modules/header.scss';
+@import 'modules/hero.scss';
+@import 'modules/pages.scss';
+@import 'modules/sections.scss';
+@import 'modules/lgpd.scss';

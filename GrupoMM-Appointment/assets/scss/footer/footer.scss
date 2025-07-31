@@ -1,0 +1,67 @@
+/*!
+ * Improved Footer Code
+ * 
+ * Code licensed under the Apache License v2.0.
+ * For details, see http://www.apache.org/licenses/LICENSE-2.0.
+ */
+
+@import '../themes/default.scss';
+
+/* ---------------------------------------------------[ Footer ]-----
+   As definições do rodapé da página
+   ------------------------------------------------------------------ */
+
+footer
+{
+  display: block;
+  bottom: 0;
+  background: $sidebarBackground;
+  float: left;
+  width: 100%;
+  border-top: 1px solid #333;
+
+  .maps {
+    display: block;
+    background: #e6e6e6;
+    float: left;
+    width: 100%;
+    padding: 20px 0 10px 10px;
+    margin-bottom: 0.5em;
+    font-size: 0.8em;
+    font-weight: 400;
+
+    h4 {
+      font-size: 1.2rem;
+      font-weight: 500;
+      color: #444;
+    }
+
+    .text {
+      color: $normalTextColor;
+    }
+  
+    i.icon.social {
+      font-size: 1.6em;
+    }
+    
+    .ui.selection.list > .item {
+      padding-left: 0;
+
+      &:hover {
+        text-decoration: underline;
+        color: #1e70bf !important;
+        background: rgba(0,0,0,0);
+      }
+    }
+
+    @media screen and (max-width: 767px) {
+      padding-left: 0px;
+    }
+  }
+
+  .copyright {
+    color: $invertedTextColor;
+    padding: 5px;
+    font-size: 12px;
+  }
+}

@@ -1,0 +1,176 @@
+{% extends 'templates/adm/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} tipo de medida{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  {{ css('loading.min.css') }}
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ADM\\Parameterization\\Cadastral\\MeasureTypes\\Add' %}
+  {% else %}
+    {% set URL = 'ADM\\Parameterization\\Cadastral\\MeasureTypes\\Edit' %}
+  {% endif %}
+  {% set previous = 'ADM\\Parameterization\\Cadastral\\MeasureTypes' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('adm/measuretypes.svg', 'Tipo de medida') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if editMode %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} tipo de medida
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  tipo de medida.
+                </div>
+              {% else %}
+                Visualizar tipo de medida
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um
+                  tipo (unidade) de medida.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <div class="loading hidden">Processando...&#8230;</div>
+      <form class="ui form" method="POST" autocomplete="off"
+            onsubmit="loading();"
+            action="{{ path_for(URL, { 'measureTypeID': getValue('measuretypeid') }) }}">
+        <div class="fields">
+          <div class="eight wide field{{ cssError('name') }}">
+            <label>Tipo de medida</label>
+            <div class="ui input{{ readonly }}">
+              <input name="name" type="text" maxlength="30"
+                     placeholder="Informe o nome da medida..."
+                     {{ readonly }}
+                     value="{{ getValue('name') }}">
+            </div>
+            {% if hasError('name') %}
+            <small class="helper">{{ getError('name') }}</small>
+            {% endif %}
+          </div>
+          <div class="four wide field{{ cssError('symbol') }}">
+            <label>Símbolo</label>
+            <div class="ui input{{ readonly }}">
+              <input name="symbol" type="text" maxlength="3"
+                     placeholder="Informe o símbolo da medida..."
+                     {{ readonly }}
+                     value="{{ getValue('symbol') }}">
+            </div>
+            {% if hasError('symbol') %}
+            <small class="helper">{{ getError('symbol') }}</small>
+            {% endif %}
+          </div>
+          <div class="four wide field{{ cssError('position') }}">
+            <label>Posição do símbolo</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="position" type="hidden"
+                     value="{{ getValue('position') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">{{ getValue('positionname') }}&nbsp;</div>
+              <div class="menu">
+                {% for position in positions %}
+                  <div class="item" data-value="{{ position.id }}"
+                       data-text="{{ position.name }}">
+                    {{ position.name }}
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('positionname') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('position') %}
+            <small class="helper">{{ getError('position') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="measuretypeid" value="{{ getValue('measuretypeid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      
+      // Coloca o foco no primeiro campo
+      $("input[name='name']")
+        .focus()
+      ;
+    });
+
+    var loading = function() {
+      $(document.body)
+        .css({
+          'cursor' : 'wait'
+        })
+      ;
+      $(".loading")
+        .removeClass("hidden")
+      ;
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

@@ -1,0 +1,572 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} tipo de contrato{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  <style>
+    /* Realiza ajustes nos dropdowns */
+    .ui.selection.dropdown {
+      line-height: 1.1em;
+    }
+    .medium {
+      min-width: 9em !important;
+      max-width: 9em;
+    }
+    .mini.form .ui.dropDownLabel.dropdown {
+      min-width: 9em !important;
+      max-width: 9em;
+    }
+    @media screen and (max-width: 1100px) {
+      .mini.form .ui.dropDownLabel.dropdown {
+        min-width: 5.8em !important;
+        max-width: 5.8em;
+      }
+    }
+    @media screen and (max-width: 767px) {
+      .mini.form .ui.dropDownLabel.dropdown {
+        min-width: 9em !important;
+        max-width: 9em;
+      }
+    }
+
+    /* Realiza ajustes no miniform */
+    .ui.form .fields:not(.grouped):not(.inline) .field:not(:only-child) .ui.checkbox {
+      margin-top: 0.3em;
+    }
+
+    /* Realiza ajustes nos detalhes */
+    .ui.mini.form {
+      margin-bottom: 0.7em;
+    }
+    .ui.basic.label {
+      text-align: center;
+      min-width: 3.2em;
+    }
+    .chargeEntry:first-child button {
+      background-color: #c8c8c8 !important;
+    }
+    @media (max-width: 768px) {
+      .chargeEntry {
+        margin-bottom: .5em !important;
+      }
+      .chargeEntry:after {
+        border-bottom: 1px dotted rgba(34,36,38,.15);
+        content: '';
+        flex: 1;
+        padding: 2px;
+      }
+      .chargeEntry:last-child:after {
+        border-bottom: none;
+        content: '';
+        flex: 1;
+        padding: 0px;
+      }
+    }
+    .ui.vertical.segment:first-child {
+      padding-top: 0;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Parameterization\\Financial\\ContractTypes\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Parameterization\\Financial\\ContractTypes\\Edit' %}
+  {% endif %}
+  {% set previous = 'ERP\\Parameterization\\Financial\\ContractTypes' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/contracttypes.svg', 'Tipo de contrato') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} tipo de contrato
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  tipo de contrato.
+                </div>
+              {% else %}
+                Visualizar tipo de contrato
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um tipo de contrato.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL, { 'contractTypeID': getValue('contracttypeid') }) }}">
+        <div class="ui vertical segment">
+          <div class="fields">
+            <div class="sixteen wide field{{ cssError('name') }}">
+              <label>Nome do tipo de contrato</label>
+              <div class="ui input{{ readonly }}">
+                <input name="name" type="text" maxlength="30"
+                       placeholder="Informe o nome do tipo de contrato..."
+                       {{ readonly }}
+                       value="{{ getValue('name') }}">
+              </div>
+              {% if hasError('name') %}
+              <small class="helper">{{ getError('name') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="eight wide field{{ cssError('duration') }}">
+              <label>
+                Duração do contrato
+                <span data-tooltip="Contados à partir da instalação do equipamento"
+                      data-content="Top Left" data-position="top left"
+                      data-inverted="">
+                  <i class="question circle olive outline icon"></i>
+                </span>
+              </label>
+              <div class="ui right labeled input{{ readonly }}">
+                <input name="duration" type="text" maxlength="2"
+                       placeholder="0"
+                       {{ readonly }}
+                       value="{{ getValue('duration') }}">
+                <div class="ui basic label">meses</div>
+              </div>
+              {% if hasError('duration') %}
+              <small class="helper">{{ getError('duration') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="eight wide field{{ cssError('banktariff') }}">
+              <label>Tarifa para emiss&atilde;o de t&iacute;tulo</label>
+              <div class="ui left labeled input{{ readonly }}">
+                <div class="ui basic label">R$</div>
+                <input name="banktariff" type="text"
+                       placeholder="0,00"
+                       {{ readonly }}
+                       value="{{ getValue('banktariff') }}">
+              </div>
+              {% if hasError('banktariff') %}
+              <small class="helper">{{ getError('banktariff') }}</small>
+              {% endif %}
+            </div>
+            
+            <div class="eight wide field{{ cssError('banktariffforreissuing') }}">
+              <label>Tarifa para reemiss&atilde;o de t&iacute;tulo</label>
+              <div class="ui left labeled input{{ readonly }}">
+                <div class="ui basic label">R$</div>
+                <input name="banktariffforreissuing" type="text"
+                       placeholder="0,00"
+                       {{ readonly }}
+                       value="{{ getValue('banktariffforreissuing') }}">
+              </div>
+              {% if hasError('banktariffforreissuing') %}
+              <small class="helper">{{ getError('banktariffforreissuing') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="eight wide field{{ cssError('finevalue') }}">
+              <label>Valor da multa</label>
+              <div class="ui left labeled{% if editMode %} action{% endif %}  input{{ readonly }}">
+                <div class="ui basic label"
+                     name="fineLabel">R$</div>
+                <input name="finevalue" type="text"
+                       placeholder="0,00"
+                       {{ readonly }}
+                       value="{{ getValue('finevalue') }}">
+                {% if editMode %}
+                <select class="ui dropDownLabel medium selection dropdown"
+                        name="finetype" label="fineLabel">
+                  {% set fineType = getValue('finetype') %}
+                  {% for measureType in measureTypes %}
+                    <option value="{{ measureType.id }}"
+                            {% if fineType == measureType.id %}
+                              selected
+                            {% endif %}
+                            label="{{ measureType.symbol }}">
+                      {{ measureType.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+                {% endif %} 
+              </div>
+              {% if hasError('finevalue') %}
+              <small class="helper">{{ getError('finevalue') }}</small>
+              {% endif %}
+            </div>
+            
+            <div class="eight wide field{{ cssError('interestvalue') }}">
+              <label>Valor dos juros de mora</label>
+              <div class="ui left labeled{% if editMode %} action{% endif %}  input{{ readonly }}">
+                <div class="ui basic label"
+                     name="interestLabel">R$</div>
+                <input name="interestvalue" type="text"
+                       placeholder="0,00"
+                       {{ readonly }}
+                       value="{{ getValue('interestvalue') }}">
+                {% if editMode %}
+                <select class="ui dropDownLabel medium selection dropdown"
+                        name="interesttype" label="interestLabel">
+                  {% set interestType = getValue('interesttype') %}
+                  {% for measureType in measureTypes %}
+                    <option value="{{ measureType.id }}"
+                            {% if interestType == measureType.id %}
+                              selected
+                            {% endif %}
+                            label="{{ measureType.symbol }}">
+                      {{ measureType.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+                {% endif %} 
+              </div>
+              {% if hasError('interestvalue') %}
+              <small class="helper">{{ getError('interestvalue') }}</small>
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="fields">
+            <div class="eight wide field{{ cssError('active') }}">
+              <div class="ui checkbox{{ readonly }}">
+                <input type="hidden" name="active"
+                       value="{% if getValue('active')|toBoolean %}true{% else %}false{% endif %}">
+                <input class="hidden" type="checkbox"
+                       name="_active"
+                       {{ readonly }}
+                       {% if getValue('active')|toBoolean %}checked="checked"{% endif %}>
+                <label>Tipo de contrato ativo</label>
+              </div>
+              {% if hasError('active') %}
+              <small class="helper">{{ getError('active') }}</small>
+              {% endif %}
+            </div>
+            
+            <div class="eight wide field{{ cssError('allowextendingdeadline') }}">
+              <div class="ui checkbox{{ readonly }}">
+                <input type="hidden" name="allowextendingdeadline"
+                       value="{% if getValue('allowextendingdeadline')|toBoolean %}true{% else %}false{% endif %}">
+                <input class="hidden" type="checkbox"
+                       name="_allowextendingdeadline"
+                       {{ readonly }}
+                       {% if getValue('allowextendingdeadline')|toBoolean %}checked="checked"{% endif %}>
+                <label>Permitir estender prazo de boletos vencidos</label>
+              </div>
+              {% if hasError('allowextendingdeadline') %}
+              <small class="helper">{{ getError('allowextendingdeadline') }}</small>
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="fields">
+            <div class="eight wide field{{ cssError('prorata') }}">
+              <div class="ui checkbox{{ readonly }}">
+                <input type="hidden" name="prorata"
+                       value="{% if getValue('prorata')|toBoolean %}true{% else %}false{% endif %}">
+                <input class="hidden" type="checkbox"
+                       name="_prorata"
+                       {{ readonly }}
+                       {% if getValue('prorata')|toBoolean %}checked="checked"{% endif %}>
+                <label>Permitir cobrança proporcional aos dias contratados (Prorata)</label>
+              </div>
+              {% if hasError('prorata') %}
+              <small class="helper">{{ getError('prorata') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="eight wide field{{ cssError('duedateonlyinworkingdays') }}">
+              <div class="ui checkbox{{ readonly }}">
+                <input type="hidden" name="duedateonlyinworkingdays"
+                       value="{% if getValue('duedateonlyinworkingdays')|toBoolean %}true{% else %}false{% endif %}">
+                <input class="hidden" type="checkbox"
+                       name="_duedateonlyinworkingdays"
+                       {{ readonly }}
+                       {% if getValue('duedateonlyinworkingdays')|toBoolean %}checked="checked"{% endif %}>
+                <label>Vencimento apenas em dias úteis</label>
+              </div>
+              {% if hasError('duedateonlyinworkingdays') %}
+              <small class="helper">{{ getError('duedateonlyinworkingdays') }}</small>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="ui vertical segment mini form">
+          <h4>Informações de valores cobrados</h4>
+          <div id="chargeList" class="chargeList">
+            {% for chargeNumber, charge in getValue('charges') %}
+              {% include 'erp/parameterization/financial/contracttypes/charge.twig' with { billingTypes: billingTypes, measureTypes: measureTypes, chargeNumber: chargeNumber, charge: charge, editMode: editMode, readonly: readonly }  %}
+            {% endfor %}
+          </div>
+          {% if editMode %}
+          <button type="button" class="ui mini green right labeled icon button"
+                  onclick="addCharge( {{ subsidiaryNumber }} );">
+            <i class="plus icon"></i> Novo valor a ser cobrado
+          </button>
+          {% endif %}
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="contracttypeid" value="{{ getValue('contracttypeid') }}">
+        {% endif %}
+      </form>
+      <!-- End Form -->
+      {% if formMethod == 'PUT' %}
+      <!-- Start status panel -->
+      <div class="ui segments">
+        <div class="ui grey inverted segment">
+          <h5>
+            Histórico de modificações:
+          </h5>
+          Cadastrado {{ getValue('createdat')|localizedDate('long') }} por {{ getValue('createdbyusername') }}
+          <div class="ui divider"></div>
+          Modificado {{ getValue('updatedat')|localizedDate('long') }} por {{ getValue('updatedbyusername') }}
+        </div>
+      </div>
+      <!-- End status panel -->
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('template-engine/template.engine.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+  
+  {% apply minify %}
+  <script>
+    {% set charges = getValue('charges') %}
+    // O índice de contagem dos valores cobrados
+    var chargesCount = {{ charges|length }};
+    
+    // O template de um novo valor cobrado
+    {% set chargeTemplate %}
+      {% include 'erp/parameterization/financial/contracttypes/charge.twig' with { billingTypes: billingTypes, measureTypes: measureTypes, chargeNumber: '<%=chargeNumber%>', charge: { chargeid: 0, billingtypeid: 1, chargevalue: '0.000', chargetype: 1 }, editMode: true, readonly: '' }  %}
+    {% endset %}
+    var chargeTemplate = '{{ chargeTemplate|escape('js') }}'.replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      $('.ui.checkbox')
+        .checkbox(checkboxOptions)
+      ;
+      $("input[name='duration']")
+        .mask({
+          type: 'number'
+        })
+        .blur(durationHandler)
+        .trigger("blur")
+      ;
+      $("input[name='banktariff']")
+        .mask({
+          type: 'monetary'
+        })
+      ;
+      $("input[name='banktariffforreissuing']")
+        .mask({
+          type: 'monetary'
+        })
+      ;
+      $("input[name='finevalue']")
+        .mask({
+          type: 'percentage'
+        })
+      ;
+      $("select[name='finetype']")
+        .change(updateMeasureLabel)
+        .trigger("change")
+      ;
+      $("input[name='interestvalue']")
+        .mask({
+          type: 'percentage'
+        })
+      ;
+      $("select[name='interesttype']")
+        .change(updateMeasureLabel)
+        .trigger("change")
+      ;
+
+      // Força o mascaramento dos campos dos valores cobrados
+      for (var chargeNumber = 0; chargeNumber < chargesCount; chargeNumber++) {
+        $("input[name='charges[" + chargeNumber + "][chargevalue]']")
+          .mask({
+            type: 'percentage'
+          })
+        ;
+        $("select[name='charges[" + chargeNumber + "][chargetype]']")
+          .change(updateMeasureLabel)
+          .trigger("change")
+        ;
+      }
+
+      // Coloca o foco no primeiro campo
+      $("input[name='name']")
+        .focus()
+      ;
+    });
+
+    // ================================================[ Handlers ]=====
+
+    // Faz o tratamento do campo duração para permitir corrigir valores
+    // zerados
+    function durationHandler()
+    {
+      var
+        duration = $(this).val()
+      ;
+
+      if (duration.trim().isEmpty()) {
+        $(this)
+          .val(0)
+        ;
+      }
+    }
+
+    // Atualiza o rótulo da unidade de medida
+    var updateMeasureLabel = function(event)
+    {
+      var
+        labelText  = $('option:selected', this).attr('label'),
+        labelField = $(this).attr('label')
+      ;
+      
+      $("div[name='" + labelField + "']")
+        .text(labelText)
+      ;
+    };
+    
+    // Faz a adição de um valor cobrado
+    var addCharge = function()
+    {
+      // Incrementa o contador de valores cobrados
+      var
+        chargeNumber = chargesCount
+      ;
+
+      // Incrementa a quantidade de campos
+      chargesCount++;
+      
+      // Adiciona um conjunto de campos para o novo valor cobrado
+      $(".chargeList")
+        .append(TemplateEngine(chargeTemplate,
+          { chargeNumber: chargeNumber }))
+      ;
+      
+      $('.ui.selection.dropdown')
+        .dropdown()
+      ;
+      
+      // Mascara o campo de valor
+      $("input[name='charges[" + chargeNumber + "][chargevalue]']")
+        .mask({
+          type: 'percentage'
+        })
+      ;
+      $("select[name='charges[" + chargeNumber + "][chargetype]']")
+        .change(updateMeasureLabel)
+        .trigger( "change" )
+      ;
+
+      // Coloca em foco o campo inicial do novo valor cobrado
+      $("input[name='charges[" + chargeNumber + "][name]']")
+        .focus()
+      ;
+    };
+    
+    // Faz a remoção de um valor cobrado
+    var delCharge = function(element) {
+      // Recupera o ID do valor cobrado
+      var
+        chargeNumber = parseInt($(element).attr("charge"))
+      ;
+
+      if (chargeNumber > 0) {
+        $(element)
+          .closest('.chargeEntry')
+          .remove()
+        ;
+      }
+    };
+    
+
+    // =================================================[ Options ]=====
+
+    // As opções para os checkbox
+    var checkboxOptions = {
+      // Dispara ao iniciar para definir o valor, se necessário
+      onChange   : function() {
+        var
+          checkbox = $(this).prop('name'),
+          // Invertemos o valor atual
+          checked = !($(this).attr('checked') !== undefined && $(this).attr('checked')),
+          boolValue = (checked
+            ? 'true'
+            : 'false'),
+          toggleField = checkbox.replace('_','')
+        ;
+
+        // Invertemos o checkbox fake
+        $(this)
+          .attr('checked', checked)
+        ;
+
+        // Alteramos o valor do verdadeiro input
+        $("input[name='" + toggleField + "']")
+          .val(boolValue)
+        ;
+      }
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

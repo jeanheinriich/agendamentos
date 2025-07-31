@@ -1,0 +1,58 @@
+{% extends 'templates/adm/layoutclean.twig' %}
+{% block title %}{{ parent() }} - Inscreva-se{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+{% endblock stylesheets %}
+{% block content %}
+  <div class="ui middle aligned center aligned auth grid">
+    <div class="column">
+      <form class="ui large form error" action="{{ path_for('ADM\\Register') }}" method="POST">
+        <div class="ui stacked segment">
+            <div class="field">
+              <h2 class="ui blue header">
+                <i class="user icon"></i> Criar uma nova conta
+              </h2>
+            </div>
+            <div class="field{% if has_error('username') %} error{% endif %}">
+              <div class="ui left icon input">
+                <i class="user icon"></i>
+                <input type="text" name="username" placeholder="Usuário" value="{{ val('username') }}">
+              </div>
+            </div>
+            <div class="field{% if has_error('email') %} error{% endif %}">
+              <div class="ui left icon input">
+                <i class="mail icon"></i>
+                <input type="email" name="email" placeholder="E-mail" value="{{ val('email') }}">
+              </div>
+            </div>
+            <div class="field{% if has_error('password') %} error{% endif %}">
+              <div class="ui left icon input">
+                <i class="lock icon"></i>
+                <input type="password" name="password" placeholder="Senha">
+              </div>
+            </div>
+            <div class="field{% if has_error('password_confirm') %} error{% endif %}">
+              <div class="ui left icon input">
+                <i class="lock icon"></i>
+                <input type="password" name="password_confirm" placeholder="Confirme sua senha">
+              </div>
+            </div>
+            {{ csrf() }}
+            <input type="submit" class="ui fluid large blue button" value="Registre-se">
+          </div>
+          {% if has_errors() %}
+            <div class="ui error message">
+              {% for paramErrors in errors() %}
+                {% for error in paramErrors %}
+                  <p>{{ error }}</p>
+                {% endfor %}
+              {% endfor %}
+            </div>
+          {% endif %}
+      </form>
+      <div class="ui message">
+          Você já tem uma conta? <a href="{{ path_for('ADM\\Login') }}">Autentique-se</a>
+      </div>
+    </div>
+  </div>
+{% endblock %}

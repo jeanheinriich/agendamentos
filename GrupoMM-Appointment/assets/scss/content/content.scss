@@ -1,0 +1,131 @@
+/*!
+ * Improved Content Code
+ *
+ * Code licensed under the Apache License v2.0.
+ * For details, see http://www.apache.org/licenses/LICENSE-2.0.
+ */
+
+@import '../mixin.scss';
+@import '../themes/default.scss';
+
+/* -----------------------------------------------------[ Main ]-----
+   As definições da área de conteúdo
+   ------------------------------------------------------------------ */
+
+.space {
+  &.before::before {
+    content: "\00a0";
+  }
+  &.after::after {
+    content: "\00a0";
+  }
+  &.both::before {
+    content: "\00a0";
+  }
+  &.both::after {
+    content: "\00a0";
+  }
+}
+
+.ui {
+  &.segment {
+    padding: 0.5em 0.5em;
+
+    &.main.basic {
+      margin-top: 0.5em;
+      padding-top: 5px;
+
+      @media screen and (max-width: 767px) {
+        padding-top: 0;
+      }
+    }
+
+    @media only screen and (max-width: 768px) {
+      padding: 0.3em 0.3em;
+    }
+  }
+
+  &.inverted.menu {
+    background: $sidebarBackground;
+
+    .dropdown.item:hover,
+    .link.item:hover,
+    a.item:hover {
+      background: $invertedHoveredBackground;
+    }
+  }
+}
+
+h3.ui.header {
+  @media screen and (max-width: 767px) {
+    font-size: 1.18571429rem;
+    margin-bottom: 0;
+  }
+}
+
+// A definição de um texto em fonte mono-espaçada
+
+// Importamos a família Cousine
+@font-face {
+  font-family: "Cousine";
+  src: url("/assets/fonts/Cousine-Regular.ttf");
+  font-weight: normal;
+}
+@font-face {
+  font-family: "Cousine";
+  src: url("/assets/fonts/Cousine-Bold.ttf");
+  font-weight: bold;
+}
+@font-face {
+  font-family: "Cousine";
+  src: url("/assets/fonts/Cousine-Italic.ttf");
+  font-style: italic, oblique;
+}
+@font-face {
+  font-family: "Cousine";
+  src: url("/assets/fonts/Cousine-BoldItalic.ttf");
+  font-weight: bold;
+  font-style: italic, oblique;
+}
+
+i.mono {
+  font-family: Cousine;
+  font-weight: normal;
+  font-style: normal;
+  font-size: .9rem;
+}
+
+/* ----------------------------------------------------[ Cores ]-----
+   As definições de cores
+   ------------------------------------------------------------------ */
+
+.darkblue {
+  color: darkblue;
+}
+.lightblue {
+  color: #2185d0;
+}
+.darkred {
+  color: darkred;
+}
+.darkgreen {
+  color: darkgreen;
+}
+.darkorange {
+  color: orangered;
+}
+.lightgrey {
+  color: #eaeaea;
+}
+.silver {
+  color: silver;
+  font-style: italic;
+}
+.darkgrey {
+  color: #666;
+  font-style: italic;
+}
+
+@import 'modules/header.scss';
+@import 'modules/table.scss';
+@import 'modules/tooltip.scss';

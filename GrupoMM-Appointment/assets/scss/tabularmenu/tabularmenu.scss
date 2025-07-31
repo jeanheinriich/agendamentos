@@ -1,0 +1,91 @@
+/*!
+ * Improved Tabular Menu Code
+ * 
+ * Code licensed under the Apache License v2.0.
+ * For details, see http://www.apache.org/licenses/LICENSE-2.0.
+ */
+
+@import '../mixin.scss';
+
+
+/* ---------------------------------------------[ Tabular Menu ]-----
+   As definições de um menu tabular com os seus respectivos conteúdos
+   ------------------------------------------------------------------ */
+
+.ui.tabular {
+  &.menu {
+    .item {
+      border-top-width: 1px;
+      border-color: #d4d4d5;
+      @include border-radii-default(.28571429rem,.28571429rem,0,0);
+      
+      &.active {
+        cursor: pointer;
+        background: #f0f1f2;
+        @include gradient(#e8e8e8, #ffffff);
+        color: rgba(0,0,0,.87);
+
+        &:hover {
+          background: #f0f1f2;
+          @include gradient(#e8e8e8, #ffffff);
+        }
+
+        .content {
+          @media screen and (max-width: 567px) {
+            display: none;
+          }
+        }
+      }
+      
+      &:not(.active) {
+        background: #e8e8e8;
+        @include gradient(#e0e0e0, #f4f4f4);
+
+        .icon {
+          color: #86a3c0 !important;
+        }
+
+        .content {
+          .title {
+            color: #646474;
+          }
+          .description {
+            color: #8c8c9c;
+          }
+
+          @media screen and (max-width: 900px) {
+            display: none;
+          }
+        }
+      }
+      
+      &:hover {
+        cursor: pointer;
+        background: #dcddde;
+        color: rgba(0,0,0,.87);
+      }
+    }
+  }
+
+  &.steps {
+    width: 100% !important;
+    
+    .step {
+      .icon {
+        color: #4183c4 !important;
+        font-size: 2.0em;
+      }
+      
+      .item:hover {
+      }
+      
+      &::after {
+        display: none !important;
+        
+        &.active {
+          display: none !important;
+        }
+      }
+    }
+  }
+}

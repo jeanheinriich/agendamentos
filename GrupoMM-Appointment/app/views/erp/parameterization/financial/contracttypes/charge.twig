@@ -1,0 +1,89 @@
+                <div class="fields chargeEntry">
+                  <div class="five wide field{{ cssError('charges[' ~ chargeNumber ~ '][name]') }}">
+                    {% if loop.first %}
+                    <label>Nome da cobrança</label>
+                    {% else %}
+                    <label class="mobile only">Nome da cobrança</label>
+                    {% endif %}
+                    <div class="ui input{{ readonly }}">
+                      <input name="charges[{{ chargeNumber }}][name]" type="text" maxlength="30"
+                             placeholder="Nome do valor cobrado..."
+                             {{ readonly }}
+                             value="{{ charge.name }}">
+                      <input name="charges[{{ chargeNumber }}][contracttypechargeid]"
+                             type="hidden"
+                             value="{{ charge.contracttypechargeid }}" />
+                    </div>
+                    {% if hasError('charges[' ~ chargeNumber ~ '][name]') %}
+                    <small class="helper">{{ getError('charges[' ~ chargeNumber ~ '][name]') }}</small>
+                    {% endif %}
+                  </div>
+                  <div class="five wide field{{ cssError('charges[' ~ chargeNumber ~ '][billingtypeid]') }}">
+                    {% if loop.first %}
+                    <label>Tipo de cobrança</label>
+                    {% else %}
+                    <label class="mobile only">Tipo de cobrança</label>
+                    {% endif %}
+                    {% if editMode %}
+                    <div class="ui search selection dropdown">
+                      <input name="charges[{{ chargeNumber }}][billingtypeid]" type="hidden"
+                             value="{{ charge.billingtypeid }}">
+                      <i class="dropdown icon"></i>
+                      <div class="default text"></div>
+                      <div class="menu">
+                        {% for billingType in billingTypes %}
+                          <div class="item" data-value="{{ billingType.id }}" data-text="{{ billingType.name }}">
+                            {{ billingType.name }}
+                          </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+                    {% else %}
+                    <div class="field static">
+                      <span class="darking">{{ charge.billingtypename }}&nbsp;</span>
+                    </div>
+                    {% endif %}
+                    {% if hasError('charges[' ~ chargeNumber ~ '][billingtypeid]') %}
+                    <small class="helper">{{ getError('charges[' ~ chargeNumber ~ '][billingtypeid]') }}</small>
+                    {% endif %}
+                  </div>
+                  <div class="six wide field{{ cssError('charges[' ~ chargeNumber ~ '][phonenumber]') }}">
+                    {% if loop.first %}
+                    <label>Valor cobrado</label>
+                    {% else %}
+                    <label class="mobile only">Valor cobrado</label>
+                    {% endif %}
+                    <div class="ui left labeled{% if editMode %} action{% endif %} input{{ readonly }}">
+                      <div class="ui basic label"
+                            name="charges[{{ chargeNumber }}][label]">R$</div>
+                      <input name="charges[{{ chargeNumber }}][chargevalue]"
+                             placeholder="Valor cobrado" type="text"
+                             value="{{ charge.chargevalue }}">
+                      {% if editMode %}
+                      <select class="ui dropDownLabel medium selection dropdown"
+                              name="charges[{{ chargeNumber }}][chargetype]"
+                              label="charges[{{ chargeNumber }}][label]">
+                        {% for measureType in measureTypes %}
+                          <option value="{{ measureType.id }}"
+                                  {% if measureType.id == charge.chargetype %}
+                                    selected
+                                  {% endif %}
+                                  label="{{ measureType.symbol }}">
+                            {{ measureType.name }}
+                          </option>
+                        {% endfor %}
+                      </select>
+                      <button class="ui mini youtube icon button"
+                              data-tooltip="Remove este valor cobrado"
+                              data-position="top right" type="button"
+                              charge="{{ chargeNumber }}"
+                              onclick="delCharge(this);">
+                        <i class="minus icon"></i>
+                      </button>
+                      {% endif %}
+                    </div>
+                    {% if hasError('charges[' ~ chargeNumber ~ '][chargevalue]') %}
+                    <small class="helper">{{ getError('charges[' ~ chargeNumber ~ '][chargevalue]') }}</small>
+                    {% endif %}
+                  </div>
+                </div>

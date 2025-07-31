@@ -1,0 +1,408 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} lançamento de cobrança{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/semantic-ui/components/calendar.min.css') }}
+  {{ css('form.min.css') }}
+  <style>
+    /**
+     * Personaliza os dropdowns para permitir melhor seleção dos valores
+     */
+    .ui.dropdown .menu>.item.vertical {
+      display: -webkit-box;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: reverse;
+      -ms-flex-direction: column-reverse;
+      flex-direction: column-reverse;
+    }
+    .ui.dropdown .menu>.item.vertical>.description {
+      margin: 0;
+      color: CornflowerBlue;
+      font-style: italic;
+      border-top: 1px solid rgba(34,36,38,0.15);
+      line-height: 1.3em;
+    }
+    .ui.dropdown .menu>.item.vertical>.text {
+      margin-bottom: .25em;
+    }
+    .symbol {
+      color: gray;
+      font-size: .9em;
+    }
+    .plate,
+    .monetary {
+      color: DarkOrange;
+      font-size: 1em;
+    }
+    .ui.dropdown>.text>.description>.hidden {
+      display: none;
+    }
+
+    /**
+     * Personaliza os campos de valores para permitir exibir cores
+     * corretamente
+     */
+    .ui.input.info>input {
+      color: #276f86;
+      background: #f8ffff;
+      border-color: #a9d5de;
+      -webkit-box-shadow: none;
+      box-shadow: none;
+    }
+    .ui.form>.field.info>.ui.labeled.input:not(.right):not([class*="corner labeled"])>.ui.label,
+    .ui.form>.field.info>.ui.left.action.input>.ui.button,
+    .ui.labeled.input.info:not(.right):not([class*="corner labeled"])>.ui.label,
+    .ui.left.action.input.info>.ui.button,
+    .ui.action.input.info:not(.left)>input+.ui.button,
+    .ui.form>.field.info>.ui.action.input:not(.left)>input+.ui.button,
+    .ui.form>.field.info>.ui.right.labeled.input:not([class*="corner labeled"])>input+.ui.label,
+    .ui.right.labeled.input.info:not([class*="corner labeled"])>input+.ui.label {
+      color: #276f86;
+      background-color: #e1f7f7;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set URL = 'ERP\\Financial\\Billings\\Edit' %}
+  {% set previous = 'ERP\\Financial\\Billings' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/billings.svg', 'Lançamento de cobrança') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                Editar lançamento de cobrança
+                <div class="sub header">
+                  Permite modificar as informações cadastrais de um
+                  lançamento de cobrança em um item de contrato.
+                </div>
+              {% else %}
+                Visualizar lançamento de cobrança
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um
+                  lançamento de cobrança.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL, { 'billingID': getValue('billingid') }) }}">
+        <h3 class="ui header">Informações do item de contrato</h3>
+
+        <div class="fields">
+          <div class="eight wide field">
+            <label>Cliente responsável pelo item de contrato</label>
+            <div class="field static">
+              <span class="darking">
+                {{ getValue('customername') }}
+              </span>
+              <input type="hidden" name="customername"
+                     value="{{ getValue('customername') }}">
+            </div>
+            <input type="hidden" name="customerid"
+                   value="{{ getValue('customerid') }}">
+          </div>
+
+          <div class="eight wide field">
+            <label for="subsidiarytitle">Unidade/filial</label>
+            <div class="field static">
+              <span class="darking">
+                {{ getValue('subsidiaryname') }}
+              </span>
+              <input type="hidden" name="subsidiaryname"
+                     value="{{ getValue('subsidiaryname') }}">
+            </div>
+            <input type="hidden" name="subsidiaryid"
+                   value="{{ getValue('subsidiaryid') }}">
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="eight wide field">
+            <label>Nº do contrato</label>
+            <div class="field static">
+              <span class="darking">
+                {{ getValue('contractnumber') }}
+              </span>
+              <input type="hidden" name="contractnumber"
+                     value="{{ getValue('contractnumber') }}">
+            </div>
+            <input type="hidden" name="contractid"
+                   value="{{ getValue('contractid') }}">
+          </div>
+
+          <div class="eight wide field{{ cssError('installationid') }}">
+            <label>Nº do item de contrato</label>
+            <div class="field static">
+              <span class="darking">
+                {{ getValue('installationnumber') }}
+              </span>
+              <input type="hidden" name="installationnumber"
+                     value="{{ getValue('installationnumber') }}">
+            </div>
+            <input type="hidden" name="installationid"
+                   value="{{ getValue('installationid') }}">
+          </div>
+        </div>
+
+        <h3 class="ui header">Informações do valor a ser lançado</h3>
+        <div class="fields">
+          <div class="sixteen wide field{{ cssError('name') }}">
+            <label>Descrição</label>
+            <input name="name" type="text" class="search"
+                   maxlength="60"
+                   placeholder="Informe a cobrança..."
+                   value="{{ getValue('name') }}">
+            <input type="hidden" name="contractchargeid"
+                   value="{{ getValue('contractchargeid') }}">
+            {% if hasError('name') %}
+            <small class="helper">{{ getError('name') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="four wide field{{ cssError('billingdate') }}">
+            <label>
+              Data da cobrança
+            </label>
+            <div class="ui calendar" id="billingdate">
+              <div class="ui input left icon{{ readonly }}">
+                <i class="calendar icon"></i>
+                <input name="billingdate" type="text"
+                       placeholder="Ocorrido em..."
+                       {{ readonly }}
+                       value="{{ getValue('billingdate') }}">
+              </div>
+            </div>
+            {% if hasError('billingdate') %}
+            <small class="helper">{{ getError('billingdate') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('value') }}">
+            <label>Valor</label>
+            <div class="ui left labeled input{{ readonly }}">
+              <div class="ui basic label">R$</div>
+              <input name="value" type="text"
+                     placeholder="0,00"
+                     class="right" {{ readonly }}
+                     value="{{ getValue('value') }}">
+            </div>
+            {% if hasError('value') %}
+            <small class="helper">{{ getError('value') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('installmentnumber') }}">
+            <label>
+              Número da parcela
+            </label>
+            <div class="ui input info">
+              <input name="installmentnumber" type="text"
+                     placeholder="0" readonly
+                     value="{{ getValue('installmentnumber') }}">
+            </div>
+            {% if hasError('installmentnumber') %}
+            <small class="helper">{{ getError('installmentnumber') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('installmentnumber') }}">
+            <label>
+              Quantiade de parcelas
+            </label>
+            <div class="ui input info">
+              <input name="numberofinstallments" type="text"
+                     placeholder="0" readonly
+                     value="{{ getValue('numberofinstallments') }}">
+            </div>
+            {% if hasError('numberofinstallments') %}
+            <small class="helper">{{ getError('numberofinstallments') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> Modificar
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        <input type="hidden" name="billingid" value="{{ getValue('billingid') }}">
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('semantic-ui/components/calendar.min.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $("#billingdate")
+        .calendar(calendarOptions)
+      ;
+      $("input[name='billingdate")
+        .mask({
+          type: 'date'
+        })
+      ;
+      $('input[name="value"]')
+        .mask({
+          type: 'monetary',
+          trim: true,
+          allowNegativeValues: false,
+          decimalsPlaces: 2,
+          maxLength: 15
+        })
+        .blur(monetaryHandler)
+      ;
+      $("input[name='installmentnumber']")
+        .mask({
+          type: 'number',
+          trim: true,
+          allowNegativeValues: false,
+          maxLength: 2
+        })
+      ;
+
+      // Coloca o foco no primeiro campo
+      $("input[name='name']")
+        .focus()
+      ;
+    });
+
+    // =================================================[ Options ]=====
+
+    // As opções para o componente de exibição de calendário no campo de
+    // entrada de data
+    var calendarOptions = {
+      type: 'date',
+      formatInput: true,
+      monthFirst: false,
+      today: true,
+      text: {
+        days: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'],
+        months: [
+          'Janeiro', 'Fevereiro', 'Março', 'Abril',
+          'Maio', 'Junho', 'Julho', 'Agosto',
+          'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ],
+        monthsShort: [
+          'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+          'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+        ],
+        today: 'Hoje',
+        now: 'Agora',
+        am: 'AM',
+        pm: 'PM'
+      },
+      formatter: {
+        date: function (date, settings) {
+          if (!date) {
+            return '';
+          }
+
+          var
+            day   = date.getDate().toString().padLeftWithZeros(2),
+            month = (date.getMonth()+1).toString().padLeftWithZeros(2),
+            year  = date.getFullYear()
+          ;
+
+          return (settings.type === 'year')
+            ? year
+            : (
+                (settings.type === 'month')
+                  ? month + '/' + year
+                  : ( settings.monthFirst
+                      ? month + '/' + day
+                      : day + '/' + month
+                    ) + '/' + year
+              )
+          ;
+        }
+      }
+    };
+
+    // ================================================[ Handlers ]=====
+
+    // Faz o tratamento de campos que informam um valor monetário para
+    // permitir corrigir valores inválidos
+    function monetaryHandler()
+    {
+      var
+        monetary = $(this).val()
+      ;
+
+      if (monetary.trim().isEmpty()) {
+        $(this)
+          .val('0,00')
+        ;
+      }
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   viewBox="0 0 400 400"
+   version="1.1"
+   id="svg4"
+   sodipodi:docname="privacity.svg"
+   width="400"
+   height="400"
+   inkscape:version="0.92.4 5da689c313, 2019-01-14">
+  <metadata
+     id="metadata10">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs8" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1366"
+     inkscape:window-height="705"
+     id="namedview6"
+     showgrid="true"
+     inkscape:zoom="0.85515725"
+     inkscape:cx="-186.51441"
+     inkscape:cy="196.69563"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1">
+    <inkscape:grid
+       type="xygrid"
+       id="grid1223"
+       dotted="true" />
+  </sodipodi:namedview>
+  <g
+     inkscape:groupmode="layer"
+     id="layer1"
+     inkscape:label="Fundo"
+     style="display:inline" />
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="Desenho"
+     style="display:inline;opacity:1">
+    <path
+       style="stroke-width:0.78125"
+       d="M 68.75,0 C 58.35938,0 50,8.359375 50,18.75 v 362.5 C 50,391.64062 58.35938,400 68.75,400 h 262.5 C 341.64062,400 350,391.64062 350,381.25 V 125 H 243.75 C 233.4375,125 225,116.5625 225,106.25 V 0 Z M 250,0 v 100 h 100 v -4.765625 c 0,-4.921875 -1.95313,-9.6875 -5.46875,-13.203125 L 268.04688,5.46875 C 264.53125,1.953125 259.76562,0 254.76562,0 Z M 106.25,50 h 62.5 c 3.45312,0 6.25,2.796875 6.25,6.25 v 12.5 c 0,3.453125 -2.79688,6.25 -6.25,6.25 h -62.5 C 102.79688,75 100,72.203125 100,68.75 v -12.5 c 0,-3.453125 2.79688,-6.25 6.25,-6.25 z m 0,50 h 62.5 c 3.45312,0 6.25,2.79688 6.25,6.25 v 12.5 c 0,3.45313 -2.79688,6.25 -6.25,6.25 h -62.5 c -3.45312,0 -6.25,-2.79687 -6.25,-6.25 v -12.5 c 0,-3.45312 2.79688,-6.25 6.25,-6.25 z m 93.74805,65.27148 c 29.80156,0 54.15625,24.35079 54.15625,54.15235 v 15.03906 h -23.06641 v -15.03906 c 0,-17.4223 -13.66754,-31.08789 -31.08984,-31.08789 -17.4223,0 -31.08789,13.66559 -31.08789,31.08789 v 15.10547 h -23.0625 v -15.10547 c 0,-29.80156 24.34883,-54.15235 54.15039,-54.15235 z m -54.15235,77.21875 h 108.3086 c 12.77822,0 23.06445,10.28624 23.06445,23.06446 v 77.2207 c 0,12.77823 -10.28623,23.06445 -23.06445,23.06445 H 145.8457 c -12.77822,0 -23.06445,-10.28622 -23.06445,-23.06445 v -77.2207 c 0,-12.77822 10.28623,-23.06446 23.06445,-23.06446 z M 200,280.85742 A 15.544059,15.544059 0 0 0 184.45508,296.40234 15.544059,15.544059 0 0 0 192.47852,310 v 18.23438 a 7.5220734,7.5220734 0 1 0 15.04101,0 v -18.25 A 15.544059,15.544059 0 0 0 215.54492,296.40234 15.544059,15.544059 0 0 0 200,280.85742 Z"
+       id="path2"
+       inkscape:connector-curvature="0" />
+    <g
+       inkscape:label="Fundo"
+       id="layer1-3"
+       transform="matrix(3.7795276,0,0,3.7795276,-444.75575,-852.93954)"
+       style="display:inline" />
+    <path
+       inkscape:connector-curvature="0"
+       d=""
+       style="opacity:1;vector-effect:none;fill:none;fill-opacity:1;stroke:#ff0000;stroke-width:18;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.55707762"
+       id="path5657"
+       r="21.166664"
+       cy="36.285713"
+       cx="53.011158" />
+    <g
+       inkscape:label="Fundo"
+       id="layer1-6"
+       transform="matrix(1.8951361,0,0,1.8951361,49.715718,-197.01549)"
+       style="display:inline;fill:#ffffff" />
+    <path
+       inkscape:connector-curvature="0"
+       d=""
+       style="opacity:1;vector-effect:none;fill:#ffffff;fill-opacity:1;stroke:#ff0000;stroke-width:9.02558517;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.55707762"
+       id="path5657-9"
+       r="21.166664"
+       cy="36.285713"
+       cx="53.011158" />
+  </g>
+</svg>

@@ -1,0 +1,74 @@
+{% extends 'templates/site/layout.twig' %}
+{% block title %}{{ parent() }} - Reduza consumo de combustível{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+{% endblock stylesheets %}
+{% block content %}
+    <main>
+      <section class="hero fuelconsumption">
+      </section>
+      <section class="description">
+        <div class="ui basic segment">
+          <!-- Início cabeçalho módulo -->
+          <h2 class="ui blue header">
+            <table cellspacing="0" cellpadding="0">
+              <tbody>
+                <tr>
+                  <td class="mobile hidden">
+                    {{ icon('site/fuelconsumption.svg', 'Consumo de combustível') }}
+                  </td>
+                  <td>
+                    <div class="content">
+                      Consumo de combustível
+                      <div class="sub header">
+                        Com o uso inteligente de sua frota, e o auxílio
+                        de nossas ferramentas, você pode reduzir o
+                        consumo de combustíveis em até 30%.
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </h2>
+          <!-- Fim cabeçalho módulo -->
+
+          <p>Para reduzir custos e minimizar rotas, as empresas transportadoras
+          precisam um controle apurado do consumo de combustível, visando
+          melhorar o desempenho do veículo e sua eficiência energética.
+          Somente o item combustível, por exemplo, responde por 38% dos
+          custos de frete.</p>
+          <h3 class="ui black header">O que pode ser feito?</h3>
+          <p>Através de nossas ferramentas, você pode traçar rotas mais
+          eficiêntes, reduzindo os deslocamentos e, consequentemente,
+          reduzindo o consumo. Não basta apenas a rota menor, mas também
+          o melhor trajeto, que seja mais seguro e com melhores condições
+          da estrada e com menores congestionamentos. Além disto, você
+          pode orientar um motorista a distância para encontrar uma rota
+          alternativa em casos de bloqueios no trajeto atual.</p>
+          <p>São 3 os fatores principais que você deve se atentar para
+          aumentar a eficiência energética da frota. São eles: humano,
+          gerencial e mecânico. O fator humano é observado através da
+          capacitação dos motoristas, com sistemas de direção eficientes,
+          encontradas dentro do conceito Eco-driving. O mecânico é
+          observado pelo uso de frotas mais eficiêntes. E o gerencial passa
+          pelo uso eficiente e correto de todas informações. Somente
+          instalar equipamentos nos veículos e softwares de rastreamento
+          e localizadores nas empresas e cargas não resultam nas soluções
+          desejadas. Se faz necessária uma adaptação dos processos
+          internos à nova realidade da empresa.</p>
+          <p>Com nossas soluções para rastreamento de veículos, você pode
+          economizar dinheiro e criar oportunidades para aumentar sua
+          lucratividade. E estamos ansiosos para trabalhar de perto com
+          você para orientar no gerenciamento de sua frota, atendendo
+          suas necessidades. Temos profissionais capacitados para lhe
+          orientar e buscar mecanismos para melhorar a eficiência do
+          consumo de combustíveis em sua empresa.</p>
+          <button type="button" class="ui blue labeled icon button"
+                  onclick="location.href='{{ path_for('Home') }}';">
+            <i class="home icon"></i> Retornar para a página inicial
+          </button>
+        </div>
+      </section>
+    </main>
+{% endblock %}

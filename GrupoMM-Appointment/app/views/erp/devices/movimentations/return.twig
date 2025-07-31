@@ -1,0 +1,804 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - Devolução para o fornecedor{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('dialog.min.css') }}
+
+  {% if getValue('step') == 1 %}
+  {% else %}
+    {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+    {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {% endif %}
+  <style>
+    .module {
+      max-width: 900px;
+    }
+    h3.ui.header {
+      color: #4183c4;
+      padding-bottom: .3rem;
+      border-bottom: 1px dotted rgba(34,36,38,.15);
+    }
+
+    @media only screen and (max-width:767px) {
+      h3.ui.header {
+        margin-top: .3rem !important;
+      }
+
+      .ui.main.basic.segment h2.ui.header {
+        margin-bottom: 1rem;
+      }
+
+      .ui.stackable.grid {
+        width: auto;
+        margin-top: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+      }
+
+      .ui.form .fields > .buttons {
+        margin: 1em 0;
+      }
+    }
+
+    span.select-info {
+      display: none;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set URL = 'ERP\\Devices\\Movimentations\\Return' %}
+  {% set previous = 'ERP\\Home' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/return.svg', 'Devolução de dispositivo ao fornecedor') }}
+            </td>
+            <td>
+              <div class="content">
+                Devolução de dispositivo ao fornecedor
+                <div class="sub header">
+                  Permite devolver dispositivos (SIM Cards e/ou
+                  equipamentos) retirados em comodato para o
+                  respectivo fornecedor.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module stackable segment">
+      <!-- Início dos passos de progresso -->
+      <div class="ui three top ordered attached steps">
+        <div class="{{ cssStep('step', 1) }}">
+          <div class="content">
+            <div class="title">Preparação</div>
+            <div class="description">Definir o que estamos devolvendo</div>
+          </div>
+        </div>
+        <div class="{{ cssStep('step', 2) }}">
+          <div class="content">
+            <div class="title">Seleção</div>
+            <div class="description">Informar quais itens serão devolvidos</div>
+          </div>
+        </div>
+        <div class="{{ cssStep('step', 3) }}">
+          <div class="content">
+            <div class="title">Confirmação</div>
+            <div class="description">Confirmar o que será devolvido</div>
+          </div>
+        </div>
+      </div>
+      <!-- Fim dos passos de progresso -->
+
+      <!-- Início conteúdo dos passos de progresso -->
+      <div class="ui attached segment">
+        <!-- Início formulário -->
+        <form class="ui form" method="POST" autocomplete="off"
+              {% if getValue('step') == 2 %}onsubmit="return validateForm(this);"{% endif %}
+              action="{{ path_for(URL) }}">
+          {% if getValue('step') == 1 %}
+          <h3 class="ui header">
+            Dados do dispositivo a ser devolvido
+            <div class="sub header">
+              Definir quais os tipos de dispositivos estamos devolvendo
+              ao respectivo fornecedor.
+            </div>
+          </h3>
+          <div class="fields">
+            <div class="sixteen wide field{{ cssError('deviceType') }}">
+              <label>Qual o tipo dos dispositivos a serem devolvidos</label>
+              <div class="ui search selection dropdown">
+                <input name="deviceType" type="hidden"
+                       value="{{ getValue('deviceType') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text">Informe o tipo de dispositivo</div>
+                <div class="menu">
+                {% set deviceTypeID = getValue('deviceType') %}
+                {% for deviceType in deviceTypes %}
+                  <div class="item" {% if deviceType.id == deviceTypeID %}selected{% endif %}
+                       data-value="{{ deviceType.id }}"
+                       data-text="{{ deviceType.name }}">
+                    {{ deviceType.name }}
+                  </div>
+                {% endfor %}
+                </div>
+              </div>
+              {% if hasError('deviceType') %}
+              <small class="helper">{{ getError('deviceType') }}</small>
+              {% endif %}
+            </div>
+          </div>
+          {% elseif getValue('step') == 2 %}
+          <h3 class="ui header">
+            Seleção
+            <div class="sub header">
+              Selecionar quais
+              {% if getValue('deviceType') == 'SimCard' %}
+                SIM Cards
+              {% else %}
+                equipamentos
+              {% endif %} serão devolvidos.
+            </div>
+          </h3>
+          <input name="deviceType" type="hidden"
+                 value="{{ getValue('deviceType') }}">
+          <div class="fields">
+            <div class="sixteen wide field{{ cssErrors() }}">
+              <!-- Início tabela -->
+              <table id="result"
+                     class="ui unstackable compact selectable striped celled table nowrap"
+                     width="100%" cellspacing="0">
+                <thead>
+                  <tr>
+                    {% if getValue('deviceType') == 'SimCard' %}
+                    <th></th>
+                    <th>ID do SIM Card</th>
+                    <th>ICCID</th>
+                    <th>IMSI</th>
+                    <th>Telefone</th>
+                    <th>Operadora</th>
+                    <th>Modelo</th>
+                    <th>N&ordm; Patrimônio</th>
+                    {% else %}
+                    <th></th>
+                    <th>ID do equipamento</th>
+                    <th>IMEI</th>
+                    <th>N&ordm; de série</th>
+                    <th>Marca</th>
+                    <th>Modelo</th>
+                    <th>ID da situação</th>
+                    <th>Situação</th>
+                    <th>N&ordm; Patrimônio</th>
+                    {% endif %}
+                  </tr>
+                </thead>
+                <tbody>
+                </tbody>
+              </table>
+              <!-- Fim tabela -->
+              {% if hasErrors() %}
+                {% set errors = getErrors() %}
+                {% for field, fieldErrors in errors %}
+                  <div class="ui negative message">
+                    <i class="close icon"></i>
+                    {% if field == 'devices' %}
+                      <div class="header">
+                        Lamentamos, mas não conseguimos identificar os
+                        dispositivos selecionados.
+                      </div>
+                      <p>
+                        Selecione novamente os dispositivos.
+                      </p>
+                    {% else %}
+                      <div class="header">
+                        Erro
+                      </div>
+                      <ul class="list">
+                      {% for error in fieldErrors %}
+                        <li>{{ error }}</li>
+                      {% endfor %}
+                      </ul>
+                    {% endif %}
+                  </div>                  
+                {% endfor %}
+              {% endif %}
+            </div>
+          </div>
+          {% elseif getValue('step') == 3 %}
+          <h3 class="ui header">
+            Confirmação
+            <div class="sub header">
+              Confirme os dispositivos que serão devolvidos ao seu
+              respectivo fornecedor.
+            </div>
+          </h3>
+          <input name="deviceType" type="hidden"
+                 value="{{ getValue('deviceType') }}">
+          <div class="ui icon red message">
+            <i class="clipboard check icon"></i>
+            <div class="content">
+              <div class="header">
+                Devolução de dispositivos ao fornecedor
+              </div>
+              <p>Confirme os itens que estão relacionados abaixo e que
+              serão devolvidos ao fornecedor</p>
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="sixteen wide field{{ cssErrors() }}">
+              <!-- Início tabela -->
+              <table id="result"
+                     class="ui unstackable compact selectable striped celled table nowrap"
+                     width="100%" cellspacing="0">
+                <thead>
+                  <tr>
+                    {% if getValue('deviceType') == 'SimCard' %}
+                    <th>ICCID</th>
+                    <th>IMSI</th>
+                    <th>Telefone</th>
+                    <th>Modelo</th>
+                    {% else %}
+                    <th>IMEI</th>
+                    <th>N&ordm; de série</th>
+                    <th>Marca</th>
+                    <th>Modelo</th>
+                    {% endif %}
+                  </tr>
+                </thead>
+                <tbody>
+                {% set devicesData = getValue('devicesData') %}
+                {% for row in devicesData %}
+                <tr>
+                  {% for col in row %}
+                  <td>
+                  {% if col == 'null' %}
+                  &nbsp;
+                  {% else %}
+                  {{ col }}
+                  {% endif %}
+                  </td>
+                  {% endfor %}
+                </tr>
+                {% endfor %}
+                </tbody>
+              </table>
+              <!-- Fim tabela -->
+            </div>
+          </div>
+          {% set devices = getValue('devices') %}
+          {% for device in devices %}
+          <input type="hidden" name="devices[]" value="{{ device }}">
+          {% endfor %}
+
+          {% endif %}
+
+          <div class="fields">
+            <div class="sixteen wide field buttons">
+              {% if getValue('step') > 1 %}
+              <button type="submit" name="action" value="Previous"
+                      onclick="this.form.submitted=this.value;"
+                      class="ui primary left floated labeled icon button">
+                <i class="angle left icon"></i> Voltar
+              </button>
+              {% else %}
+              <button type="button" class="ui youtube right labeled icon button"
+                      onclick="location.href='{{ path_for(previous) }}';">
+                <i class="remove icon"></i> Cancelar
+              </button>
+              {% endif %}
+              {% if getValue('step') < 3 %}
+              <button type="submit" name="action" value="Next"
+                      onclick="this.form.submitted=this.value;"
+                      class="ui submit primary right floated right labeled icon button">
+                <i class="angle right icon"></i> Avançar
+              </button>
+              {% else %}
+              <button type="submit" name="action" value="Return"
+                      onclick="this.form.submitted=this.value;"
+                      class="ui submit youtube right floated right labeled icon button">
+                <i class="angle right icon"></i> Devolver
+              </button>
+              {% endif %}
+            </div>
+          </div>
+
+          {{ csrf() }}
+
+          <input type="hidden" name="_method" value="{{ formMethod }}">
+          <input type="hidden" name="step" value="{{ getValue('step') }}">
+        </form>
+        <!-- Fim formulário -->
+      </div>
+      <!-- Fim conteúdo dos passos de progresso -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/info.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  
+  {% if getValue('step') == 1 %}
+  {% elseif getValue('step') == 2 %}
+    {{ lib('datatables/jquery.dataTables.min.js') }}
+    {{ lib('datatables/dataTables.semanticui.min.js') }}
+    {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+    {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+    {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+    {{ lib('datatables/formatters/ImageFormatter.min.js') }}
+  {% elseif getValue('step') == 3 %}
+    {{ lib('datatables/jquery.dataTables.min.js') }}
+    {{ lib('datatables/dataTables.semanticui.min.js') }}
+    {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {% endif %}
+  
+  {% set URL     = 'ERP\\Devices\\Movimentations\\Return' %}
+  {% set getData = { 'URL': 'ERP\\Devices\\Movimentations\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      deviceName = "{% if getValue('deviceType') == 'SimCard' %}SIM Card{% else %}equipamento{% endif %}"
+    ;
+
+    {% if getValue('step') == 2 %}
+      var
+        table,
+        selected = [],
+        deviceData = []
+      ;
+      
+      {% if getValue('deviceType') == 'Equipment' %}
+      // Um formatador de colunas para exibir a situação de um equipamento
+      var stateFormatter = function ( value, type, row, meta ) {
+        var color, icon;
+
+        switch (row.stateid) {
+          case 1: color = 'green'; icon = 'check'; break;
+          case 2: color = 'red'; icon = 'exclamation triangle orange'; break;
+          case 3: color = 'darkorange'; icon = 'exclamation triangle blue'; break;
+          case 4: color = 'darkred'; icon = 'close red'; break;
+          
+          default:
+            color = 'darkred';
+        }
+
+        return ''
+          + '<span style="color: ' + color + '">'
+          +   '<i class="' + icon + ' icon"></i>' + value
+          + '</span>'
+        ;
+      };
+      {% endif %}
+
+    {% endif %}
+
+    $(document).ready(function()
+    {
+      {% if getValue('step') == 1 %}
+        // -----------------------------[ Componentes do formulário ]---
+        $('.form .ui.dropdown')
+          .dropdown()
+        ;
+
+        // Coloca o foco no primeiro campo
+        $("input[name='deviceType']")
+          .closest('div')
+          .find('input.search')
+          .focus()
+        ;
+      {% elseif getValue('step') == 2 %}
+
+        // --------------------------------------------[ Datatables ]---
+
+        // Atualiza a tabela para reajustar as colunas em caso de
+        // alternância da barra lateral
+        $('#ResizeSidebarMenu').click(function() {
+          setTimeout(function() {
+            table
+              .columns
+              .adjust()
+            ;
+          }, 500);
+        });
+
+        // Atualiza a tabela para reajustar as colunas em caso de
+        // redimensionamento da janela
+        $(window).resize(function() {
+          setTimeout(function() {
+            table
+              .columns
+              .adjust()
+            ;
+          }, 500);
+        });
+
+        table = $('#result').DataTable({
+          pagingType: "first_last_numbers",
+          lengthChange: false,
+          searching: false,
+          scrollX: true,
+          language: {
+            url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+          },
+          columnDefs: [
+          {% if getValue('deviceType') == 'SimCard' %}
+            { "targets": 0,
+              "name": "selected",
+              "data": "selected",
+              "orderable": false, className: 'select-checkbox' },
+            { "targets": 1,
+              "name": "id",
+              "data": "id",
+              "visible": false,
+              "orderable": false },
+            { "targets": 2,
+              "name": "simcards.iccid",
+              "data": "iccid",
+              "visible": true,
+              "orderable": true },
+            { "targets": 3,
+              "name": "simcards.imsi",
+              "data": "imsi",
+              "visible": true,
+              "width": "150px",
+              "orderable": true },
+            { "targets": 4,
+              "name": "simcards.phonenumber",
+              "data": "phonenumber",
+              "visible": true,
+              "width": "100px",
+              "orderable": true },
+            { "targets": 5,
+              "name": "simcards.mobileoperatorname",
+              "data": "mobileoperatorlogo",
+              "visible": true,
+              "orderable": false,
+              "width": "50px",
+              "render": imageFormatter(50, 16) },
+            { "targets": 6,
+              "name": "simcardtypes.name",
+              "data": "simcardtypename",
+              "visible": true,
+              "width": "100px",
+              "orderable": true },
+            { "targets": 7,
+              "name": "simcards.assetnumber",
+              "data": "assetnumber",
+              "visible": true,
+              "width": "100px",
+              "orderable": true },
+          {% else %}
+            { "targets": 0,
+              "name": "selected",
+              "data": "selected",
+              "orderable": false, className: 'select-checkbox' },
+            { "targets": 1,
+              "name": "id",
+              "data": "id",
+              "visible": false,
+              "orderable": false },
+            { "targets": 2,
+              "name": "equipments.imei",
+              "data": "imei",
+              "visible": true,
+              "orderable": true },
+            { "targets": 3,
+              "name": "equipments.serialnumber",
+              "data": "serialnumber",
+              "visible": true,
+              "orderable": true },
+            { "targets": 4,
+              "name": "equipmentbrands.name, equipments.imei",
+              "data": "brandname",
+              "visible": true,
+              "width": "100px",
+              "orderable": true },
+            { "targets": 5,
+              "name": "equipmentmodels.name, equipments.imei",
+              "data": "modelname",
+              "visible": true,
+              "width": "100px",
+              "orderable": true },
+            { "targets": 6,
+              "name": "stateid",
+              "data": "stateid",
+              "visible": false,
+              "orderable": false },
+            { "targets": 7,
+              "name": "equipments.equipmentstateid, equipments.imei",
+              "data": "statename",
+              "visible": true,
+              "width": "100px",
+              "orderable": true,
+              "render": stateFormatter },
+            { "targets": 8,
+              "name": "equipments.assetnumber",
+              "data": "assetnumber",
+              "visible": true,
+              "width": "60px",
+              "orderable": true },
+          {% endif %}
+          ],
+          order: [[ 2, 'asc' ]],
+          select: {
+            style: 'multi',
+            items: 'row'
+          },
+          dom:
+            "<'ui grid'"+
+              "<'row'"+
+                "<'sixteen wide column'"+
+                  "<'toolbar'>"+
+                ">"+
+              ">"+
+              "<'row dt-table'"+
+                "<'sixteen wide column'tr>"+
+              ">"+
+              "<'row'"+
+                "<'seven wide column'i>"+
+                "<'right aligned nine wide column'p>"+
+              ">"+
+            ">",
+          processing: true,
+          serverSide: true,
+          ajax: {
+            url: "{{ path_for(getData.URL) }}",
+            type: "{{ getData.method }}",
+            data: function ( params ) {
+              params.deviceType          = $('input[name="deviceType"]').val();
+            },
+            error: handleAjaxError
+          },
+          responsive: true,
+          initComplete: function(settings, json) {
+            // Unstack Pagination
+            $('div.ui.pagination.menu')
+              .removeClass('stackable')
+              .addClass('unstackable')
+            ;
+          },
+          rowCallback: function(row, data) {
+            // Força a seleção dos ítens em caso de mudança de página
+            if ( $.inArray(data.id, selected) !== -1 ) {
+              $(row)
+                .addClass('selected')
+              ;
+              table
+                .row(row)
+                .select()
+              ;
+            }
+          }
+        });
+
+        // Manipula os eventos de click
+        table
+          .on('user-select', function (e, dt, type, cell, originalEvent) {
+            if (type === 'row') {
+              var
+                // Recupera os dados da linha selecionada
+                index  = cell[0][0],
+                device = dt.rows( index.row ).data().toArray()[0],
+                pos    = $.inArray(device.id, selected)
+              ;
+
+              // Verifica se o dispositivo está na lista de seleção
+              if (pos == -1) {
+                // Adiciona o dispositivo na lista de seleção
+                selected
+                  .push(device.id)
+                ;
+
+                // Armazena os dados do dispositivo para conferência
+                {% if getValue('deviceType') == 'SimCard' %}
+                deviceData[ device.id ] = [ device.iccid, device.imsi, device.phonenumber, device.simcardtypename ];
+                {% else %}
+                deviceData[ device.id ] = [ device.imei, device.serialnumber, device.brandname, device.modelname ];
+                {% endif %}
+              } else {
+                // Remove o dispositivo da lista de seleção
+                selected
+                  .splice(pos, 1)
+                ;
+
+                // Remove os dados do dispositivo para conferência
+                delete deviceData[ device.id ];
+              }
+
+              if (selected.length > 0) {
+                if (selected.length > 1) {
+                  $("div.toolbar")
+                    .html('<b>Selecionados ' + selected.length + ' ' + deviceName + 's</b>')
+                  ;
+                } else {
+                  $("div.toolbar")
+                    .html('<b>Selecionado ' + selected.length + ' ' + deviceName + '</b>')
+                  ;
+                }
+              } else {
+                $("div.toolbar")
+                  .html('<b></b>')
+                ;
+              }
+            }
+          }
+        );
+      {% elseif getValue('step') == 3 %}
+
+        // --------------------------------------------[ Datatables ]---
+
+        // Atualiza a tabela para reajustar as colunas em caso de
+        // alternância da barra lateral
+        $('#ResizeSidebarMenu').click(function() {
+          setTimeout(function() {
+            table
+              .columns
+              .adjust()
+            ;
+          }, 500);
+        });
+
+        // Atualiza a tabela para reajustar as colunas em caso de
+        // redimensionamento da janela
+        $(window).resize(function() {
+          setTimeout(function() {
+            table
+              .columns
+              .adjust()
+            ;
+          }, 500);
+        });
+
+        $('#result').DataTable({
+          pagingType: "first_last_numbers",
+          pageLength: 10,
+          lengthChange: false,
+          searching: false,
+          scrollX: true,
+          language: {
+            url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+          },
+          dom:
+            "<'ui grid'"+
+              "<'row'"+
+                "<'sixteen wide column'"+
+                  "<'toolbar'>"+
+                ">"+
+              ">"+
+              "<'row dt-table'"+
+                "<'sixteen wide column'tr>"+
+              ">"+
+              "<'row'"+
+                "<'seven wide column'i>"+
+                "<'right aligned nine wide column'p>"+
+              ">"+
+            ">",
+          responsive: true,
+          initComplete: function(settings, json) {
+            // Unstack Pagination
+            $('div.ui.pagination.menu')
+              .removeClass('stackable')
+              .addClass('unstackable')
+            ;
+          }
+        });
+      {% endif %}
+    });
+
+    // ================================================[ Handlers ]=====
+
+    {% if getValue('step') == 2 %}
+    // Valida a seleção de dispositivos e anexa no formulário àqueles
+    // selecionados
+    function validateForm(form)
+    {
+      switch (form.submitted) {
+        case 'Next':
+        case 'Return':
+          // Verifica se selecionamos ao menos um dispositivo
+          if (selected.length == 0) {
+            warningDialog(
+              'Atenção',
+              'Selecione ao menos um ' + deviceName +
+              ' antes de prosseguir.'
+            );
+
+            return false;
+          }
+
+          // Percorremos os dispositivos selecionados e acrescentamos
+          // no nosso formulário
+          $.each(selected, function(key, value) {
+            // Para cada dispositivo, acrescentamos um input com o
+            // respectivo valor
+            var
+              newInput = $("<input>")
+                             .attr({"type":"hidden","name":"devices[]"})
+                             .val(value)
+            ;
+
+            $(form)
+              .append(newInput)
+            ;
+          });
+
+          // Acrescentamos no nosso formulário uma matriz contendo os
+          // dados dos dispositivos selecionados
+          var
+            deviceDataString = convertArrayToText(deviceData),
+            newInput = $("<input>")
+                         .attr({"type":"hidden","name":"devicesData"})
+                         .val(deviceDataString)
+          ;
+
+          $(form)
+            .append(newInput)
+          ;
+
+        default:
+          // Não faz nada
+          // 
+      }
+
+      return true;
+    }
+
+    function convertArrayToText(myArray) {
+      var
+        Php = ''
+      ;
+
+      if (Array.isArray(myArray)) {
+        Php += 'array(';
+
+        for (var i in myArray) {
+          Php += '\'' + i + '\' => ' + convertArrayToText(myArray[i]);
+
+          if (myArray[i] != myArray[Object.keys(myArray)[Object.keys(myArray).length-1]]) {
+            Php += ', ';
+          }
+        }
+
+        Php += ')';
+
+        return Php;
+      } else {
+        return '\'' + myArray + '\'';
+      }
+    }
+    {% endif %}
+  </script>
+  {% endapply %}
+{% endblock scripts %}

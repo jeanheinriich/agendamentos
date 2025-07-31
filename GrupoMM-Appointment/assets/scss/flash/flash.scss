@@ -1,0 +1,180 @@
+/*!
+ * Improved Pushable Sidebar Code
+ * 
+ * Code licensed under the Apache License v2.0.
+ * For details, see http://www.apache.org/licenses/LICENSE-2.0.
+ */
+
+@import '../themes/default.scss';
+
+/* ----------------------------------------------------[ Flash ]-----
+   As definições para as mensagens Flash
+   ------------------------------------------------------------------ */
+
+.ui.message-box {
+  display: flex;
+  flex-flow: row wrap;
+  vertical-align: middle;
+  position: relative;
+  z-index: 1;
+  padding: 0 0.5em;
+  text-align: center;
+
+  .flash.message {
+    flex: 1 1 auto;
+    display: inline-block;
+    text-align: left;
+    padding: 21px 0;
+    background-color: $flashBackground;
+    border: 1px solid $dividerBackground;
+    max-width: 500px;
+    top: 0px;
+    position: relative;
+    box-shadow: 0 1px 2px 0 $dividerBackground;
+    border-radius: .28571429rem;
+    margin-top: 0.5em;
+    margin-right: 0.5em;
+
+    &:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      border-top-left-radius: 4px;
+      border-bottom-left-radius: 4px;
+      background-color: $lightTextColor;
+    }
+
+    &.hidden {
+      display: none;
+      visibility: hidden;
+    }
+
+    .svg {
+      fill: $iconColor;
+      stroke: $iconColor;
+    }
+
+    .icon {
+      position:absolute;
+      top: 50%;
+      left: 18px;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      padding: 7px;
+      border-radius: 50%;
+      display: inline-block;
+      line-height: 18.4px;
+      background-color: $lightTextColor;
+    }
+
+    .type {
+      color: $mutedTextColor;
+      font-weight: 700;
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 1.2em;
+    }
+
+    .message {
+      font-size: 14px;
+      margin-top: 0;
+      margin-bottom: 0;
+      color: $normalTextColor;
+    }
+
+    .content {
+      padding-left: 70px;
+      padding-right: 60px;
+
+
+      p > i, 
+      p > b {
+        padding: 0 .2em;
+      }
+    }
+
+    .close {
+      position: absolute;
+      right: 14px;
+      top: 18px;
+      width: 14px;
+      cursor: pointer;
+      height: 14px;
+      fill: $dimmerColor;
+      transform: translateY(-50%);
+
+      &:hover {
+        fill: #000;
+        fill: $dimmerHoveredColor;
+      }
+    }
+
+    &.success {
+      background-color: lighten($successColor, 54%);
+
+      &:before{
+        background-color: $successColor;
+      }
+
+      .icon {
+        background-color: $successColor;
+      }
+
+      .type {
+        color: $successColor;
+      }
+    }
+
+    &.info {
+      background-color: lighten($infoColor, 49%);
+      
+      &:before{
+        background-color: $infoColor;
+      }
+
+      .icon {
+        background-color: $infoColor;
+      }
+
+      .type {
+        color: $infoColor;
+      }
+    }
+
+    &.warning {
+      background-color: lighten($warningColor, 45%);
+      
+      &:before{
+        background-color: $warningColor;
+      }
+
+      .icon {
+        background-color: $warningColor;
+      }
+
+      .type {
+        color: $warningColor;
+      }
+    }
+
+    &.error {
+      background-color: lighten($errorColor, 47%);
+      
+      &:before{
+        background-color: $errorColor;
+      }
+
+      .icon {
+        background-color: $errorColor;
+      }
+
+      .type {
+        color: $errorColor;
+      }
+    }
+  }
+}

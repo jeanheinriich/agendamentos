@@ -1,0 +1,685 @@
+{% extends 'templates/erp/layout.twig' %}
+{% import "templates/erp/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento de modelos de veículos{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.main.basic.segment .searchbar.fields .field.brand {
+      flex-grow: 1;
+      min-width: 250px;
+    }
+    @media only screen and (max-width: 767px) {
+      .ui.main.basic.segment .searchbar.fields .field.brand {
+        min-width: 100px;
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 100px;
+        width: calc(100% - 47px);
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox input {
+        width: calc(100% - 166px);
+      }
+      .ui.adaptable.dropdown.searchfield {
+        min-width: 9em;
+        max-width: 9em;
+      }
+      .ui.adaptable.dropdown.searchfield > .text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .ui.adaptable.dropdown.searchfield .menu > .item {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+
+    @media only screen and (min-width: 1055px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set add  = { 'URL': 'ERP\\Parameterization\\Vehicles\\Models\\Add', 'method': 'GET' } %}
+  {% set sync = { 'URL': 'ERP\\Parameterization\\Vehicles\\Models\\Synchronize', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/vehiclemodels.svg', 'Modelos de veículos') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento dos modelos de veículos
+                <div class="sub header">
+                  Permite gerenciar os modelos de veículos cadastrados
+                  no sistema.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(add.URL, add.method) %}
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Adiciona um modelo de veículo"
+                      data-position="top left" type="button"
+                      onclick="add();">
+                <i class="add icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            {% if authorization.getAuthorizationFor(sync.URL, sync.method) %}
+            <div class="field button">
+              <button class="ui primary icon button" id="sync"
+                      data-tooltip="Sincroniza os modelos de veículos com o site FIPE"
+                      data-position="top left" type="button"
+                      onclick="synchronize();">
+                <i class="refresh icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            <div class="field brand">
+              <input placeholder="Informe a marca..." type="text"
+                     name="brandName"
+                     value="{{ vehicle.brand.name }}">
+              <input type="hidden" name="brandID"
+                     value="{{ vehicle.brand.id }}" >
+            </div>
+          </div>
+
+          <div class="flex">
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite o modelo que procura..."
+                       value="{{ vehicle.model.name }}">
+                <select class="ui searchfield adaptable selection dropdown button"
+                        name="typeID" id="typeID">
+                  <option value="0"{% if vehicle.type.id == vehicleType.id %} selected{% endif %}>
+                    Qualquer tipo
+                  </option>
+                  {% for vehicleType in vehicleTypes %}
+                  <option value="{{ vehicleType.id }}"{% if vehicle.type.id == vehicleType.id %} selected{% endif %}>
+                    {{ vehicleType.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza um modelo de veículo"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início da barra de progresso -->
+    <div class="ui vertical flexBorderBottom segment">
+      <div class="ui indicating progress" data-value="1" data-total="100" id="progressbar">
+        <div class="bar">
+          <div class="progress"></div>
+        </div>
+        <div class="label" id="progressbartitle">Sincronizando os modelos de veículos...</div>
+      </div>
+    </div>
+    <!-- Fim da barra de progresso -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Modelo de veículo</th>
+          <th>Marca</th>
+          <th>Tipo de veículo</th>
+          <th>Subtipo de veículo</th>
+          <th {{ tooltip.add('left', 'Permite remover o modelo de veículo') }}><i class="remove darkred icon"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/info.twig' %}
+  {% include 'templates/erp/partials/dialogs/question.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/DeleteFormatter.min.js') }}
+  
+  {% set getData = { 'URL': 'ERP\\Parameterization\\Vehicles\\Models\\Get', 'method': 'PATCH' } %}
+  {% set add     = { 'URL': 'ERP\\Parameterization\\Vehicles\\Models\\Add', 'method': 'GET' } %}
+  {% set edit    = { 'URL': 'ERP\\Parameterization\\Vehicles\\Models\\Edit', 'method': 'GET' } %}
+  {% set remove  = { 'URL': 'ERP\\Parameterization\\Vehicles\\Models\\Delete', 'method': 'DELETE' } %}
+  {% set sync    = { 'URL': 'ERP\\Parameterization\\Vehicles\\Models\\Synchronize', 'method': 'GET' } %}
+
+  {% set getBrandNameCompletion = { 'URL': 'ERP\\Parameterization\\Vehicles\\Brands\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      table
+    ;
+    
+    // Sobrescreve o tratamento de erros
+    $.fn.dataTable.ext.errMode = function ( settings, helpPage, message ) {
+      var errorMessage = '';
+      if (typeof(message) != 'undefined' && message != null) {
+        if (message.length > 38) {
+          // Exibe a mensagem de erro
+          errorMessage = message.substring(38);
+        }
+      }
+
+      if (errorMessage === 'Não temos modelos de veículos cadastrados.') {
+        // Informa de maneira didática que não temos modelos de veículos
+        // cadastrados e pergunta ao usuário se o mesmo deseja cadastrar
+        // um neste momento
+        questionDialog(
+          'Gerenciamento de modelos de veículos',
+          'Ainda não há modelos de veículos cadastrado no sistema. ' +
+          'Deseja cadastrar um novo modelo agora?<br>' +
+          '<span style="color: #89afd7;">Caso você não queira fazer ' +
+          'isto agora, pode cadastrá-lo em outro momento.<span>',
+          function() {
+            // Permite adicionar um novo modelo de veículo
+            add();
+          });
+      } else {
+        // Exibe a mensagem de erro
+        if (errorMessage.length > 0) {
+          warningDialog('Desculpe', errorMessage);
+        }
+      }
+    };
+
+    $(document).ready(function() {
+      // --------------------------------[ Componentes da Searchbar ]---
+      $('.searchbar .ui.dropdown')
+        .dropdown()
+      ;
+      $("input[name='brandName']")
+        .autocomplete(brandNameCompletionOptions)
+      ;
+      $("#typeID")
+        .change(vehicleTypeHandler)
+      ;
+      $('#searchValue')
+        .keypress(forceSearch)
+      ;
+
+      // -----------------------[ Componentes da Barra de Progresso ]---
+      // Esconde a barra de progresso
+      $('.ui.progress')
+        .parent()
+        .hide()
+      ;
+
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "id",
+            "data": "id",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "vehiclemodels.name",
+            "data": "name",
+            "visible": true,
+            "orderable": true },
+          { "targets": 2,
+            "name": "vehiclebrands.name, vehiclemodels.name",
+            "data": "vehiclebrandname",
+            "visible": true,
+            "orderable": true },
+          { "targets": 3,
+            "name": "vehicletypes.name, vehiclemodels.name",
+            "data": "vehicletypename",
+            "visible": true,
+            "orderable": true },
+          { "targets": 4,
+            "name": "vehiclesubtypes.name, vehiclemodels.name",
+            "data": "vehiclesubtypename",
+            "visible": true,
+            "orderable": true },
+          { "targets": 5,
+            "name": "delete",
+            "data": "id",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": deleteFormatter("Remover este modelo de veículo") }
+        ],
+        order: [[ 1, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.searchValue = $('#searchValue').val();
+            params.typeID      = parseInt($("#typeID").children("option:selected").val());
+            params.typeName    = $("#typeID").children("option:selected").text();
+            params.brandID     = $("input[name='brandID']").val();
+            params.brandName   = $("input[name='brandName']").val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        }
+      });
+
+      // Manipula os eventos de click
+      table
+        .on('user-select', function (e, dt, type, cell, originalEvent) {
+          if (type === 'cell') {
+            var
+              // Recupera os dados da célula selecionada
+              index   = cell[0][0],
+
+              // Recupera o modelo de veículo selecionado
+              vehicleModel = dt.rows( index.row ).data().toArray()[0]
+            ;
+
+            // Em função da coluna onde ocorreu o clique, executa a ação
+            // correspondente
+            switch (index.column) {
+              {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}
+              case 5:
+                // Apaga o modelo de veículo selecionado
+                questionDialog(
+                  'Remover modelo de veículo',
+                  'Você deseja realmente remover o modelo de veículo <b>&ldquo;' + vehicleModel.name + '&rdquo;</b>?<br>Esta ação não poderá ser desfeita.',
+                  function() {
+                    // Remove o modelo de veículo selecionado
+                    var
+                      url  = "{{ buildURL(remove.URL, {'vehicleModelID': 'vehicleModel.id'}) }}"
+                    ;
+
+                    deleteJSONData(url, [],
+                    function (data, params, message) {
+                      // Atualiza a tabela
+                      searchLoad();
+                    });
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  }
+                );
+
+                break;
+              {% endif %}
+              default:
+                {% if authorization.getAuthorizationFor(edit.URL, edit.method) %}
+                // Coloca o modelo de veículo em edição
+                window.location.href = "{{ buildURL(edit.URL, {'vehicleModelID': 'vehicleModel.id'}) }}";
+                {% endif %}
+            }
+
+            e.preventDefault();
+          }
+        }
+      );
+
+      // Força a atualização da tabela para reajustar as colunas após
+      // a carga
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 1500);
+    });
+
+
+    // =================================================[ Options ]=====
+
+    // As opções para o componente de autocompletar o nome da marca de
+    // veículo
+    var brandNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      showClearValue: true,
+      ajax: {
+        url: "{{ path_for(getBrandNameCompletion.URL) }}",
+        type: "{{ getBrandNameCompletion.method }}",
+        data: function(params, options) {
+          params.vehicleTypeID = $("input[name='typeID']").val();
+        }
+      },
+      onSelect: function (element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='brandID']")
+          .val(suggestion.id)
+        ;
+
+        searchLoad();
+      },
+      onInvalidateSelection: function() {
+        // Limpa os dados
+        $("input[name='brandID']")
+          .val(0)
+        ;
+
+        searchLoad();
+      }
+    };
+
+
+    // ================================================[ Handlers ]=====
+
+    // Executa a pesquisa
+    function searchLoad() {
+      table
+        .ajax
+        .reload()
+      ;
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 500);
+    }
+
+    // Força a atualização da tabela
+    function forceSearch(event) {
+      if (event.which == 13) {
+        searchLoad();
+      }
+    }
+
+    // Codifica elementos para envio na requisição
+    function encodeQueryData(data) {
+      const
+        ret = []
+      ;
+
+      for (let d in data) {
+        ret
+          .push(encodeURIComponent(d) + '=' + encodeURIComponent(data[d]))
+        ;
+      }
+
+      return ret.join('&');
+    }
+
+    // Permite adicionar um modelo de veículo
+    function add() {
+      var
+        data = {
+          'typeID'    : parseInt($("#typeID").children("option:selected").val()),
+          'typeName'  : $("#typeID").children("option:selected").text(),
+          'brandID'   : $("input[name='brandID']").val(),
+          'brandName' : $("input[name='brandName']").val()
+        }
+      ;
+
+      const
+        url         = "{{ buildURL(add.URL, {}) }}",
+        queryString = encodeQueryData(data)
+      ;
+
+      window.location.href = url + '?' + queryString;
+    }
+
+    // Sincroniza os modelos de veículos com o sistema FIPE
+    function synchronize() {
+      var
+        $progress = $('#progressbar'),
+        url       = "{{ buildURL(sync.URL, {}) }}",
+        evtSource = new EventSource(url),
+        $button   = $("#sync")
+      ;
+      
+      // Reinicia a contagem
+      $progress
+        .progress('reset')
+        .progress('set label', 'Solicitando...')
+        .progress('set total', 100)
+      ;
+      if ($progress.is(":hidden")) {
+        $progress
+          .parent()
+          .transition('slide down')
+        ;
+      }
+      if (!$button.prop('disabled')) {
+        $button
+          .prop('disabled', true)
+        ;
+      }
+
+      evtSource.onmessage = function(event)
+      {
+        syncData = JSON.parse(event.data);
+        
+        switch (syncData.result) {
+          case "START":
+            $progress
+              .progress('set active')
+              .progress('set label', syncData.message)
+              .progress('reset')
+              .progress('update progress', 0)
+            ;
+
+            break;
+          case "PROGRESS":
+            // Seta a barra de progresso
+            var
+              progress = Math.round((syncData.count/syncData.total) * 100)
+            ;
+            $progress
+              .progress('set label', syncData.message)
+              .progress('update progress', progress)
+            ;
+            
+            break;
+          case "END":
+            evtSource
+              .close()
+            ;
+            $progress
+              .progress('set label', syncData.message)
+              .progress('complete')
+            ;
+            setTimeout(function(){
+              $progress
+                .parent()
+                .transition('slide up')
+              ;
+            }, 2000);
+            $button
+              .prop('disabled', false)
+            ;
+
+            // Força a atualização dos dados
+            searchLoad();
+            
+            break;
+          case "ERROR":
+            console.error('Erro', syncData.message);
+            evtSource
+              .close()
+            ;
+            $progress
+              .progress('set error', syncData.message)
+            ;
+            $button
+              .prop('disabled', false)
+            ;
+
+            break;
+          default:
+            evtSource
+              .close()
+            ;
+            setTimeout(function(){
+              $progress
+                .parent()
+                .transition('slide up')
+              ;
+            }, 2000);
+            $button
+              .prop('disabled', false)
+            ;
+
+            break;
+        }
+      };
+      evtSource.onerror = function(error) {
+        console.error("Ocorreu um erro na sincronização:", error);
+
+        // Sempre força o encerramento da sincronização
+        evtSource
+          .close()
+        ;
+
+        // Atualiza o progresso, indicando o erro
+        $progress
+          .progress('set error', 'Erro interno do servidor')
+        ;
+        $button
+          .prop('disabled', false)
+        ;
+      };
+      
+      return false;
+    }
+
+    // Trata as modificações do tipo de veículo selecionado
+    function vehicleTypeHandler() {
+      var
+        value = parseInt($(this).children("option:selected").val())
+      ;
+
+      if (value> 0) {
+        // Limpa o campo de seleção da marca do veículo
+        $("input[name='brandName']")
+          .val('')
+        ;
+        $("input[name='brandID']")
+          .val(0)
+        ;
+      }
+      
+      // Atualiza a tabela
+      searchLoad();
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

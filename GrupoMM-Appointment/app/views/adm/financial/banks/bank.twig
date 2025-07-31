@@ -1,0 +1,164 @@
+{% extends 'templates/adm/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} banco{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  {{ css('loading.min.css') }}
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ADM\\Financial\\Banks\\Add' %}
+  {% else %}
+    {% set URL = 'ADM\\Financial\\Banks\\Edit' %}
+  {% endif %}
+  {% set previous = 'ADM\\Financial\\Banks' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('adm/banks.svg', 'Instituição financeira') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if editMode %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} banco
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar uma nova {% else %}modificar as informações cadastrais de uma {% endif %}
+                  instituição financeira.
+                </div>
+              {% else %}
+                Visualizar banco
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de uma
+                  instituição financeira.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <div class="loading hidden">Processando...&#8230;</div>
+      <form class="ui form" method="POST" autocomplete="off"
+            onsubmit="loading();"
+            action="{% if formMethod == 'POST' %}{{ path_for('ADM\\Financial\\Banks\\Add') }}{% else %}{{ path_for('ADM\\Financial\\Banks\\Edit', {'bankID': getValue('bankid')}) }}{% endif %}">
+        <div class="fields">
+          <div class="two wide field{{ cssError('bankid') }}">
+            <label>Código</label>
+            <div class="ui input{{ readonly }}">
+              <input name="bankid" type="text" maxlength="3"
+                     placeholder="Informe o código..."
+                     {{ readonly }}
+                     value="{{ getValue('bankid') }}">
+            </div>
+            {% if hasError('bankid') %}
+            <small class="helper">{{ getError('bankid') }}</small>
+            {% endif %}
+          </div>
+          <div class="seven wide field{{ cssError('name') }}">
+            <label>Nome do banco</label>
+            <div class="ui input{{ readonly }}">
+              <input name="name" type="text" maxlength="100"
+                     placeholder="Informe o nome..."
+                     {{ readonly }}
+                     value="{{ getValue('name') }}">
+            </div>
+            {% if hasError('name') %}
+            <small class="helper">{{ getError('name') }}</small>
+            {% endif %}
+          </div>
+          <div class="seven wide field{{ cssError('shortname') }}">
+            <label>Nome fantasia</label>
+            <div class="ui input{{ readonly }}">
+              <input name="shortname" type="text" maxlength="50"
+                     placeholder="Informe o nome fantasia..."
+                     {{ readonly }}
+                     value="{{ getValue('shortname') }}">
+            </div>
+            {% if hasError('shortname') %}
+            <small class="helper">{{ getError('shortname') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+  
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $("input[name='bankid']")
+        .mask({
+          type: 'number',
+          maxlength: 3
+        })
+      ;
+
+      // Coloca o foco no primeiro campo
+      $("input[name='bankid']")
+        .focus()
+      ;
+    });
+
+    var loading = function() {
+      $(document.body)
+        .css({
+          'cursor' : 'wait'
+        })
+      ;
+      $(".loading")
+        .removeClass("hidden")
+      ;
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

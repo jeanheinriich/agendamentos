@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-br" itemscope itemtype="http://schema.org/{% block schema %}WebSite{% endblock schema %}">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    {% block meta %}
+    {% endblock meta %}
+
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon/favicon.ico') }}">
+    <link rel="apple-touch-icon" type="image/png" sizes="57x57" href="{{ asset('favicon/apple-touch-icon-57x57.png') }}">
+    <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="{{ asset('favicon/apple-touch-icon-60x60.png') }}">
+    <link rel="apple-touch-icon" type="image/png" sizes="72x72" href="{{ asset('favicon/apple-touch-icon-72x72.png') }}">
+    <link rel="apple-touch-icon" type="image/png" sizes="76x76" href="{{ asset('favicon/apple-touch-icon-76x76.png') }}">
+    <link rel="apple-touch-icon" type="image/png" sizes="114x114" href="{{ asset('favicon/apple-touch-icon-114x114.png') }}">
+    <link rel="apple-touch-icon" type="image/png" sizes="120x120" href="{{ asset('favicon/apple-touch-icon-120x120.png') }}">
+    <link rel="apple-touch-icon" type="image/png" sizes="144x144" href="{{ asset('favicon/apple-touch-icon-144x144.png') }}">
+    <link rel="apple-touch-icon" type="image/png" sizes="152x152" href="{{ asset('favicon/apple-touch-icon-152x152.png') }}">
+    <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="{{ asset('favicon/apple-touch-icon-180x180.png') }}">
+  
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon/favicon-16x16.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="24x24" href="{{ asset('favicon/favicon-24x24.png') }}">
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('favicon/favicon-48x48.png') }}">
+    <link rel="icon" type="image/png" sizes="72x72" href="{{ asset('favicon/favicon-72x72.png') }}">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('favicon/favicon-96x96.png') }}">
+    <link rel="icon" type="image/png" sizes="144x144" href="{{ asset('favicon/favicon-144x144.png') }}">
+    <link rel="icon" type="image/png" sizes="152x152" href="{{ asset('favicon/favicon-152x152.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('favicon/favicon-192x192.png') }}">
+    <link rel="icon" type="image/png" sizes="196x196" href="{{ asset('favicon/favicon-196x196.png') }}">
+    <link rel="manifest" href="{{ asset('favicon/manifest.json') }}">
+
+    <title>
+      {% block title %}
+      {% endblock %}
+    </title>
+    
+    {% block head %}
+    {% endblock head %}
+    {% block stylesheets %}
+      <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Open+Sans:400,600&amp;subset=latin-ext">
+      {{ css('libs/fontawesome-free/css/all.min.css') }}
+    {% endblock stylesheets %}
+  </head>
+  <body>
+    {% apply htmlminify %}
+    {% block body %}
+    {% endblock body %}
+    {% endapply %}
+    {% block scripts %}
+      {{ lib('jquery/jquery.min.js') }}
+      {{ lib('semantic-ui/semantic.min.js') }}
+    {% endblock scripts%}
+  </body>
+</html>

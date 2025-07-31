@@ -1,0 +1,374 @@
+{% extends 'templates/erp/layout.twig' %}
+{% import "templates/erp/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Histórico de movimentações do SIM Card{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <!--{{ css('history.min.css') }}-->
+  <style>
+    .ui[class*="action"].input > .ui.selection.dropdown:first-child {
+      border-radius: .28571429rem 0 0 .28571429rem;
+    }
+  
+    #result_wrapper {
+      width: 100%;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/history.svg', 'Histórico de movimentações do SIM Card') }}
+            </td>
+            <td>
+              <div class="content">
+                Histórico de movimentações do SIM Card
+                <div class="sub header">
+                  Permite visualizar todas as movimentações ocorridas em
+                  um SIM Card, desde sua aquisição, incluindo os
+                  equipamentos onde o mesmo foi instalado.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="field searchbox">
+            <div class="ui reduced action input">
+              <select class="ui searchfield adaptable selection dropdown button"
+                      id="period">
+                <option value="0"{% if history.period == 0 %} selected{% endif %}>
+                  Qualquer período
+                </option>
+                <option value="30"{% if history.period == 30 %} selected{% endif %}>
+                  últimos 30 dias
+                </option>
+                <option value="60"{% if history.period == 60 %} selected{% endif %}>
+                  últimos 60 dias
+                </option>
+                <option value="90"{% if history.period == 90 %} selected{% endif %}>
+                  últimos 90 dias
+                </option>
+                <option value="180"{% if history.period == 180 %} selected{% endif %}>
+                  último 6 meses
+                </option>
+                <option value="365"{% if history.period == 365 %} selected{% endif %}>
+                  último ano
+                </option>
+              </select>
+              <button class="ui primary icon button"
+                      data-tooltip="Localiza um período de histórico"
+                      data-position="top right"
+                      type="button" onclick="searchLoad();">
+                <i class="search icon"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!--<div class="history">
+      <ul class="timeline">
+        <li class="item">
+          <div class="timestamp">
+            Seg, 21 de Dez de 2020<br>15:08
+          </div>
+          <div class="title">Aquisição</div>
+          <div class="detail"></div>
+        </li>
+        <li class="item">
+          <div class="timestamp">
+            Seg, 21 de Dez de 2020<br>15:15
+          </div>
+          <div class="title">Instalação</div>
+          <div class="detail">Equipamento Nº de Série: 55911390<br>Slot 1</div>
+        </li>
+        <li class="item">
+          <div class="timestamp">
+            1st June 2015<br> 7:00 PM
+          </div>
+          <div class="title">Throw that goddamn ring in the lava</div>
+          <div class="detail">Also, throw that Gollum too</div>
+        </li>
+
+      </ul>
+    </div>-->
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID do dispositivo</th>
+          <th>Data</th>
+          <th>Operação</th>
+          <th>Descrição</th>
+          <th>ID da Situação</th>
+          <th>Situação</th>
+          <th>ID do Responsável</th>
+          <th>Responsável</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+
+    <div class="ui vertical segment">
+      <button type="button" class="ui blue labeled icon button"
+              onclick="location.href='{{ path_for('ERP\\Devices\\SimCards') }}';">
+        <i class="fas fa-sim-card icon"></i> Retornar ao gerenciamento de SIM Cards
+      </button>
+    </div>
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/info.twig' %}
+  {% include 'templates/erp/partials/dialogs/question.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/DateTimeFormatter.min.js') }}
+  
+  {% set getData = { 'URL': 'ERP\\Devices\\SimCards\\History\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      table
+    ;
+    
+    // Um formatador de colunas para exibir a situação de um equipamento
+    var stateFormatter = function ( value, type, row, meta ) {
+      var
+        color,
+        icon
+      ;
+
+      switch (row.stateid) {
+        case 1: color = 'green'; icon = 'check'; break;
+        case 2: color = 'red'; icon = 'exclamation triangle orange'; break;
+        case 3: color = 'darkorange'; icon = 'exclamation triangle blue'; break;
+        case 4: color = 'darkred'; icon = 'close red'; break;
+        
+        default:
+          color = 'darkred';
+      }
+
+      return ''
+        + '<span style="color: ' + color + '">'
+        +   '<i class="' + icon + ' icon"></i>'
+        +     value
+        + '</span>'
+      ;
+    };
+
+    $(document).ready(function() {
+      // --------------------------------[ Componentes da Searchbar ]---
+      $('.searchbar .ui.dropdown')
+        .dropdown()
+      ;
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+      
+      // Carrega os dados de equipamentos
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}"
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "id",
+            "data": "id",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "performedat",
+            "data": "performedat",
+            "visible": true,
+            "orderable": false,
+            "className": "dt-center",
+            "width": "190px",
+            "render": datetimeFormatter },
+          { "targets": 2,
+            "name": "operation",
+            "data": "operation",
+            "visible": false,
+            "orderable": false },
+          { "targets": 3,
+            "name": "description",
+            "data": "description",
+            "visible": true,
+            "orderable": false },
+          { "targets": 4,
+            "name": "stateid",
+            "data": "stateid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 5,
+            "name": "statename",
+            "data": "statename",
+            "visible": true,
+            "orderable": false,
+            "className": "dt-center",
+            "width": "100px" },
+          { "targets": 6,
+            "name": "performedbyuserid",
+            "data": "performedbyuserid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 7,
+            "name": "performedbyusername",
+            "data": "performedbyusername",
+            "visible": true,
+            "orderable": false },
+        ],
+        processing: true,
+        serverSide: true,
+        ajax: {
+          url: "{{ buildURL(getData.URL, {'simcardID': 'history.simcardID'}) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.simcardID = {{ history.simcardID }};
+            params.period = $('#period').val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        createdRow: function( row, data, dataIndex ) {
+          // Deixa as linhas com cores diferentes para indicar o estado
+          switch (parseInt(data.stateid)) {
+            case 2:
+              // Com defeito
+              $(row)
+                .addClass('broked')
+              ;
+
+              break;
+            case 3:
+              // Em manutenção
+              $(row)
+                .addClass('maintenance')
+              ;
+
+              break;
+            case 4:
+              // Inutilizado
+              $(row)
+                .addClass('damaged')
+              ;
+              $('td:lt(6)', row)
+                .addClass('strikethrough')
+              ;
+              
+              break;
+            default:
+              // Não faz nada
+          }
+        }
+      });
+
+      // Força a atualização da tabela para reajustar as colunas após
+      // a carga
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 1500);
+    });
+
+
+    // ================================================[ Handlers ]=====
+
+    // Executa a pesquisa
+    function searchLoad() {
+      table
+        .ajax
+        .reload()
+      ;
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 500);
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

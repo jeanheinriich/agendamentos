@@ -1,0 +1,611 @@
+{% extends 'templates/stc/layout.twig' %}
+{% import "templates/stc/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento de veículos{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    {% if authorization.user.groupid < 6 %}
+    .ui.main.basic.segment .searchbar.fields .field.customer {
+      flex-grow: 1;
+      min-width: 236px;
+    }
+    {% else %}
+    .ui.main.basic.segment .searchbar.fields .field.searchbox {
+      min-width: 236px;
+      width: calc(100% - 47px);
+    }
+    {% endif %}
+    @media only screen and (max-width: 767px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 100px;
+        width: calc(100% - 47px);
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox input {
+        max-width: calc(100% - 38px);
+      }
+    }
+
+    @media only screen and (min-width: 800px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+      {% if authorization.user.groupid < 6 %}
+      {% else %}
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        width: 538px;
+      }
+      {% endif %}
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+
+    /* --------------------------------------------------------------
+     * Personalizações das linhas do datagrid apenas para este módulo
+     * -------------------------------------------------------------- */
+    .blocked > td {
+      color: #7f7f7f
+    }
+    .blocked > td {
+      background-color: #fff6f6 !important;
+      color: DarkRed;
+    }
+    tr.blocked:hover > td {
+      background-color: #f6e7e7 !important;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set sync = { 'URL': 'STC\\Cadastre\\Vehicles\\Synchronize', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('stc/vehicles.svg', 'Veículos') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento dos veículos
+                <div class="sub header">
+                  Permite gerenciar os veículos cadastrados no sistema
+                  STC.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(sync.URL, sync.method) %}
+            <div class="field button">
+              <button class="ui primary icon button" id="sync"
+                      data-tooltip="Sincroniza os veículos com o sistema STC"
+                      data-position="top left" type="button"
+                      onclick="synchronize();">
+                <i class="refresh icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            {% if authorization.user.groupid < 6 %}
+            <div class="field customer">
+              <input placeholder="Informe o cliente..." type="text"
+                     name="customerName"
+                     value="{{ vehicle.customer.name }}">
+              <input type="hidden" name="customerID"
+                     value="{{ vehicle.customer.id }}" >
+            </div>
+            {% endif %}
+          {% if authorization.user.groupid < 6 %}
+          </div>
+
+          <div class="flex">
+          {% endif %}
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite a placa do veículo que procura..."
+                       value="{{ vehicle.searchValue }}">
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza um veículo"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    {% if authorization.user.groupid < 6 %}
+    <!-- Início da barra de progresso -->
+    <div class="ui vertical flexBorderBottom segment">
+      <div class="ui indicating progress" data-value="1" data-total="100" id="progressbar">
+        <div class="bar">
+          <div class="progress"></div>
+        </div>
+        <div class="label" id="progressbartitle">Sincronizando os veículos...</div>
+      </div>
+    </div>
+    <!-- Fim da barra de progresso -->
+    {% endif %}
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Placa</th>
+          <th>Tipo de Veículo</th>
+          <th>Marca</th>
+          <th>Modelo</th>
+          <th>Cliente</th>
+          <th {{ tooltip.add('left', 'Indicador de veículo bloqueado para uso no sistema') }}><i class="lock darkred icon"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/stc/partials/dialogs/error.twig' %}
+  {% include 'templates/stc/partials/dialogs/info.twig' %}
+  {% include 'templates/stc/partials/dialogs/question.twig' %}
+  {% include 'templates/stc/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  
+  {% set getData = { 'URL': 'STC\\Cadastre\\Vehicles\\Get', 'method': 'PATCH' } %}
+  {% set view    = { 'URL': 'STC\\Cadastre\\Vehicles\\View', 'method': 'GET' } %}
+  {% set sync    = { 'URL': 'STC\\Cadastre\\Vehicles\\Synchronize', 'method': 'GET' } %}
+
+  {% set getCustomerNameCompletion = { 'URL': 'STC\\Cadastre\\Customers\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      table
+    ;
+
+    // Um formatador para exibir um ícone indicativo de que o veículo
+    // está ou não bloqueado
+    var blockedFormatter = function ( value, type, row, meta ) {
+      var buildIcon = function (color, icon, title) {
+        return ''
+          + '<span data-position="left center"'
+          +       'data-blue data-inverted '
+          +       'data-tooltip="' + title + '">'
+          +   '<i class="' + icon + ' ' + color + ' icon"></i>'
+          + '</span>'
+        ;
+      };
+
+      switch (value) {
+        case false:
+          // O veículo está bloqueado
+          return buildIcon('lock', 'darkred',
+            'O veículo está bloqueado');
+        default:
+          // Está ativo
+          return buildIcon('unlock', 'lightgrey',
+            'O veículo está ativo');
+      }
+    };
+
+    $(document).ready(function() {
+      // --------------------------------[ Componentes da Searchbar ]---
+      {% if authorization.user.groupid < 6 %}
+      $("input[name='customerName']")
+        .autocomplete(customerNameCompletionOptions)
+      ;
+      {% endif %}
+      $('#searchValue')
+        .keypress(forceSearch)
+      ;
+
+      {% if authorization.user.groupid < 6 %}
+      // -----------------------[ Componentes da Barra de Progresso ]---
+      // Esconde a barra de progresso
+      $('.ui.progress')
+        .parent()
+        .hide()
+      ;
+      {% endif %}
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "id",
+            "data": "id",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "vehicles.plate",
+            "data": "plate",
+            "visible": true,
+            "className": "dt-center",
+            "orderable": true,
+            "width": "40px" },
+          { "targets": 2,
+            "name": "vehicles.vehicletypeid, vehicles.plate",
+            "data": "vehicletypename",
+            "visible": true,
+            "orderable": true,
+            "width": "110px" },
+          { "targets": 3,
+            "name": "vehiclemodels.vehiclebrandid, vehicles.vehiclemodelid, vehicles.plate",
+            "data": "vehiclebrandname",
+            "visible": true,
+            "orderable": true,
+            "width": "110px" },
+          { "targets": 4,
+            "name": "vehicles.vehiclemodelid, vehicles.plate",
+            "data": "vehiclemodelname",
+            "visible": true,
+            "orderable": true,
+            "width": "110px" },
+          { "targets": 5,
+            "name": "customername",
+            "data": "customername",
+            "visible": true,
+            "orderable": false },
+          { "targets": 6,
+            "name": "status",
+            "data": "status",
+            "visible": true,
+            "className": "dt-center",
+            "orderable": false,
+            "width": "10px",
+            "render": blockedFormatter }
+        ],
+        order: [[ 1, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.searchValue  = $('#searchValue').val();
+            params.clientID     = $("input[name='customerID']").val();
+            params.customerName = $("input[name='customerName']").val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        createdRow: function(row, data, dataIndex) {
+          // Deixa as linhas com cores diferentes para indicar os
+          // bloqueios de veículos
+          if (!data.status) {
+            $(row)
+              .addClass('blocked')
+            ;
+          }
+        }
+      });
+
+      // Manipula os eventos de click
+      table
+        .on('user-select', function (e, dt, type, cell, originalEvent) {
+          if (type === 'cell') {
+            var
+              // Recupera os dados da célula selecionada
+              index   = cell[0][0],
+
+              // Recupera o veículo selecionado
+              vehicle = dt.rows( index.row ).data().toArray()[0]
+            ;
+
+            // Em função da coluna onde ocorreu o clique, executa a ação
+            // correspondente
+            switch (index.column) {
+              default:
+                {% if authorization.getAuthorizationFor(view.URL, view.method) %}
+                // Coloca o veículo em visualização
+                window.location.href = "{{ buildURL(view.URL, {'vehicleID': 'vehicle.id'}) }}";
+                {% endif %}
+            }
+
+            e.preventDefault();
+          }
+        }
+      );
+
+      // Força a atualização da tabela para reajustar as colunas após
+      // a carga
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 1500);
+    });
+
+
+    // =================================================[ Options ]=====
+
+    {% if authorization.user.groupid < 6 %}
+    // As opções para o componente de autocompletar o nome do cliente
+    var customerNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      showClearValue: true,
+      ajax: {
+        url: "{{ path_for(getCustomerNameCompletion.URL) }}",
+        type: "{{ getCustomerNameCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'customer';
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        return ''
+          + '<div class="content">'
+          +   '<div class="title">' + suggestion.name + '<br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       suggestion.nationalregister
+          +     '</span>'
+          +   '</div>'
+          + '</div>'
+        ;
+      },
+      onSelect: function(element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='customerID']")
+          .val(suggestion.id)
+        ;
+
+        searchLoad();
+      },
+      onInvalidateSelection: function() {
+        // Limpa os dados
+        $("input[name='customerID']")
+          .val(0)
+        ;
+
+        searchLoad();
+      }
+    };
+    {% endif %}
+
+
+    // ================================================[ Handlers ]=====
+
+    // Executa a pesquisa
+    function searchLoad() {
+      table
+        .ajax
+        .reload()
+      ;
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 500);
+    }
+
+    // Força a atualização da tabela
+    function forceSearch(event) {
+      if (event.which == 13) {
+        searchLoad();
+      }
+    }
+
+    // Sincroniza as informações de veículos com o sistema STC
+    function synchronize() {
+      var
+        $progress = $('#progressbar'),
+        url       = "{{ buildURL(sync.URL, {}) }}",
+        evtSource = new EventSource(url),
+        $button   = $("#sync")
+      ;
+      
+      // Reinicia a contagem
+      $progress
+        .progress('reset')
+        .progress('set label', 'Solicitando...')
+        .progress('set total', 100)
+      ;
+      if ($progress.is(":hidden")) {
+        $progress
+          .parent()
+          .transition('slide down')
+        ;
+      }
+      if (!$button.prop('disabled')) {
+        $button
+          .prop('disabled', true)
+        ;
+      }
+
+      evtSource.onmessage = function(event)
+      {
+        syncData = JSON.parse(event.data);
+        
+        switch (syncData.result) {
+          case "START":
+            $progress
+              .progress('set active')
+              .progress('set label', syncData.message)
+              .progress('reset')
+              .progress('update progress', 0)
+            ;
+
+            break;
+          case "PROGRESS":
+            // Seta a barra de progresso
+            var
+              progress = Math.round((syncData.count/syncData.total) * 100)
+            ;
+            $progress
+              .progress('set label', syncData.message)
+              .progress('update progress', progress)
+            ;
+            
+            break;
+          case "END":
+            evtSource
+              .close()
+            ;
+            $progress
+              .progress('set label', syncData.message)
+              .progress('complete')
+            ;
+            setTimeout(function(){
+              $progress
+                .parent()
+                .transition('slide up')
+              ;
+            }, 2000);
+            $button
+              .prop('disabled', false)
+            ;
+
+            // Força a atualização dos dados
+            searchLoad();
+            
+            break;
+          case "ERROR":
+            console.error('Erro', syncData.message);
+            evtSource
+              .close()
+            ;
+            $progress
+              .progress('set error', syncData.message)
+            ;
+            $button
+              .prop('disabled', false)
+            ;
+
+            break;
+          default:
+            evtSource
+              .close()
+            ;
+            setTimeout(function(){
+              $progress
+                .parent()
+                .transition('slide up')
+              ;
+            }, 2000);
+            $button
+              .prop('disabled', false)
+            ;
+
+            break;
+        }
+      };
+      evtSource.onerror = function(error) {
+        console.error("Ocorreu um erro na sincronização:", error);
+
+        // Sempre força o encerramento da sincronização
+        evtSource
+          .close()
+        ;
+
+        // Atualiza o progresso, indicando o erro
+        $progress
+          .progress('set error', 'Erro interno do servidor')
+        ;
+        $button
+          .prop('disabled', false)
+        ;
+      };
+      
+      return false;
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

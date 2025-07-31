@@ -1,0 +1,178 @@
+{% extends 'templates/usr/layout.twig' %}
+{% block title %}{{ parent() }} - Minha conta{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+{% endblock stylesheets %}
+{% block content %}
+  {% set URL = 'USR\\Account' %}
+  {% set previous = 'USR\\Home' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/user.svg', 'Conta do usuário') }}
+            </td>
+            <td>
+              <div class="content">
+                Minha conta
+                {% if editMode %}
+                <div class="sub header">
+                  Permite modificar as informações cadastrais da minha
+                  conta de acesso à área do cliente.
+                </div>
+                {% else %}
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais da minha
+                  conta.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL) }}">
+        <div class="fields">
+          <div class="twelve wide field{{ cssError('name') }}">
+            <label>Nome do usuário</label>
+            <div class="ui input{{ readonly }}">
+              <input name="name" type="text" maxlength="50"
+                     placeholder="Informe o seu nome completo..."
+                     {{ readonly }}
+                     value="{{ getValue('name') }}">
+            </div>
+            {% if hasError('name') %}
+            <small class="helper">{{ getError('name') }}</small>
+            {% endif %}
+          </div>
+          <div class="four wide field{{ cssError('phonenumber') }}">
+            <label>Telefone</label>
+            <div class="ui input{{ readonly }}">
+              <input name="phonenumber" type="text"
+                     placeholder="Informe o seu telefone..."
+                     {{ readonly }}
+                     value="{{ getValue('phonenumber') }}">
+            </div>
+            {% if hasError('phonenumber') %}
+            <small class="helper">{{ getError('phonenumber') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field">
+            <label>Nome do {{ entity.type|lower }} ao qual está vinculado:</label>
+            <div class="field static">
+              <span class="darking">
+                {{ entity.name }}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="four wide field">
+            <label>CPF/CNPJ</label>
+            <div class="field static">
+              <span class="lighting">
+                {{ authorization.user.username }}
+              </span>
+              <input name="username" type="hidden"
+                     value="{{ getValue('username') }}">
+            </div>
+          </div>
+          <div class="four wide field">
+            <label>Último acesso</label>
+            <div class="field static"
+                 title="{{ authorization.user.lastlogin|localizedDate('short') }}">
+              <span class="darking">
+                {{ authorization.user.lastlogin|localizedDate('short') }}&nbsp;
+              </span>
+            </div>
+          </div>
+          <div class="eight wide field{{ cssError('email') }}">
+            <label>E-mail para recuperação de senha</label>
+            <div class="ui input{{ readonly }}">
+              <input name="email" type="text" maxlength="50"
+                     placeholder="Informe o seu e-mail..."
+                     {{ readonly }}
+                     value="{{ getValue('email') }}">
+            </div>
+            {% if hasError('email') %}
+              <small class="helper">{{ getError('email') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> Modificar
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        <input type="hidden" name="userid" value="{{ getValue('userid') }}">
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $("input[name='phonenumber']")
+        .mask({
+          type: 'phoneNumber'
+        })
+      ;
+      
+      // Coloca o foco no primeiro campo
+      $("input[name='name']")
+        .focus()
+      ;
+    });
+  </script>
+  {% endapply %}
+{% endblock scripts %}

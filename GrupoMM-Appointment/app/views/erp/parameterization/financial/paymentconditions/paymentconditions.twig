@@ -1,0 +1,581 @@
+{% extends 'templates/erp/layout.twig' %}
+{% import "templates/erp/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento de condições de pagamento{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.main.basic.segment .searchbar.fields .field.searchbox {
+      flex-grow: 1;
+      min-width: 456px;
+    }
+    @media only screen and (min-width: 768px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+    }
+    @media only screen and (max-width: 767px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 100px;
+        width: calc(100% - 47px);
+      }
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+
+    /* --------------------------------------------------------------
+     * Personalizações das linhas do datagrid apenas para este módulo
+     * -------------------------------------------------------------- */
+    .blocked > td {
+      color: #7f7f7f
+    }
+    .blocked > td {
+      background-color: #fff6f6 !important;
+      color: DarkRed;
+    }
+    tr.blocked:hover > td {
+      background-color: #f6e7e7 !important;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set add  = { 'URL': 'ERP\\Parameterization\\Financial\\PaymentConditions\\Add', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/paymentconditions.svg', 'Condições de pagamento') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento das condições de pagamento
+                <div class="sub header">
+                  Permite gerenciar as condições de pagamento disponíveis
+                  no sistema.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(add.URL, add.method) %}
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Adiciona uma condição de pagamento"
+                      data-position="top left" type="button"
+                      onclick="location.href='{{ path_for(add.URL) }}'">
+                <i class="add icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite a condição de pagamento que procura..."
+                       value="{{ paymentcondition.name }}">
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza uma condição de pagamento"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Condição de pagamento</th>
+          <th>ID do meio de pagamento</th>
+          <th>Meio de<br>pagamento</th>
+          <th>Configuração</th>
+          <th>ID da forma de pagamento</th>
+          <th>Forma de<br>pagamento</th>
+          <th>Detalhamento das<br>condições de pagamento</th>
+          <th>Intervalo<br>expresso em</th>
+          <th {{ tooltip.add('left', 'Indicador de uso de gateway de pagamentos') }}><i class="random darkorange icon"></i></th>
+          <th {{ tooltip.add('left', 'Indicador de carnê de pagamentos') }}><i class="money check icon"></i></th>
+          <th {{ tooltip.add('left', 'Indicador de condição de pagamento bloqueado para uso no sistema') }}><i class="lock darkred icon"></i></th>
+          <th {{ tooltip.add('left', 'Permite remover a condição de pagamento') }}><i class="remove darkred icon"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/info.twig' %}
+  {% include 'templates/erp/partials/dialogs/question.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/DateFormatter.min.js') }}
+  {{ lib('datatables/formatters/DeleteFormatter.min.js') }}
+  
+  {% set getData       = { 'URL': 'ERP\\Parameterization\\Financial\\PaymentConditions\\Get', 'method': 'PATCH' } %}
+  {% set edit          = { 'URL': 'ERP\\Parameterization\\Financial\\PaymentConditions\\Edit', 'method': 'GET' } %}
+  {% set remove        = { 'URL': 'ERP\\Parameterization\\Financial\\PaymentConditions\\Delete', 'method': 'DELETE' } %}
+  {% set toggleBlocked = { 'URL': 'ERP\\Parameterization\\Financial\\PaymentConditions\\ToggleBlocked', 'method': 'PUT' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      table
+    ;
+
+    // Constroi um ícone
+    var buildIcon = function (color, icon, title) {
+      return ''
+        + '<span data-position="left center"'
+        +       'data-blue data-inverted '
+        +       'data-tooltip="' + title + '">'
+        +   '<i class="' + icon + ' ' + color + ' icon"></i>'
+        + '</span>'
+      ;
+    };
+
+    // Um formatador de pagamentos
+    var paymentFormatter = function ( value, type, row, meta ) {
+      if (value !== null) {
+        var
+          periods = value.split('/'),
+          result = ''
+        ;
+
+        if (row.paymentformid === 1) {
+          // Pagamentos à vista, então o intervalo expressa o tempo para
+          // vencimento do valor
+          if (parseInt(periods.at(-1)) > 0) {
+            if (row.timeunit === "MONTH") {
+              result = periods.at(-1)
+                + ((parseInt(periods.at(-1)) > 1)?' mesês':' mês')
+              ;
+            } else {
+              result = periods.at(-1)
+                + ((parseInt(periods.at(-1)) > 1)?' dias':' dia')
+              ;
+            }
+            result = result + ' <span class="lightblue">(prazo para pagar)</span>';
+          } else {
+            // Não temos prazo para pagamento
+            result = 'Pagamento no ato';
+          }
+        } else {
+          // Pagamentos a prazo, então o intervalo expressa o tempo para
+          // vencimento da(s) parcela(s)
+          if (row.timeunit === "MONTH") {
+            if ( (parseInt(periods[0]) === 0) &&
+                 (periods.length > 1) ) {
+              result = 'Entrada mais ';
+            }
+
+            if (parseInt(periods.at(-1)) > 0) {
+              if (parseInt(periods.at(-1)) > 1) {
+                result = result + periods.at(-1)
+                  + ' vezes <span class="lightblue">(em parcelas mensais)</span>'
+                ;
+              } else {
+                result = result + periods.at(-1)
+                  + ' vez <span class="lightblue">(parcela única)</span>'
+                ;
+              }
+            }
+          } else {
+            var
+              result = '',
+              build = function (item, index, arr) {
+                if (parseInt(item) === 0) {
+                  result = result + 'Entrada';
+                } else {
+                  result = result + ((index > 0)?' / ':'')
+                    + item + ' <span class="lightblue">'
+                    + ((item > 1)?'dias':'dia') + '</span>'
+                  ;
+                }
+              }
+            ;
+
+            periods.forEach(build);
+          }
+        }
+
+        return result;
+      }
+      
+      return '<span class="silver">---</span>';
+    };
+
+    // Um formatador para exibir um ícone indicativo de que a condição
+    // de pagamento usa ou não um gateway de pagamentos
+    var gatewayFormatter = function ( value, type, row, meta ) {
+
+      switch (value) {
+        case true:
+          // A condição de pagamento está bloqueada
+          return buildIcon('random', 'darkorange',
+            'Utiliza um gatwey de pagamentos');
+        default:
+          // Está livre
+          return buildIcon('random', 'lightgrey',
+            'Não utiliza um gatwey de pagamentos');
+      }
+    };
+
+    // Um formatador para exibir um ícone indicativo de que a condição
+    // de pagamento usa ou não a formatação como carnê de pagamentos
+    var bookletFormatter = function ( value, type, row, meta ) {
+
+      switch (value) {
+        case true:
+          // Formatar como carnê de pagamentos
+          return buildIcon('money check', 'black',
+            'Formatar como carnê de pagamentos');
+        default:
+          return '';
+      }
+    };
+
+    // Um formatador para exibir um ícone indicativo de que a condição
+    // de pagamento está ou não bloqueada
+    var blockedFormatter = function ( value, type, row, meta ) {
+      switch (value) {
+        case true:
+          // A condição de pagamento está bloqueada
+          return buildIcon('lock', 'darkred',
+            'A condição de pagamento não está disponível');
+        default:
+          // Está livre
+          return buildIcon('unlock', 'lightgrey',
+            'A condição de pagamento está disponível');
+      }
+    };
+    
+    $(document).ready(function() {
+      // --------------------------------[ Componentes da Searchbar ]---
+      $('#searchValue').keypress(function(e) {
+        if(e.which == 13) {
+          searchLoad();
+        }
+      });
+
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "id",
+            "data": "id",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "paymentconditions.name",
+            "data": "name",
+            "visible": true,
+            "orderable": true },
+          { "targets": 2,
+            "name": "paymentmethodid",
+            "data": "paymentmethodid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 3,
+            "name": "paymentmethods.name, paymentconditions.name",
+            "data": "paymentmethodname",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true,
+            "width": "50px" },
+          { "targets": 4,
+            "name": "definedmethods.name, paymentconditions.name",
+            "data": "definedmethodname",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true,
+            "width": "50px" },
+          { "targets": 5,
+            "name": "paymentformid",
+            "data": "paymentformid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 6,
+            "name": "paymentforms.name, paymentconditions.name",
+            "data": "paymentformname",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true,
+            "width": "50px" },
+          { "targets": 7,
+            "name": "paymentinterval",
+            "data": "paymentinterval",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "render": paymentFormatter },
+          { "targets": 8,
+            "name": "timeunit",
+            "data": "timeunit",
+            "className": "dt-center",
+            "visible": false },
+          { "targets": 9,
+            "name": "usepaymentgateway",
+            "data": "usepaymentgateway",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": gatewayFormatter },
+          { "targets": 10,
+            "name": "formatasbooklet",
+            "data": "formatasbooklet",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": bookletFormatter },
+          { "targets": 11,
+            "name": "blocked",
+            "data": "blocked",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": blockedFormatter },
+          { "targets": 12,
+            "name": "delete",
+            "data": "id",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": deleteFormatter("Remover esta condição de pagamento") }
+        ],
+        order: [[ 1, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.searchValue = $('#searchValue').val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        createdRow: function(row, data, dataIndex) {
+          // Deixa as linhas com cores diferentes para indicar os
+          // bloqueios de condições de pagamento
+          if (data.blocked) {
+            $(row)
+              .addClass('blocked')
+            ;
+          }
+        }
+      });
+      
+      // Manipula os eventos de click
+      table
+        .on('user-select', function (e, dt, type, cell, originalEvent) {
+          if (type === 'cell') {
+            var
+              // Recupera os dados da célula selecionada
+              index   = cell[0][0],
+
+              // Recupera o condição de pagamento selecionado
+              paymentCondition = dt.rows( index.row ).data().toArray()[0]
+            ;
+
+            // Em função da coluna onde ocorreu o clique, executa a ação
+            // correspondente
+            switch (index.column) {
+              {% if authorization.getAuthorizationFor(toggleBlocked.URL, toggleBlocked.method) %}
+              case 11:
+                var
+                  // Alterna o bloqueio da conta
+                  action = (paymentCondition.blocked === "true")
+                    ? "desbloquear"
+                    : "bloquear"
+                ;
+                
+                questionDialog(
+                  action.charAt(0).toUpperCase() + action.slice(1), ''
+                  + 'Você deseja realmente ' + action + ' a condição '
+                  + 'de pagamento <b>&ldquo;' + paymentCondition.name
+                  + '&rdquo;</b>?',
+                  function() {
+                    // Alternar o bloqueio do condição de pagamento
+                    var
+                      url = "{{ buildURL(toggleBlocked.URL, {'paymentConditionID': 'paymentCondition.id'}) }}"
+                    ;
+                    
+                    putJSONData(url, [],
+                    function (data, params, message) {
+                      // Atualiza a tabela
+                      searchLoad();
+                    });
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  }
+                );
+
+                break;
+              {% endif %}
+              {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}
+              case 12:
+                // Questiona se deve apagar a condição de pagamento
+                // selecionada
+                questionDialog(
+                  'Remover condição de pagamento', 'Você deseja '
+                  + 'realmente remover a condição de pagamento '
+                  + '<b>&ldquo;' + paymentCondition.name
+                  + '&rdquo;</b>? Esta ação não poderá ser desfeita.',
+                  function() {
+                    var
+                      // Remove o condição de pagamento selecionado
+                      url  = "{{ buildURL(remove.URL, {'paymentConditionID': 'paymentCondition.id'}) }}"
+                    ;
+                    
+                    deleteJSONData(url, [],
+                    function (data, params, message) {
+                      // Atualiza a tabela
+                      searchLoad();
+                    });
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  }
+                );
+
+                break;
+              {% endif %}
+              default:
+                {% if authorization.getAuthorizationFor(edit.URL, edit.method) %}
+                // Coloca o condição de pagamento em edição
+                window.location.href = "{{ buildURL(edit.URL, {'paymentConditionID': 'paymentCondition.id'}) }}";
+                {% endif %}
+            }
+
+            e.preventDefault();
+          }
+        }
+      );
+    });
+
+
+    // ================================================[ Handlers ]=====
+    
+    // Executa a pesquisa
+    function searchLoad() {
+      table.ajax.reload();
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

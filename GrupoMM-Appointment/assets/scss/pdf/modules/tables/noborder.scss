@@ -1,0 +1,112 @@
+/* ----------------------------------------[ Tabela sem bordas ]-----
+   As definições de uma tabela sem bordas
+   ------------------------------------------------------------------ */
+
+table.noborder {
+  tbody {
+    tr.title {
+      td {
+        padding-top: 1.5em;
+        padding-bottom: 3px;
+        padding-left: 0;
+        border-bottom: 1px solid #a0b0c0;
+      }
+      &.first td {
+        padding-top: 0.3em;
+      }
+    }
+    tr.subtitle {
+      td {
+        padding-top: 1.0em;
+        padding-left: 0;
+        padding-bottom: .5em;
+      }
+    }
+
+    tr.spacer {
+      border: 1px solid #a0b0c0;
+      td {
+        height: .5em;
+      }
+    }
+
+    tr.content {
+      td {
+        padding-top: 0.2em;
+
+        &.nospaced {
+          padding-top: 0.3em !important;
+        }
+      }
+    }
+
+    tr.detail {
+      td {
+        padding-top: 0.3em;
+        border-bottom: 1px dotted #a0b0c0;
+      }
+    }
+    tr.header {
+      td {
+        padding-top: 0.3em;
+        border-bottom: 1px dotted #a0b0c0;
+        vertical-align: bottom;
+      }
+    }
+    tr.boolean {
+      td {
+        vertical-align: middle;
+        padding: 0.1em 0.3em;
+        font-size: 1.2em;
+        font-weight: normal;
+      }
+      td.checkmark {
+        text-align: center;
+        font-size: 2em;
+        font-weight: normal;
+        color: black;
+        border: 1px solid #a0b0c0;
+        line-height: .5em;
+        width: 0.8em;
+        padding: 0.1em 0;
+      }
+    }
+  }
+}
+
+h1.title {
+  color: $boldTextColor;
+  font-size: 1.3em;
+  font-weight: bold;
+  border-bottom: 4px solid #a0b0c0;
+}
+h2.subtitle {
+  font-family: $fontEmphasy;
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #305080;
+}
+span {
+  &.field {
+    font-size: 0.8em; 
+    font-weight: normal;
+    color: $normalTextColor;
+  }
+  &.header {
+    font-size: 1em;
+    color: $normalTextColor;
+  }
+  &.symbol {
+    font-size: 1em;
+    font-weight: normal;
+    color: #305080;
+  }
+  &.content {
+    font-size: 1.1em;
+    font-weight: normal;
+    color: black;
+  }
+  &.danger {
+    color: DarkRed !important;
+  }
+}

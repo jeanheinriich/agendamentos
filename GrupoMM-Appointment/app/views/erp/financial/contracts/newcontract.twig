@@ -1,0 +1,1035 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} contrato{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('libs/semantic-ui/components/calendar.min.css') }}
+  {{ css('form.min.css') }}
+  <style>
+    /* Realiza ajustes nos dropdowns */
+    .ui.selection.dropdown {
+      line-height: 0.9em;
+    }
+    .medium {
+      min-width: 9em !important;
+      max-width: 9em;
+    }
+
+    .ui.list .list>.item .description,
+    .ui.list>.item .description {
+      position: relative;
+      padding-left: 1.85714em;
+      margin-top: .2em;
+      color: rgba(0,0,0,.5);
+    }
+
+    @media only screen and (max-width:767px) {    
+      .ui.list .list>.item,
+      .ui.list>.item {
+        margin-bottom: .5em;
+      }
+    }
+
+    .ui.input.success>input {
+      background-color: #fcfff5;
+      border-color: #a3c293;
+      color: #2c662d;
+      -webkit-box-shadow: none;
+      box-shadow: none;
+    }
+    .ui.form>.field.success>.ui.labeled.input:not(.right):not([class*="corner labeled"])>.ui.label,
+    .ui.form>.field.success>.ui.left.action.input>.ui.button,
+    .ui.labeled.input.success:not(.right):not([class*="corner labeled"])>.ui.label,
+    .ui.left.action.input.success>.ui.button {
+      color: #2c662d;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Financial\\Contracts\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Financial\\Contracts\\Edit' %}
+  {% endif %}
+  {% if getValue('blockcustomer')|toBoolean %}
+    {% set previous = 'ERP\\Cadastre\\Customers' %}
+  {% else %}
+    {% set previous = 'ERP\\Financial\\Contracts' %}
+  {% endif %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/contracts.svg', 'Contracto') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} contrato
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  contrato.
+                </div>
+              {% else %}
+                Visualizar contrato
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um contrato.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      {% if getValue('blockcustomer')|toBoolean %}
+        {% set action =  path_for(URL, { 'customerID': getValue('customerid') }) %}
+      {% else %}
+        {% set action =  path_for(URL, { 'contractID': getValue('contractid') }) %}
+      {% endif %}
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ action }}">
+        <h3 class="ui header">Dados do cliente ao qual está vinculado</h3>
+        <div class="fields">
+          <div class="eight wide field{{ cssError('customername') }}">
+            <label>Nome do cliente</label>
+            {% if authorization.user.groupid < 6 %}
+            <input name="customername" type="text" class="search"
+                   maxlength="100"
+                   placeholder="Informe o nome do cliente..."
+                   {% if getValue('blockcustomer')|toBoolean %}
+                   readonly
+                   {% endif %}
+                   value="{{ getValue('customername') }}">
+            {% else %}
+            <div class="field static">
+              <span class="darking">
+                {{ getValue('customername') }}
+              </span>
+              <input type="hidden" name="customername"
+                     value="{{ getValue('customername') }}">
+            </div>
+            {% endif %}
+            <input type="hidden" name="customerid"
+                   value="{{ getValue('customerid') }}">
+            <input type="hidden" name="blockcustomer"
+                   value="{% if getValue('blockcustomer')|toBoolean %}true{% else %}false{% endif %}">
+            {% if hasError('customername') %}
+            <small class="helper">{{ getError('customername') }}</small>
+            {% endif %}
+          </div>
+          <div class="eight wide field{{ cssError('subsidiaryname') }}">
+            {% if getValue('entitytypeid') == 2 %}
+            <label for="subsidiarytitle">Titular ou dependente ao qual está vinculado</label>
+            {% else %}
+            <label for="subsidiarytitle">Unidade/filial ao qual está vinculado</label>
+            {% endif %}
+            <input name="subsidiaryname" type="text" class="search"
+                   maxlength="50"
+                   placeholder="Informe a unidade/filial..."
+                   {{ readonly }}
+                   value="{{ getValue('subsidiaryname') }}">
+            <input name="subsidiaryid" type="hidden"
+                   value="{{ getValue('subsidiaryid') }}">
+            {% if hasError('subsidiaryname') %}
+            <small class="helper">{{ getError('subsidiaryname') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <h3 class="ui header">Condições de contratação</h3>
+        <div class="fields">
+          <div class="six wide field{{ cssError('planid') }}">
+            <label>Plano de serviços</label>
+            <div class="ui search selection dropdown">
+              <input name="planid" type="hidden"
+                     value="{{ getValue('planid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Escolha um plano...</div>
+              <div class="menu">
+              {% set planid = getValue('planid') %}
+              {% for plan in plans %}
+                <div class="item"
+                     {% if plan.id == planid %}
+                       selected
+                     {% endif %}
+                     data-price="{{ plan.monthprice }}"
+                     data-value="{{ plan.id }}"
+                     data-text="{{ plan.name }}">
+                  {{ plan.name }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% if hasError('planid') %}
+            <small class="helper">{{ getError('planid') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="six wide field{{ cssError('subscriptionplanid') }}">
+            <label>Forma de assinatura do plano</label>
+            {% if formMethod == 'POST' or editMode %}
+            <div class="ui search selection dropdown">
+              <input name="subscriptionplanid" type="hidden"
+                     value="{{ getValue('subscriptionplanid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Escolha um plano de assinatura...</div>
+              <div class="menu">
+              {% set subscriptionPlanID = getValue('subscriptionplanid') %}
+              {% set planID = getValue('planid') %}
+              {% for offeredPlan in subscriptionPlans[planID] %}
+                <div class="item"
+                     {% if offeredPlan.value == subscriptionPlanID %}
+                       selected
+                     {% endif %}
+                     data-value="{{ offeredPlan.value }}"
+                     data-months="{{ offeredPlan.months }}"
+                     data-discount="{{ offeredPlan.discount }}"
+                     data-text="{{ offeredPlan.name }}">
+                  {{ offeredPlan.name }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('subscriptionplanname') }}&nbsp;</span>
+              <input name="subscriptionplanname" type="hidden"
+                     value="{{ getValue('subscriptionplanname') }}">
+              <input name="subscriptionplanid" type="hidden"
+                     value="{{ getValue('subscriptionplanid') }}">
+            </div>
+            {% endif %}
+            {% if hasError('subscriptionplanid') %}
+            <small class="helper">{{ getError('subscriptionplanid') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('duedayid') }}">
+            <label>Dia de vencimento</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="duedayid" type="hidden"
+                     value="{{ getValue('duedayid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Dia do vencimento...</div>
+              <div class="menu">
+              {% set dueDayID = getValue('duedayid') %}
+              {% for dueDay in dueDays %}
+                <div class="item"
+                     {% if dueDay.id == dueDayID %}
+                       selected
+                     {% endif %}
+                     data-value="{{ dueDay.id }}"
+                     data-text="{{ dueDay.day }}">
+                  {{ dueDay.day }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('dueday') }}&nbsp;</span>
+              <input name="dueday" type="hidden"
+                     value="{{ getValue('dueday') }}">
+              <input name="duedayid" type="hidden"
+                     value="{{ getValue('duedayid') }}">
+            </div>
+            {% endif %}
+            {% if hasError('duedayid') %}
+            <small class="helper">{{ getError('duedayid') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="six wide field{{ cssError('signaturedate') }}">
+            <label>
+              Data da assinatura
+              <span data-tooltip="A data em que o contrato foi assinado indicando que o mesmo está ativo"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui calendar" id="signaturedate">
+              <div class="ui input left icon{{ readonly }}">
+              <i class="calendar icon"></i>
+                <input name="signaturedate" type="text"
+                       placeholder="Assinado em..."
+                       {{ readonly }}
+                       value="{{ getValue('signaturedate') }}">
+              </div>
+            </div>
+            {% if hasError('signaturedate') %}
+            <small class="helper">{{ getError('signaturedate') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="five wide field{{ cssError('monthprice') }}">
+            <label>Mensalidade</label>
+            <div class="ui left labeled input{{ readonly }}">
+              <div class="ui basic label">R$</div>
+              <input name="monthprice" type="text"
+                     placeholder="0,00"
+                     {{ readonly }}
+                     value="{{ getValue('monthprice') }}">
+            </div>
+            {% if hasError('monthprice') %}
+            <small class="helper">{{ getError('monthprice') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="five wide field ">
+            <label>Valor com desconto</label>
+            <div class="ui left labeled input success">
+              <div class="ui basic label">R$</div>
+              <input name="realmonthprice" type="text"
+                     placeholder="0,00"
+                     readonly
+                     value="{{ getValue('realmonthprice') }}">
+              <input name="discount" type="hidden"
+                     value="{{ getValue('discount') }}">
+            </div>
+            {% if hasError('realmonthprice') %}
+            <small class="helper">{{ getError('realmonthprice') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="eight wide field{{ cssError('paymentconditionid') }}">
+            <label>
+              Forma de pagamento do contrato
+              <span data-tooltip="Qual a forma de pagamento utilizada neste contrato"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="paymentconditionid" type="hidden"
+                     value="{{ getValue('paymentconditionid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Como o contrato será pago</div>
+              <div class="menu">
+              {% set paymentConditionID = getValue('paymentconditionid') %}
+              {% for paymentCondition in paymentConditions %}
+                <div class="item" {% if paymentCondition.id == paymentConditionID %}selected{% endif %}
+                     data-value="{{ paymentCondition.id }}"
+                     data-enableforwardsale="{{ paymentCondition.enableforwardsale }}"
+                     data-text="{{ paymentCondition.name }}">
+                  {{ paymentCondition.name }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('paymentconditionname') }}</span>
+              <input name="paymentconditionid" type="hidden"
+                     value="{{ getValue('paymentconditionid') }}">
+            </div>
+            {% endif %}
+            {% if hasError('paymentconditionid') %}
+            <small class="helper">{{ getError('paymentconditionid') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="eight wide field{{ cssError('additionalpaymentconditionid') }}">
+            <label>
+              Forma de pagamento adicional
+              <span data-tooltip="Para contratos pagos antecipadamente e/ou por carnê e que serviços adicionais precisem ser cobrados"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="additionalpaymentconditionid" type="hidden"
+                     value="{{ getValue('additionalpaymentconditionid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Como serviços adicionais serão cobrados</div>
+              <div class="menu">
+              {% set additionalPaymentConditionID = getValue('additionalpaymentconditionid') %}
+              {% for paymentCondition in paymentConditions %}
+                <div class="item" {% if paymentCondition.id == additionalPaymentConditionID %}selected{% endif %}
+                     data-value="{{ paymentCondition.id }}"
+                     data-text="{{ paymentCondition.name }}">
+                  {{ paymentCondition.name }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('paymentconditionname') }}</span>
+              <input name="additionalpaymentconditionid" type="hidden"
+                     value="{{ getValue('additionalpaymentconditionid') }}">
+            </div>
+            {% endif %}
+            {% if hasError('additionalpaymentconditionid') %}
+            <small class="helper">{{ getError('additionalpaymentconditionid') }}</small>
+            {% endif %}
+          </div>
+        </div>
+          
+        <div class="fields">
+          <div class="six wide field{{ cssError('amountOfInstallations') }}">
+            <label>
+              Quantidade contratada
+              <span data-tooltip="A quantidade de instalações contratadas inicialmente"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui right labeled input{{ readonly }}">
+              <input name="amountOfInstallations" type="text" maxlength="3"
+                     placeholder="0"
+                     {{ readonly }}
+                     value="{{ getValue('amountOfInstallations') }}">
+              <div class="ui basic label">instalações</div>
+            </div>
+            {% if hasError('amountOfInstallations') %}
+            <small class="helper">{{ getError('amountOfInstallations') }}</small>
+            {% endif %}
+          </div>
+        </div>
+          
+        <div class="fields">
+          <div class="sixteen wide mobile sixteen wide tablet sixteen wide computer sixteen wide large screen column }}">
+            <h3 class="ui header" style="margin-top: .5em; margin-left: .3em;">
+              Configurações específicas
+            </h3>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field">
+            <div class="ui list">
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="prepaid"
+                         value="{% if getValue('prepaid')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_prepaid"
+                         {% if getValue('prepaid')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Contrato pré-pago</label>
+                </div>
+                <div class="description">
+                  Os valores das mensalidades são cobrados préviamente.
+                  Valores adicionais, tais como serviços de manutenção
+                  prestados e/ou cobranças adicionais são realizadas
+                  posteriormente utilizando-se a forma de pagamento
+                  definida no campo "Forma de pagamento para valores
+                  adicionais".
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="chargeanytariffs"
+                         value="{% if getValue('chargeanytariffs')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_chargeanytariffs"
+                         {% if getValue('chargeanytariffs')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Cobrar tarifas definidas no meio de pagamento</label>
+                </div>
+                <div class="description">
+                  Tarifas definidas no meio de pagamento são aplicadas,
+                  tais como tarifa para emissão de boletos, a cada
+                  emissão de cobrança realizada pelo meio de pagamento
+                  defindo (se existir uma tarifa definida).
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="unifybilling"
+                         value="{% if getValue('unifybilling')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_unifybilling"
+                         {% if getValue('unifybilling')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Unificar cobranças de instalações</label>
+                </div>
+                <div class="description">
+                  Os valores de cada instalação são agrupados em uma
+                  única cobrança, onde serão discriminados os valores
+                  individuais e o respectivo valor total deste contrato.
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="starttermafterinstallation"
+                         value="{% if getValue('starttermafterinstallation')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_starttermafterinstallation"
+                         {% if getValue('starttermafterinstallation')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Início de vigência se dá após a instalação</label>
+                </div>
+                <div class="description">
+                  Os valores de cada instalação são considerados
+                  habilitados para cobrança do serviço após a ocorrência
+                  da instalação do equipamento. Caso contrário, os
+                  valores seriam cobrados imediatamente após a assinatura
+                  do contrato.
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="manualreadjustment"
+                         value="{% if getValue('manualreadjustment')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_manualreadjustment"
+                         {% if getValue('manualreadjustment')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Reajuste manual</label>
+                </div>
+                <div class="description">
+                  Os reajustes previstos no plano contratato não serão
+                  aplicados automaticamente após o vencimento do prazo.
+                  Neste caso, para reajustar o valor, será necessário
+                  ajustar manualmente quando necessário.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="contractid" value="{{ getValue('contractid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+      {% if formMethod == 'PUT' %}
+      <!-- Start status panel -->
+      <div class="ui segments">
+        <div class="ui grey inverted segment">
+          <h5>
+            Histórico de modificações:
+          </h5>
+          Cadastrado {{ getValue('createdat')|localizedDate('long') }} por {{ getValue('createdbyusername') }}
+          <div class="ui divider"></div>
+          Modificado {{ getValue('updatedat')|localizedDate('long') }} por {{ getValue('updatedbyusername') }}
+        </div>
+      </div>
+      <!-- End status panel -->
+      {% endif %}
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('semantic-ui/components/calendar.min.js') }}
+  {{ lib('template-engine/template.engine.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+
+  {% set getEntityDataCompletion = { 'URL': 'ERP\\Cadastre\\Entities\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    /* ---------------------------------[ Planos de assinatura ]----- */
+    var
+      subscriptionPlans = {
+      {% for planID, offeredPlans in subscriptionPlans %}
+        {{ planID }}: [
+        {% for offeredPlan in offeredPlans %}
+          {
+            'name': '{{ offeredPlan.name }}',
+            'value': {{ offeredPlan.value }},
+            'months': {{ offeredPlan.months }},
+            'discount': '{{ offeredPlan.discount }}'
+          },
+        {% endfor %}
+        ],
+      {% endfor %}
+      }
+    ;
+    /* -------------------------------------------------------------- */
+
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      $('.ui.checkbox')
+        .checkbox(checkboxOptions)
+      ;
+      $("input[name='customername']")
+        .autocomplete(customerNameCompletionOptions)
+      ;
+      $("input[name='subsidiaryname']")
+        .autocomplete(subsidiaryNameCompletionOptions)
+      ;
+
+      {% if formMethod == 'POST' %}
+      // Faz o tratamento da seleção do plano de serviços
+      $("input[name='planid']")
+        .change(planHandler)
+      ;
+      $("input[name='subscriptionplanid']")
+        .closest('div.search.selection.dropdown')
+        .dropdown({
+          message: {
+            noResults : 'Nenhuma assinatura disponível. '
+              + 'Selecione um plano primeiramente.'
+          }
+        })
+      ;
+      $("input[name='subscriptionplanid']")
+        .change(subscriptionPlanHandler)
+      ;
+
+      {% endif %}
+      $("input[name='monthprice']")
+        .mask({
+          type: 'monetary',
+          trim: true,
+          allowNegativeValues: false,
+          decimalsPlaces: 2,
+          maxLength: 15
+        })
+        .blur(monetaryHandler)
+      ;
+      monthPriceHandler();
+      $("input[name='signaturedate']")
+        .mask({
+          type: 'date',
+          validate: true
+        })
+      ;
+      $("#signaturedate")
+        .calendar(calendarOptions)
+      ;
+
+      // Coloca o foco no primeiro campo
+      {% if getValue('blockcustomer')|toBoolean %}
+      $("input[name='planid']")
+        .closest('div.search.selection.dropdown')
+        .children(".search")
+        .focus()
+      ;
+      {% else %}
+        $("input[name='customername']")
+          .focus()
+        ;
+      {% endif %}
+    });
+    
+
+    // =================================================[ Options ]=====
+
+    // As opções para os checkbox
+    var checkboxOptions = {
+      // Dispara ao iniciar para definir o valor, se necessário
+      onChange   : function() {
+        var
+          checkbox = $(this).prop('name'),
+          // Invertemos o valor atual
+          checked = !($(this).attr('checked') !== undefined && $(this).attr('checked')),
+          boolValue = (checked
+            ? 'true'
+            : 'false'),
+          toggleField = checkbox.replace('_','')
+        ;
+
+        // Invertemos o checkbox fake
+        $(this)
+          .attr('checked', checked)
+        ;
+
+        // Alteramos o valor do verdadeiro input
+        $("input[name='" + toggleField + "']")
+          .val(boolValue)
+        ;
+      }
+    };
+
+    // As opções para o componente de autocompletar o nome do cliente
+    var customerNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      ajax: {
+        url: "{{ path_for(getEntityDataCompletion.URL) }}",
+        type: "{{ getEntityDataCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'customer';
+          params.detailed = true;
+          params.notIncludeAnyRegister = true;
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        if (suggestion.juridicalperson) {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     (
+                    (suggestion.tradingname)
+                      ? '[<span style="color: #0256C4; font-style: italic;">' + suggestion.tradingname + '</span>]<br>'
+                      : ''
+                  )
+            +     (
+                    (suggestion.items > 1)
+                      ? (' (<span style="color: CornflowerBlue; font-style: italic;">' + suggestion.subsidiaryname + '</span>)')
+                      : ''
+                  )
+            +   '</div>'
+            + '</div>'
+          ;
+        } else {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     (
+                    (suggestion.tradingname)
+                      ? '[<span style="color: #0256C4; font-style: italic;">' + suggestion.tradingname + '</span>]<br>'
+                      : ''
+                  )
+            +     (
+                    (suggestion.items > 1)
+                      ? ( ''
+                          + '<span style="color: CornflowerBlue; font-style: italic;">'
+                          +     (
+                                  (suggestion.headoffice == true)
+                                    ? 'Titular'
+                                    : ('Dependente: ' + suggestion.subsidiaryname)
+                                )
+                          +     '</span>'
+                        )
+                      : ''
+                  )
+            +   '</div>'
+            + '</div>'
+          ;
+        }
+      },
+      onSelect: function (element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='customerid']")
+          .val(suggestion.id)
+        ;
+        $("input[name='subsidiaryid']")
+          .val(suggestion.subsidiaryid)
+        ;
+        $("input[name='subsidiaryname']")
+          .val(suggestion.subsidiaryname)
+        ;
+
+        // Modifica o rótulo do campo unidade/filial/associado
+        if (suggestion.juridicalperson) {
+          $("label[for='subsidiarytitle']")
+            .text("Unidade/filial ao qual está vinculado")
+          ;
+        } else {
+          $("label[for='subsidiarytitle']")
+            .text("Titular ou dependente ao qual está vinculado")
+          ;
+        }
+      },
+      onInvalidateSelection: function () {
+        // Não conseguiu localizar um cliente com base nos valores
+        // informados, então limpa os dados atuais
+        $("input[name='customerid']")
+          .val(0)
+        ;
+        $("input[name='subsidiaryid']")
+          .val(0)
+        ;
+        $("input[name='subsidiaryname']")
+          .val("")
+        ;
+      }
+    };
+
+    // As opções para o componente de autocompletar a unidade/filial do
+    // cliente
+    var subsidiaryNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      ajax: {
+        url: "{{ path_for(getEntityDataCompletion.URL) }}",
+        type: "{{ getEntityDataCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'subsidiary';
+          params.entityID = $("input[name='customerid']").val();
+          params.onlyCustomers = true;
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        return ''
+          + '<div class="content">'
+          +   '<div class="title">'
+          +   ((suggestion.affiliated)
+                 ? '<span style="color: DarkOrange; font-style: italic;">Associado: </span>'
+                 : '')
+          + suggestion.name + '<br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       (suggestion.nationalregister.length > 14?'CNPJ: ':'CPF: ') + suggestion.nationalregister
+          +     '</span><br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       suggestion.city + '/' + suggestion.state
+          +     '</span>'
+          +   '</div>'
+          + '</div>'
+        ;
+      },
+      onSelect: function (element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='subsidiaryid']")
+          .val(suggestion.id)
+        ;
+      },
+      onInvalidateSelection: function () {
+        // Não conseguiu localizar uma unidade/filial com base nos
+        // valores informados, então limpa os dados atuais
+        $("input[name='subsidiaryid']")
+          .val(0)
+        ;
+      }
+    };
+
+    // As opções para o componente de exibição de calendário
+    var calendarOptions = {
+      type: 'date',
+      formatInput: true,
+      monthFirst: false,
+      today: true,
+      text: {
+        days: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'],
+        months: [
+          'Janeiro', 'Fevereiro', 'Março', 'Abril',
+          'Maio', 'Junho', 'Julho', 'Agosto',
+          'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ],
+        monthsShort: [
+          'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+          'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+        ],
+        today: 'Hoje',
+        now: 'Agora',
+        am: 'AM',
+        pm: 'PM'
+      },
+      formatter: {
+        date: function (date, settings) {
+          if (!date) {
+            return '';
+          }
+
+          var
+            day   = date.getDate().toString().padLeftWithZeros(2),
+            month = (date.getMonth()+1).toString().padLeftWithZeros(2),
+            year  = date.getFullYear()
+          ;
+
+          return (settings.type === 'year')
+            ? year
+            : (settings.type === 'month')
+              ? month + '/' + year
+              : ( settings.monthFirst
+                  ? month + '/' + day
+                  : day + '/' + month
+                ) + '/' + year
+          ;
+        }
+      }
+    };
+
+
+    // ================================================[ Handlers ]=====
+
+    {% if formMethod == 'POST' %}
+    // Faz o tratamento da seleção do plano
+    function planHandler() {
+      // Exibe os planos de assinatura ofertados conforme o plano de
+      // serviços selecionado
+      var
+        planID = $(this).val(),
+        $selected = 
+          $(this)
+            .closest('div.search.selection.dropdown')
+            .dropdown('get item', planID),
+        monthPrice =
+          $($selected)
+            .data('price'),
+        $dropdown = $("input[name='subscriptionplanid']")
+          .closest('div.ui.search.selection.dropdown'),
+        firstSubscriptionPlanID = subscriptionPlans[planID][0]['value']
+      ;
+
+      // Setamos o valor da mensalidade
+      $("input[name='monthprice']")
+        .val(monthPrice)
+      ;
+
+      // Ajustamos os planos de assinatura ofertados
+      $dropdown
+        .dropdown('change values', subscriptionPlans[planID])
+      ;
+      // Acrescentamos a informação de quantos meses cada assinatura
+      // corresponde
+      $.each(subscriptionPlans[planID], function(index, subscriptionPlan) {
+        $dropdown
+          .find('div.item[data-value=' + subscriptionPlan['value'] + ']')
+          .attr('data-months', subscriptionPlan['months'])
+          .attr('data-discount', subscriptionPlan['discount'])
+        ;
+      });
+
+      // Limpamos quaisquer seleções anteriores
+      $dropdown
+        .dropdown('clear')
+      ;
+
+      // Definimos o primeiro plano de assinatura disponível
+      $dropdown
+        .dropdown('set selected', firstSubscriptionPlanID)
+      ;
+      $dropdown
+        .dropdown('refresh')
+      ;
+    }
+    {% endif %}
+
+    {% if formMethod == 'POST' %}
+    // Faz o tratamento da seleção do plano de assinatura
+    function subscriptionPlanHandler() {
+      // Define que um plano é pré-pago quando o cliente contrata um
+      // período superior a um mês
+      var
+        subscriptionPlanID = $(this).val(),
+        $selected = 
+          $(this).closest('div.search.selection.dropdown')
+            .dropdown('get item', subscriptionPlanID),
+        months =
+          $($selected)
+            .data('months'),
+        discount =
+          $($selected)
+            .data('discount')
+      ;
+
+      if (discount !== undefined) {
+        // Convertemos os valores para float
+        discount = discount
+          .replace('.', '')
+          .replace(',', '.')
+        ;
+        discount = parseFloat(discount);
+        $("input[name='discount']")
+          .val(discount)
+        ;
+      }
+
+      monthPriceHandler();
+
+      if (months > 1) {
+        // Definimos como pré-pago
+        $("input[name='prepaid']")
+          .closest('.ui.checkbox')
+          .checkbox('check')
+          .checkbox('set disabled')
+        ;
+      } else {
+        // Retiramos a definição de pré-pago
+        $("input[name='prepaid']")
+          .closest('.ui.checkbox')
+          .checkbox('uncheck')
+          .checkbox('set enabled')
+        ;
+      }
+    }
+    {% endif %}
+
+    // Faz o tratamento de campos que informam um valor monetário para
+    // permitir corrigir valores inválidos
+    function monetaryHandler()
+    {
+      var
+        monetary = $(this).val()
+      ;
+
+      if (monetary.trim().isEmpty()) {
+        $(this)
+          .val('0,00')
+        ;
+      }
+    }
+
+    // Faz o tratamento do campo que informa o valor final
+    function monthPriceHandler()
+    {
+      var
+        monthPrice = $("input[name='monthprice']")
+          .val(),
+        discount = $("input[name='discount']")
+          .val()
+      ;
+
+      // Recalcula o valor real
+      discount = parseFloat(discount);
+      monthPrice = monthPrice
+        .replace('.', '')
+        .replace(',', '.')
+      ;
+      monthPrice = parseFloat(monthPrice);
+
+      if (discount > 0.00) {
+        // Calcula a mensalidade com desconto
+        monthPrice =  monthPrice - monthPrice * discount/100;
+      }
+
+      $("input[name='realmonthprice']")
+        .val(monthPrice.toFixed(2).replace('.', ','))
+      ;
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

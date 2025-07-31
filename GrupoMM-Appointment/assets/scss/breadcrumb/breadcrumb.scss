@@ -1,0 +1,175 @@
+/*!
+ * Improved Breadcrumb Code
+ * 
+ * Code licensed under the Apache License v2.0.
+ * For details, see http://www.apache.org/licenses/LICENSE-2.0.
+ */
+
+@import '../mixin.scss';
+@import '../themes/default.scss';
+
+/* -----------------------------------------------[ Breadcrumb ]-----
+   As definições do breadcrumb
+   ------------------------------------------------------------------ */
+
+.breadcrumb-arrow {
+  list-style: none;
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 0;
+  margin: 0;
+  line-height: 2rem;
+  font-size: 0.89em;
+
+  background-color: $breadcrumbActiveBackground;
+  border-bottom: 1px solid $dividerBackground;
+
+  li {
+    // Acrescentamos um espaço após o símbolo de home
+    .fa-home:after {
+      content: " ";
+      white-space: pre;
+    }
+  }
+
+  li,
+  li a,
+  li span {
+    display: inline-block;
+    vertical-align: top;
+  }
+  
+  li {
+    &:not(:first-child) {
+      margin-left: -0.157rem;
+    }
+
+    + li:before {
+      padding: 0;
+      content: ""
+    }
+
+    span {
+      padding: 0 0.714rem;
+    }
+
+    a,
+    &:not(:first-child) span {
+      padding: 0 0.714rem 0 1.786rem;
+    }
+
+    &:first-child a {
+      padding: 0 0.3rem;
+    }
+
+    a i,
+    span i {
+      line-height: 27.5px;
+    }
+
+    a {
+      position: relative;
+      color: $breadcrumbTextColor;
+      text-decoration: none;
+      background-color: $breadcrumbBackground;
+      border: 1px solid $breadcrumbBackground;
+    }
+
+    span {
+      color: $textColor;
+      text-decoration: none;
+      background-color: $breadcrumbActiveBackground;
+      border: 1px solid $breadcrumbActiveBackground;
+    }
+
+    &:first-child a {
+      padding-left: 0.5rem;
+
+      @media only screen and (max-width: 767px) {
+        padding-left: 0.3rem;
+        padding-right: 0;
+      }
+    }
+
+    a {
+      &:before,
+      &:after {
+        position: absolute;
+        top: -0.2rem;
+        width: 0;
+        height: 0;
+        content: '';
+        border-top: 1.2rem solid transparent;
+        border-bottom: 1.2rem solid transparent;
+      }
+
+      &:before {
+        right: -1.105rem;
+        z-index: 3;
+        border-left: 1.2rem solid $breadcrumbBackground;
+      }
+
+      &:after {
+        right: -1.185rem;
+        z-index: 2;
+        border-left: 1.2rem solid $breadcrumbDividerBackground;
+      }
+
+      &:focus,
+      &:hover {
+        background-color: $breadcrumbHoveredBackground;
+        border: 1px solid $breadcrumbHoveredBackground;
+
+        &:before {
+          border-left-color: $breadcrumbHoveredBackground;
+        }
+      }
+
+      &:active {
+        background-color: $breadcrumbDividerBackground;
+        border: 1px solid $breadcrumbDividerBackground;
+
+        &:after,
+        &:before {
+          border-left-color: $breadcrumbDividerBackground;
+        }
+      }
+    }
+    
+    &:not(:last-child) a span {
+      background: none;
+      padding: 0;
+      border: none;
+      margin: 0;
+      color: inherit;
+    }
+
+    @media only screen and (max-width: 767px) {
+      &:first-child a {
+        span {
+          display: none;
+        }
+      }
+
+      &:not(:first-child):not(:last-child) a {
+        padding-left: 1.3rem;
+        padding-right: 0;
+      }
+
+      &:not(:last-child) a {
+  
+        span {
+          width: 3.5rem;
+          text-overflow: ellipsis;  
+          overflow: hidden;
+  
+          &:hover {
+            overflow: visible;
+            width: 100%;
+          }
+        }
+      }
+    }
+  }
+}

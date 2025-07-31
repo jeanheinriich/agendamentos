@@ -1,0 +1,146 @@
+{% import "templates/erp/macros/menuItem.twig" as menu %}
+<ul class="level1">
+  {{ menu.addItem('ERP\\Home', 'home', 'Início') }}
+
+ {% if authorization.hasAuthorizationForGroupOfRoutes('ERP\\Appointments') %}
+  <li class="item has-submenu">
+    <div>
+      <i class="fas fa-calendar"></i> Agendamentos
+      <i class="dropdown icon"></i>
+    </div>
+
+    <ul class="level2">
+      {{ menu.addItem('ERP\\Appointments\\Calendar', 'calendar-check', 'Calendário') }}
+      {{ menu.addItem('ERP\\Appointments\\newAppointment', 'plus-square', 'Novo Agendamento') }}
+    </ul>
+  </li>
+  {% endif %}
+
+  
+
+  {% if ( authorization.hasAuthorizationForGroupOfRoutes('ERP\\Cadastre') ) %}
+  <li class="item has-submenu">
+    <div>
+      <i class="fas fa-book-open"></i> Cadastro
+      <i class="dropdown icon"></i>
+    </div>
+
+    <ul class="level2">
+      {% if authorization.user.groupid < 6 %}
+      {{ menu.addItem('ERP\\Cadastre\\Customers', 'house-user', 'Clientes') }}
+      {% else %}
+      <li class="item has-submenu">
+        <div>
+          <i class="fas fa-house-user"></i> Cliente
+          <i class="dropdown icon"></i>
+        </div>
+
+        <ul class="level3">
+          {{ menu.addItem('ERP\\Cadastre\\Customers\\Edit', 'info-circle', 'Meus dados cadastrais', { 'customerID': authorization.user.entityid }) }}
+          {{ menu.addItem('ERP\\Cadastre\\Customers\\Contract', 'file-signature', 'Meu contrato', { 'contractID': authorization.user.entityid }) }}
+        </ul>
+      </li>
+      {% endif %}
+      {{ menu.addItem('ERP\\Cadastre\\Suppliers', 'truck-loading', 'Fornecedores') }}
+      {{ menu.addItem('ERP\\Cadastre\\ServiceProviders', 'ambulance', 'Prestadores de serviços') }}
+      {{ menu.addItem('ERP\\Cadastre\\Sellers', 'user-tie', 'Vendedores') }}
+      {{ menu.addItem('ERP\\Cadastre\\RapidResponses', 'shipping-fast', 'Pronta-resposta') }}
+      {{ menu.addItem('ERP\\Cadastre\\Vehicles', 'truck', 'Veículos') }}
+      {{ menu.addItem('ERP\\Cadastre\\Users', 'users-cog', 'Usuários') }}
+    </ul>
+  </li>
+  {% endif %}
+
+  {% if ( authorization.hasAuthorizationForGroupOfRoutes('ERP\\Devices') ) %}
+  <li class="item has-submenu">
+    <div>
+      <i class="fas fa-project-diagram"></i> Dispositivos
+      <i class="dropdown icon"></i>
+    </div>
+
+    <ul class="level2">
+      {{ menu.addItem('ERP\\Devices\\SimCards', 'sim-card', 'SIM Cards') }}
+      {{ menu.addItem('ERP\\Devices\\Equipments', 'box', 'Equipamentos') }}
+
+      {% if ( authorization.hasAuthorizationForGroupOfRoutes('ERP\\Devices\\Movimentations') ) %}
+      <li class="item has-submenu">
+        <div>
+          <i class="fas fa-retweet"></i> Movimentações
+          <i class="dropdown icon"></i>
+        </div>
+
+        <ul class="level3">
+          {{ menu.addItem('ERP\\Devices\\Movimentations\\Transfer', 'people-carry', 'Transferência') }}
+          {{ menu.addItem('ERP\\Devices\\Movimentations\\Return', 'reply-all', 'Devolução') }}
+        </ul>
+      </li>
+      {% endif %}
+    </ul>
+  </li>
+  {% endif %}
+
+  {% if ( authorization.hasAuthorizationForGroupOfRoutes('ERP\\Financial') ) %}
+  <li class="item has-submenu">
+    <div>
+      <i class="fas fa-coins"></i> Financeiro
+      <i class="dropdown icon"></i>
+    </div>
+
+    <ul class="level2">
+      {{ menu.addItem('ERP\\Financial\\Plans', 'file-invoice-dollar', 'Planos') }}
+      {{ menu.addItem('ERP\\Financial\\Contracts', 'file-contract', 'Contratos') }}
+      {{ menu.addItem('ERP\\Financial\\Billings', 'vote-yea', 'Lançamentos') }}
+      {{ menu.addItem('ERP\\Financial\\MonthlyCalculations', 'calendar-check', 'Fechamentos') }}
+      {{ menu.addItem('ERP\\Financial\\Payments', 'dollar-sign', 'Cobranças') }}
+    </ul>
+  </li>
+  {% endif %}
+
+  {% if ( authorization.hasAuthorizationForGroupOfRoutes('ERP\\Parameterization') ) %}
+  <li class="item has-submenu">
+    <div>
+      <i class="fas fa-layer-group"></i> Parametrizações
+      <i class="dropdown icon"></i>
+    </div>
+
+    <ul class="level2">
+      {% if ( authorization.hasAuthorizationForGroupOfRoutes('ERP\\Parameterization\\Financial') ) %}
+      <li class="item has-submenu">
+        <div>
+          <i class="fas fa-coins"></i> Financeiras
+          <i class="dropdown icon"></i>
+        </div>
+
+        <ul class="level3">
+          {{ menu.addItem('ERP\\Parameterization\\Financial\\InstallmentTypes', 'list-ol', 'Tipos de parcelamentos') }}
+          {{ menu.addItem('ERP\\Parameterization\\Financial\\BillingTypes', 'file-invoice-dollar', 'Tipos de cobranças') }}
+          {{ menu.addItem('ERP\\Parameterization\\Financial\\DueDays', 'calendar-day', 'Dias de vencimento') }}
+          {{ menu.addItem('ERP\\Parameterization\\Financial\\ContractTypes', 'file-signature', 'Tipos de contratos') }}
+          {{ menu.addItem('ERP\\Parameterization\\Financial\\DefinedMethods', 'money-check-alt', 'Meios de pagamento') }}
+          {{ menu.addItem('ERP\\Parameterization\\Financial\\PaymentConditions', 'donate', 'Condições de pagamento') }}
+        </ul>
+      </li>
+      {% endif %}
+
+      {% if ( authorization.hasAuthorizationForGroupOfRoutes('ERP\\Parameterization\\Vehicles') ) %}
+      <li class="item has-submenu">
+        <div>
+          <i class="fas fa-truck"></i> Veículos
+          <i class="dropdown icon"></i>
+        </div>
+
+        <ul class="level3">
+          {{ menu.addItem('ERP\\Parameterization\\Vehicles\\Brands', 'award', 'Marcas') }}
+          {{ menu.addItem('ERP\\Parameterization\\Vehicles\\Models', 'ambulance', 'Modelos') }}
+        </ul>
+      </li>
+      {% endif %}
+
+      {{ menu.addItem('ERP\\Parameterization\\Deposits', 'warehouse', 'Depósitos') }}
+      {{ menu.addItem('ERP\\Parameterization\\MailingProfiles', 'mail-bulk', 'Perfis de notificação') }}
+    </ul>
+  </li>
+  {% endif %}
+
+  {{ menu.addItem('ERP\\About', 'info-circle', 'Sobre') }}
+</ul>

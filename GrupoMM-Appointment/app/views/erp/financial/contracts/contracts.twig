@@ -1,0 +1,1653 @@
+{% extends 'templates/erp/layout.twig' %}
+{% import "templates/erp/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento de contratos{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.adaptable.dropdown {
+      flex-basis: 11.8em;
+      min-width: 11.8em;
+    }
+    .field.customer .ui.search.autocomplete {
+      width: 100%;
+    }
+    {% if authorization.user.groupid < 6 %}
+    .ui.main.basic.segment .searchbar.fields .field.customer {
+      flex-grow: 1;
+      min-width: 236px;
+    }
+    {% else %}
+    .ui.main.basic.segment .searchbar.fields .field.searchbox {
+      min-width: 236px;
+      width: calc(100% - 47px);
+    }
+    {% endif %}
+    @media only screen and (max-width: 767px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 100px;
+        width: calc(100% - 47px);
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox input {
+        width: calc(100% - 140px);
+      }
+    }
+
+    @media only screen and (min-width: 920px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+      {% if authorization.user.groupid < 6 %}
+      {% else %}
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        width: 538px;
+      }
+      {% endif %}
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+
+    /* --------------------------------------------------------------
+     * Personalizações das linhas do datagrid apenas para este módulo
+     * -------------------------------------------------------------- */
+    .blocked > td {
+      color: #7f7f7f
+    }
+    .blocked > td {
+      background-color: #fff6f6 !important;
+      color: DarkRed;
+    }
+    tr.blocked:hover > td {
+      background-color: #f6e7e7 !important;
+    }
+
+    .installation {
+      padding-left: 1em;
+    }
+    .symbol {
+      color: #9aabc2;
+      font-style: oblique;
+      font-size: .9rem;
+      float: left;
+    }
+    .inline.button {
+      font-size: .75714286rem;
+      vertical-align: text-bottom;
+      padding: .38571429em .18571429em .38571429em !important;
+      margin-left: .55rem;
+    }
+
+    .ui.modal>.content>.icon+.description {
+      overflow-wrap: break-word;
+      width: fit-content;
+    }
+
+    tr.contract {
+      background-color: #ebf4fc;
+    }
+    
+    .ui.celled.table tr td.bold {
+      color: #0066cc;
+      font-weight: bold;
+    }
+    .ui.celled.table tr.damaged td.bold {
+      color: #777777;
+      font-weight: bold;
+    }
+    .ui.celled.table tr.maintenance td.bold {
+      color: #b300b3;
+      font-weight: bold;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set add  = { 'URL': 'ERP\\Financial\\Contracts\\Add', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/contract.svg', 'Contrato') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento dos contratos
+                <div class="sub header">
+                  Permite gerenciar os contratos de cada cliente. Cada
+                  contrato especifica valores e parâmetros nos quais a
+                  execução de serviços está baseada. Um cliente pode ter
+                  mais de um contrato, com valores e condições distintas
+                  entre eles, ou baseados em planos diferentes.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(add.URL, add.method) %}
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Adiciona um contrato"
+                      data-position="top left" type="button"
+                      onclick="location.href='{{ path_for(add.URL) }}'">
+                <i class="add icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            <div class="field customer">
+              <input placeholder="Informe o cliente..." type="text"
+                     name="customerName"
+                     value="{{ contract.customer.name }}">
+              <input type="hidden" name="customerID"
+                     value="{{ contract.customer.id }}" >
+              <input type="hidden" name="subsidiaryID"
+                     value="{{ contract.customer.subsidiaryID }}" >
+            </div>
+          </div>
+
+          <div class="flex">
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite o que procura..."
+                       value="{{ contract.searchValue }}">
+                <select class="ui searchfield adaptable selection dropdown button"
+                        id="searchField">
+                  <option value="plate"{% if contract.searchField == "plate" %} selected{% endif %}>
+                    Placa
+                  </option>
+                  <option value="installationNumber"{% if contract.searchField == "installationNumber" %} selected{% endif %}>
+                    Item de contrato
+                  </option>
+                  <option value="contractNumber"{% if contract.searchField == "contractNumber" %} selected{% endif %}>
+                    Contrato
+                  </option>
+                </select>
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza um contrato"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID do contrato</th>
+          <th>ID do item de contrato</th>
+          <th>ID do cliente</th>
+          <th>Nome do cliente</th>
+          <th>Pessoa jurídica?</th>
+          <th>ID da unidade/filial do cliente</th>
+          <th>Unidade/filial do cliente</th>
+          <th>Número do<br>contrato</th>
+          <th>ID do plano</th>
+          <th>Nome do plano</th>
+          <th>Mensalidade contrato</th>
+          <th>Dia de<br>vencimento</th>
+          <th>Data da<br>assinatura</th>
+          <th>Encerramento<br>do contrato</th>
+          <th>Condição de<br>pagamento</th>
+          <th>Número do contrato<br>ou item de contrato</th>
+          <th>Placa</th>
+          <th>Tipo</th>
+          <th>Marca</th>
+          <th>Modelo</th>
+          <th>Cor</th>
+          <th>Mensalidade</th>
+          <th>Data da<br>instalação</th>
+          <th>Data da<br>desinstalação</th>
+          <th>Data do<br>próx. reajuste</th>
+          <th>Último dia<br>processado</th>
+          <th>Último dia<br>cobrado</th>
+          <th {{ tooltip.add('left', 'Indicador da situação do contrato/item') }}><i class="check darkgreen icon"></i></th>
+          <th>Bloqueio da Unidade/filial</th>
+          <th>Bloqueio do Cliente</th>
+          <th>Bloqueio do Veículo</th>
+          <th>Contrato ativo</th>
+          <th>Não rastreado</th>
+          <th>Contém dados de rastreamento</th>
+          <th {{ tooltip.add('left', 'Permite remover o contrato/item de contrato') }}><i class="remove darkred icon"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/info.twig' %}
+  {% include 'templates/erp/partials/dialogs/interaction.twig' %}
+  {% include 'templates/erp/partials/dialogs/question.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="interactionSound">
+    <source src="/sounds/interaction.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/DateFormatter.min.js') }}
+  {{ lib('datatables/formatters/DeleteFormatter.min.js') }}
+  {{ lib('datatables/formatters/EnableFormatter.min.js') }}
+  {{ lib('datatables/formatters/MonetaryFormatter.min.js') }}
+  {{ lib('datatables/formatters/IconFormatter.min.js') }}
+  
+  {% set getData      = { 'URL': 'ERP\\Financial\\Contracts\\Get', 'method': 'PATCH' } %}
+  {% set edit         = { 'URL': 'ERP\\Financial\\Contracts\\Edit', 'method': 'GET' } %}
+  {% set remove       = { 'URL': 'ERP\\Financial\\Contracts\\Delete', 'method': 'DELETE' } %}
+  {% set toggleActive = { 'URL': 'ERP\\Financial\\Contracts\\ToggleActive', 'method': 'PUT' } %}
+
+  {% set addInstallation    = { 'URL': 'ERP\\Financial\\Contracts\\Installations\\Add', 'method': 'POST' } %}
+  {% set editInstallation   = { 'URL': 'ERP\\Financial\\Contracts\\Installations\\Edit', 'method': 'GET' } %}
+  {% set removeInstallation = { 'URL': 'ERP\\Financial\\Contracts\\Installations\\Delete', 'method': 'DELETE' } %}
+  
+  {% set getCustomerNameCompletion = { 'URL': 'ERP\\Cadastre\\Entities\\Autocompletion\\Get', 'method': 'PATCH' } %}
+
+  {% apply minify %}
+  <script>
+    var
+      table,
+      groupColumn    = 3,
+      subgroupColumn = 6
+    ;
+
+    // Um formatador de colunas para exibir um ícone antes do número de
+    // um item de contrato
+    var installationFormatter = function ( value, type, row, meta ) {
+      return ''
+        + '<span data-position="right center"'
+        +       'data-blue data-inverted '
+        +       'data-tooltip="Item de contrato" '
+        +       'class="installation">'
+        +   '<i class="tag grey icon"></i>'
+        + '</span>' + value
+      ;
+    };
+
+    // Um formatador para exibir um ícone indicativo da situação do
+    // contrato e/ou item de contrato
+    var blockedFormatter = function ( value, type, row, meta ) {
+      var buildIcon = function (color, icon, title) {
+        return ''
+          + '<span data-position="left center"'
+          +       'data-blue data-inverted '
+          +       'data-tooltip="' + title + '">'
+          +   '<i class="' + icon + ' ' + color + ' icon"></i>'
+          + '</span>'
+        ;
+      };
+      
+      switch (value) {
+        case 1:
+          // Apenas o item de contrato está encerrado
+          return buildIcon('archive', 'darkorange', ''
+            + 'O item de contrato está encerrado'
+          );
+        case 2:
+          // Apenas o contrato está inativo ou encerrado
+          if (row.contractenddate !== null) {
+            return buildIcon('archive', 'grey', ''
+              + 'O contrato ao qual este item pertence está encerrado'
+            );
+          } else {
+            return buildIcon('lock', 'darkred', ''
+              + 'O contrato ao qual este item pertence está suspenso'
+            );
+          }
+        case 3:
+          // Tanto o contrato está encerrado ou inativo quanto o
+          // respectivo item de contrato foi encerrado
+          return buildIcon('archive', 'grey', ''
+            + 'O item de contrato está encerrado'
+          );
+        case 4:
+          // Apenas a unidade/filial do cliente está bloqueada
+          return buildIcon('lock', 'darkorange', ''
+            + 'O contrato ao qual este item pertence está inativo em '
+            + 'função do bloqueio na unidade/filial do cliente'
+          );
+        case 5:
+          // A unidade/filial do cliente está bloqueada, mas o item de
+          // contrato já está encerrado também
+          return buildIcon('archive', 'grey', ''
+            + 'O item de contrato está encerrado'
+          );
+        case 6:
+          // Tanto o contrato está inativo quanto a unidade/filial do
+          // cliente está bloqueada
+          if (row.contractenddate !== null) {
+            return buildIcon('archive', 'grey', ''
+              + 'O contrato ao qual este item pertence está encerrado'
+            );
+          } else {
+            return buildIcon('lock', 'darkred', ''
+              + 'A conta da unidade/filial do cliente está bloqueada e '
+              + 'o contrato ao qual este item pertence está suspenso'
+            );
+          }
+        case 7:
+          // Tanto o contrato está inativo quanto a unidade/filial do
+          // cliente está bloqueada e o item de contrato foi encerrado
+          return buildIcon('archive', 'grey', ''
+            + 'O item de contrato está encerrado'
+          );
+        case 8:
+          // Apenas o cliente está bloqueado
+          return buildIcon('lock', 'darkorange', ''
+            + 'O contrato ao qual este item pertence está inativo em '
+            + 'função do bloqueio na conta do cliente'
+          );
+        case 9:
+          // O cliente está bloqueado e o item de contrato foi encerrado
+          return buildIcon('archive', 'grey', ''
+            + 'O item de contrato está encerrado'
+          );
+        case 10:
+          // Tanto a empresa/cliente está bloqueado quanto este contrato
+          // está inativo
+          if (row.contractenddate !== null) {
+            return buildIcon('archive', 'grey', ''
+              + 'O contrato ao qual este item pertence está encerrado'
+            );
+          } else {
+            return buildIcon('lock', 'darkred', ''
+              + 'A conta do cliente está bloqueada e o contrato ao '
+              + 'qual este item pertence está suspenso'
+            );
+          }
+        case 11:
+          // Tanto a empresa/cliente está bloqueado quanto este contrato
+          // está inativo e o item de contrato foi encerrado
+          return buildIcon('archive', 'grey', ''
+            + 'O item de contrato está encerrado'
+          );
+        case 12:
+          // Tanto a empresa/cliente quanto sua unidade/filial estão
+          // bloqueados
+          return buildIcon('lock', 'darkorange', ''
+            + 'O contrato ao qual este item pertence está inativo em '
+            + 'função do bloqueio tanto na conta do cliente quanto de '
+            + 'sua unidade/filial'
+          );
+        case 13:
+          // Tanto a empresa/cliente quanto sua unidade/filial estão
+          // bloqueados e o item de contrato foi encerrado
+          return buildIcon('archive', 'grey', ''
+            + 'O item de contrato está encerrado'
+          );
+        case 14:
+          // Tanto a empresa/cliente quanto sua unidade/filial estão
+          // bloqueados e este contrato está inativo
+          if (row.contractenddate !== null) {
+            return buildIcon('archive', 'grey', ''
+              + 'O contrato ao qual este item pertence está encerrado'
+            );
+          } else {
+            return buildIcon('lock', 'darkred', ''
+              + 'As contas do cliente e de sua unidade/filial estão '
+              + 'bloqueadas e o contrato ao qual este item pertence '
+              + 'está suspenso'
+            );
+          }
+        case 15:
+          // Tanto a empresa/cliente quanto sua unidade/filial estão
+          // bloqueados e este contrato está inativo e o item de
+          // contrato foi encerrad0
+          return buildIcon('archive', 'grey', ''
+            + 'O item de contrato está encerrado'
+          );
+        case 16:
+          // O contratante está bloqueado
+          return buildIcon('lock', 'darkorange', ''
+            + 'Este contrato está inativo em função do bloqueio na '
+            + 'conta do contratante'
+          );
+        case 17:
+          // O contratante está bloqueado e o item de contrato foi
+          // encerrado
+          return buildIcon('archive', 'grey', ''
+            + 'O item de contrato está encerrado'
+          );
+        case 18:
+          // Tanto o contratante está bloqueado quanto este contrato
+          // está inativo
+          if (row.contractenddate !== null) {
+            return buildIcon('archive', 'grey', ''
+              + 'O contrato ao qual este item pertence está encerrado'
+            );
+          } else {
+            return buildIcon('lock', 'darkred', ''
+              + 'A conta do contratante está bloqueada e o contrato ao '
+              + 'qual este item pertence está inativo'
+            );
+          }
+        case 19:
+          // Tanto o contratante está bloqueado quanto este contrato
+          // está inativo e o item de contrato foi encerrado
+          return buildIcon('archive', 'grey', ''
+            + 'O item de contrato está encerrado'
+          );
+        case 20:
+          // Tanto o contratante quanto a unidade/filial do cliente
+          // estão bloqueados
+          return buildIcon('lock', 'darkorange', ''
+            + 'Este contrato está inativo em função do bloqueio tanto '
+            + 'na conta do contratante quanto da unidade/filial do '
+            + 'cliente'
+          );
+        case 21:
+          // Tanto o contratante quanto a unidade/filial do cliente
+          // estão bloqueados e o item de contrato foi encerrado
+          return buildIcon('archive', 'grey', ''
+            + 'O item de contrato está encerrado'
+          );
+        case 22:
+          // Tanto o contratante quanto a unidade/filial do cliente e
+          // o contrato estão bloqueados
+          if (row.contractenddate !== null) {
+            return buildIcon('archive', 'grey', ''
+              + 'O contrato ao qual este item pertence está encerrado'
+            );
+          } else {
+            return buildIcon('lock', 'darkred', ''
+              + 'As contas do contratante e da unidade/filial do '
+              + 'cliente estão bloqueadas e o contrato ao qual este '
+              + 'item pertence está inativo'
+            );
+          }
+        case 23:
+          // Tanto o contratante quanto a unidade/filial do cliente e
+          // o contrato estão bloqueados e o item de contrato foi
+          // encerrado
+          return buildIcon('archive', 'grey', ''
+            + 'O item de contrato está encerrado'
+          );
+        case 24:
+          // Tanto o contratante quanto o cliente estão bloqueados
+          return buildIcon('lock', 'darkorange', ''
+            + 'Este contrato está inativo em função dos bloqueios '
+            + 'tanto na conta do contratante quanto na do cliente'
+          );
+        case 25:
+          // Tanto o contratante quanto o cliente estão bloqueados e o
+          // item de contrato foi encerrado
+          return buildIcon('archive', 'grey', ''
+            + 'O item de contrato está encerrado'
+          );
+        case 26:
+          // Tanto o contratante quanto a empresa/cliente estão
+          // bloqueados e este contrato está inativo
+          if (row.contractenddate !== null) {
+            return buildIcon('archive', 'grey', ''
+              + 'O contrato ao qual este item pertence está encerrado'
+            );
+          } else {
+            return buildIcon('lock', 'darkred', ''
+              + 'As contas do contratante e do cliente estão bloqueadas '
+              + 'e o contrato ao qual este item pertence está inativo'
+            );
+          }
+        case 27:
+          // Tanto o contratante quanto a empresa/cliente estão
+          // bloqueados e este contrato está inativo e o item de
+          // contrato foi encerrado
+          return buildIcon('archive', 'grey', ''
+            + 'O item de contrato está encerrado'
+          );
+        case 28:
+          // Tanto o contratante, quanto a empresa/cliente e a sua
+          // unidade/filial estão bloqueados
+          return buildIcon('lock', 'darkorange', ''
+            + 'O contrato ao qual este item pertence está inativo em '
+            + 'função dos bloqueios tanto na conta do contratante '
+            + 'quanto na do cliente e também no da sua unidade/filial'
+          );
+        case 29:
+          // Tanto o contratante, quanto a empresa/cliente e a sua
+          // unidade/filial estão bloqueados e o item de contrato foi
+          // encerrado
+          return buildIcon('archive', 'grey', ''
+            + 'O item de contrato está encerrado'
+          );
+        case 30:
+          // Tanto o contratante, quanto a empresa/cliente e a sua
+          // unidade/filial estão bloqueados e este contrato está
+          // inativo
+          if (row.contractenddate !== null) {
+            return buildIcon('archive', 'grey', ''
+              + 'O contrato ao qual este item pertence está encerrado'
+            );
+          } else {
+            return buildIcon('lock', 'darkred', ''
+              + 'O contrato ao qual este item pertence está inativo em '
+              + 'função dos bloqueios tanto na conta do contratante '
+              + 'quanto na do cliente e também no da sua unidade/filial '
+              + 'e o contrato está suspenso'
+            );
+          }
+        case 31:
+          // Todos estão bloqueados (contratante, empresa/cliente,
+          // unidade/filial da empresa/cliente) o contrato está inativo
+          // e o item de contrato foi encerrado
+          return buildIcon('archive', 'grey', ''
+            + 'O item de contrato está encerrado'
+          );
+        default:
+          // Não temos bloqueios
+          if (row.signaturedate === null) {
+            return buildIcon('exclamation triangle', 'darkorange', ''
+              + 'Este contrato não está assinado')
+            ;
+          } else {
+            if (row.startdate === null) {
+              return buildIcon('exclamation triangle', 'darkorange', ''
+                + 'A instalação do equipamento ainda não foi registrada'
+              );
+            } else {
+              if (row.notracker) {
+                return buildIcon('exclamation triangle', 'darkorange', ''
+                  + 'O item de contrato está ativo mas sem um '
+                  + 'equipamento instalado'
+                );
+              } else {
+                if (row.vehicleblocked) {
+                  return buildIcon('exclamation triangle', 'darkorange', ''
+                    + 'O item de contrato está ativo mas o veículo '
+                    + 'está bloqueado'
+                  );
+                } else {
+                  return buildIcon('check', 'darkgreen', ''
+                    + 'Este item de contrato está ativo'
+                  );
+                }
+              }
+            }
+          }
+      }
+    };
+    
+    $(document).ready(function() {
+      // --------------------------------[ Componentes da Searchbar ]---
+      $('.searchbar .ui.dropdown')
+        .dropdown()
+      ;
+      $("input[name='customerName']")
+        .autocomplete(customerNameCompletionOptions)
+      ;
+      $('#searchValue')
+        .keypress(forceSearch)
+      ;
+
+      // Lida com o pressionamento de teclas
+      $(document).on('keydown',function(event) {
+        if (event.keyCode == 27) {
+          // Limpa os dados do formulário
+          $('#searchValue').val('');
+          $("input[name='customerID']").val(0);
+          $("input[name='customerName']").val('');
+          $("input[name='subsidiaryID']").val(0);
+
+          searchLoad();
+        }
+      });
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "contracts.contractid",
+            "data": "id",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "installations.installationid",
+            "data": "installationid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 2,
+            "name": "contracts.customerid",
+            "data": "customerid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 3,
+            "name": "customer.name",
+            "data": "customername",
+            "visible": false },
+          { "targets": 4,
+            "name": "customer.juridicalperson",
+            "data": "juridicalperson",
+            "visible": false },
+          { "targets": 5,
+            "name": "contracts.subsidiaryid",
+            "data": "subsidiaryid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 6,
+            "name": "subsidiaries.name",
+            "data": "subsidiaryname",
+            "visible": false,
+            "orderable": false },
+          { "targets": 7,
+            "name": "contractnumber",
+            "data": "contractnumber",
+            "visible": false,
+            "orderable": false },
+          { "targets": 8,
+            "name": "contracts.planid",
+            "data": "planid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 9,
+            "name": "plans.name",
+            "data": "planname",
+            "visible": false,
+            "orderable": false },
+          { "targets": 10,
+            "name": "contracts.monthprice",
+            "data": "contractprice",
+            "visible": false,
+            "orderable": false },
+          { "targets": 11,
+            "name": "duedays.day",
+            "data": "dueday",
+            "visible": false,
+            "orderable": false },
+          { "targets": 12,
+            "name": "contracts.signaturedate",
+            "data": "signaturedate",
+            "visible": false,
+            "orderable": false },
+          { "targets": 13,
+            "name": "contracts.enddate",
+            "data": "contractenddate",
+            "visible": false,
+            "orderable": false },
+          { "targets": 14,
+            "name": "paymentconditionname",
+            "data": "paymentconditionname",
+            "visible": false,
+            "orderable": false },
+          { "targets": 15,
+            "name": "customer.name, getContractNumber(contracts.createdat), installations.startdate NULLS FIRST",
+            "data": "installationnumber",
+            "visible": true,
+            "orderable": true,
+            "render": installationFormatter },
+          { "targets": 16,
+            "name": "customer.name, getContractNumber(contracts.createdat), vehicle.plate NULLS FIRST",
+            "data": "plate",
+            "visible": true,
+            "width": "30px",
+            "className": "dt-center bold",
+            "orderable": true },
+          { "targets": 17,
+            "name": "vehicletypename",
+            "data": "vehicletypename",
+            "visible": true,
+            "orderable": false,
+            "width": "50px" },
+          { "targets": 18,
+            "name": "vehiclebrandname",
+            "data": "vehiclebrandname",
+            "visible": true,
+            "orderable": false,
+            "width": "150px" },
+          { "targets": 19,
+            "name": "vehiclemodelname",
+            "data": "vehiclemodelname",
+            "visible": true,
+            "orderable": false },
+          { "targets": 20,
+            "name": "vehiclecolorname",
+            "data": "vehiclecolorname",
+            "visible": true,
+            "orderable": false,
+            "width": "120px" },
+          { "targets": 21,
+            "name": "installations.monthprice",
+            "data": "monthprice",
+            "className": "dt-right",
+            "visible": true,
+            "orderable": true,
+            "width": "80px",
+            "render": monetaryFormatter },
+          { "targets": 22,
+            "name": "installations.startdate",
+            "data": "startdate",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true,
+            "width": "80px" },
+          { "targets": 23,
+            "name": "installations.enddate",
+            "data": "enddate",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true,
+            "width": "80px" },
+          { "targets": 24,
+            "name": "installations.dateofnextreadjustment",
+            "data": "dateofnextreadjustment",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true,
+            "width": "80px" },
+          { "targets": 25,
+            "name": "installations.lastdayofcalculatedperiod",
+            "data": "lastdayofcalculatedperiod",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true,
+            "width": "80px" },
+          { "targets": 26,
+            "name": "installations.lastdayofbillingperiod",
+            "data": "lastdayofbillingperiod",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true,
+            "width": "80px" },
+          { "targets": 27,
+            "name": "blockedlevel",
+            "data": "blockedlevel",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": blockedFormatter },
+          { "targets": 28,
+            "name": "subsidiaryblocked",
+            "data": "subsidiaryblocked",
+            "visible": false,
+            "orderable": false },
+          { "targets": 29,
+            "name": "customerblocked",
+            "data": "customerblocked",
+            "visible": false,
+            "orderable": false },
+          { "targets": 30,
+            "name": "vehicleblocked",
+            "data": "vehicleblocked",
+            "visible": false,
+            "orderable": false },
+          { "targets": 31,
+            "name": "contractactive",
+            "data": "contractactive",
+            "visible": false,
+            "orderable": false },
+          { "targets": 32,
+            "name": "notracker",
+            "data": "notracker",
+            "visible": false,
+            "orderable": false },
+          { "targets": 33,
+            "name": "containstrackingdata",
+            "data": "containstrackingdata",
+            "visible": false,
+            "orderable": false },
+          { "targets": 34,
+            "name": "delete",
+            "data": "id",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": deleteFormatter("Remover esta instalação") }
+        ],
+        order: [[ 16, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        displayStart: {{ contract.displayStart|default("0") }},
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.searchValue  = $('#searchValue').val();
+            params.searchField  = $('#searchField').val();
+            params.customerID   = $("input[name='customerID']").val();
+            params.customerName = $("input[name='customerName']").val();
+            params.subsidiaryID = $("input[name='subsidiaryID']").val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+          {% set colspan = 12 %}
+
+          // Agrupamento de linhas
+          var
+            api          = this.api(),
+            rows         = api.rows( {page:'current'} ).nodes(),
+            lastGroup    = null,
+            lastSubGroup = null,
+            lastContract = null
+          ;
+
+          api.column(groupColumn, {page:'current'} ).data().each(function( group, i ) {
+            var
+              addSubGroupRow = false
+            ;
+
+            if (lastGroup !== group) {
+              // Informações do cliente
+
+              // Primeiramente, cria as novas colunas com seus
+              // respectivos eventos de click
+              
+              // 1. Coluna expandida com os dados do cliente
+
+              // Monta os dados dos cabeçalhos das colunas
+              var
+                groupedCellData = ''
+                  + '<span {{ tooltip.add("right", "Cliente") }}>'
+                  +   '<i class="fas fa-house-user"></i> '
+                  + '</span>' + group,
+                $column1 = $("<td colspan='{{ colspan }}'>")
+                  .html(groupedCellData)
+                  .css("font-weight", "600")
+              ;
+
+              // 2. Coluna com informações de bloqueio
+              var
+                blockedCellData =  iconTitleFormatter("unlock", "lightgrey",
+                  "O cliente está liberado")
+              ;
+
+              if (rows.data()[i].customerblocked) {
+                blockedCellData =  iconTitleFormatter("lock", "darkred",
+                  "O cliente está bloqueado");
+              }
+
+              var
+                $column2 = $("<td>")
+                  .html(blockedCellData)
+              ;
+
+              // 3. Coluna com o acesso à remoção
+              var
+                deleteCellData = iconTitleFormatter("minus", "lightgrey", ""),
+                $column3 = $("<td>")
+                  .html(deleteCellData)
+              ;
+
+              // Adiciona uma nova linha e, internamente, as colunas
+              var
+                $newRow = $("<tr>")
+                  .addClass('group')
+                  .append($column1)
+                  .append($column2)
+                  .append($column3)
+              ;
+
+              // Altera a cor da linha em função de bloqueio
+              if (rows.data()[i].blockedlevel > 3) {
+                $newRow.addClass('blocked');
+              }
+
+              // Adiciona a nova linha de agrupamento antes da linha
+              // atual
+              $(rows)
+                .eq( i )
+                .before(
+                  $newRow
+                )
+              ;
+
+              lastGroup = group;
+              addSubGroupRow = true;
+            }
+
+            if ((lastSubGroup !== rows.data()[i].subsidiaryname) ||
+                (addSubGroupRow)) {
+              // Informações da unidade/filial do cliente
+
+              // Monta os dados dos cabeçalhos das colunas
+              var
+                icon   = 'universal access',
+                type   = 'titular',
+                gender = 'O'
+              ;
+
+              if (rows.data()[i].juridicalperson) {
+                icon   = 'plus square';
+                type   = 'unidade/filial';
+                gender = 'A';
+              }
+
+              // Primeiramente, cria as novas colunas com seus respectivos
+              // eventos de click
+              
+              // 1. Coluna expandida com os dados da unidade/filial do
+              //    cliente
+              var
+                groupedCellData = ''
+                  + '<span {{ tooltip.add("right", "' + gender + ' '
+                  + type + ' do cliente") }}>'
+                  +   '<i class="' + icon + ' blue icon"></i>'
+                  + '</span>'
+                  + rows.data()[i].subsidiaryname,
+                $column1 = $("<td colspan='{{ colspan }}'>")
+                  .html(groupedCellData)
+                  .css("font-weight", "600")
+              ;
+
+              // 2. Coluna com informações de bloqueio
+              var
+                blockedCellData =  iconTitleFormatter("unlock", "lightgrey",
+                  gender + " " + type + " está liberad" +
+                  gender.toLowerCase())
+              ;
+              
+              if (rows.data()[i].subsidiaryblocked) {
+                blockedCellData =  iconTitleFormatter("lock", "darkred",
+                  gender + " " + type + " está bloquead" +
+                  gender.toLowerCase());
+              } else {
+                if (rows.data()[i].customerblocked) {
+                  blockedCellData =  iconTitleFormatter("lock", "darkorange",
+                    gender + " " + type + " está bloquead" +
+                    gender.toLowerCase() + " em função do bloqueio " +
+                    "na conta do cliente");
+                }
+              }
+
+              var
+                $column2 = $("<td>")
+                  .html(blockedCellData)
+              ;
+
+              // 3. Coluna com o acesso à remoção
+              var
+                deleteCellData = iconTitleFormatter("minus", "lightgrey", ""),
+                $column3 = $("<td>")
+                  .html(deleteCellData)
+              ;
+
+              // Adiciona uma nova linha e, internamente, as colunas
+              var
+                $newRow = $("<tr>")
+                  .addClass('group')
+                  .append($column1)
+                  .append($column2)
+                  .append($column3)
+              ;
+
+              // Altera a cor da linha em função de bloqueio
+              if (rows.data()[i].blockedlevel > 3) {
+                $newRow.addClass('blocked');
+              }
+
+              // Adiciona a nova linha de agrupamento antes da linha
+              // atual
+              $(rows)
+                .eq( i )
+                .before(
+                  $newRow
+                )
+              ;
+
+              lastSubGroup = rows.data()[i].subsidiaryname;
+            }
+
+            if ((lastContract !== rows.data()[i].contractnumber) ||
+                (addSubGroupRow)) {
+              // Informações do contrato
+
+              // Monta os dados dos cabeçalhos das colunas
+
+              // Primeiramente, cria as novas colunas com seus respectivos
+              // eventos de click
+              
+              // 1. Coluna com o número do contrato
+              var
+                button = ''
+                  + '<button class="ui primary inline icon button"'
+                  + '        data-tooltip="Adiciona uma instalação"'
+                  + '        data-position="right center" type="button"'
+                  + '        data-blue data-inverted'
+                  + '        name="addInstallationButton">'
+                  + '  <i class="add icon" name="addInstallationIcon"></i>'
+                  + '</button>',
+                cellData = ''
+                  + '<span {{ tooltip.add("right", "O número do '
+                  +   'contrato do cliente") }}>'
+                  +   '<i class="file signature black icon"></i>'
+                  + '</span>'
+                  + rows.data()[i].contractnumber
+                  + (
+                      (rows.data()[i].contractenddate === null)
+                        ? button
+                        : ''
+                    ),
+                $column1 = $("<td>")
+                  .html(cellData)
+                  .css("font-weight", "600")
+                  .prop('customerID', rows.data()[i].customerid)
+                  .prop('customerName', rows.data()[i].customername)
+                  .prop('contractID', rows.data()[i].id)
+                  .prop('contractNumber', rows.data()[i].contractnumber)
+                  .on("click", function (event) {
+                    var
+                      source       = event.originalEvent.srcElement,
+                      name         = source.attributes.name,
+                      customerID   = $(this).prop('customerID'),
+                      customerName = $(this).prop('customerName'),
+                      contractID   = $(this).prop('contractID'),
+                      number       = $(this).prop('contractNumber')
+                    ;
+
+                    if (name === undefined || name === null) {
+                      // Clicamos no título
+                      {% if authorization.getAuthorizationFor(edit.URL, edit.method) %}
+                      // Coloca o cliente em edição
+                      window.location.href = "{{ buildURL(edit.URL, { 'contractID': 'contractID' }) }}";
+                      {% endif %}
+                    } else {
+                      // Adiciona uma instalação no cliente
+                      questionDialog('Adicionar instalação', 'Você deseja '
+                        + 'adicionar uma nova instalação no contrato nº <b>'
+                        + number + '</b> do cliente <b>' + customerName
+                        + '</b>?',
+                        function() {
+                          // Adiciona uma instalação no contrato
+                          // selecionado
+                          var
+                            url  = "{{ buildURL(addInstallation.URL, {'contractID': 'contractID'}) }}"
+                          ;
+
+                          postJSONData(url, [],
+                            function (data, params, message) {
+                              // Atualiza a tabela
+                              searchLoad();
+                            }
+                          );
+                        },
+                        function() {
+                          table
+                            .rows()
+                            .deselect()
+                          ;
+                          table
+                            .draw('page')
+                          ;
+                        });
+
+                    }
+                  })
+              ;
+              
+              // 2. Coluna com o plano
+              var
+                cellData = ''
+                  + '<span>Plano: </span>'
+                  + rows.data()[i].planname,
+                $column2 = $('<td colspan="5">')
+                  .html(cellData)
+                  .css("font-weight", "600")
+              ;
+              
+              // 3. Coluna com a mensalidade do contrato
+              var
+                formatedValue = rows.data()[i].contractprice.replace('.', ','),
+                cellData = ''
+                  + '<span class="symbol">R$</span> '
+                  + formatedValue,
+                $column3 = $('<td class="dt-right">')
+                  .html(cellData)
+                  .css("font-weight", "600")
+              ;
+              
+              // 4. Coluna com a assinatura do contrato
+              if (rows.data()[i].signaturedate !== null) {
+                var
+                  cellData = ''
+                    + '<span {{ tooltip.add("right", "A data de '
+                    +   'assinatura do contrato") }}>'
+                    +   '<i class="calendar check green icon"></i>'
+                    + '</span>'
+                    + rows.data()[i].signaturedate,
+                  $column4 = $('<td class="dt-right">')
+                    .html(cellData)
+                    .css("font-weight", "600")
+                ;
+              } else {
+                var
+                  $column4 = $('<td class="dt-center">')
+                    .html('<span>Não assinado</span>')
+                    .css("color", "darkgrey")
+                    .css("font-weight", "600")
+                ;
+              }
+              
+              // 5. Coluna com a assinatura do encerramento do contrato
+              if (rows.data()[i].contractenddate !== null) {
+                var
+                  cellData = ''
+                    + '<span {{ tooltip.add("right", "A data de '
+                    +   'encerramento do contrato") }}>'
+                    +   '<i class="calendar times red icon"></i>'
+                    + '</span>'
+                    + rows.data()[i].contractenddate,
+                  $column5 = $('<td class="dt-right">')
+                    .html(cellData)
+                    .css("font-weight", "600")
+                ;
+              } else {
+                var
+                  $column5 = $('<td class="dt-center">')
+                    .html('<span>---</span>')
+                    .css("color", "darkgrey")
+                    .css("font-weight", "600")
+                ;
+              }
+              
+              // 6. Coluna com a forma de pagamento
+              var
+                cellData = ''
+                  + '<span>Forma de pagamento: </span>'
+                  + rows.data()[i].paymentconditionname,
+                $column6 = $('<td colspan="3">')
+                  .html(cellData)
+                  .css("font-weight", "600")
+              ;
+
+              // 7. Coluna com informações da situação do contrato
+              var
+                blockedCellData =  iconTitleFormatter("check", "darkgreen",
+                  "O contrato está ativo")
+              ;
+              
+              if (rows.data()[i].contractactive === false) {
+                blockedCellData =  iconTitleFormatter("lock", "darkred",
+                  "O contrato está suspenso");
+              } else {
+                if (rows.data()[i].contractenddate !== null) {
+                  blockedCellData =  iconTitleFormatter("archive", "grey",
+                    "O contrato está encerrado");
+                } else {
+                  if (rows.data()[i].customerblocked) {
+                    if (rows.data()[i].subsidiaryblocked) {
+                      blockedCellData = iconTitleFormatter("lock", "darkorange",
+                        "O contrato está inativo em função do bloqueio "
+                        + "tanto na conta do cliente quanto de sua a "
+                        + "unidade/filial"
+                      );
+                    } else {
+                      blockedCellData = iconTitleFormatter("lock", "darkorange",
+                        "O contrato está inativo em função do bloqueio " +
+                        "na conta do cliente"
+                      );
+                    }
+                  } else {
+                    if (rows.data()[i].subsidiaryblocked) {
+                      blockedCellData = iconTitleFormatter("lock", "darkorange",
+                        "O contrato está inativo em função do bloqueio na "
+                        + "unidade/filial do cliente"
+                      );
+                    }
+                  }
+                }
+              }
+
+              var
+                $column7 = $("<td>")
+                  .html(blockedCellData)
+                  .prop('customerID', rows.data()[i].customerid)
+                  .prop('customerName', rows.data()[i].customername)
+                  .prop('contractID', rows.data()[i].id)
+                  .prop('contractNumber', rows.data()[i].contractnumber)
+                  .prop('active', (rows.data()[i].contractactive)?"true":"false")
+                  .on("click", function (event) {
+                    {% if authorization.getAuthorizationFor(toggleActive.URL, toggleActive.method) %}
+                    var
+                      customerID     = $(this).prop('customerID'),
+                      customerName   = $(this).prop('customerName'),
+                      contractID     = $(this).prop('contractID'),
+                      contractNumber = $(this).prop('contractNumber'),
+                      active         = $(this).prop('active'),
+
+                      // Alterna o bloqueio do cliente
+                      action = (active === "true")
+                        ? "suspender"
+                        : "ativar"
+                    ;
+
+                    questionDialog(
+                      action.charAt(0).toUpperCase() + action.slice(1),
+                      'Você deseja realmente ' + action + ' o contrato '
+                      + 'de serviço <b>&ldquo;' + contractNumber
+                      + '&rdquo;</b> do cliente <b>&ldquo;'
+                      + customerName + '&rdquo;</b> e todas as suas '
+                      + 'instalações?',
+                      function() {
+                        // Alternar a ativação do contrato selecionado
+                        var
+                          url  = "{{ buildURL(toggleActive.URL, {'contractID': 'contractID'}) }}"
+                        ;
+
+                        putJSONData(url, [],
+                        function (data, params, message) {
+                          // Atualiza a tabela
+                          searchLoad();
+                        });
+                      },
+                      function() {
+                        table
+                          .rows()
+                          .deselect()
+                        ;
+                        table
+                          .draw('page')
+                        ;
+                      })
+                    ;
+                    {% endif %}
+                  })
+              ;
+
+              // 8. Coluna com o acesso à remoção
+              {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}
+              var
+                deleteCellData = iconTitleFormatter("remove", "darkred",
+                  "Permite remover este contrato"),
+                $column8 = $("<td>")
+                  .html(deleteCellData)
+                  .prop('customerID', rows.data()[i].customerid)
+                  .prop('customerName', rows.data()[i].customername)
+                  .prop('contractID', rows.data()[i].id)
+                  .prop('contractNumber', rows.data()[i].contractnumber)
+                  .on("click", function (event) {
+                    var
+                      customerID   = $(this).prop('customerID'),
+                      customerName = $(this).prop('customerName'),
+                      contractID   = $(this).prop('contractID'),
+                      number       = $(this).prop('contractNumber')
+                    ;
+
+                    // Apaga o cliente selecionado
+                    questionDialog('Remover contrato', 'Você deseja '
+                      + 'realmente remover o contrato nº <b>'
+                      + number + '</b> do cliente <b>' + customerName
+                      + '</b>? Esta ação não poderá ser desfeita.',
+                      function() {
+                        // Remove o contrato selecionado
+                        var
+                          url  = "{{ buildURL(remove.URL, {'contractID': 'contractID'}) }}"
+                        ;
+
+                        deleteJSONData(url, [],
+                          function (data, params, message) {
+                            // Atualiza a tabela
+                            searchLoad();
+                          }
+                        );
+                      },
+                      function() {
+                        table
+                          .rows()
+                          .deselect()
+                        ;
+                        table
+                          .draw('page')
+                        ;
+                      });
+                  })
+              ;
+              {% else %}
+              var
+                $column8 = ''
+              ;
+              {% endif %}
+
+              // Adiciona uma nova linha e, internamente, as colunas
+              var
+                $newRow = $("<tr>")
+                  .addClass('group')
+                  .append($column1)
+                  .append($column2)
+                  .append($column3)
+                  .append($column4)
+                  .append($column5)
+                  .append($column6)
+                  .append($column7)
+                  .append($column8)
+              ;
+
+              // Altera a cor da linha em função de bloqueio
+              if (rows.data()[i].contractenddate !== null) {
+                $newRow.addClass('damaged');
+              } else {
+                if (rows.data()[i].blockedlevel > 1) {
+                  $newRow.addClass('blocked');
+                } else {
+                  $newRow.addClass('contract');
+                }
+              }
+
+              // Adiciona a nova linha de agrupamento antes da linha
+              // atual
+              $(rows)
+                .eq( i )
+                .before(
+                  $newRow
+                )
+              ;
+
+              lastContract = rows.data()[i].contractnumber;
+            }
+          } );
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+
+        },
+        createdRow: function(row, data, dataIndex) {
+          // Deixa as linhas com cores diferentes para indicar os
+          // contratos que não estão ativos
+          if (data.enddate !== null) {
+            $(row)
+              .addClass('damaged')
+            ;
+          } else {
+            if (data.notracker) {
+              if (data.containstrackingdata) {
+                // Está sem rastreador
+                $(row)
+                  .addClass('maintenance')
+                ;
+              } else {
+                // Nunca foi rastreado
+                $(row)
+                  .addClass('broked')
+                ;
+              }
+            } else {
+              if (data.blockedlevel > 0) {
+                if (data.enddate !== null) {
+                  $(row)
+                    .addClass('damaged')
+                  ;
+                } else {
+                  $(row)
+                    .addClass('blocked')
+                  ;
+                }
+              } else {
+                if (data.vehicleblocked === true) {
+                  $(row)
+                    .addClass('blocked')
+                  ;
+                }
+              }
+            }
+          }
+        }
+      });
+      
+      // Manipula os eventos de click
+      table
+        .on('user-select', function (e, dt, type, cell, originalEvent) {
+          if (type === 'cell') {
+            var
+              // Recupera os dados da célula selecionada
+              index   = cell[0][0],
+
+              // Recupera o contrato de serviço selecionado
+              contract = dt.rows( index.row ).data().toArray()[0]
+            ;
+
+            // Em função da coluna onde ocorreu o clique, executa a ação
+            // correspondente
+            switch (index.column) {
+              {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}
+              case 34:
+                if (contract.startdate === null) {
+                  // Questiona se deve apagar a instalação selecionada
+                  questionDialog(
+                    'Remover instalação', 'Você deseja realmente remover '
+                    + 'a instalação <b>' + contract.installationnumber
+                    + '</b> do contrato nº <b>&ldquo;'
+                    + contract.contractnumber + '&rdquo;</b> do cliente '
+                    + '<b>&ldquo;' + contract.customername
+                    + '&rdquo;</b>? Esta ação não poderá ser desfeita.',
+                    function() {
+                      // Remove a instalação selecionada
+                      var
+                        url  = "{{ buildURL(removeInstallation.URL, {'installationID': 'contract.installationid'}) }}"
+                      ;
+                      
+                      deleteJSONData(url, [],
+                      function (data, params, message) {
+                        // Atualiza a tabela
+                        searchLoad();
+                      });
+                    },
+                    function() {
+                      table
+                        .rows()
+                        .deselect()
+                      ;
+                      table
+                        .draw('page')
+                      ;
+                    }
+                  );
+                }
+
+                break;
+              {% endif %}
+              default:
+                {% if authorization.getAuthorizationFor(edit.URL, edit.method) %}
+                // Coloca o contrato de serviço em edição
+                window.location.href = "{{ buildURL(editInstallation.URL, {'contractID': 'contract.id', 'installationID': 'contract.installationid'}) }}";
+                {% endif %}
+            }
+
+            e.preventDefault();
+          }
+        }
+      );
+    });
+
+
+    // =================================================[ Options ]=====
+
+    // As opções para o componente de autocompletar o nome do cliente
+    var customerNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      showClearValue: true,
+      ajax: {
+        url: "{{ path_for(getCustomerNameCompletion.URL) }}",
+        type: "{{ getCustomerNameCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'customer';
+          params.detailed = true;
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        if (suggestion.juridicalperson) {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     (
+                    (suggestion.tradingname)
+                      ? '[<span style="color: #0256C4; font-style: italic;">' + suggestion.tradingname + '</span>]<br>'
+                      : ''
+                  )
+            +     (
+                    (suggestion.items > 1)
+                      ? (' (<span style="color: CornflowerBlue; font-style: italic;">' + suggestion.subsidiaryname + '</span>)')
+                      : ''
+                  )
+            +   '</div>'
+            + '</div>'
+          ;
+        } else {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     (
+                    (suggestion.tradingname)
+                      ? '[<span style="color: #0256C4; font-style: italic;">' + suggestion.tradingname + '</span>]<br>'
+                      : ''
+                  )
+            +     (
+                    (suggestion.items > 1)
+                      ? ( ''
+                          + '<span style="color: CornflowerBlue; font-style: italic;">'
+                          +     (
+                                  (suggestion.headoffice == true)
+                                    ? 'Titular'
+                                    : ('Dependente: ' + suggestion.subsidiaryname)
+                                )
+                          +     '</span>'
+                        )
+                      : ''
+                  )
+            +   '</div>'
+            + '</div>'
+          ;
+        }
+      },
+      onSelect: function(element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='customerID']")
+          .val(suggestion.id)
+        ;
+        $("input[name='subsidiaryID']")
+          .val(suggestion.subsidiaryid)
+        ;
+
+        searchLoad();
+      },
+      onInvalidateSelection: function() {
+        // Limpa os dados
+        $("input[name='customerID']")
+          .val(0)
+        ;
+        $("input[name='subsidiaryID']")
+          .val(0)
+        ;
+
+        searchLoad();
+      }
+    };
+
+
+    // ================================================[ Handlers ]=====
+    
+    // Executa a pesquisa
+    function searchLoad() {
+      table
+        .ajax
+        .reload()
+      ;
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 500);
+    }
+
+    // Força a atualização da tabela
+    function forceSearch(event) {
+      if (event.which == 13) {
+        searchLoad();
+      }
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

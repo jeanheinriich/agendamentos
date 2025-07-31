@@ -1,0 +1,29 @@
+/* --------------------------------------------------[ Clearfix ]-----*/
+
+.no-padding {
+  padding: 0!important;
+}
+
+.clearfix:after {
+  visibility: hidden;
+  display: block;
+  font-size: 0;
+  content: " ";
+  clear: both;
+  height: 0;
+}
+
+.clearfix {
+  display: block;
+}
+
+* html .clearfix {
+  height: 1%;
+}
+
+.notransition {
+  -webkit-transition: none !important;
+  -moz-transition: none !important;
+  -o-transition: none !important;
+  transition: none !important;
+}

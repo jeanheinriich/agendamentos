@@ -1,0 +1,89 @@
+{% extends 'templates/site/layout.twig' %}
+{% block title %}{{ parent() }} - Sobre{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  <style>
+    .links + .ui.list>.item {
+      display: flex;
+      justify-content: left;
+      align-items: center;
+      height: 60px;
+      border-bottom: 1px solid #aaa;
+      border-right: 1px solid #aaa;
+      margin: 5px;
+      font-weight: 500;
+      font-size: 1.2em;
+
+      padding: .4em;
+      margin: .5em 0;
+      background: #ddd;
+      text-decoration: none;
+      border-radius: .3em;
+      transition: all .3s ease-out;
+    }
+    .links + .ui.list>.item .content a {
+      color: #374045;
+      vertical-align: baseline;
+      vertical-align: -webkit-baseline-middle;
+    }
+    .links + .ui.list>.item:hover{
+      background:#53a7ea;
+    }
+    .links + .ui.list>.item:hover .content a {
+      color: white;
+    }
+    .ui.small.image {
+      padding: 2px;
+      height: 48px;
+      flex-grow: 0;     /* do not grow   - initial value: 0 */
+      flex-shrink: 0;   /* do not shrink - initial value: 1 */
+      flex-basis: 48px; /* width/height  - initial value: auto */
+      background-color: #fcfcfc !important;
+      border-bottom: 1px solid #aaa;
+      border-right: 1px solid #aaa;
+      border-radius: .3em;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+    <main>
+      <section class="hero about">
+      </section>
+      <section class="description">
+        <div class="ui basic segment">
+          <!-- Início cabeçalho módulo -->
+          <h2 class="ui blue header">
+            <table cellspacing="0" cellpadding="0">
+              <tbody>
+                <tr>
+                  <td class="mobile hidden">
+                    {{ icon('site/about.svg', 'Lista de links') }}
+                  </td>
+                  <td>
+                    <div class="content">
+                      Lista de links
+                      <div class="sub header">
+                        Alguns links úteis.
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </h2>
+          <!-- Fim cabeçalho módulo -->
+
+          <h3 class="ui black header links">
+            Esta é uma relação de links úteis.
+          </h3>
+          {% include 'site/listOfLinks.twig' %}
+          
+          <button type="button" class="ui blue labeled icon button"
+                  onclick="location.href='{{ path_for('Home') }}';">
+            <i class="home icon"></i> Retornar para a página inicial
+          </button>
+        </div>
+      </section>
+    </main>
+{% endblock %}

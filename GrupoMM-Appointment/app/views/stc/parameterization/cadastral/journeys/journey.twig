@@ -1,0 +1,748 @@
+{% extends 'templates/stc/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} jornada de trabalho{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  <style>
+    /* Realiza ajustes nos dropdowns */
+    .ui.selection.dropdown {
+      line-height: 1.1em;
+    }
+    .medium {
+      min-width: 9em !important;
+      max-width: 9em;
+    }
+    .mini.form .ui.dropDownLabel.dropdown {
+      min-width: 9em !important;
+      max-width: 9em;
+    }
+    @media screen and (max-width: 1100px) {
+      .mini.form .ui.dropDownLabel.dropdown {
+        min-width: 5.8em !important;
+        max-width: 5.8em;
+      }
+    }
+    @media screen and (max-width: 767px) {
+      .mini.form .ui.dropDownLabel.dropdown {
+        min-width: 9em !important;
+        max-width: 9em;
+      }
+    }
+    .ui.grid+.grid {
+      margin-top: 0;
+    }
+
+    /* Realiza ajustes no miniform */
+    .ui.form .fields:not(.grouped):not(.inline) .field:not(:only-child) .ui.checkbox {
+      margin-top: 0.3em;
+    }
+
+    /* Realiza ajustes nos detalhes */
+    .ui.mini.form {
+      margin-bottom: 0.7em;
+    }
+    .ui.basic.label {
+      text-align: center;
+      min-width: 3.2em;
+    }
+    .dayEntry:first-child button {
+      background-color: #c8c8c8 !important;
+    }
+    @media (max-width: 768px) {
+      .dayEntry {
+        margin-bottom: .5em !important;
+      }
+      .dayEntry:after {
+        border-bottom: 1px dotted rgba(34,36,38,.15);
+        content: '';
+        flex: 1;
+        padding: 2px;
+      }
+      .dayEntry:last-child:after {
+        border-bottom: none;
+        content: '';
+        flex: 1;
+        padding: 0px;
+      }
+    }
+    .ui.vertical.segment:first-child {
+      padding-top: 0;
+    }
+    div.field.static span.lighting.red {
+      background-color: #fae6e6;
+      color: #9a0000;
+      border: 1px solid rgba(34,36,38,0.15);
+    }
+    div.ui.input.red input {
+      background-color: #fae6e6;
+      color: #9a0000;
+    }
+    div.ui.input.red input:focus {
+      background-color: #fae6e6;
+    }
+
+    .padded {
+      padding: .5em;
+    }
+
+    .time {
+      border: 1px dotted grey;
+      border-radius: .28571429rem;
+    }
+    .day.fields {
+      background-color: #f9f9e0;
+    }
+    .night.fields {
+      background-color: #f8f8f9;
+    }
+    .withspace {
+      margin-top: 1em !important;
+      margin-bottom: 2em !important;
+    }
+    .withspace b,
+    .withspace strong {
+      padding: 0 0.3rem;
+    }
+    
+    .ui.vertical.segment.noBottomBorder, .ui.vertical.segment.form {
+      border-bottom: none;
+      margin-top: 0;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'STC\\Parameterization\\Cadastral\\Journeys\\Add' %}
+  {% else %}
+    {% set URL = 'STC\\Parameterization\\Cadastral\\Journeys\\Edit' %}
+  {% endif %}
+  {% set previous = 'STC\\Parameterization\\Cadastral\\Journeys' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('stc/journeys.svg', 'Jornada de trabalho') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} jornada de trabalho
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar uma nova {% else %}modificar as informações cadastrais de uma {% endif %}
+                  jornada de trabalho.
+                </div>
+              {% else %}
+                Visualizar jornada de trabalho
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de uma jornada de trabalho.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL, { 'journeyID': getValue('journeyid') }) }}">
+        <div class="ui vertical segment">
+          {% if authorization.user.groupid < 6 %}
+          <div class="fields">
+            <div class="sixteen wide field{{ cssError('customername') }}">
+              <label>Empresa</label>
+              <input name="customername" type="text"
+                     placeholder="O nome da empresa onde trabalha..."
+                     {% if formMethod == 'POST' %}
+                       {{ readonly }}
+                     {% else %}
+                       readonly
+                     {% endif %}
+                     value="{{ getValue('customername') }}">
+              <input type="hidden" name="clientid"
+                     value="{{ getValue('clientid') }}">
+              {% if hasError('customername') %}
+              <small class="helper">{{ getError('customername') }}</small>
+              {% endif %}
+            </div>
+          </div>
+          {% else %}
+          <input type="hidden" name="customername"
+                 value="{{ getValue('customername') }}">
+          <input type="hidden" name="clientid"
+                 value="{{ getValue('clientid') }}">
+          {% endif %}
+
+          <div class="fields">
+            <div class="nine wide field{{ cssError('name') }}">
+              <label>Nome da jornada de trabalho</label>
+              <div class="ui input{{ readonly }}">
+                <input name="name" type="text" maxlength="30"
+                       placeholder="Informe o nome da jornada de trabalho..."
+                       {{ readonly }}
+                       value="{{ getValue('name') }}">
+              </div>
+              {% if hasError('name') %}
+              <small class="helper">{{ getError('name') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="seven wide field">
+              <label>
+                Duração da jornada
+                <span data-tooltip="Mensal / Semanal"
+                      data-content="Top Left" data-position="top right"
+                      data-inverted="">
+                  <i class="question circle olive outline icon"></i>
+                </span>
+              </label>
+              <div class="field static">
+                <span id="duration" class="lighting">
+                  &nbsp;
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="eight wide field">
+              <div class="ui checkbox{{ readonly }}" style="margin-top: 0;">
+                <input name="computeovertime" type="hidden"
+                       value="{% if getValue('computeovertime')|toBoolean %}true{% else %}false{% endif %}">
+                <input name="_computeovertime" type="checkbox"
+                       class="hidden" {{ readonly }}
+                       {% if getValue('computeovertime')|toBoolean %}checked="checked"{% endif %}>
+                <label>Horas adicionais serão consideradas horas extras</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="eight wide field">
+              <div class="ui checkbox{{ readonly }}" style="margin-top: 0;">
+                <input name="discountworkedlesshours" type="hidden"
+                       value="{% if getValue('discountworkedlesshours')|toBoolean %}true{% else %}false{% endif %}">
+                <input name="_discountworkedlesshours" type="checkbox"
+                       class="hidden" {{ readonly }}
+                       {% if getValue('discountworkedlesshours')|toBoolean %}checked="checked"{% endif %}>
+                <label>Horas trabalhadas à menos serão descontadas do banco de horas</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="eight wide field{{ cssError('asdefault') }}">
+              <div class="ui checkbox{{ readonly }}">
+                <input type="hidden" name="asdefault"
+                       value="{% if getValue('asdefault')|toBoolean %}true{% else %}false{% endif %}">
+                <input class="hidden" type="checkbox"
+                       name="_asdefault"
+                       {{ readonly }}
+                       {% if getValue('asdefault')|toBoolean %}checked="checked"{% endif %}>
+                <label>Esta jornada é o padrão para novos motoristas</label>
+              </div>
+              {% if hasError('asdefault') %}
+              <small class="helper">{{ getError('asdefault') }}</small>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="ui vertical segment">
+          <h4 class="ui header">Horário de trabalho</h4>
+          <div class="ui grid" style="padding-bottom: 0;">
+            <div class="sixteen wide tablet eight wide computer column">
+              <!-- Início mensagem -->
+              <div class="ui orange withspace message">
+                <p style="color: darkred !important;">
+                  A jornada de trabalho do empregado é, por regra, de 8 horas
+                  diárias e 44 horas semanais. Contudo, existe diferença se
+                  essas horas forem cumpridas durante o dia ou à noite. A
+                  jornada de trabalho noturna deve ser paga com valor
+                  diferenciado e tendo um “tempo” diferente.<br>
+                  <br>
+                  Para efeito de consideração nos cálculos internos no sistema,
+                  precisamos estipular os horário da jornada noturna e diurna.<br>
+                  <br>
+                  A jornada de trabalho noturno engloba o período das <b>22h</b> às
+                  <b>5h</b>, com algumas exceções. Para trabalhadores rurais, o
+                  horário noturno é das <b>21h</b> às <b>5h</b>, se trabalharem com
+                  agricultura. Para os trabalhadores pecuaristas, o trabalho
+                  noturno é das <b>20h</b> às <b>4h</b>. Para os portuários, a jornada
+                  noturna vai das <b>19h</b> às <b>7h</b>.<br>
+                </p>
+              </div>
+              <!-- Fim mensagem -->
+            </div>
+          </div>
+          <div class="ui grid" style="padding-bottom: 1em;">
+            <!-- Início porção esquerda -->
+            <div class="eight wide tablet four wide computer column">
+              <div class="grouped padded day time fields">
+                <div class="field{{ cssError('startdaytime') }}">
+                  <label><i class="sun icon"></i> Diurno</label>
+                  <label>Início</label>
+                  <div class="ui input{{ readonly }}">
+                    <input name="startdaytime" type="text"
+                           placeholder="Horário de início..."
+                           {{ readonly }}
+                           value="{{ getValue('startdaytime') }}">
+                  </div>
+                  {% if hasError('startdaytime') %}
+                  <small class="helper">{{ getError('startdaytime') }}</small>
+                  {% endif %}
+                </div>
+
+                <div class="field{{ cssError('enddaytime') }}">
+                  <label>Término</label>
+                  <div class="field static">
+                    <span class="lighting">
+                      {{ getValue('enddaytime') }}
+                    </span>
+                    <input name="enddaytime" type="hidden"
+                           value="{{ getValue('enddaytime') }}">
+                  </div>
+                  {% if hasError('enddaytime') %}
+                  <small class="helper">{{ getError('enddaytime') }}</small>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <!-- Início porção direita -->
+            <div class="eight wide tablet four wide computer column">
+              <div class="grouped padded night time fields">
+                <div class="field{{ cssError('startnighttime') }}">
+                  <label><i class="moon icon"></i> Noturno</label>
+                  <label>Início</label>
+                  <div class="ui input{{ readonly }}">
+                    <input name="startnighttime" type="text"
+                           placeholder="Horário de início..."
+                           {{ readonly }}
+                           value="{{ getValue('startnighttime') }}">
+                  </div>
+                  {% if hasError('startnighttime') %}
+                  <small class="helper">{{ getError('startnighttime') }}</small>
+                  {% endif %}
+                </div>
+
+                <div class="field{{ cssError('endnighttime') }}">
+                  <label>Término</label>
+                  <div class="field static">
+                    <span class="lighting">
+                      {{ getValue('endnighttime') }}
+                    </span>
+                    <input name="endnighttime" type="hidden"
+                           value="{{ getValue('endnighttime') }}">
+                  </div>
+                  {% if hasError('endnighttime') %}
+                  <small class="helper">{{ getError('endnighttime') }}</small>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ui vertical segment mini form">
+          <h4>Informações da duração da jornada por dia</h4>
+          <div class="ui grid" style="padding-bottom: 0;">
+            <div class="sixteen wide tablet eight wide computer column">
+              <!-- Início mensagem -->
+              <div class="ui orange withspace message">
+                <p style="color: darkred !important;">
+                  Configure a jornada diária, determinando a duração à
+                  cada dia da semana, independente do horário de início
+                  e/ou término da mesma. A jornada padrão é de 8hs diárias
+                  de segunda à sexta, e 4 horas diárias no sábado.
+                </p>
+              </div>
+              <!-- Fim mensagem -->
+            </div>
+          </div>
+          <div id="dayList" class="dayList">
+            {% set dayNames = [ 'Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado' ] %}
+            {% for dayNumber, day in getValue('days') %}
+              {% include 'stc/parameterization/cadastral/journeys/day.twig' with { dayNames: dayNames, dayNumber: dayNumber, day: day, editMode: editMode, readonly: readonly }  %}
+            {% endfor %}
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="journeyid" value="{{ getValue('journeyid') }}">
+        {% endif %}
+      </form>
+      <!-- End Form -->
+
+      {% if formMethod == 'PUT' %}
+      <!-- Start status panel -->
+      <div class="ui segments">
+        <div class="ui grey inverted segment">
+          <h5>
+            Histórico de modificações:
+          </h5>
+          Cadastrado {{ getValue('createdat')|localizedDate('long') }} por {{ getValue('createdbyusername') }}
+          <div class="ui divider"></div>
+          Modificado {{ getValue('updatedat')|localizedDate('long') }} por {{ getValue('updatedbyusername') }}
+        </div>
+      </div>
+      <!-- End status panel -->
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('template-engine/template.engine.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+  
+  {% set getCustomerNameCompletion = { 'URL': 'STC\\Cadastre\\Customers\\Autocompletion\\Get', 'method': 'PATCH' } %}
+
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.ui.checkbox').checkbox({
+        onChange: function() {
+          var
+            checkbox = $(this).prop('name')
+          ;
+
+          if (checkbox.startsWith('_')) {
+            // Fazemos com que este campo contenha o valor correto
+            var
+              toggleField = checkbox.replace('_',''),
+              newValue    = ($("input[name='" + toggleField + "']").val()=="true")
+                ? "false"
+                : "true"
+            ;
+
+            $("input[name='" + toggleField + "']")
+              .val(newValue)
+            ;
+          }
+          if (checkbox.indexOf('[_') !== -1) {
+            // Fazemos com que este campo contenha o valor correto
+            var
+              toggleField = checkbox.replace('_',''),
+              newValue    = ($("input[name='" + toggleField + "']").val()=="true")
+                ? "false"
+                : "true"
+            ;
+
+            $("input[name='" + toggleField + "']")
+              .val(newValue)
+            ;
+          }
+        }
+      });
+      {% if authorization.user.groupid < 6 %}
+      $("input[name='customername']")
+        .autocomplete(customerNameCompletionOptions)
+      ;
+      {% endif %}
+      $("input[name='startdaytime']")
+        .mask({
+          type: 'time'
+        })
+        .blur(function() {
+          refreshEndNightTime();
+        })
+      ;
+      $("input[name='startnighttime']")
+        .mask({
+          type: 'time'
+        })
+        .blur(function() {
+          refreshEndDayTime();
+        })
+      ;
+
+      // Força o mascaramento dos campos dos valores de tempo por dia
+      var seconds;
+      for (var dayNumber = 0; dayNumber < 7; dayNumber++) {
+        // Primeiramente convertemos o valor em segundos em um valor de
+        // tempo
+        seconds = $("input[name='days[" + dayNumber + "][seconds]']")
+          .val()
+        ;
+        $("input[name='days[" + dayNumber + "][duration]']")
+          .val(fancyTimeFormat(seconds, true, false))
+        ;
+
+        // Agora mascaramos o campo
+        $("input[name='days[" + dayNumber + "][duration]']")
+          .mask({
+            type: 'time'
+          })
+          .change(refreshSeconds)
+        ;
+      }
+
+      // Forçamos a atualização dos campos
+      refreshDuration();
+      refreshEndDayTime();
+      refreshEndNightTime();
+
+      // Coloca o foco no primeiro campo
+      {% if authorization.user.groupid < 6 %}
+      $("input[name='customername']")
+        .focus()
+      ;
+      {% else %}
+      $("input[name='name']")
+        .focus()
+      ;
+      {% endif %}
+    });
+
+    // =================================================[ Options ]=====
+
+    // As opções para o componente de autocompletar o nome do cliente
+    var customerNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      ajax: {
+        url: "{{ path_for(getCustomerNameCompletion.URL) }}",
+        type: "{{ getCustomerNameCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'customer';
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        return ''
+          + '<div class="content">'
+          +   '<div class="title">' + suggestion.name + '<br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       suggestion.nationalregister
+          +     '</span>'
+          +   '</div>'
+          + '</div>'
+        ;
+      },
+      onSelect: function(element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='clientid']")
+          .val(suggestion.id)
+        ;
+      },
+      onInvalidateSelection: function() {
+        // Limpa os dados
+        $("input[name='clientid']")
+          .val(0)
+        ;
+      }
+    };
+
+    // ================================================[ Handlers ]=====
+    
+    // Converte um valor em segundos para um valor em formato de tempo
+    var fancyTimeFormat = function(duration, includeSeconds = false,
+      humanized = true) {
+      var
+        hours        = ~~(duration / 3600),
+        minutes      = ~~((duration % 3600) / 60),
+        seconds      = ~~duration % 60,
+        ret          = "",
+        hoursLabel   = (hours > 1 ? "horas":"hora"),
+        minutesLabel = (minutes > 1 ? "minutos":"minuto"),
+        secondsLabel = (seconds > 1 ? "segundos":"segundo")
+      ;
+
+      if (humanized) {
+        // Devolve o valor como "1 hora e 1 minuto" ou "4 horas e
+        // 3 minutos e 59 segundos" ou "123 horas e 3 minutos e
+        // 59 segundos"
+        if (hours > 0) {
+          ret = "" + hours + " " + hoursLabel
+            + (minutes > 0
+              ? " e "
+              : ((seconds > 0) && includeSeconds
+                ? " e "
+                :""
+                )
+              )
+          ;
+        }
+        if (minutes > 0) {
+          ret += "" + minutes + " " + minutesLabel
+            + ((seconds > 0) && includeSeconds
+              ? " e "
+              : ""
+              )
+          ;
+        }
+        if ((seconds > 0) && includeSeconds) {
+          ret += "" + seconds + " " + secondsLabel;
+        }
+      } else {
+        // Devolve o valor como "1:01" ou "4:03:59" ou "123:03:59"
+        ret = "" + (hours < 10 ? "0" : "") + hours
+          + ":" + (minutes < 10 ? "0" : "")
+        ;
+        ret += "" + minutes;
+        if (includeSeconds) {
+          ret += ":" + (seconds < 10 ? "0" : "") + seconds;
+        }
+      }
+
+      return ret;
+    };
+
+    // Atualiza a duração da jornada de trabalho
+    var refreshDuration = function() {
+      var
+        seconds = 0,
+        duration = 0
+      ;
+
+      for (var dayNumber = 0; dayNumber < 7; dayNumber++) {
+        // Recuperamos o tempo em segundos de cada dia
+        seconds = $("input[name='days[" + dayNumber + "][seconds]']")
+          .val()
+        ;
+
+        // Acrescentamos à duração da jornada
+        duration += parseInt($.trim(seconds));
+      }
+
+      $("#duration")
+        .text(
+          fancyTimeFormat(duration*5) + " mensais / " +
+          fancyTimeFormat(duration) + " semanais")
+      ;
+    };
+
+    // Atualiza a duração do dia
+    var refreshSeconds = function() {
+      var
+        dayNumber = parseInt($(this).attr("day")),
+        time      = $(this).val(),
+        timeArray = time.split(':'),
+        duration  = 0;
+      ;
+
+      // Calculamos a duração em segundos
+      duration = parseInt(timeArray[0])*60*60
+        + parseInt(timeArray[1])*60
+        + parseInt(timeArray[2])
+      ;
+
+      // Atualizamos o tempo em segundos
+      $("input[name='days[" + dayNumber + "][seconds]']")
+        .val(duration)
+      ;
+
+      // Atualizamos o tempo da jornada de trabalho
+      refreshDuration();
+    };
+
+    // Atualiza o horário de término do período diurno
+    var refreshEndDayTime = function() {
+      var
+        startNightTime = $("input[name='startnighttime']").val(),
+        time = startNightTime.split(':'),
+        seconds = parseInt($.trim(time[0]))*60*60
+          + parseInt($.trim(time[1]))*60
+          + parseInt($.trim(time[2])),
+        endDayTime;
+      ;
+
+      // Retrocedemos o tempo em um segundo
+      seconds -= 1;
+
+      // Calculamos o resultado
+      var
+        interval = new Date(null)
+      ;
+      
+      interval.setSeconds(seconds);
+      endDayTime = interval
+        .toISOString()
+        .substr(11, 8)
+      ;
+
+      $("input[name='enddaytime']")
+        .val(endDayTime)
+      ;
+      $("input[name='enddaytime']")
+        .prev()
+        .text(endDayTime)
+      ;
+    };
+
+    // Atualiza o horário de término do período noturno
+    var refreshEndNightTime = function() {
+      var
+        startDayTime = $("input[name='startdaytime']").val(),
+        time = startDayTime.split(':'),
+        seconds = parseInt($.trim(time[0]))*60*60
+          + parseInt($.trim(time[1]))*60
+          + parseInt($.trim(time[2])),
+        endNightTime;
+      ;
+
+      // Retrocedemos o tempo em um segundo
+      seconds -= 1;
+
+      // Calculamos o resultado
+      var interval = new Date(null);
+      interval.setSeconds(seconds);
+      endNightTime = interval
+        .toISOString()
+        .substr(11, 8)
+      ;
+
+      $("input[name='endnighttime']")
+        .val(endNightTime)
+      ;
+      $("input[name='endnighttime']")
+        .prev()
+        .text(endNightTime)
+      ;
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

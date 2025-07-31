@@ -1,0 +1,828 @@
+{% extends 'templates/stc/layout.twig' %}
+{% import "templates/stc/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Jornadas executadas{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('libs/semantic-ui/components/calendar.min.css') }}
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('responsive.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.main.basic.segment .searchbar.fields .field.customer,
+    .ui.main.basic.segment .searchbar.fields .field.driver {
+      flex-grow: 1;
+      min-width: 236px;
+    }
+
+    {% if authorization.user.groupid < 6 %}
+    @media only screen and (min-width: 1328px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+    }
+    {% else %}
+    @media only screen and (min-width: 1080px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+    }
+    {% endif %}
+    @media only screen and (max-width: 767px) {
+      .ui.main.basic.segment .searchbar.fields .field.driver {
+        min-width: 206px;
+      }
+    }
+
+    #result_wrapper {
+      width: 100%;
+    }
+
+    /* --------------------------------------------------------------
+     * Personalizações das cores de linhas
+     * -------------------------------------------------------------- */
+
+    tr.ignore td {
+      text-decoration: line-through;
+    }
+    tr.start td {
+      color: #00a3cc;
+    }
+    tr.message td {
+      color: #cc731b;
+    }
+    tr.end td {
+      color: #4c72b5;
+      font-weight: bold;
+    }
+    tr.restart td {
+      color: #9aabc2;
+      font-style: oblique;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set getPDF  = { 'URL': 'STC\\Report\\RoadTrips\\Get\\PDF', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('stc/roadtrips.svg', 'Viagens') }}
+            </td>
+            <td>
+              <div class="content">
+                Relatório de viagens executadas
+                <div class="sub header">
+                  Permite acompanhar a execução das viagens à partir
+                  das informações de teclado para um determinado
+                  colaborador.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            <div class="field date">
+              <div class="ui calendar" id="rangestart">
+                <div class="ui input left icon">
+                  <i class="calendar icon"></i>
+                  <input type="text"
+                         name="start" id="start"
+                         placeholder="De..."
+                         value="{{ roadtrip.start }}">
+                </div>
+              </div>
+            </div>
+
+            <div class="field date">
+              <div class="ui calendar" id="rangeend">
+                <div class="ui input left icon">
+                  <i class="calendar icon"></i>
+                  <input type="text"
+                         name="end" id="end"
+                         placeholder="Até..."
+                         value="{{ roadtrip.end }}">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {% if authorization.user.groupid < 6 %}
+          <div class="flex">
+            <div class="field customer">
+              <input placeholder="Informe o cliente..." type="text"
+                     name="customerName"
+                     value="{{ roadtrip.customer.name }}">
+              <input type="hidden" name="customerID"
+                     value="{{ roadtrip.customer.id }}" >
+            </div>
+          </div>
+          {% else %}
+          <input type="hidden" name="customerName"
+                 value="{{ roadtrip.customer.name }}">
+          <input type="hidden" name="customerID"
+                 value="{{ roadtrip.customer.id }}" >
+          {% endif %}
+
+          <div class="flex">
+            <div class="field driver">
+              <input placeholder="Informe o motorista..." type="text"
+                     name="driverName"
+                     value="{{ roadtrip.driver.name }}">
+              <input type="hidden" name="driverID"
+                     value="{{ roadtrip.driver.id }}" >
+            </div>
+
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Localiza as jornadas executadas"
+                      data-position="top right"
+                      type="button" onclick="searchLoad();">
+                <i class="search icon"></i>
+              </button>
+            </div>
+
+            {% if authorization.getAuthorizationFor(getPDF.URL, getPDF.method) %}
+            <div class="field button">
+              <button class="ui black icon button"
+                      data-tooltip="Permite gerar um PDF com a relação de jornadas executadas"
+                      data-position="top right" type="button"
+                      onclick="getPDF();">
+                <i class="file pdf icon"></i>
+              </button>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Dia</th>
+          <th>Hora</th>
+          <th>Tipo</th>
+          <th>Local/Mensagem</th>
+          <th>Duração</th>
+          <th>Placa</th>
+          <th>Situação</th>
+          <th>Dia da semana</th>
+          <th>Ignorar</th>
+          <th>Incompleto</th>
+          <th>Mensagem</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/stc/partials/dialogs/error.twig' %}
+  {% include 'templates/stc/partials/dialogs/info.twig' %}
+  {% include 'templates/stc/partials/dialogs/question.twig' %}
+  {% include 'templates/stc/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+  
+  {{ lib('semantic-ui/components/calendar.min.js') }}
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  
+  {% set getData = { 'URL': 'STC\\Report\\RoadTrips\\Get', 'method': 'PATCH' } %}
+  {% set getPDF  = { 'URL': 'STC\\Report\\RoadTrips\\Get\\PDF', 'method': 'GET' } %}
+
+  {% set getCustomerNameCompletion = { 'URL': 'STC\\Cadastre\\Customers\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  {% set getDriverNameCompletion   = { 'URL': 'STC\\Cadastre\\Drivers\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      table,
+      groupColumn = 1
+    ;
+
+    // Os formatadores de colunas
+    // 
+    // Um formatador de colunas para exibir a mensagem ao invés do local
+    // onde ocorreu o evento
+    var messageFormatter = function ( value, type, row, meta ) {
+      if (row.typeofevent == 'Envio de mensagem') {
+        return 'Mensagem: ' + row.message
+      }
+
+      return value;
+    };
+
+    $(document).ready(function() {
+      // --------------------------------[ Componentes da Searchbar ]---
+      $('#rangestart')
+        .calendar({
+          text: {
+            days: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'],
+            months: [
+              'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+              'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro',
+              'Dezembro'
+            ],
+            monthsShort: [
+            'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago',
+            'Set', 'Out', 'Nov', 'Dez'],
+            today: 'Hoje',
+            now: 'Agora',
+            am: 'Manhã',
+            pm: 'Tarde'
+          },
+          type: 'date',
+          endCalendar: $('#rangeend'),
+          initialDate: getDateFromString('{{ roadtrip.start }}'),
+          formatter: {
+            date: function (date, settings) {
+              if (!date) {
+                return '';
+              }
+
+              return getStringFromDate(date);
+            }
+          }
+        })
+      ;
+      $('#rangeend')
+        .calendar({
+          text: {
+            days: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'],
+            months: [
+              'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+              'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro',
+              'Dezembro'
+            ],
+            monthsShort: [
+            'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago',
+            'Set', 'Out', 'Nov', 'Dez'],
+            today: 'Hoje',
+            now: 'Agora',
+            am: 'Manhã',
+            pm: 'Tarde'
+          },
+          type: 'date',
+          initialDate: getDateFromString('{{ roadtrip.end }}'),
+          startCalendar: $('#rangestart'),
+          formatter: {
+            date: function (date, settings) {
+              if (!date) {
+                return '';
+              }
+
+              return getStringFromDate(date);
+            }
+          }
+        })
+      ;
+
+      {% if authorization.user.groupid < 6 %}
+      $("input[name='customerName']")
+        .autocomplete(customerNameCompletionOptions)
+      ;
+      {% endif %}
+      $("input[name='driverName']")
+        .autocomplete(driverNameCompletionOptions)
+      ;
+      
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "registreID",
+            "data": "registreID",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "day",
+            "data": "day",
+            "visible": true,
+            "orderable": true,
+            "visible": false,
+            "orderable": false },
+          { "targets": 2,
+            "name": "time",
+            "data": "time",
+            "visible": true,
+            "orderable": false,
+            "className": "dt-center",
+            "width": "40px" },
+          { "targets": 3,
+            "name": "typeofevent",
+            "data": "typeofevent",
+            "visible": true,
+            "orderable": false,
+            "className": "dt-left",
+            "width": "120px" },
+          { "targets": 4,
+            "name": "location",
+            "data": "location",
+            "visible": true,
+            "orderable": false,
+            "render": messageFormatter },
+          { "targets": 5,
+            "name": "duration",
+            "data": "duration",
+            "visible": true,
+            "orderable": false,
+            "className": "dt-center",
+            "width": "80px" },
+          { "targets": 6,
+            "name": "plate",
+            "data": "plate",
+            "visible": true,
+            "orderable": false,
+            "className": "dt-center",
+            "width": "40px" },
+          { "targets": 7,
+            "name": "status",
+            "data": "status",
+            "visible": false,
+            "orderable": false },
+          { "targets": 8,
+            "name": "dayOfWeek",
+            "data": "dayOfWeek",
+            "visible": false,
+            "orderable": false },
+          { "targets": 9,
+            "name": "ignore",
+            "data": "ignore",
+            "visible": false,
+            "orderable": false },
+          { "targets": 10,
+            "name": "incomplete",
+            "data": "incomplete",
+            "visible": false,
+            "orderable": false },
+          { "targets": 11,
+            "name": "message",
+            "data": "message",
+            "visible": false,
+            "orderable": false }
+        ],
+        order: [[ 0, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.startDate    = $("input[name='start']").val();
+            params.endDate      = $("input[name='end']").val();
+            params.clientID     = $("input[name='customerID']").val();
+            params.customerName = $("input[name='customerName']").val();
+            params.driverID     = $("input[name='driverID']").val();
+            params.driverName   = $("input[name='driverName']").val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+
+          // Agrupamento de linhas
+          var
+            api  = this.api(),
+            rows = api.rows( {page:'current'} ).nodes(),
+            last = null
+          ;
+
+          api.column(groupColumn,
+            {
+              page:'current'
+            } ).data().each(function( group, i ) {
+              
+            if (last !== group) {
+              // Informações do dia de trabalho
+
+              // Primeiramente, cria as novas colunas
+              
+              // 1. Coluna expandida com os dados do dia
+              var
+                groupedCellData = ''
+                  + '<span {{ tooltip.add("right", "Dia") }}>'
+                  +   '<i class="fas fa-calendar"></i> '
+                  + '</span>' + group
+                  + '<span class="color: #748aa8; font-weight: normal;"> ('
+                  + rows.data()[i].dayOfWeek
+                  + ')</span>',
+                $column1 = $("<td colspan='2'>")
+                  .html(groupedCellData)
+                  .css("font-weight", "600")
+              ;
+
+              // 2. Coluna com os totais de tempo e horas trabalhadas
+              var
+                $column2 = $("<td colspan='3'>")
+                  .html("&nbsp;")
+                  .css("font-weight", "600")
+              ;
+
+              // Adiciona uma nova linha e, internamente, as colunas
+              var
+                $newRow = $("<tr>")
+                  .addClass('group')
+                  .append($column1)
+                  .append($column2)
+              ;
+
+              // Adiciona a nova linha de agrupamento antes da linha
+              // atual
+              $(rows)
+                .eq( i )
+                .before(
+                  $newRow
+                )
+              ;
+
+              last = group;
+            }
+          });
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        createdRow: function(row, data, dataIndex) {
+          if (data.ignore) {
+            // Sinaliza que o evento deve ser ignorado
+            $(row)
+              .addClass('ignore')
+            ;
+          }
+          if (data.incomplete) {
+            // Sinaliza que o evento deve ser ignorado
+            $(row)
+              .addClass('error')
+            ;
+          }
+
+          // Deixa as linhas com cores diferentes para indicar os
+          // eventos incompletos
+          if (data.status == 'Incompleta') {
+            // Sinaliza que o evento pertence à uma viagem marcada como
+            // incompleta
+            $(row)
+              .addClass('blocked')
+            ;
+          } else {
+            // Formatamos as linhas com cores para realçar o tipo d
+            // evento
+            if (data.typeofevent == 'Início de viagem') {
+              // Sinaliza início de viagem
+              $(row)
+                .addClass('start')
+              ;
+            } else {
+              if (data.typeofevent == 'Reinício de viagem') {
+                $(row)
+                  .addClass('restart')
+                ;
+              } else if (data.typeofevent == 'Envio de mensagem') {
+                $(row)
+                  .addClass('message')
+                ;
+              } else if (data.typeofevent == 'Fim de viagem') {
+                $(row)
+                  .addClass('end')
+                ;
+              }
+            }
+          }
+        }
+      });
+
+      // Força a atualização da tabela para reajustar as colunas após
+      // a carga
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 2500);
+    });
+
+
+    // =================================================[ Options ]=====
+
+    {% if authorization.user.groupid < 6 %}
+    // As opções para o componente de autocompletar o nome do cliente
+    var customerNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      showClearValue: true,
+      ajax: {
+        url: "{{ path_for(getCustomerNameCompletion.URL) }}",
+        type: "{{ getCustomerNameCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'customer';
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        return ''
+          + '<div class="content">'
+          +   '<div class="title">' + suggestion.name + '<br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       suggestion.nationalregister
+          +     '</span>'
+          +   '</div>'
+          + '</div>'
+        ;
+      },
+      onSelect: function(element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='customerID']")
+          .val(suggestion.id)
+        ;
+
+        // Força o campo de motoristas a ser zerado
+        $("input[name='driverID']")
+          .val(0)
+        ;
+        $("input[name='driverName']")
+          .val('')
+        ;
+
+        if (table.data().any()) {
+          // Recarrega o conteúdo da tabela
+          searchLoad();
+        }
+      },
+      onInvalidateSelection: function() {
+        // Limpa os dados
+        $("input[name='customerID']")
+          .val(0)
+        ;
+        $("input[name='driverID']")
+          .val(0)
+        ;
+        $("input[name='driverName']")
+          .val('')
+        ;
+
+        if (table.data().any()) {
+          // Recarrega o conteúdo da tabela
+          searchLoad();
+        }
+      }
+    };
+    {% endif %}
+
+    // As opções para o componente de autocompletar o nome do motorista
+    var driverNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      showClearValue: true,
+      ajax: {
+        url: "{{ path_for(getDriverNameCompletion.URL) }}",
+        type: "{{ getDriverNameCompletion.method }}",
+        data: function(params, options) {
+          var
+            clientID = $("input[name='customerID']").val()
+          ;
+          params.clientID = clientID;
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        return ''
+          + '<div class="content">'
+          +   '<div class="title">' + suggestion.name + '<br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       'ID: ' + suggestion.id + ' - ' + suggestion.occupation
+          +     '</span>'
+          +   '</div>'
+          + '</div>'
+        ;
+      },
+      onSelect: function(element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='driverID']")
+          .val(suggestion.id)
+        ;
+
+        if (table.data().any()) {
+          // Recarrega o conteúdo da tabela
+          searchLoad();
+        }
+      },
+      onInvalidateSelection: function() {
+        // Limpa os dados
+        $("input[name='driverID']")
+          .val(0)
+        ;
+
+        if (table.data().any()) {
+          // Recarrega o conteúdo da tabela
+          searchLoad();
+        }
+      }
+    };
+
+    // ================================================[ Handlers ]=====
+    
+    // Recupera a data à partir de um valor string
+    function getDateFromString(value) {
+      var
+        day   = value.split("/")[0],
+        month = value.split("/")[1],
+        year  = value.split("/")[2]
+      ;
+
+      return new Date(year, month-1, day);
+    }
+
+    // Recupera o valor formatado à partir de uma data
+    function getStringFromDate(date) {
+      var
+        day   = date.getDate(),
+        month = date.getMonth() + 1,
+        year  = date.getFullYear()
+      ;
+
+      return ("0" + day).slice(-2) + '/' + ("0" + month).slice(-2) + '/' + year;
+    }
+
+    function parseDate(value) {
+      var parts = value.split('/');
+      
+      // Note: months are 0-based
+      return new Date(parts[2], parts[1]-1, parts[0]);
+    }
+
+    // Executa a pesquisa
+    function searchLoad() {
+      const
+        startDateVal = $("input[name='start']").val(),
+        endDateVal   = $("input[name='end']").val()
+      ;
+
+      if (startDateVal == '' || endDateVal == '') {
+        // Exibe a mensagem de erro
+        errorDialog('Erro', 'Informe o período de busca.');
+        document.getElementById('errorSound').play();
+
+        return;
+      }
+
+      let
+        startDate = parseDate(startDateVal),
+        endDate   = parseDate(endDateVal)
+      ;
+
+      // Se as datas não forem válidas
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        // Exibe a mensagem de erro
+        errorDialog('Erro', 'Informe um período de busca válido.');
+        document.getElementById('errorSound').play();
+
+        return;
+      }
+
+      // Verifica se a data de início é menor que a data de fim
+      if (startDate > endDate) {
+        // Exibe a mensagem de erro
+        errorDialog('Erro', 'A data de início não pode ser maior que a data de fim.');
+        document.getElementById('errorSound').play();
+
+        return;
+      }
+
+      // Verifica se o período é maior do que 1 mês
+      const oneMonthLater = new Date(startDate.setMonth(startDate.getMonth() + 1));
+      if (endDate > oneMonthLater) {
+        // Exibe a mensagem de erro
+        errorDialog('Erro', 'O período de busca não pode ser maior do que 1 mês.');
+        document.getElementById('errorSound').play();
+
+        return;
+      } else {
+        warningDialog('Atenção', 'Não tá certo');
+
+        return;
+      }
+      
+      table
+        .ajax
+        .reload()
+      ;
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 500);
+    }
+
+    // Codifica elementos para envio na requisição
+    function encodeQueryData(data) {
+      const ret = [];
+      for (let d in data) {
+        ret.push(encodeURIComponent(d) + '=' + encodeURIComponent(data[d]));
+      }
+
+      return ret.join('&');
+    }
+
+    // Gera um PDF com as informações de feriados na cidade selecionada
+    function getPDF() {
+      var
+        data = {
+          'startDate': $("input[name='start").val(),
+          'endDate'  : $("input[name='end").val(),
+          'clientID' : $("input[name='customerID']").val(),
+          'driverID' : $("input[name='driverID']").val()
+        }
+      ;
+      
+      const
+        url         = "{{ path_for(getPDF.URL) }}",
+        queryString = encodeQueryData(data)
+      ;
+
+      window.open(url + '?' + queryString, '_blank');
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

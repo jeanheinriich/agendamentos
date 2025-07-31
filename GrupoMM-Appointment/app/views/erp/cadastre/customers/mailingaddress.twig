@@ -1,0 +1,95 @@
+            <div class="ui compact grid mailing address">
+              <div class="sixteen wide mobile sixteen wide tablet six wide computer column{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][contacts][' ~ contactNumber ~ '][name]') }}">
+                <label>Nome do contato</label>
+                <div class="ui input{{ readonly }}">
+                  <input name="subsidiaries[{{ subsidiaryNumber }}][contacts][{{ contactNumber }}][name]"
+                         placeholder="Nome do contato..."
+                         type="text" maxlength="50" {{ readonly }}
+                         value="{{ contact.name }}">
+                  <input name="subsidiaries[{{ subsidiaryNumber }}][contacts][{{ contactNumber }}][mailingaddressid]"
+                         type="hidden"
+                         value="{{ contact.mailingaddressid }}" />
+                </div>
+                {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][contacts][' ~ contactNumber ~ '][name]') %}
+                <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][contacts][' ~ contactNumber ~ '][name]') }}</small>
+                {% endif %}
+              </div>
+
+              <div class="sixteen wide mobile eight wide tablet five wide computer column{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][contacts][' ~ contactNumber ~ '][attribute]') }}">
+                <label>Departamento</label>
+                <div class="ui input{{ readonly }}">
+                  <input name="subsidiaries[{{ subsidiaryNumber }}][contacts][{{ contactNumber }}][attribute]"
+                         placeholder="Outras informações..."
+                         type="text" maxlength="50" {{ readonly }}
+                         value="{{ contact.attribute }}">
+                </div>
+                {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][contacts][' ~ contactNumber ~ '][attribute]') %}
+                <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][contacts][' ~ contactNumber ~ '][attribute]') }}</small>
+                {% endif %}
+              </div>
+
+              <div class="sixteen wide mobile eight wide tablet five wide computer column{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][contacts][' ~ contactNumber ~ '][mailingprofileid]') }}">
+                <label>Perfil do contato</label>
+                {% if editMode %}
+                <select name="subsidiaries[{{ subsidiaryNumber }}][contacts][{{ contactNumber }}][mailingprofileid]"
+                        class="ui dropDownLabel single selection dropdown">
+                  {% for mailingProfile in mailingProfiles %}
+                    <option value="{{ mailingProfile.id }}"{% if mailingProfile.id == contact.mailingprofileid %} selected{% endif %}>{{ mailingProfile.name }}</option>
+                  {% endfor %}
+                </select>
+                {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][contacts][' ~ contactNumber ~ '][mailingprofileid]') %}
+                <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][contacts][' ~ contactNumber ~ '][mailingprofileid]') }}</small>
+                {% endif %}
+                {% else %}
+                  <div class="field right static">
+                    <span class="darking">{{ contact.mailingprofilename }}</span>
+                  </div>
+                {% endif %}
+              </div>
+
+              <div class="sixteen wide mobile sixteen wide tablet eight wide computer ten wide large screen column{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][contacts][' ~ contactNumber ~ '][email]') }}">
+                <label>E-mail</label>
+                <div class="ui input{{ readonly }}">
+                  <input name="subsidiaries[{{ subsidiaryNumber }}][contacts][{{ contactNumber }}][email]"
+                         placeholder="Endereço de e-mail..."
+                         type="text" maxlength="100" {{ readonly }}
+                         value="{{ contact.email }}">
+                </div>
+                {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][contacts][' ~ contactNumber ~ '][email]') %}
+                <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][contacts][' ~ contactNumber ~ '][email]') }}</small>
+                {% endif %}
+              </div>
+
+              <div class="sixteen wide mobile sixteen wide tablet eight wide computer six wide large screen column{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][contacts][' ~ contactNumber ~ '][phonenumber]') }}">
+                <label>Telefone</label>
+                <div class="ui action input{{ readonly }}">
+                  <input name="subsidiaries[{{ subsidiaryNumber }}][contacts][{{ contactNumber }}][phonenumber]"
+                         type="text" {{ readonly }}
+                         placeholder="(99) 99999-9999"
+                         value="{{ contact.phonenumber }}">
+                  {% if editMode %}
+                  <select name="subsidiaries[{{ subsidiaryNumber }}][contacts][{{ contactNumber }}][phonetypeid]"
+                          class="ui dropDownLabel medium selection dropdown">
+                    {% for phoneType in phoneTypes %}
+                      <option value="{{ phoneType.id }}"{% if phoneType.id == contact.phonetypeid %} selected{% endif %}>{{ phoneType.name }}</option>
+                    {% endfor %}
+                  </select>
+                  <button class="ui mini youtube icon button"
+                          data-tooltip="Remove este contato"
+                          data-position="top right" type="button"
+                          subsidiaryNumber="{{ subsidiaryNumber }}"
+                          contactNumber="{{ contactNumber }}"
+                          onclick="delContact(this);">
+                    <i class="minus icon"></i>
+                  </button>
+                  {% else %}
+                    <div class="field right static">
+                      <span class="darking">{{ contact.phonetypename }}</span>
+                    </div>
+                  {% endif %}
+                </div>
+                {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][contacts][' ~ contactNumber ~ '][phonenumber]') %}
+                <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][contacts][' ~ contactNumber ~ '][phonenumber]') }}</small>
+                {% endif %}
+              </div>
+            </div>

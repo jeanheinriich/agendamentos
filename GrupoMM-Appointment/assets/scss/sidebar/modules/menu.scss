@@ -1,0 +1,197 @@
+/* ----------------------------------------------------[ Menus ]-----
+   As definições de menus dentro da barra lateral
+   ------------------------------------------------------------------ */
+
+// A definição de um nível
+@mixin level ($arrowHoveredColor, $iconColor, $labelColor) {
+  li.item.open {
+    > div {
+      &::after {
+        // A cor da ponta da seta
+        border-top: 10px solid $iconColor;
+      }
+
+      &:hover::after {
+        // A cor da ponta da seta quando o mouse está sobre a mesma
+        border-top: 10px solid $arrowHoveredColor;
+      }
+    }
+  }
+
+  background: -webkit-linear-gradient(left, $iconColor 20%, $labelColor 20%);
+  background: -o-linear-gradient(left, $iconColor 20%, $labelColor 20%);
+  background: linear-gradient(to right, $iconColor 20%, $labelColor 20%);
+}
+
+// Vertical Menu
+.ui.lateralbar {
+  .ui.vertical.menu {
+    width: 250px;
+    border-radius: 0;
+
+    .item {
+      color: $invertedTextColor;
+
+      > i.icon,
+      > i.fas,
+      > i.fab {
+        float: left;
+        margin: 0 1.2em 0 0;
+        font-size: 1.2rem;
+        width: 20px;
+        text-align: center;
+      }
+
+      &.active {
+        color: $invertedActiveTextColor;
+        background-color: $invertedActiveBackground;
+      }
+
+      &:first-child,
+      &:last-child {
+        border-radius: 0;
+      }
+    }
+
+    &:not(.accordion)::before,
+    &:not(.accordion)::after {
+      display: block;
+      content: "";
+      width: 100%;
+      height: 1px;
+      visibility: visible;
+      background: $invertedHoveredBackground;
+    }
+  }
+}
+
+// Accordion Menu
+.ui.lateralbar {
+  .ui.vertical.accordion.menu {
+    margin: 0;
+
+    ul {
+      padding:0;
+      margin:0;
+      list-style:none;
+      display: block;
+      width: 250px;
+
+      &.level1 {
+        border-bottom: 1px solid $invertedDividerBackground;
+      }
+
+      li.item {
+        @include user-select(none);
+        padding: 0;
+
+        &.has-submenu {
+          padding: 0;
+
+          > div {
+            border-top: 1px solid $invertedDividerBackground;
+            position: relative;
+            padding: .92857143em 1.04285714em;
+          }
+        }
+
+        > a {
+          border-top: 1px solid $invertedDividerBackground;
+          position: relative;
+          padding: .92857143em 1.04285714em;
+        }
+
+        > a,
+        > div {
+          display: block;
+          width: 100%;
+          color: $invertedMenuTextColor;
+
+          > i.icon,
+          > i.fas,
+          > i.fab {
+            float: left;
+            margin: 0 1.2em 0 0;
+            font-size: 1.2rem;
+            width: 20px;
+            text-align: center;
+          }
+
+          > i.dropdown.icon {
+            float: right;
+            margin: 0;
+            cursor: pointer;
+
+            @include rotate(90deg);
+          }
+        }
+
+        &.open {
+          > div {
+            color: $invertedActiveTextColor;
+            font-weight: 600;
+
+            &::before {
+              content: '';
+              width: 0;
+              height: 0;
+              border-left: 11px solid transparent;
+              border-right: 11px solid transparent;
+              border-top: 11px solid $invertedDividerBackground;
+              position: absolute;
+              left: 13px;
+              bottom: -11px;
+              z-index: 1;
+            }
+            &::after {
+              content: '';
+              width: 0;
+              height: 0;
+              border-left: 10px solid transparent;
+              border-right: 10px solid transparent;
+              position: absolute;
+              left: 14px;
+              bottom: -10px;
+              z-index: 1;
+            }
+
+            > i.dropdown.icon {
+              @include rotate(0deg);
+            }
+          }
+        }
+
+        &:hover {
+          background: none;
+        }
+
+        > div:hover,
+        > a:hover {
+          background: $invertedHoveredBackground;
+        }
+        
+        &.active {
+          background-color: $invertedActiveBackground;
+          background: -webkit-linear-gradient(left, $invertedActiveIconBackground 20%, $invertedActiveBackground 20%);
+          background: -o-linear-gradient(left, $invertedActiveIconBackground 20%, $invertedActiveBackground 20%);
+          background: linear-gradient(to right, $invertedActiveIconBackground 20%, $invertedActiveBackground 20%);
+
+          > div,
+          > a {
+            color: $invertedActiveTextColor;
+          }
+        }
+      }
+      
+      &.level1 {
+        @include level($level1ArrowHoveredBackground, $level1IconBackground, $level1TextBackground);
+      }
+      &.level2 {
+        @include level($level2ArrowHoveredBackground, $level2IconBackground, $level2TextBackground);
+      }
+      &.level3 {
+        @include level($level3ArrowHoveredBackground, $level3IconBackground, $level3TextBackground);
+      }
+    }
+  }
+}

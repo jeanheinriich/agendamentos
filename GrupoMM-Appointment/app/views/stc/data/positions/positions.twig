@@ -1,0 +1,498 @@
+{% extends 'templates/stc/layout.twig' %}
+{% import "templates/stc/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Histórico de posicionamentos{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.main.basic.segment .searchbar.fields .field.selectbox {
+      flex-grow: 1;
+      min-width: 250px;
+    }
+
+    @media only screen and (min-width: 814px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set sync = { 'URL': 'STC\\Data\\Positions\\Synchronize', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('stc/positions.svg', 'Dados de posicionamento') }}
+            </td>
+            <td>
+              <div class="content">
+                Histórico de posicionamentos
+                <div class="sub header">
+                  Permite visualizar o histórico de posicionamentos
+                  obtidos à partir dos dados coletados dos equipamentos
+                  de rastreamento instalados nos veículos e cadastrados
+                  no sistema STC.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(sync.URL, sync.method) %}
+            <div class="field button">
+              <button class="ui primary icon button" id="sync"
+                      data-tooltip="Sincroniza o histórico de posicionamentos com o sistema STC"
+                      data-position="top left" type="button"
+                      onclick="synchronize();">
+                <i class="refresh icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            <div class="field selectbox">
+              <select class="ui adaptable selection dropdown"
+                      name="period" id="period">
+                <option value="1"{% if position.period == 1 %} selected{% endif %}>
+                  Últimas 24hs
+                </option>
+                <option value="7"{% if position.period == 7 %} selected{% endif %}>
+                  Última semana
+                </option>
+                <option value="30"{% if position.period == 30 %} selected{% endif %}>
+                  Últimos 30 dias
+                </option>
+                <option value="60"{% if position.period == 60 %} selected{% endif %}>
+                  Últimos 60 dias
+                </option>
+                <option value="0"{% if position.period == 0 %} selected{% endif %}>
+                  Qualquer período
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="flex">
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite a placa do veículo que procura..."
+                       value="{{ position.searchValue }}">
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza um equipamento pela placa onde ele está instalado"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início da barra de progresso -->
+    <div class="ui vertical flexBorderBottom segment">
+      <div class="ui indicating progress" data-value="1" data-total="100" id="progressbar">
+        <div class="bar">
+          <div class="progress"></div>
+        </div>
+        <div class="label" id="progressbartitle">Sincronizando o histórico de posicionamentos...</div>
+      </div>
+    </div>
+    <!-- Fim da barra de progresso -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>ID da Posição</th>
+          <th>Placa</th>
+          <th>Data do evento</th>
+          <th {{ tooltip.add('left', 'Indicador do estado da ignição do veículo') }}><i class="toggle on black icon"></i></th>
+          <th>Endereço</th>
+          <th>Latitude</th>
+          <th>Longitude</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/stc/partials/dialogs/error.twig' %}
+  {% include 'templates/stc/partials/dialogs/info.twig' %}
+  {% include 'templates/stc/partials/dialogs/question.twig' %}
+  {% include 'templates/stc/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/DateTimeFormatter.min.js') }}
+  
+  {% set getData = { 'URL': 'STC\\Data\\Positions\\Get', 'method': 'PATCH' } %}
+  {% set sync    = { 'URL': 'STC\\Data\\Positions\\Synchronize', 'method': 'GET' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      table
+    ;
+
+    // Um formatador para exibir um ícone indicativo do estado da
+    // ignição do veículo num posicionamento
+    var ignitionFormatter = function ( value, type, row, meta ) {
+      var buildIcon = function (color, icon, title) {
+        return ''
+          + '<span data-position="left center"'
+          +       'data-blue data-inverted '
+          +       'data-tooltip="' + title + '">'
+          +   '<i class="' + icon + ' ' + color + ' icon"></i>'
+          + '</span>'
+        ;
+      };
+
+      switch (value) {
+        case true:
+          // A ignição está ligada
+          return buildIcon('toggle on', 'darkgreen',
+            'A ignição está ligada');
+        default:
+          // A ignição está desligada
+          return buildIcon('toggle off', 'lightgrey',
+            'A ignição está desligada');
+      }
+    };
+
+    $(document).ready(function() {
+      // --------------------------------[ Componentes da Searchbar ]---
+      $('.searchbar .ui.dropdown')
+        .dropdown()
+      ;
+      $('#searchValue').keypress(function(e) {
+        if (e.which == 13) {
+          searchLoad();
+        }
+      });
+
+      // -----------------------[ Componentes da Barra de Progresso ]---
+      // Esconde a barra de progresso
+      $('.ui.progress')
+        .parent()
+        .hide()
+      ;
+
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "id",
+            "data": "id",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "positionid",
+            "data": "positionid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 2,
+            "name": "plate, eventdate",
+            "data": "plate",
+            "visible": true,
+            "orderable": true,
+            "width": "70px" },
+          { "targets": 3,
+            "name": "eventdate",
+            "data": "eventdate",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "220px",
+            "render": datetimeFormatter },
+          { "targets": 4,
+            "name": "ignitionstatus",
+            "data": "ignitionstatus",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": ignitionFormatter },
+          { "targets": 5,
+            "name": "address",
+            "data": "address",
+            "visible": true,
+            "orderable": false },
+          { "targets": 6,
+            "name": "latitude",
+            "data": "latitude",
+            "visible": true,
+            "orderable": false,
+            "width": "100px" },
+          { "targets": 7,
+            "name": "longitude",
+            "data": "longitude",
+            "visible": true,
+            "orderable": false,
+            "width": "100px" }
+        ],
+        order: [[ 2, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.searchValue = $('#searchValue').val();
+            params.period = $('#period').val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        }
+      });
+
+      // Força a atualização da tabela para reajustar as colunas após
+      // a carga
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 1500);
+    });
+
+
+    // ================================================[ Handlers ]=====
+
+    // Sincroniza as informações de histórico de posicionamentos com o
+    // sistema STC
+    function synchronize() {
+      var
+        $progress = $('#progressbar'),
+        url       = "{{ buildURL(sync.URL, {}) }}",
+        evtSource = new EventSource(url),
+        $button   = $("#sync"),
+        $label    = $('#progressbar').children('div.label');
+      ;
+      
+      // Reinicia a contagem
+      $progress
+        .progress('reset')
+        .progress('set label', 'Solicitando...')
+        .progress('set total', 100)
+      ;
+      if ($progress.is(":hidden")) {
+        $progress
+          .parent()
+          .transition('slide down')
+        ;
+      }
+      if (!$button.prop('disabled')) {
+        $button
+          .prop('disabled', true)
+        ;
+      }
+
+      evtSource.onmessage = function(event)
+      {
+        syncData = JSON.parse(event.data);
+        
+        switch (syncData.result) {
+          case "START":
+            $progress
+              .progress('set active')
+              .progress('set label', syncData.message)
+              .progress('reset')
+              .progress('update progress', 0)
+            ;
+
+            break;
+          case "PROGRESS":
+            // Seta a barra de progresso
+            var
+              progress = Math.round((syncData.count/syncData.total) * 100)
+            ;
+            $progress
+              .progress('set label', syncData.message)
+              .progress('update progress', progress)
+            ;
+            
+            break;
+          case "END":
+            evtSource
+              .close()
+            ;
+            $progress
+              .progress('set label', syncData.message)
+              .progress('complete')
+            ;
+            setTimeout(function(){
+              $progress
+                .parent()
+                .transition('slide up')
+              ;
+            }, 2000);
+            $button
+              .prop('disabled', false)
+            ;
+
+            // Força a atualização dos dados
+            searchLoad();
+            
+            break;
+          case "ERROR":
+            console.error('Erro', syncData.message);
+            evtSource
+              .close()
+            ;
+            $progress
+              .progress('set error', syncData.message)
+            ;
+            $button
+              .prop('disabled', false)
+            ;
+
+            break;
+          default:
+            evtSource
+              .close()
+            ;
+            setTimeout(function(){
+              $progress
+                .parent()
+                .transition('slide up')
+              ;
+            }, 2000);
+            $button
+              .prop('disabled', false)
+            ;
+
+            break;
+        }
+      };
+      evtSource.onerror = function(error) {
+        console.error("Ocorreu um erro na sincronização:", error);
+
+        // Sempre força o encerramento da sincronização
+        evtSource
+          .close()
+        ;
+
+        // Atualiza o progresso, indicando o erro
+        $progress
+          .progress('set error', 'Erro interno do servidor')
+        ;
+        $button
+          .prop('disabled', false)
+        ;
+      };
+      
+      return false;
+    }
+
+    // Executa a pesquisa
+    function searchLoad() {
+      table
+        .ajax
+        .reload()
+      ;
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 500);
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

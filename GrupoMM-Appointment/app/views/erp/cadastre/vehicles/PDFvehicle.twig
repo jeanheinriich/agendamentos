@@ -1,0 +1,319 @@
+{% extends 'templates/basePDF.twig' %}
+{% block title %}
+  Dados cadastrais do veículo placa {{ vehicle.plate }}
+{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+  <style>
+    table.noborder tr td {
+      vertical-align: bottom;
+    }
+  </style>
+{% endblock %}
+{% block content %}
+<table width="100%" class="noborder topalign">
+    <tbody>
+      <tr class="title">
+        <td colspan="5">
+          <h1 class="title">
+            Dados básicos do cliente
+          </h1>
+        </td>
+      </tr>
+      <tr class="content">
+        <td colspan="2" width="61%">
+          {% if vehicle.juridicalperson %}
+            <span class="field">Razão Social:</span><br>
+          {% else %}
+            <span class="field">Nome do cliente:</span><br>
+          {% endif %}
+          <span class="content">{{ vehicle.customername }}</span>
+        </td>
+        <td colspan="3" width="39%">
+          {% if vehicle.affiliated %}
+            <span class="field">Associado:</span><br>
+          {% else %}
+            {% if vehicle.juridicalperson %}
+              <span class="field">Unidade/filial:</span><br>
+            {% else %}
+              <span class="field">Titular:</span><br>
+            {% endif %}
+          {% endif %}
+          <span class="content">{{ vehicle.subsidiaryname }}</span>
+        </td>
+      </tr>
+      {% if vehicle.customerblocked %}
+      <tr class="content">
+        <td colspan="5">
+          <span class="content danger">Atenção: Este cliente encontra-se bloqueado</span>
+        </td>
+      </tr>
+      {% endif %}
+      <tr class="title">
+        <td colspan="5">
+          <h1 class="title">
+            Dados do veículo
+          </h1>
+        </td>
+      </tr>
+      <tr class="content">
+        <td>
+          <span class="field">Placa:</span><br>
+          <span class="content">{{ vehicle.plate }}</span>
+        </td>
+        <td colspan="2" width="39%">
+        </td>
+        <td>
+          <span class="field">Tipo de veículo:</span><br>
+          <span class="content">
+            {% if vehicle.vehiclesubtypeid > 0 %}
+            {{ vehicle.vehiclesubtypename }}
+            {% else %}
+            {{ vehicle.vehicletypename }}
+            {% endif %}
+            &nbsp;
+          </span>
+        </td>
+        <td>
+          <span class="field">Marca:</span><br>
+          <span class="content">{{ vehicle.vehiclebrandname }}&nbsp;</span>
+        </td>
+      </tr>
+      <tr class="content">
+        <td colspan="3">
+          <span class="field">Modelo:</span><br>
+          <span class="content">{{ vehicle.vehiclemodelname }}&nbsp;</span>
+        </td>
+        <td>
+          <span class="field">Ano Fabricação/Modelo:</span><br>
+          <span class="content">{{ vehicle.yearfabr }} / {{ vehicle.yearmodel }}</span>
+        </td>
+        <td>
+          <span class="field">Cor predominante:</span><br>
+          <span class="content">{{ vehicle.vehiclecolorname }}</span>
+        </td>
+      </tr>
+      <tr class="content">
+        <td>
+          <span class="field">RENAVAM:</span><br>
+          <span class="content">{{ vehicle.renavam }}&nbsp;</span>
+        </td>
+        <td colspan="2">
+          <span class="field">Número do chassi:</span><br>
+          <span class="content">{{ vehicle.vin }}&nbsp;</span>
+        </td>
+        <td>
+          <span class="field">Combust&iacute;vel:</span><br>
+          <span class="content">{{ vehicle.fueltypename }}</span>
+        </td>
+        <td>
+          <span class="field">N&ordm; da Frota/Carro:</span><br>
+          <span class="content">{{ vehicle.carnumber }}&nbsp;</span>
+        </td>
+      </tr>
+      {% if vehicle.blocked %}
+      <tr class="content">
+        <td colspan="5">
+          <span style="font-size: 1.2rem; background-color: #ffffee; border: 2px solid darkred; font-weight: bold; color: darkred;">
+            &nbsp;&times;
+          </span>
+          <span class="content danger">
+            &nbsp;Atenção: Este veículo encontra-se bloqueado
+          </span>
+        </td>
+      </tr>
+      {% endif %}
+      <tr class="title">
+        <td colspan="5">
+          <h1 class="title">
+            Dados do propriet&aacute;rio do ve&iacute;culo
+          </h1>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="5">
+          <table width="100%" class="noborder">
+            <tr class="boolean">
+              <td class="checkmark">
+                {% if vehicle.customeristheowner == true %}
+                &#10003;
+                {% else %}
+                &nbsp;
+                {% endif %}
+              </td>
+              <td>
+                O cliente &eacute; o propriet&aacute;rio deste ve&iacute;culo
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr class="content">
+        <td colspan="3">
+          <span class="field">Nome do titular:</span><br>
+          <span class="content">{{ vehicle.ownername }}&nbsp;</span>
+        </td>
+        <td>
+          <span class="field">{{ vehicle.regionaldocumentname }}:</span><br>
+          <span class="content">{{ vehicle.regionaldocumentnumber }} / {{ vehicle.regionaldocumentstate }}</span>
+        </td>
+        <td>
+          {% if vehicle.nationalregister|length > 14 %}
+          <span class="field">CNPJ:</span><br>
+          {% else %}
+          <span class="field">CPF:</span><br>
+          {% endif %}
+          <span class="content">{{ vehicle.nationalregister }}&nbsp;</span>
+        </td>
+      </tr>
+      <tr class="content">
+        <td colspan="3">
+          <span class="field">Endereço:</span><br>
+          <span class="content">{{ vehicle.address }}&nbsp;</span>
+        </td>
+        <td>
+          <span class="field">Número:</span><br>
+          <span class="content">{{ vehicle.streetnumber }}&nbsp;</span>
+        </td>
+        <td>
+          <span class="field">Complemento:</span><br>
+          <span class="content">{{ vehicle.complement }}&nbsp;</span>
+        </td>
+      </tr>
+      <tr class="content">
+        <td>
+          <span class="field">CEP:</span><br>
+          <span class="content">{{ vehicle.postalcode }}&nbsp;</span>
+        </td>
+        <td>
+          <span class="field">Bairro:</span><br>
+          <span class="content">{{ vehicle.district }}&nbsp;</span>
+        </td>
+        <td colspan="2">
+          <span class="field">Cidade / UF:</span><br>
+          <span class="content">{{ vehicle.cityname }} / {{ vehicle.state }}</span>
+        </td>
+      </tr>
+      {% if vehicle.equipments is not empty %}
+      <tr class="title">
+        <td colspan="5">
+          <h1 class="title">
+            {% if vehicle.equipments|length > 1 %}
+            Equipamentos instalados
+            {% else %}
+            Equipamento instalado
+            {% endif %}
+          </h1>
+        </td>
+      </tr>
+      {% set installationsite = vehicle.equipments[0].installationsite %}
+      {% set blockingsite = vehicle.equipments[0].blockingsite %}
+      {% set sirensite = vehicle.equipments[0].sirensite %}
+      {% set panicbuttonsite = vehicle.equipments[0].panicbuttonsite %}
+      
+      {% for equipment in vehicle.equipments %}
+        <tr class="content">
+          <td colspan="5">
+            <table width="100%" class="tableNoBorder">
+              <tr>
+                {% if equipment.main|toBoolean %}
+                  {% set color = '#98ccfd' %}
+                {% else %}
+                  {% set color = '#ffd599' %}
+                {% endif %}
+                <td rowspan="2" width="35px"
+                    style="font-size: 2em; background-color: {{ color }}; text-align: center; vertical-align: middle;">
+                  <span class="content">{{ loop.index }}</span>
+                </td>
+                <td rowspan="2" width="3px">
+                </td>
+                <td width="205px">
+                  <span class="field">N&ordm; de série:</span><br>
+                  <span class="content">{{ equipment.serialnumber }}&nbsp;</span>
+                </td>
+                <td colspan="2">
+                  <span class="field">IMEI:</span><br>
+                  <span class="content">{{ equipment.imei }}&nbsp;</span>
+                </td>
+                <td>
+                  <span class="field">Marca:</span><br>
+                  <span class="content">{{ equipment.brandname }}&nbsp;</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="field">Data de instalação:</span><br>
+                  <span class="content">{{ equipment.installedat|date("d/m/Y") }}&nbsp;</span>
+                </td>
+                <td colspan="2">
+                  <span class="field">Item de contrato:</span><br>
+                  <span class="content">{{ equipment.installationnumber }}&nbsp;</span>
+                </td>
+                <td>
+                  <span class="field">Modelo:</span><br>
+                  <span class="content">{{ equipment.modelname }}&nbsp;</span>
+                </td>
+              </tr>
+              <tr>
+                <td rowspan="3" width="35px" style="border-bottom: none;">
+                </td>
+                <td rowspan="3" width="3px">
+                </td>
+                <td colspan="4">
+                  Local de instalação
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2">
+                  <span class="field">Rastreador:</span><br>
+                  <span class="content">{{ equipment.installationsite }}&nbsp;</span>
+                </td>
+                <td colspan="2">
+                  <span class="field">Bloqueio:</span><br>
+                  <span class="content">{{ blockingsite }}&nbsp;</span>
+                </td>
+                <td>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2">
+                  <span class="field">Sirene:</span><br>
+                  <span class="content">{{ sirensite }}&nbsp;</span>
+                </td>
+                <td colspan="2">
+                  <span class="field">Botão de pânico:</span><br>
+                  <span class="content">{{ panicbuttonsite }}&nbsp;</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      {% endfor %}
+      {% endif %}
+      {% if vehicle.attachments is not empty %}
+      <tr class="title">
+        <td colspan="5">
+          <h1 class="title">
+            Anexos
+          </h1>
+        </td>
+      </tr>
+      {% for attachment in vehicle.attachments %}
+      <tr>
+        <td colspan="5" style="padding-bottom: 5px;">
+          <span>{{ attachment.realfilename }}</span> <i style="color: #829fbd;">({{ attachment.size }})</i>
+        </td>
+      </tr>
+      {% if attachment.encodedImage is not empty %}
+      {# Somente inclui o conteúdo de anexos que sejam imagens #}
+      <tr>
+          <td colspan="5">
+            <img src="{{ attachment.encodedImage }}">
+          </td>
+        </tr>
+      {% endif %}
+      {% endfor %}
+      {% endif %}
+    </tbody>
+  </table>
+{% endblock %}

@@ -1,0 +1,500 @@
+{% extends 'templates/erp/layout.twig' %}
+{% import "templates/erp/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento de veículos{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('libs/semantic-ui/components/calendar.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  {{ css('colorselector.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.adaptable.dropdown {
+      flex-basis: 7em;
+      min-width: 7em;
+    }
+    {% if authorization.user.groupid < 6 %}
+    .ui.main.basic.segment .searchbar.fields .field.customer {
+      flex-grow: 1;
+      min-width: 236px;
+    }
+    {% else %}
+    .ui.main.basic.segment .searchbar.fields .field.searchbox {
+      min-width: 236px;
+      width: calc(100% - 47px);
+    }
+    {% endif %}
+    @media only screen and (max-width: 767px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 100px;
+        width: calc(100% - 47px);
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox input {
+        width: calc(100% - 140px);
+      }
+    }
+
+    @media only screen and (min-width: 920px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+      {% if authorization.user.groupid < 6 %}
+      {% else %}
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        width: 538px;
+      }
+      {% endif %}
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+
+    .dataTables_wrapper i.fas {
+      margin: 0 .25rem 0 0;
+      color: #6495ed;
+    }
+
+    /* -------------------------------------------[ Row Slider ]-----
+       As definições para o detalhamento de equipamentos associados à
+       um veículo
+       -------------------------------------------------------------- */
+    .ui.table td div.slider {
+      background-color: #f0f8ff;
+      display: flex;
+      -webkit-box-orient: horizontal;
+      -webkit-box-direction: normal;
+      -ms-flex-direction: row;
+      flex-direction: row;
+      -ms-flex-wrap: wrap;
+      flex-wrap: wrap;
+      -webkit-box-align: stretch;
+      -ms-flex-align: stretch;
+      align-items: stretch;
+      padding: 0;
+      margin: 0;
+    }
+    td.content > a.header {
+      font-size: 0.8em;
+    }
+    td.content > div.description {
+      font-size: 0.7em;
+    }
+    td.content > div.description > p {
+      color: DimGrey;
+    }
+    .ui.compact.table td.clean {
+      padding: .3em;
+      cursor: text;
+    }
+    .ui.compact.table td.buttons {
+      padding: .3em;
+      flex-direction: column;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: .4em;
+      height: 84.625px;
+    }
+    .ui.compact.table td.clean.content {
+      min-width: 124px;
+      vertical-align: top;
+    }
+    .ui.compact.table td.clean.content:not(:last-child) {
+      padding-right: .8em;
+    }
+    .ui.compact.table td.clean.content.divided {
+      border-right: 1px dotted #bdd1e0;
+    }
+    .ui.compact.table td.clean.content.divided span.title {
+      font-size: .8em;
+    }
+
+    .slider .column {
+      border-right: 1px solid rgba(34,36,38,.1);
+      border-bottom: 1px solid rgba(34,36,38,.1);
+    }
+    .ui.celled.table tr td.clean {
+      border-left: none;
+      height: 84.625px;
+      font-size: 1.2em;
+    }
+    .ui.selectable.table tbody tr.no-padding:hover,
+    .ui.selectable.table tbody tr.no-padding:hover td div.slider,
+    .ui.table tbody tr.no-padding td.selectable:hover {
+      background: #F0F8FF !important;
+      color: rgba(0,0,0,.87);
+    }
+    td.clean:first-child {
+      padding-left: 1px !important;
+      padding-right: 2px !important;
+      font-size: 1.2em;
+      font-weight: bold;
+      color: black;
+      border-radius: 3px;
+      position: relative;
+    }
+    td.clean.lightgrey:first-child,
+    td.clean.lightcyan:first-child,
+    td.clean.lightorange:first-child {
+      padding-left: 12px !important;
+      padding-right: 12px !important;
+    }
+    td.clean:first-child button {
+      margin-right: 0px !important;
+    }
+    span.model {
+      font-weight: bold;
+      color: black;
+    }
+    span.site {
+      font-weight: bold;
+      color: darkslategrey;
+      text-transform: uppercase;
+    }
+    td.lightgrey {
+      background-color: #cccccc;
+    }
+    td.lightcyan {
+      background-color: #98ccfd;
+    }
+    td.lightorange {
+      background-color: #ffd599;
+    }
+    span.role {
+      padding: .4em .6em;
+      line-height: 2.2em;
+      color: white;
+      border-radius: .3em;
+    }
+    span.role.main {
+      background-color: #0262ed;
+    }
+    span.role.contingency {
+      background-color: darkorange;
+    }
+
+    /* --------------------------------------------------------------
+     * Personalizações das linhas do datagrid apenas para este módulo
+     * -------------------------------------------------------------- */
+    tr.affiliated td {
+      color: #8a6d07;
+      font-style: italic;
+    }
+
+    tr.grouped td {
+      background-color: rgba(103, 120, 128,.12);
+      font-weight: bold;
+    }
+    tr.subgrouped:nth-of-type(odd) td {
+      background-color: rgba(103, 120, 128,.07);
+    }
+    tr.subgrouped:nth-of-type(even) td {
+      background-color: rgba(103, 120, 128,.08);
+    }
+
+    tr.inactived:nth-of-type(odd) td {
+      font-style: italic;
+      color: rgba(40,40,40,.5);
+      background-color: rgba(0,60,240,.05);
+    }
+    tr.inactived:nth-of-type(even) td {
+      font-style: italic;
+      color: rgba(40,40,40,.5);
+      background-color: rgba(0,60,240,.06);
+    }
+    tr.inactived.blocked td {
+      color: darkred;
+    }
+
+    span.status {
+      display: block;
+      color: white;
+      border-radius: .3em;
+      padding: 0.5em;
+      min-width: 6em;
+    }
+    span.status.darkgreen {
+      background-color: darkgreen;
+    }
+    span.status.darkred {
+      background-color: darkred;
+    }
+
+    /* As personalizações do diálogo */
+    .ui.modal>.content>.icon+.description,
+    .ui.modal>.content>.image+.description {
+      width: 100%;
+    }
+    .ui.uninstall.form .fields {
+      flex-direction: column;
+    }
+
+    /* As opções do menu flutuante */
+    .floating.options {
+      display: block;
+      position: relative;
+      bottom: 25px;
+      right: 335px;
+      width: 0px;
+      height: 0px;
+      z-index: 10;
+    }
+    .floating.options.inactive {
+      display: none;
+    }
+    .floating.options .ui.compact.horizontal.menu {
+      box-shadow: 0 2px 3px 0 rgb(34 36 38 / 15%);
+    }
+    .ui.labeled.icon.menu > p.item {
+      background-color: #e8e8e8;
+      color: rgba(0, 0, 0, 0.87);
+      cursor: default;
+      min-width: 1.4em;
+      width: 1.4em;
+      padding-left: .2em;
+      margin: 0;
+      text-align: center;
+      padding-right: 0.2em;
+      padding: .42857143em .2em 0 .2em;
+    }
+    .ui.labeled.icon.menu > p.item > .icon:not(.dropdown)
+    {
+      font-size: 1.1em !important;
+      float: right;
+      color: rgba(0,0,0,0.87);
+      opacity: 0.5;
+      cursor: pointer;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set add = { 'URL': 'ERP\\Cadastre\\Vehicles\\Add', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/vehicles.svg', 'Veículos') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento dos veículos
+                <div class="sub header">
+                  Permite gerenciar os veículos cadastrados no sistema,
+                  bem como os equipamentos à eles associados.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(add.URL, add.method) %}
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Adiciona um veículo"
+                      data-position="top left" type="button"
+                      onclick="location.href='{{ path_for(add.URL) }}'">
+                <i class="add icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            <div class="field selectbox">
+              <select class="ui adaptable selection dropdown"
+                      name="filterType" id="filterType">
+                {% for filter in filters %}
+                <option value="{{ filter.id }}"{% if vehicle.filter.type == filter.id %} selected{% endif %}>
+                  {{ filter.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="flex">
+            {% if authorization.user.groupid < 6 %}
+            <div class="field customer">
+              <input placeholder="Informe o cliente..." type="text"
+                     name="customerName"
+                     value="{{ vehicle.customer.name }}">
+              <input type="hidden" name="customerID"
+                     value="{{ vehicle.customer.id }}" >
+              <input type="hidden" name="subsidiaryID"
+                     value="{{ vehicle.customer.subsidiaryID }}" >
+            </div>
+            {% else %}
+            <input type="hidden" name="customerID"
+                   value="{{ vehicle.customer.id }}" >
+            <input type="hidden" name="customerName"
+                   value="{{ vehicle.customer.name }}">
+            {% endif %}
+          {% if authorization.user.groupid < 6 %}
+          </div>
+
+          <div class="flex">
+          {% endif %}
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite o que procura..."
+                       value="{{ vehicle.searchValue }}">
+                <select class="ui searchfield adaptable selection dropdown button"
+                        id="searchField">
+                  <option value="plate"{% if vehicle.searchField == "plate" %} selected{% endif %}>
+                    Placa
+                  </option>
+                  <option value="renavam"{% if vehicle.searchField == "renavam" %} selected{% endif %}>
+                    Renavam
+                  </option>
+                  <option value="vehicleBrandName"{% if vehicle.searchField == "vehicleBrandName" %} selected{% endif %}>
+                    Marca
+                  </option>
+                  <option value="vehicleModelName"{% if vehicle.searchField == "vehicleModelName" %} selected{% endif %}>
+                    Modelo
+                  </option>
+                </select>
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza um veículo"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID do veículo</th>
+          <th>ID do cliente</th>
+          <th>ID da unidade/filial</th>
+          <th>ID da associação do cliente</th>
+          <th>ID da unidade/filial da associação do cliente</th>
+          <th>Indicador de que é monitorado</th>
+          <th>Indicador de pessoa jurídica</th>
+          <th>Indicador de associação</th>
+          <th>Indicador de matriz</th>
+          <th>Indicador de tipo</th>
+          <th>Indicador de nível</th>
+          <th>Indicador de cooperativa ativa</th>
+          <th>Placa</th>
+          <th>Nome fantasia/apelido</th>
+          <th>Marca</th>
+          <th>Modelo</th>
+          <th>Tipo do veículo</th>
+          <th>Subtipo do veículo</th>
+          <th>Tipo</th>
+          <th>Cor</th>
+          <th>Situação</th>
+          <th {{ tooltip.add('left', 'Detalhamento do(s) equipamento(s) associado(s)') }}><svg style="position: relative; top: 2px; margin: auto; text-align: center;" width="20px" height="20px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><path d="M 19.996546, 0.7644605 2.6462706, 5.9771679 C 3.0718364,18.8823157 6.3104161,34.625339 19.996546,39.229436 33.833327,34.757043 36.759467,18.7450662 37.346821, 5.9771679 Z" fill="#98ccfd" stroke="#2a5b8a" stroke-width="1"></path><text y="20" x="20" style="-inkscape-font-specification:\'Cantarell, Bold\';font-family:Cantarell;font-feature-settings:normal;font-size:30px;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;font-weight:bold;letter-spacing:0px;line-height:1;text-align:center;text-anchor:middle;word-spacing:0px"><tspan y="30" x="20">?</tspan></text></svg></th>
+          <th>Dados dos equipamentos</th>
+          <th class="dt-center">Situação dos<br>envios de e-mails</th>
+          <th {{ tooltip.add('left', 'Indica o monitoramento do veículo') }}><i class="eye icon"></i></th>
+          <th {{ tooltip.add('left', 'Permite gerar um PDF para impressão dos dados cadastrais do veículo') }}><i class="file pdf icon"></i></th>
+          <th {{ tooltip.add('left', 'Indicador de veículo bloqueado para uso no sistema') }}><i class="lock darkred icon"></i></th>
+          <th {{ tooltip.add('left', 'Permite remover o veículo') }}><i class="remove darkred icon"></i></th>
+          <th>Sem rastreador principal</th>
+          <th>Nome do dono</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+  {% include 'erp/cadastre/vehicles/emailsdialog.twig' %}
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/info.twig' %}
+  {% include 'templates/erp/partials/dialogs/interaction.twig' %}
+  {% include 'templates/erp/partials/dialogs/question.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="interactionSound">
+    <source src="/sounds/interaction.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('download/download.min.js') }}
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('semantic-ui/components/calendar.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/ColorFormatter.min.js') }}
+  {{ lib('datatables/formatters/IconFormatter.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+
+  {% set getData         = { 'URL': 'ERP\\Cadastre\\Vehicles\\Get', 'method': 'PATCH' } %}
+  {% set add             = { 'URL': 'ERP\\Cadastre\\Vehicles\\Add', 'method': 'GET' } %}
+  {% set edit            = { 'URL': 'ERP\\Cadastre\\Vehicles\\Edit', 'method': 'GET' } %}
+  {% set getPDF          = { 'URL': 'ERP\\Cadastre\\Vehicles\\Get\\PDF', 'method': 'GET' } %}
+  {% set remove          = { 'URL': 'ERP\\Cadastre\\Vehicles\\Delete', 'method': 'DELETE' } %}
+  {% set toggleBlocked   = { 'URL': 'ERP\\Cadastre\\Vehicles\\ToggleBlocked', 'method': 'PUT' } %}
+  {% set toggleMonitored = { 'URL': 'ERP\\Cadastre\\Vehicles\\ToggleMonitored', 'method': 'PUT' } %}
+  {% set getMailData     = { 'URL': 'ERP\\Cadastre\\Vehicles\\Get\\MailData', 'method': 'PATCH' } %}
+
+  {% set attachEquipment = { 'URL': 'ERP\\Cadastre\\Vehicles\\Attach', 'method': 'PUT' } %}
+  {% set detachEquipment = { 'URL': 'ERP\\Cadastre\\Vehicles\\Detach', 'method': 'DELETE' } %}
+
+  {% set hasOneOrMoreCustomer      = { 'URL': 'ERP\\Cadastre\\Customers\\HasOneOrMore', 'method': 'GET' } %}
+  {% set addCustomer               = { 'URL': 'ERP\\Cadastre\\Customers\\Add', 'method': 'GET' } %}
+  {% set getCustomerNameCompletion = { 'URL': 'ERP\\Cadastre\\Entities\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    {% include 'erp/cadastre/vehicles/vehicles.js' with {
+      getData: getData,
+      add: add,
+      edit: edit,
+      getPDF: getPDF,
+      remove: remove,
+      toggleBlocked: toggleBlocked,
+      attachEquipment: attachEquipment,
+      detachEquipment: detachEquipment,
+      hasOneOrMoreCustomer: hasOneOrMoreCustomer,
+      addCustomer: addCustomer,
+      getCustomerNameCompletion
+    } %}
+  </script>
+  {% endapply %}
+{% endblock scripts %}

@@ -1,0 +1,162 @@
+{% extends 'templates/site/layout.twig' %}
+{% block title %}{{ parent() }} - Monitoramento{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+{% endblock stylesheets %}
+{% block content %}
+    <main>
+      <section class="hero monitoring">
+      </section>
+      <section class="description">
+        <div class="ui basic segment">
+          <!-- Início cabeçalho módulo -->
+          <h2 class="ui blue header">
+            <table cellspacing="0" cellpadding="0">
+              <tbody>
+                <tr>
+                  <td class="mobile hidden">
+                    {{ icon('site/monitoring.svg', 'Monitoramento') }}
+                  </td>
+                  <td>
+                    <div class="content">
+                      Monitoramento 24h
+                      <div class="sub header">
+                        Deixe seu carro mais protegido com nossa solução
+                        de monitoramento de veículos.
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </h2>
+          <!-- Fim cabeçalho módulo -->
+
+          <p>
+            Com nossa tecnologia, você pode proporcionar maior segurança
+            e tranquilidade para você e sua família. O alto índice de
+            furtos e roubos de veículos no Brasil (carros e motos) aliado
+            aos altos custos dos seguros e às restrições de análise de
+            perfil para se fazer um seguro justificam o investimento em
+            sistemas de monitoramento, que além de oferecerem uma série
+            de vantagens, reduzem o custo das apólices de seguro de boa
+            parte das operadoras. Localize seu veículo ou de seus
+            familiares por meio da WEB ou do nosso aplicativo para
+            smartphones.
+          </p>
+          <h3 class="ui black header">
+            Benefícios
+          </h3>
+          <p>
+            Confira as vantagens ao investir na mais moderna e econômica
+            tecnologia de proteção do seu patrimônio.
+          </p>
+          <div class="ui relaxed list">
+            <div class="item">
+              <i class="large eye middle aligned icon"></i>
+              <div class="content">
+                <a class="header">
+                  Monitoração em tempo real
+                </a>
+                <div class="description">
+                  Você fica sabendo onde seu veículo está a qualquer
+                  momento. Nossos equipamentos enviam sua localização
+                  com periodicidades entre 60 segundos, possibilitando
+                  assim o cliente ter o rastreamento do veículo com mais
+                  precisão entre uma posição e outra. Além disto, todos
+                  os percursos realizados pelo carro ficam armazenados
+                  em nosso banco de dados sem período de expiração.
+                  Você pode consultar os locais por onde o veículo
+                  passou por tempo indeterminado. Isso significa que,
+                  caso seu marido, filhos ou esposa saiam com o carro,
+                  você tem total controle da segurança deles, mesmo se
+                  não estiver junto. O acesso ao monitoramento é
+                  ilimitado.
+                </div>
+              </div>
+            </div>
+            <div class="item">
+              <i class="large clipboard check middle aligned icon"></i>
+              <div class="content">
+                <a class="header">
+                  Prevenção
+                </a>
+                <div class="description">
+                  Você fica sabendo quando a carga da bateria do seu
+                  veículo está baixa, possibilitando tomar medidas
+                  rápidas e não ser surpreendido com o veículo sem
+                  bateria. Também é possível estabelecer ao equipamento
+                  uma velocidade máxima e caso o condutor ultrapasse essa
+                  velocidade, será gerado um alerta, permitindo evitar
+                  multas e acidentes.
+                </div>
+              </div>
+            </div>
+            <div class="item">
+              <i class="large object group outline middle aligned icon"></i>
+              <div class="content">
+                <a class="header">Cerca virtual</a>
+                <div class="description">
+                  Com nosso sistema de cerca eletrônica é possível
+                  determinar, via sistema, perímetros de controle onde o
+                  sistema gera alertas e relatórios de chegada e saída
+                  desses locais pré-determinados. Essa função garante
+                  que atividades comuns do dia a dia, como levar os
+                  filhos à escola ou ir ao supermercado, sejam realizadas
+                  com segurança. Em caso de qualquer anormalidade, se o
+                  veículo deixar esta área delimitada, você fica sabendo
+                  imediatamente, atrás do aplicativo instalado em seu
+                  celular ou tablet.
+                </div>
+              </div>
+            </div>
+            <div class="item">
+              <i class="large clock outline middle aligned icon"></i>
+              <div class="content">
+                <a class="header">Central de emergência 24h</a>
+                <div class="description">
+                  Caso haja uma suspeita de roubo ou furto você pode
+                  comunicar a central de emergência que poderá parar o
+                  veículo (bloqueio) em um momento oportuno e com
+                  segurança, facilitando a recuperação do carro. Nossa
+                  <b>Central de Emergência</b> funciona 24 horas por dia
+                  7 dias por semana, com 0800, possibilitando efetuar o
+                  chamado de emergência de qualquer telefone público,
+                  celular ou fixo.
+                </div>
+              </div>
+            </div>
+            <div class="item">
+              <i class="large motorcycle middle aligned icon"></i>
+              <div class="content">
+                <a class="header">Economia de bateria em motos</a>
+                <div class="description">
+                  Nosso equipamento foi projetado especialmente para
+                  poupar ao máximo a bateria de sua moto. Seu sistema de
+                  adormecimento impede que o equipamento descarregue a
+                  carga da bateria, garantindo sua potência no momento
+                  da partida. Além disto, nossos técnicos, são treinados
+                  para efetuar as instalações de forma que o equipamento
+                  não entre em contato com a água. Utilizamos exclusiva
+                  proteção desenvolvida com os maiores rigores de testes,
+                  aprovando assim a instalação em todos as marcas e modelos,
+                  independente do terreno onde a moto seja utilizada.
+                </div>
+              </div>
+            </div>
+          </div>
+          <p>
+            Com nossas soluções para monitoramento de veículos, você
+            pode economizar dinheiro e criar oportunidades para aumentar
+            a segurança sua e de sua família, preservando seu patrimônio
+            e, inclusive, ter acesso a descontos no seguro do seu carro
+            ou moto.
+          </p>
+          <button type="button" class="ui blue labeled icon button"
+                  onclick="location.href='{{ path_for('Home') }}';">
+            <i class="home icon"></i> Retornar para a página inicial
+          </button>
+        </div>
+      </section>
+    </main>
+{% endblock %}

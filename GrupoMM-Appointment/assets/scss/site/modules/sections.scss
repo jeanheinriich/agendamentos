@@ -1,0 +1,158 @@
+/* -------------------------------------------------[ Sections ]-----
+   As definições das seções da página principal.
+   ------------------------------------------------------------------ */
+
+.services {
+  padding-top: 50px;
+  padding-bottom: 50px;
+  color: $normalTextColor;
+
+  .section-title {
+    text-align: center;
+    color: #404040;
+    font-size: 30px;
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+
+  .desc {
+    text-align: center;
+    font-size: 1.2em;
+    margin: 0 0 20px 0;
+  }
+
+  .media {
+    font-size: 0.9em;
+    margin-top: 30px;
+
+    .media-body {
+      overflow: hidden;
+      zoom: 1;
+    }
+
+    .media-middle {
+      vertical-align: middle;
+    }
+
+    .media-body, .media-left, .media-right {
+      display: table-cell;
+      vertical-align: top;
+    }
+
+    .media-left, .media > .pull-left {
+      padding-right: 10px;
+    }
+
+    .media-body {
+      width: 10000px;
+
+      .media-heading {
+        margin-top: 0;
+        margin-bottom: 5px;
+      }
+    }
+
+    .media, .media-body {
+      overflow: hidden;
+      zoom: 1;
+    }
+
+    i {
+      font-size: 45px;
+      color: #005FA6;
+    }
+    
+    h4 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #404040;
+    }
+  }
+}
+
+.details {
+  padding-bottom: 50px;
+
+  .content {
+    font-size: 0.9em;
+    font-weight: 300;
+
+    .subtitle {
+      position: relative;
+      font-size: 1.4rem;
+      font-weight: 600;
+      padding-bottom: 20px;
+      color: #404040;
+      margin-bottom: 30px;
+
+      &::after {
+        content: '';
+        position: absolute;
+        width: 30px;
+        background-color: #005FA6;
+        height: 2px;
+        left: 0;
+        bottom: 0;
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+      }
+    }
+
+    .thumbnail {
+      img {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+      }
+
+      .caption {
+        padding: 9px;
+        padding-right: 9px;
+        padding-left: 9px;
+        color: #404040;
+        padding-left: 0;
+        padding-right: 0;
+
+        h3 {
+          font-size: 1.2em;
+          font-weight: 600;
+          margin-top: 10px;
+          margin-bottom: 10px;
+
+          a {
+            color: #404040;
+
+            &:focus {
+              outline: 5px auto -webkit-focus-ring-color;
+              outline-offset: -2px;
+            }
+            &:hover {
+              color: #23527c;
+              text-decoration: none;
+            }
+          }
+        }
+
+        p {
+          font-size: 1em;
+          line-height: 1.6;
+          color: #8c8c8c;
+        }
+
+        a.more {
+          color: #005FA6;
+
+          &::after {
+            content: '\002026';
+          }
+
+          &:hover {
+            color: #007CD9;
+          }
+        }
+      }
+    }
+  }
+}

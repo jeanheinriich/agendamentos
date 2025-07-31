@@ -1,0 +1,875 @@
+{% extends 'templates/erp/layout.twig' %}
+{% import "templates/erp/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento de cobranças{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/semantic-ui/components/calendar.min.css') }}
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/fixedColumn/fixedColumns.semanticui.min.css') }}
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  {{ css('fileinput.min.css') }}
+  <style>
+    .ui.blue.toast {
+      background-color: #0261ed;
+      color: rgba(255,255,255,1);
+    }
+
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.adaptable.dropdown {
+      flex-basis: 7em;
+      min-width: 7em;
+    }
+    .ui.main.basic.segment .searchbar.fields .field.customer {
+      flex-grow: 1;
+      min-width: 236px;
+    }
+    .ui.main.basic.segment .searchbar.fields .field.situation {
+      flex-grow: 1;
+      min-width: 165px;
+    }
+    .ui.main.basic.segment .searchbar.fields .field.method {
+      flex-grow: 1;
+      min-width: 235px;
+    }
+    @media only screen and (max-width: 767px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 100px;
+        width: calc(100% - 47px);
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox input {
+        width: calc(100% - 140px);
+      }
+    }
+
+    @media only screen and (min-width: 920px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+      {% if authorization.user.groupid < 6 %}
+      {% else %}
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        width: 538px;
+      }
+      {% endif %}
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+
+    /* --------------------------------------------------------------
+     * Personalizações das linhas do datagrid apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.celled.table tr th.dt-center.dt-right,
+    .ui.celled.table tr td.dt-center.dt-right {
+      text-align: center;
+    }
+    .blocked > td {
+      color: #7f7f7f
+    }
+    .blocked > td {
+      background-color: #fff6f6 !important;
+      color: DarkRed;
+    }
+    tr.blocked:hover > td {
+      background-color: #f6e7e7 !important;
+    }
+
+    .installation {
+      padding-left: 1em;
+    }
+    .symbol {
+      color: #9aabc2;
+      font-style: oblique;
+      font-size: .9rem;
+      float: left;
+    }
+    .inline.button {
+      font-size: .75714286rem;
+      vertical-align: text-bottom;
+      padding: .38571429em .18571429em .38571429em !important;
+      margin-left: .55rem;
+    }
+
+    .ui.modal>.content>.icon+.description {
+      overflow-wrap: break-word;
+      width: fit-content;
+    }
+    .cursor-wait {
+      cursor: wait !important;
+    }
+
+    /* Colocamos uma linha separadora entre as colunas fixas e o
+     * restante do conteúdo
+     */
+    .ui.celled.table>tbody>tr>td.dtfc-fixed-left:nth-child(3),
+    .ui.celled.table>tbody>tr>th.dtfc-fixed-left:nth-child(3),
+    .ui.celled.table>tfoot>tr>td.dtfc-fixed-left:nth-child(3),
+    .ui.celled.table>tfoot>tr>th.dtfc-fixed-left:nth-child(3),
+    .ui.celled.table>thead>tr>th.dtfc-fixed-left:nth-child(3),
+    .ui.celled.table>tr>td.dtfc-fixed-left:nth-child(3),
+    .ui.celled.table>tr>th.dtfc-fixed-left:nth-child(3) {
+      border-right: 1px solid rgba(34,36,38,.1) !important;
+    }
+
+    /* Cores das linhas com estado não registrado */
+    tr.unregistered:nth-of-type(odd) td {
+      background-color: #f5fcff;
+      color: #00a3cc;
+    }
+    tr.unregistered:nth-of-type(odd):hover td {
+      background-color: #ebf0f3;
+    }
+    tr.unregistered:nth-of-type(even) td {
+      background-color: #edf6fb;
+      color: #00a3cc;
+    }
+    tr.unregistered:nth-of-type(even):hover td {
+      background-color: #e7f0f3;
+    }
+
+    /* Cores das linhas com estado não registrado */
+    tr.beforeExpiration:nth-of-type(odd) td {
+      background-color: #fffcf8;
+      color: #cf5c11;
+    }
+    tr.beforeExpiration:nth-of-type(odd):hover td {
+      background-color: #f2efec;
+    }
+    tr.beforeExpiration:nth-of-type(even) td {
+      background-color: #faf6f1;
+      color: #cf5c11;
+    }
+    tr.beforeExpiration:nth-of-type(even):hover td {
+      background-color: #f3efea;
+    }
+
+    /* Cores das linhas com estado vencido */
+    tr.overdue:nth-of-type(odd) td {
+      background-color: #fff5f6;
+      color: DarkRed;
+    }
+    tr.overdue:nth-of-type(odd):hover td {
+      background-color: #f3eaea;
+    }
+    tr.overdue:nth-of-type(even) td {
+      background-color: #faeeef;
+      color: DarkRed;
+    }
+    tr.overdue:nth-of-type(even):hover td {
+      background-color: #f3e7e7;
+    }
+
+    /* Cores das linhas com estado pago */
+    tr.paid:nth-of-type(odd) td {
+      background-color: #f5fff6;
+      color: DarkGreen;
+    }
+    tr.paid:nth-of-type(odd):hover td {
+      background-color: #eaf3eb;
+    }
+    tr.paid:nth-of-type(even) td {
+      background-color: #effaf0;
+      color: DarkGreen;
+    }
+    tr.paid:nth-of-type(even):hover td {
+      background-color: #e7f3e8;
+    }
+
+    /* Cores das linhas com estado cancelado */
+    tr.cancel:nth-of-type(odd) td {
+      background-color: #f7f7f9;
+      color: #9090a0;
+    }
+    tr.cancel:nth-of-type(odd):hover td {
+      background-color: #ebebed;
+    }
+    tr.cancel:nth-of-type(even) td {
+      background-color: #f1f0f4;
+      color: #9090a0;
+    }
+    tr.cancel:nth-of-type(even):hover td {
+      background-color: #eaeaec;
+    }
+
+    /* Cores das linhas com estado em cobrança */
+    tr.billing:nth-of-type(odd) td {
+      background-color: #f4f2f4;
+      color: #660066;
+    }
+    tr.billing:nth-of-type(odd):hover td {
+      background-color: #e9e7e9;
+    }
+    tr.billing:nth-of-type(even) td {
+      background-color: #ece9ed;
+      color: #660066;
+    }
+    tr.billing:nth-of-type(even):hover td {
+      background-color: #e4e1e4;
+    }
+
+    /* Cores das linhas com estado de erro */
+    tr.error:nth-of-type(odd) td {
+      background-color: #ffeddf;
+      color: Red;
+    }
+    tr.error:nth-of-type(odd):hover td {
+      background-color: #fee0d3;
+    }
+    tr.error:nth-of-type(even) td {
+      background-color: #feead7;
+      color: Red;
+    }
+    tr.error:nth-of-type(even):hover td {
+      background-color: #feddcb;
+    }
+
+    table.dataTable thead tr th {
+      word-wrap: break-word;
+      word-break: break-all;
+    }
+    /**
+     * Corrigimos a cor do ícone do e-mail quando sem informação
+     */
+    i.silver.icon.icon.icon.icon.icon {
+      color: #C6C6B6;
+    }
+    /**
+     * Corrigimos as colunas fixadas para se sobreporem aos rótulos de
+     * estado dos e-mails
+     */
+    .ui.celled.table > tbody > tr > td.dtfc-fixed-left {
+      z-index: 1;
+    }
+
+    /**
+     * Corrigimos o botão de fechar do modal
+     */
+    .ui.modal > .close {
+      top: 1.0rem;
+      right: 1.0rem;
+      color: #000;
+    }
+
+    .ui.slim.modal {
+      width: 16rem;
+    }
+    .ui.slim.modal .ui.vertical.menu {
+      width: 16rem;
+    }
+
+    .ui.slim.modal > .content {
+      padding: 0 0;
+    }
+
+    .ui.slim.modal .ui.vertical.menu {
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+      border: none;
+    }
+
+    .ui.slim.modal .ui.vertical.menu > .item {
+      border-radius: 0 0;
+      border: none;
+    }
+
+    .ui.slim.modal .ui.vertical.menu > .divider {
+      border-top: 1px solid rgba(34,36,38,.1);
+      background-color: rgba(34,36,38,.2);
+      height: 2px;
+    }
+
+    .ui.ui.ui.menu .silver.item {
+      color: #333333;
+      background-color: #f6f5f4;
+      font-style: normal;
+    }
+    .ui.ui.ui.menu .silver.item:hover {
+      color: #000000;
+      background-color: #aabad0a6;
+    }
+
+    .ui.ui.ui.menu .orange.item {
+      color: #bb0000;
+      background-color: #fff299;
+    }
+    .ui.ui.ui.menu .orange.item:hover {
+      color: #800000;
+      background-color: #efc56e;
+    }
+
+    /**
+     * Corrigimos o erro na tabela
+     */
+    .ui.table thead tr:first-child > th:last-child {
+      border-right: none;
+    }
+
+    .ui.celled.table > tfoot > tr > th.bold {
+      font-weight: bold;
+    }
+
+    .dropdown .menu > .item[data-value^="1"] {
+      color: #224159;
+      background-color: #ffff9a20;
+    }
+    .ui.celled.table tr td.bold span.bold {
+      font-weight: bold;
+      color: #003000;
+    }
+
+    /**
+     * Menu de adição
+     */
+    .ui.header+p {
+      white-space: normal;
+    }
+    .ui.vertical.menu {
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .ui.vertical.menu .item {
+      border: 1px solid rgba(34,36,38,.15);
+      border-top: none;
+      border-right: none;
+    }
+
+    .ui.pointing.dropdown .menu > .item {
+      min-height: 1.57142857rem;
+      line-height: 1.57142857rem;
+    }
+
+    /**
+     * Ajustes para os formulários modais
+     */
+    .ui.input.info>input {
+      color: #276f86;
+      background: #f8ffff;
+      border-color: #a9d5de;
+      -webkit-box-shadow: none;
+      box-shadow: none;
+    }
+    .ui.form>.field.info>.ui.labeled.input:not(.right):not([class*="corner labeled"])>.ui.label,
+    .ui.form>.field.info>.ui.left.action.input>.ui.button,
+    .ui.labeled.input.info:not(.right):not([class*="corner labeled"])>.ui.label,
+    .ui.left.action.input.info>.ui.button,
+    .ui.action.input.info:not(.left)>input+.ui.button,
+    .ui.form>.field.info>.ui.action.input:not(.left)>input+.ui.button,
+    .ui.form>.field.info>.ui.right.labeled.input:not([class*="corner labeled"])>input+.ui.label,
+    .ui.right.labeled.input.info:not([class*="corner labeled"])>input+.ui.label {
+      color: #276f86;
+      background-color: #e1f7f7;
+    }
+    .ui.icon.input.info>i.icon:not(.link) {
+      color: #276f86;
+    }
+    small.helper,
+    .column.error label {
+      color: #9f3a38;
+    }
+    .fields .ui.error.text {
+      margin: 1rem .5rem;
+    }
+
+    /* O menu suspenso */
+
+    .table-responsive {
+      overflow-y: visible !important;
+    }
+    /* O container <div> - necessário para posicionar o conteúdo do menu
+       suspenso */
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    /* Conteúdo do menu suspenso (escondido por padrão) */
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #f1f1f1;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 1;
+    }
+
+    /* Links dentro do menu suspenso */
+    .dropdown-content a {
+      color: black;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: block;
+    }
+
+    /* Alterar a cor dos links no menu suspensos ao passar o mouse */
+    .dropdown-content a:hover {background-color: #ddd}
+
+    /* Mostre o menu suspenso (use JS para adicionar esta classe ao
+       contêiner .dropdown-content quando o usuário clicar no botão) */
+    .dropdown-content.show {
+      display:block;
+    }
+
+    tr.unregistered td > span.highlight {
+      color: #c99400;
+    }
+    tr.beforeExpiration td > span.highlight {
+      color: #fa6f14;
+    }
+    tr.error td > span.highlight,
+    tr.overdue td > span.highlight {
+      color: #d10202;
+    }
+    tr.billing td > span.highlight {
+      color: #a102a1;
+    }
+    tr.paid td > span.highlight {
+      color: #54a102;
+    }
+    tr.cancel td > span.highlight {
+      color: #8e8ea3;
+    }
+
+    .symbol.with.detail {
+      margin-top: .65em;
+    }
+    .ui.detail.button {
+      padding: .78571429em .78571429em .78571429em;
+      margin-left: .78571429em;
+    }
+    .ui.detail.button > i.icon {
+      opacity: .9;
+      margin: 0 !important;
+      vertical-align: top;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set add = { 'URL': 'ERP\\Financial\\Payments\\Add', 'method': 'GET' } %}
+  {% set getBillingPhoneList = { 'URL': 'ERP\\Financial\\Payments\\Get\\BillingPhoneList', 'method': 'GET' } %}
+  {% set getShippingFile = { 'URL': 'ERP\\Financial\\Payments\\CNAB\\ShippingFile\\Download', 'method': 'GET' } %}
+  {% set processReturnFile = { 'URL': 'ERP\\Financial\\Payments\\CNAB\\ReturnFile\\Process', 'method': 'POST' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/payments.svg', 'Cobrança') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento de cobranças e pagamentos
+                <div class="sub header">
+                  Permite gerenciar as cobranças de clientes, permitindo
+                  visualizar as cobranças pendentes, emitir cobranças
+                  avulsas e/ou carnês, dar baixa em valores pagos,
+                  analisar os pagamentos de um cliente, bem como
+                  renegociar valores em aberto.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(add.URL, add.method) %}
+            <div class="field button">
+              <div class="ui dropdown item">
+                <button class="ui primary icon button"
+                        style="font-size: 1.07rem;"
+                        data-tooltip="Adiciona uma cobrança avulsa"
+                        data-position="top left" type="button">
+                  <i class="add icon"></i>
+                </button>
+                <div class="ui vertical menu" style="min-width: 25rem; width: 25rem;">
+                  <a class="item" onclick="add('carnet');">
+                    <h4 class="ui header">Carnê de pagamentos</h4>
+                    <p>
+                      São emitidos antecipadamente boletos com os valores
+                      referentes aos serviços ainda a serem prestados ao
+                      cliente.
+                    </p>
+                  </a>
+                  <a class="item" onclick="add('prepayment');">
+                    <h4 class="ui header">Pagamento antecipado</h4>
+                    <p>
+                      É emitido uma cobrança única da soma dos valores
+                      referentes aos serviços ainda a serem prestados ao
+                      cliente no período indicado, permitindo o pagamento
+                      prévio.
+                    </p>
+                  </a>
+                  <a class="item" onclick="add('unusual');">
+                    <h4 class="ui header">Cobrança extraordinária</h4>
+                    <p>
+                      Cobrança de valores que tenham sido lançados e que
+                      estejam pendentes de cobrança nos itens de contrato
+                      do cliente.
+                    </p>
+                  </a>
+                  <a class="item" onclick="add('closing');">
+                    <h4 class="ui header">Apuração de valores de encerramento</h4>
+                    <p>
+                      São calculados os valores dos serviços prestados
+                      até a data da emissão, bem como acrescido dos demais
+                      valores lançados e que estejam ainda pendentes de
+                      cobrança.
+                    </p>
+                  </a>
+                  <a class="item" onclick="add('another');">
+                    <h4 class="ui header">Valores avulsos</h4>
+                    <p>
+                      Cobrança de outros valores, não relacionados com
+                      os itens de contrato do cliente.
+                    </p>
+                  </a>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+
+            {% if authorization.getAuthorizationFor(getBillingPhoneList.URL, getBillingPhoneList.method) %}
+            <div class="field button">
+              <div class="ui dropdown item">
+                <button class="ui primary icon button"
+                        style="font-size: 1.07rem;"
+                        data-tooltip="Obtém a relação de telefones para cobrança"
+                        data-position="top left" type="button">
+                  <i class="phone icon"></i>
+                </button>
+                <div class="ui vertical menu" style="min-width: 25rem; width: 25rem;">
+                  <a class="item" onclick="getPhoneList(1, 'true', 'false', 0);">
+                    <h4 class="ui header">Vencidos</h4>
+                    <p>
+                      Obtém a relação de telefones de clientes com
+                      valores vencidos a mais de 1 dia e que não estejam
+                      em cobrança externa.
+                    </p>
+                  </a>
+                  <a class="item" onclick="getPhoneList(1, 'true', 'true', 0);">
+                    <h4 class="ui header">Em cobraça</h4>
+                    <p>
+                      Obtém a relação de telefones de clientes com
+                      valores vencidos e que estejam em cobrança externa.
+                    </p>
+                  </a>
+                  <a class="item" onclick="getPhoneList(1, 'false', 'false', 1);">
+                    <h4 class="ui header">Clientes ativos</h4>
+                    <p>
+                      Obtém a relação de telefones de clientes ativos e
+                      que possuam ao menos 1 veículo ativo.
+                    </p>
+                  </a>
+                  <a class="item" onclick="getPhoneList(1, 'false', 'false', 5);">
+                    <h4 class="ui header">Clientes ativos com mais de 5 veículos</h4>
+                    <p>
+                      Obtém a relação de telefones de clientes ativos e
+                      que possuam mais de 5 veículos igualmente ativos.
+                    </p>
+                  </a>
+                  <a class="item" onclick="getPhoneList(2, 'false', 'false', 0);">
+                    <h4 class="ui header">Associados ativos</h4>
+                    <p>
+                      Obtém a relação de telefones de associados ativos.
+                    </p>
+                  </a>
+                  <a class="item" onclick="getPhoneList(3, 'false', 'false', 0);">
+                    <h4 class="ui header">Veículos com rastreador sem comunicação</h4>
+                    <p>
+                      Obtém a relação de telefones de clientes e associados
+                      cujo(s) veículo(s) possua um rastreador com falha
+                      de comunicação à pelo menos 48h.
+                    </p>
+                  </a>
+                  <a class="item" onclick="getPhoneList(6, 'false', 'false', 0);">
+                    <h4 class="ui header">Rastreador sem comunicação</h4>
+                    <p>
+                      Obtém a relação de telefones do Simcard de
+                      rastreadores com falha de comunicação à pelo menos
+                      6h.
+                    </p>
+                  </a>
+                  <a class="item" onclick="getPhoneList(4, 'false', 'false', 0);">
+                    <h4 class="ui header">Boletos à vencer</h4>
+                    <p>
+                      Obtém a relação de telefones de clientes que possuam
+                      boletos à vencer no mês corrente para envio de link
+                      para download do boleto.
+                    </p>
+                  </a>
+                  <a class="item" onclick="getPhoneList(5, 'false', 'false', 0);">
+                    <h4 class="ui header">Bloqueios principal</h4>
+                    <p>
+                      Obtém a relação de telefones de associados bloqueados
+                      da principal.
+                    </p>
+                  </a>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+
+            {% if ( authorization.hasAuthorizationForGroupOfRoutes('ERP\\Financial\\Payments\\CNAB') ) %}
+            <div class="field button">
+              <div class="ui dropdown item">
+                <button class="ui primary icon button"
+                        style="font-size: 1.07rem;"
+                        data-tooltip="Interage com arquivos de remessa e retorno"
+                        data-position="top left" type="button">
+                  <i class="retweet icon"></i>
+                </button>
+                <div class="ui vertical menu" style="min-width: 25rem; width: 25rem;">
+                  {% if authorization.getAuthorizationFor(getShippingFile.URL, getShippingFile.method) %}
+                  <a class="item" onclick="downloadShippingFile(0);">
+                    <h4 class="ui header">Arquivo de remessa</h4>
+                    <p>
+                      Obtém o arquivo de remessa a ser enviado ao banco
+                      com as instruções pendentes.
+                    </p>
+                  </a>
+                  {% endif %}
+                  {% if authorization.getAuthorizationFor(processReturnFile.URL, processReturnFile.method) %}
+                  <a class="item" onclick="processReturnFile();">
+                    <h4 class="ui header">Arquivo de retorno</h4>
+                    <p>
+                      Processa o arquivo de retorno do banco, realizando
+                      as atualizações nos títulos existentes.
+                    </p>
+                  </a>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="field customer">
+              <input placeholder="Informe o cliente..." type="text"
+                     name="customerName"
+                     value="{{ payment.customer.name }}">
+              <input type="hidden" name="customerID"
+                     value="{{ payment.customer.id }}" >
+              <input type="hidden" name="subsidiaryID"
+                     value="{{ payment.customer.subsidiaryID }}" >
+            </div>
+          </div>
+
+          <div class="flex">
+            <div class="field selectbox situation">
+              <select class="ui adaptable selection dropdown"
+                      name="situationID" id="situationID">
+                <option value="0"{% if payment.situationID == 0 %} selected{% endif %}>
+                  Todas situações
+                </option>
+                {% for situation in paymentSituations %}
+                  {% if situation.id == 1 %}
+                  <optgroup label="A receber">
+                    <option class="group" value="1"{% if situation.id == 1 %} selected{% endif %}>Tudo a receber</option>
+                    <option class="group" value="10"{% if situation.id == 10 %} selected{% endif %}>Não vencidos</option>
+                    <option class="group" value="11"{% if situation.id == 11 %} selected{% endif %}>Vencidos</option>
+                    <option class="group" value="12"{% if situation.id == 12 %} selected{% endif %}>Negativados</option>
+                    <option class="group" value="13"{% if situation.id == 13 %} selected{% endif %}>Protestados</option>
+                    <option class="group" value="14"{% if situation.id == 14 %} selected{% endif %}>Em cobrança</option>
+                  </optgroup>
+                  {% else %}
+                  <option value="{{ situation.id }}"{% if payment.situationID == situation.id %} selected{% endif %}>
+                    {{ situation.name }}
+                  </option>
+                  {% endif %}
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="field selectbox method">
+              <select class="ui adaptable selection dropdown"
+                      name="methodID" id="methodID">
+                <option value="0"{% if payment.methodID == 0 %} selected{% endif %}>
+                  Todos meios de pagamento
+                </option>
+                {% for method in paymentMethods %}
+                <option value="{{ method.id }}"{% if payment.methodID == method.id %} selected{% endif %}>
+                  {{ method.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="flex">
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite o que procura..."
+                       value="{{ payment.name }}">
+                <select class="ui searchfield adaptable selection dropdown button"
+                        id="searchField">
+                  <option value="invoiceid"{% if payment.searchField == "invoiceid" %} selected{% endif %}>
+                    Nº do documento
+                  </option>
+                  <option value="name"{% if payment.searchField == "name" %} selected{% endif %}>
+                    Nome do cliente
+                  </option>
+                </select>
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza cobranças"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           style="width: 2700px"
+           cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID da cobrança</th>
+          <th>ID do cliente</th>
+          <th class="w500 dt-center">Cliente</th>
+          <th>ID da unidade/filial do cliente</th>
+          <th class="dt-center">Unidade/filial do cliente</th>
+          <th class="dt-center">Número do<br>documento</th>
+          <th class="dt-center">Mês de<br>referência</th>
+          <th>ID do meio de pagamento</th>
+          <th class="dt-center">Meio de pagamento</th>
+          <th class="dt-center">Valor<br>cobrado</th>
+          <th class="dt-center">Dia de<br>vencimento</th>
+          <th>Vencido</th>
+          <th>ID da situação do pagamento</th>
+          <th>ID da situação de restrição aplicada</th>
+          <th class="dt-center">Situação</th>
+          <th>ID da situação da baixa do boleto</th>
+          <th class="dt-center">Situação<br>do boleto</th>
+          <th class="dt-center">Dia de<br>pagamento</th>
+          <th class="dt-center">Valor<br>pago</th>
+          <th class="dt-center">Valor juros<br>de mora</th>
+          <th class="dt-center">Valor de<br>multa</th>
+          <th class="dt-center">Valor de<br>abatimento</th>
+          <th class="dt-center">Valor de<br>tarifa</th>
+          <th class="dt-center">Data do<br>crédito</th>
+          <th class="dt-center">Contém erro</th>
+          <th class="dt-center">Motivo do erro</th>
+          <th class="dt-center">Ações</th>
+          <th class="dt-center">Situação dos<br>envios de e-mails</th>
+          <th class="dt-center" {{ tooltip.add('left', 'Permite remover esta cobrança') }}><i class="remove darkred icon"></i></th>
+          <th class="dt-center">Número do documento junto a instituição financeira</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+  {% include 'erp/financial/payments/emailsdialog.twig' %}
+  {% include 'erp/financial/payments/paiddialog.twig' %}
+  {% include 'erp/financial/payments/tariffsdialog.twig' %}
+  {% include 'erp/financial/payments/historydialog.twig' %}
+  {% include 'erp/financial/payments/dropmenu.twig' %}
+  {% include 'erp/financial/payments/paydialog.twig' %}
+  {% include 'erp/financial/payments/discountdialog.twig' %}
+  {% include 'erp/financial/payments/changeduedatedialog.twig' %}
+  {% include 'erp/financial/payments/reasondialog.twig' %}
+  {% include 'erp/financial/payments/returnfiledialog.twig' %}
+  {% include 'erp/financial/payments/resultdialog.twig' %}
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/info.twig' %}
+  {% include 'templates/erp/partials/dialogs/interaction.twig' %}
+  {% include 'templates/erp/partials/dialogs/question.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+  {% include 'templates/erp/partials/dialogs/detail.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="interactionSound">
+    <source src="/sounds/interaction.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('semantic-ui/components/calendar.min.js') }}
+  {{ lib('download/download.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/plugins/fixedColumn/dataTables.fixedColumns.min.js') }}
+  {{ lib('datatables/plugins/fixedColumn/fixedColumns.semanticui.min.js') }}
+  {{ lib('datatables/formatters/DateFormatter.min.js') }}
+  {{ lib('datatables/formatters/DeleteFormatter.min.js') }}
+  {{ lib('datatables/formatters/MonetaryFormatter.min.js') }}
+  
+  {% set getData             = { 'URL': 'ERP\\Financial\\Payments\\Get', 'method': 'PATCH' } %}
+  {% set add                 = { 'URL': 'ERP\\Financial\\Payments\\Add', 'method': 'GET' } %}
+  {% set getPDF              = { 'URL': 'ERP\\Financial\\Payments\\Get\\PDF', 'method': 'GET' } %}
+  {% set getBillingPhoneList = { 'URL': 'ERP\\Financial\\Payments\\Get\\BillingPhoneList', 'method': 'GET' } %}
+  {% set getDigitableLine    = { 'URL': 'ERP\\Financial\\Payments\\Get\\DigitableLine', 'method': 'PATCH' } %}
+  {% set getDownloadableLink = { 'URL': 'ERP\\Financial\\Payments\\Get\\DownloadableLink', 'method': 'PATCH' } %}
+  {% set getMailData         = { 'URL': 'ERP\\Financial\\Payments\\Get\\MailData', 'method': 'PATCH' } %}
+  {% set getShippingFile     = { 'URL': 'ERP\\Financial\\Payments\\CNAB\\ShippingFile\\Download', 'method': 'GET' } %}
+  {% set getTariffData       = { 'URL': 'ERP\\Financial\\Payments\\Get\\TariffData', 'method': 'PATCH' } %}
+  {% set getHistoryData      = { 'URL': 'ERP\\Financial\\Payments\\Get\\HistoryData', 'method': 'PATCH' } %}
+  {% set processReturnFile   = { 'URL': 'ERP\\Financial\\Payments\\CNAB\\ReturnFile\\Process', 'method': 'POST' } %}
+  {% set sendByMail          = { 'URL': 'ERP\\Financial\\Payments\\Send\\Mail', 'method': 'PUT' } %}
+  {% set sendBySMS           = { 'URL': 'ERP\\Financial\\Payments\\Send\\SMS', 'method': 'PUT' } %}
+  {% set drop                = { 'URL': 'ERP\\Financial\\Payments\\Drop', 'method': 'PUT' } %}
+  {% set remove              = { 'URL': 'ERP\\Financial\\Payments\\Delete', 'method': 'DELETE' } %}
+  
+  {% set getCustomerNameCompletion = { 'URL': 'ERP\\Cadastre\\Entities\\Autocompletion\\Get', 'method': 'PATCH' } %}
+
+  {% apply minify %}
+  <script>
+    {% include 'erp/financial/payments/payments.js'  with {
+      getData: getData,
+      add: add,
+      getPDF: getPDF,
+      getDigitableLine: getDigitableLine,
+      getDownloadableLink: getDownloadableLink,
+      getBillingPhoneList: getBillingPhoneList,
+      getMailData: getMailData,
+      getShippingFile: getShippingFile,
+      getTariffData: getTariffData,
+      getHistoryData: getHistoryData,
+      processReturnFile: processReturnFile,
+      sendByMail: sendByMail,
+      sendBySMS: sendBySMS,
+      drop: drop,
+      remove: remove,
+      payment: payment
+    } %}
+  </script>
+  {% endapply %}
+{% endblock scripts %}

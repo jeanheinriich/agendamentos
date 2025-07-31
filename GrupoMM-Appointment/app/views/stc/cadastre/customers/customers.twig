@@ -1,0 +1,588 @@
+{% extends 'templates/stc/layout.twig' %}
+{% import "templates/stc/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento de clientes{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.main.basic.segment .searchbar.fields .field.searchbox {
+      flex-grow: 1;
+      min-width: 455px;
+    }
+    @media only screen and (max-width: 767px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 200px;
+      }
+    }
+
+    @media only screen and (min-width: 768px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+
+    /* --------------------------------------------------------------
+     * Personalizações das linhas do datagrid apenas para este módulo
+     * -------------------------------------------------------------- */
+    .blocked > td {
+      color: #7f7f7f
+    }
+    .blocked > td {
+      background-color: #fff6f6 !important;
+      color: DarkRed;
+    }
+    tr.blocked:hover > td {
+      background-color: #f6e7e7 !important;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set sync = { 'URL': 'STC\\Cadastre\\Customers\\Synchronize', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('stc/customers.svg', 'Clientes') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento dos clientes
+                <div class="sub header">
+                  Permite gerenciar os clientes cadastrados no sistema
+                  STC.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(sync.URL, sync.method) %}
+            <div class="field button">
+              <button class="ui primary icon button" id="sync"
+                      data-tooltip="Sincroniza os clientes com o sistema STC"
+                      data-position="top left" type="button"
+                      onclick="synchronize();">
+                <i class="refresh icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite o cliente que procura..."
+                       value="{{ customer.searchValue }}">
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza um cliente"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    {% if authorization.user.groupid < 6 %}
+    <!-- Início da barra de progresso -->
+    <div class="ui vertical flexBorderBottom segment">
+      <div class="ui indicating progress" data-value="1" data-total="100" id="progressbar">
+        <div class="bar">
+          <div class="progress"></div>
+        </div>
+        <div class="label" id="progressbartitle">Sincronizando os clientes...</div>
+      </div>
+    </div>
+    <!-- Fim da barra de progresso -->
+    {% endif %}
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nome</th>
+          <th>CPF/CNPJ</th>
+          <th>Cidade</th>
+          <th>UF</th>
+          <th {{ tooltip.add('left', 'Indicador de cliente bloqueado para uso no sistema') }}><i class="lock darkred icon"></i></th>
+          <th {{ tooltip.add('left', 'Indicador de cliente habilitado para obtenção do histórico de posicionamentos dos veículos') }}><i class="map marked darkorange icon"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/stc/partials/dialogs/error.twig' %}
+  {% include 'templates/stc/partials/dialogs/info.twig' %}
+  {% include 'templates/stc/partials/dialogs/question.twig' %}
+  {% include 'templates/stc/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  
+  {% set getData            = { 'URL': 'STC\\Cadastre\\Customers\\Get', 'method': 'PATCH' } %}
+  {% set view               = { 'URL': 'STC\\Cadastre\\Customers\\View', 'method': 'GET' } %}
+  {% set sync               = { 'URL': 'STC\\Cadastre\\Customers\\Synchronize', 'method': 'GET' } %}
+  {% set toggleGetPositions = { 'URL': 'STC\\Cadastre\\Customers\\ToggleGetPositions', 'method': 'PUT' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      table
+    ;
+
+    // Um formatador para exibir um ícone indicativo de que o cliente
+    // está ou não bloqueado
+    var blockedFormatter = function ( value, type, row, meta ) {
+      var buildIcon = function (color, icon, title) {
+        return ''
+          + '<span data-position="left center"'
+          +       'data-blue data-inverted '
+          +       'data-tooltip="' + title + '">'
+          +   '<i class="' + icon + ' ' + color + ' icon"></i>'
+          + '</span>'
+        ;
+      };
+
+      switch (value) {
+        case false:
+          // O cliente está bloqueado
+          return buildIcon('lock', 'darkred',
+            'O cliente está bloqueado');
+        default:
+          // Está ativo
+          return buildIcon('unlock', 'lightgrey',
+            'O cliente está ativo');
+      }
+    };
+
+    // Um formatador para exibir um ícone indicativo de que o cliente
+    // está ou não habilitado a recuperar os dados do histórico de
+    // posicionamentos dos veículos do cliente
+    var toggleFormatter = function ( value, type, row, meta ) {
+      var buildIcon = function (color, icon, title) {
+        return ''
+          + '<span data-position="left center"'
+          +       'data-blue data-inverted '
+          +       'data-tooltip="' + title + '">'
+          +   '<i class="' + icon + ' ' + color + ' icon"></i>'
+          + '</span>'
+        ;
+      };
+
+      switch (value) {
+        case true:
+          // O cliente está bloqueado
+          return buildIcon('map marked', 'darkorange',
+            'Está habilitada a obtenção do histórico de posicionamentos dos veículos deste cliente');
+        default:
+          // Está ativo
+          return buildIcon('map marked', 'lightgrey',
+            'Está desabilitada a obtenção do histórico de posicionamentos dos veículos deste cliente');
+      }
+    };
+
+    $(document).ready(function() {
+      // --------------------------------[ Componentes da Searchbar ]---
+      $('#searchValue').keypress(function(e) {
+        if (e.which == 13) {
+          searchLoad();
+        }
+      });
+
+      {% if authorization.user.groupid < 6 %}
+      // -----------------------[ Componentes da Barra de Progresso ]---
+      // Esconde a barra de progresso
+      $('.ui.progress')
+        .parent()
+        .hide()
+      ;
+      {% endif %}
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "id",
+            "data": "id",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "name",
+            "data": "name",
+            "visible": true, 
+            "orderable": true },
+          { "targets": 2,
+            "name": "nationalregister",
+            "data": "nationalregister",
+            "visible": true,
+            "orderable": false,
+            "width": "130px" },
+          { "targets": 3,
+            "name": "cityname",
+            "data": "cityname",
+            "visible": true,
+            "orderable": false },
+          { "targets": 4,
+            "name": "state",
+            "data": "state",
+            "visible": true,
+            "className": "dt-center",
+            "orderable": false,
+            "width": "25px" },
+          { "targets": 5,
+            "name": "status",
+            "data": "status",
+            "visible": true,
+            "className": "dt-center",
+            "orderable": false,
+            "width": "10px",
+            "render": blockedFormatter },
+          { "targets": 6,
+            "name": "getpositions",
+            "data": "getpositions",
+            "visible": true,
+            "className": "dt-center",
+            "orderable": false,
+            "width": "10px",
+            "render": toggleFormatter }
+        ],
+        order: [[ 1, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.searchValue = $('#searchValue').val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        createdRow: function(row, data, dataIndex) {
+          // Deixa as linhas com cores diferentes para indicar os
+          // bloqueios de clientes
+          if (!data.status) {
+            $(row)
+              .addClass('blocked')
+            ;
+          }
+        }
+      });
+
+      // Manipula os eventos de click
+      table
+        .on('user-select', function (e, dt, type, cell, originalEvent) {
+          if (type === 'cell') {
+            var
+              // Recupera os dados da célula selecionada
+              index   = cell[0][0],
+
+              // Recupera o cliente selecionado
+              customer = dt.rows( index.row ).data().toArray()[0]
+            ;
+
+            // Em função da coluna onde ocorreu o clique, executa a ação
+            // correspondente
+            switch (index.column) {
+              {% if authorization.getAuthorizationFor(toggleGetPositions.URL, toggleGetPositions.method) %}
+              case 6:
+                // Alterna a obtenção de histórico de posicionamentos do
+                // cliente
+                var
+                  action = customer.getpositions
+                    ? "desativar"
+                    : "ativar"
+                ;
+
+                questionDialog(
+                  action.charAt(0).toUpperCase() + action.slice(1),
+                  'Você deseja realmente ' + action + ' a obtenção do '
+                  + 'histórico de posicionamentos dos veículos do '
+                  + 'cliente <b>&ldquo;' + customer.name
+                  + '&rdquo;</b>?',
+                  function() {
+                    // Alterna a obtenção de histórico de posicionamentos
+                    // do cliente
+                    var
+                      url  = "{{ buildURL(toggleGetPositions.URL, {'clientID': 'customer.id' }) }}"
+                    ;
+
+                    putJSONData(url, [],
+                    function (data, params, message) {
+                      // Atualiza a tabela
+                      searchLoad();
+                    });
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  }
+                );
+
+                break;
+              {% endif %}
+              default:
+                {% if authorization.getAuthorizationFor(view.URL, view.method) %}
+                // Coloca o cliente em visualização
+                window.location.href = "{{ buildURL(view.URL, {'clientID': 'customer.id'}) }}";
+                {% endif %}
+            }
+
+            e.preventDefault();
+          }
+        }
+      );
+
+      // Força a atualização da tabela para reajustar as colunas após
+      // a carga
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 1500);
+    });
+
+
+    // ================================================[ Handlers ]=====
+
+    // Sincroniza os dados de clientes com o sistema STC
+    function synchronize() {
+      var
+        $progress = $('#progressbar'),
+        url       = "{{ buildURL(sync.URL, {}) }}",
+        evtSource = new EventSource(url),
+        $button   = $("#sync")
+      ;
+      
+      // Reinicia a contagem
+      $progress
+        .progress('reset')
+        .progress('set label', 'Solicitando...')
+        .progress('set total', 100)
+      ;
+      if ($progress.is(":hidden")) {
+        $progress
+          .parent()
+          .transition('slide down')
+        ;
+      }
+      if (!$button.prop('disabled')) {
+        $button
+          .prop('disabled', true)
+        ;
+      }
+
+      evtSource.onmessage = function(event)
+      {
+        syncData = JSON.parse(event.data);
+        
+        switch (syncData.result) {
+          case "START":
+            $progress
+              .progress('set active')
+              .progress('set label', syncData.message)
+              .progress('reset')
+              .progress('update progress', 0)
+            ;
+
+            break;
+          case "PROGRESS":
+            // Seta a barra de progresso
+            var
+              progress = Math.round((syncData.count/syncData.total) * 100)
+            ;
+            $progress
+              .progress('set label', syncData.message)
+              .progress('update progress', progress)
+            ;
+            
+            break;
+          case "END":
+            evtSource
+              .close()
+            ;
+            $progress
+              .progress('set label', syncData.message)
+              .progress('complete')
+            ;
+            setTimeout(function(){
+              $progress
+                .parent()
+                .transition('slide up')
+              ;
+            }, 2000);
+            $button
+              .prop('disabled', false)
+            ;
+
+            // Força a atualização dos dados
+            searchLoad();
+            
+            break;
+          case "ERROR":
+            console.error('Erro', syncData.message);
+            evtSource
+              .close()
+            ;
+            $progress
+              .progress('set error', syncData.message)
+            ;
+            $button
+              .prop('disabled', false)
+            ;
+
+            break;
+          default:
+            evtSource
+              .close()
+            ;
+            setTimeout(function(){
+              $progress
+                .parent()
+                .transition('slide up')
+              ;
+            }, 2000);
+            $button
+              .prop('disabled', false)
+            ;
+
+            break;
+        }
+      };
+      evtSource.onerror = function(error) {
+        console.error("Ocorreu um erro na sincronização:", error);
+
+        // Sempre força o encerramento da sincronização
+        evtSource
+          .close()
+        ;
+
+        // Atualiza o progresso, indicando o erro
+        $progress
+          .progress('set error', 'Erro interno do servidor')
+        ;
+        $button
+          .prop('disabled', false)
+        ;
+      };
+      
+      return false;
+    }
+
+    // Executa a pesquisa
+    function searchLoad() {
+      table
+        .ajax
+        .reload()
+      ;
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 500);
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

@@ -1,0 +1,28 @@
+            <div class="ui compact grid mailing">
+              <div class="sixteen wide mobile sixteen wide tablet eight wide computer six wide large screen column{{ cssError('emails[' ~ emailNumber ~ '][email]') }}">
+                <div class="ui action input{{ readonly }}">
+                  <input name="emails[{{ emailNumber }}][email]"
+                         type="text" maxlength="100" {{ readonly }}
+                         placeholder="Endereço de e-mail..."
+                         value="{{ mailing.email }}">
+                  <input name="emails[{{ emailNumber }}][technicianmailingid]"
+                         type="hidden"
+                         value="{{ mailing.technicianmailingid }}" />
+                  {% if editMode %}
+                  <button class="ui mini youtube icon button"
+                          data-tooltip="Remove este e-mail"
+                          data-position="top right" type="button"
+                          emailNumber="{{ emailNumber }}"
+                          {% if loop.first %}
+                          disabled
+                          {% endif %}
+                          onclick="delEmail(this);">
+                    <i class="minus icon"></i>
+                  </button>
+                  {% endif %}
+                </div>
+                {% if hasError('emails[' ~ emailNumber ~ '][email]') %}
+                <small class="helper">{{ getError('emails[' ~ emailNumber ~ '][email]') }}</small>
+                {% endif %}
+              </div>
+            </div>

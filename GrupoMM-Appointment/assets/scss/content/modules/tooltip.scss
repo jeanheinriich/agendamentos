@@ -1,0 +1,40 @@
+/* --------------------------------------------------[ Tooltip ]-----
+   As definições adicionais para dicas exibidas
+   ------------------------------------------------------------------ */
+
+.ui.borderless.menu {
+  .item::before {
+    background-color: #fff !important;
+  }
+
+  [data-tooltip][data-position="bottom left"]:hover::before {
+    top: 100% !important;
+    left: 1em !important;
+    bottom: auto;
+    right: auto;
+    width: .71428571em !important;
+    height: .71428571em !important;
+    margin-left: .7142857rem;
+    margin-top: .14285714rem;
+  }
+
+  [data-tooltip][data-position="bottom right"]:hover::before {
+    top: 100% !important;
+    right: 1em !important;
+    bottom: auto;
+    left: auto;
+    width: .71428571em !important;
+    height: .71428571em !important;
+    margin-right: .7142857rem;
+    margin-top: .14285714rem;
+  }
+}
+
+[data-tooltip][data-inverted][data-blue]:after {
+  background: linear-gradient(to right, #06f, #3385ff, #0f6fff, #06f);
+  font-size: 0.8rem;
+  padding: .633em .9em;
+}
+[data-inverted][data-tooltip][data-blue]:before {
+  background: #06f;
+}

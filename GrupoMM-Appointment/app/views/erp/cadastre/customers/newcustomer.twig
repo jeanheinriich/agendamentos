@@ -1,0 +1,172 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} cliente{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    .ui.dropdown .menu > .item.vertical > .description {
+      white-space: normal;
+      line-height: 1.4em;
+    }
+
+    .header.blue h3 {
+      color: steelblue;
+      margin-bottom: 1em;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set URL = 'ERP\\Cadastre\\Customers\\Add' %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {% if authorization.user.groupid < 6 %}
+              {{ icon('erp/customers.svg', 'Cliente') }}
+              {% else %}
+              {{ icon('erp/customer.svg', 'Cliente') }}
+              {% endif %}
+            </td>
+            <td>
+              <div class="content">
+                Adicionar cliente
+                <div class="sub header">
+                  Permite adicionar um novo cliente.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL, {'customerID': getValue('entityid') }) }}">
+        <h3 class="ui header">Dados básicos do cliente</h3>
+        <div class="sub header left aligned" style="padding-bottom: 10px;">
+          Informe o CPF ou CNPJ do cliente que deseja adicionar e o seu
+          tipo de relacionamento.
+        </div>
+        
+        <div class="fields">
+          <div class="six wide field{{ cssError('nationalregister') }}">
+            <label for="nationalregister">
+              CPF ou CNPJ
+            </label>
+            <div class="ui icon input{{ readonly }}">
+              <input name="nationalregister"
+                     type="text" maxlength="18"
+                     placeholder="CPF ou CNPJ..."
+                     value="{{ getValue('nationalregister') }}">
+              <i class="id card outline icon"></i>
+            </div>
+            {% if hasError('nationalregister') %}
+            <small class="helper">{{ getError('nationalregister') }}</small>
+            {% endif %}
+          </div>
+          <div class="six wide field{{ cssError('relationshipid') }}">
+            <label for="relationshipid">
+              Tipo de relacionamento
+            </label>
+            <div class="ui search selection dropdown">
+              <input name="relationshipid" type="hidden"
+                     value="{{ getValue('relationshipid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text"></div>
+              <div class="menu">
+                {% for relationshipType in relationshipTypes %}
+                  <div class="vertical item" {% if relationshipType.id == getValue('relationshipid') %}selected{% endif %}
+                       data-value="{{ relationshipType.id }}"
+                       data-text="{{ relationshipType.name }}">
+                    <span class="description">
+                      {{ relationshipType.description }}
+                    </span>
+                    <span class="text">
+                      {{ relationshipType.name }}
+                    </span>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% if hasError('relationshipid') %}
+            <small class="helper">{{ getError('relationshipid') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for('ERP\\Cadastre\\Customers') }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="angle right icon"></i> Prosseguir
+            </button>
+          </div>
+        </div>
+
+        <!-- Início mensagem -->
+        <div class="ui icon info message" style="display: block;">
+          <div class="blue header">
+            <h3>Informação importante</h3>
+          </div>
+          <p>
+            Um cliente pode ter mais de um relacionamento, ou seja, ele
+            pode ter um contrato como cliente e também ter vínculo com
+            uma associação por ter contratado serviços desta. Todavia,
+            o cadastro será sempre único, independente da quantidade de
+            relacionamentos que um mesmo cliente tiver. Em seu cadastro
+            você verá os relacionamentos que o mesmo possui dentro do
+            sistema.
+          </p>
+        </div>
+        <!-- Fim mensagem -->
+
+        {{ csrf() }}
+
+        <input type="hidden" name="_method" value="POST">
+        <input type="hidden" name="step" value="1">
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function() {
+      // -------------------------------[ Componentes do formulário ]---
+
+      $("input[name='nationalregister']")
+        .mask({
+          type: 'cpforcnpj',
+          validate: true
+        })
+      ;
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+
+      // Coloca o foco no primeiro campo
+      $("input[name='nationalregister']")
+        .focus()
+      ;
+    });
+  </script>
+  {% endapply %}
+{% endblock scripts %}

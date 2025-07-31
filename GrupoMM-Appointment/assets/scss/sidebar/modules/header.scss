@@ -1,0 +1,68 @@
+/* -----------------------------------------------[ Header Box ]-----
+   As definições de um box com a logo e o nome do aplicativo dentro
+   da barra lateral
+   ------------------------------------------------------------------ */
+
+.headerbox {
+  width: $sidebar-size;
+  height: $logo-size;
+  min-height: $logo-size;
+  position: relative;
+  border: 0px;
+  padding: 0;
+  padding-left: 50px;
+  display: inline-block;
+  margin: 0;
+  vertical-align: middle;
+  display: table-cell;
+  background: linear-gradient(to right, $sidebarBackground 20%, $headerDivider 20.3%, $headerBackground 20.3%);
+
+  img {
+    width: $logo-size;
+    max-width: $logo-size;
+    background-color: transparent;
+    display: block;
+    border-style: none;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 5px;
+  }
+  
+  h3 {
+    display: block;
+    width: 196px;
+    font-size: 2rem;
+    text-align: center;
+    padding: 0px;
+    color: #0360ebff;
+    border: none;
+    
+    position: absolute;
+    bottom: 0;
+    margin: 0;
+    margin-left: -6px;
+
+    @include rotate(270deg);
+    @include origin(bottom left);
+    
+    @media only screen and (max-width: 767px) {
+      margin-left: 0;
+      width: $sidebar-size;
+
+      @include rotate(0deg);
+    }
+
+    img {
+      padding: 0;
+      display: inline-block;
+      width: 2rem;
+      height: 2rem;
+    }
+  }
+
+  @media only screen and (max-width: 767px) {
+    border: 0;
+    background-color: $invertedDividerBackground;
+    height: 40px;
+  }
+}

@@ -1,0 +1,117 @@
+{# Layout para o site principal #}
+{% extends 'templates/base.twig' %}
+{% block schema %}WebSite{% endblock schema %}
+{% block meta %}
+  <!-- Chrome, Firefox OS and Opera -->
+  <meta name="theme-color" content="#163454">
+  <!-- Windows Phone -->
+  <meta name="msapplication-navbutton-color" content="#163454">
+  <!-- iOS Safari -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="#163454">
+  <!-- Windows Phone -->
+  <meta name="msapplication-navbutton-color" content="#163454">
+  <!-- iOS Safari -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+{% endblock meta %}
+{% block title %}
+  Grupo M&amp;M
+  {{ parent() }}
+{% endblock title %}
+{% block head %}
+  <meta name="description" content="WebSite institucional do Grupo M&amp;M" />
+  <meta name="keywords" content="WebSite">
+  <meta name="author" content="Grupo M&amp;M">
+  <meta itemprop="name" content="Grupo M&amp;M">
+  <meta itemprop="description" content="WebSite institucional do Grupo M&amp;M">
+  <meta itemprop="author" content="Grupo M&amp;M">
+  <meta itemprop="author" content="Emerson Cavalcanti">
+{% endblock head %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/semantic-ui/semantic.min.css') }}
+
+  {{ css('clearfix.min.css') }}
+  {{ css('footer.min.css') }}
+  {{ css('responsive.min.css') }}
+  {{ css('site.min.css') }}
+  {{ css('floatingactionbutton.min.css') }}
+
+  <style>
+    .whatsapp.floating {
+      background:#00d32a;
+    }
+    .insurance.floating {
+      background:#ffbb00;
+    }
+    .whatsapp.floating.right {
+      bottom: 15px;
+    }
+    .insurance.floating.right {
+      bottom: 85px;
+    }
+    .whatsapp span.text {
+      color: #fff;
+    }
+    .insurance span.text {
+      color: #783c00;;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block body %}
+  {% block header %}
+    <!-- Início do cabeçalho -->
+    <div id="contextWrap">
+      {% include 'templates/site/partials/header.twig' %}
+    </div>
+    <!-- Fím do cabeçalho -->
+  {% endblock %}
+  
+  <!-- Start site content !-->
+  {% block content %}
+  {% endblock %}
+  <!-- End site content !-->
+  
+  <!-- Start of footer -->
+  {% include 'templates/site/partials/footer.twig' %}
+  <!-- End of footer -->
+
+  <!-- Início diálogos modais -->
+  {% block dialogs %}
+  {% endblock dialogs %}
+  <!-- Fim diálogos modais -->
+
+  <!-- Início banner whatsapp -->
+  <div class="whatsapp floating right action circular button"
+       data-number="{{ address('whatsapp').phone }}"
+       data-message="{{ address('whatsapp').message|raw }}">
+    <img class="icon" src="/images/site/whatsapp.png" alt="">
+    <span class="text initial">
+      <span class="headline">Precisa de ajuda?</span>
+      Clique para conversar
+    </span>
+  </div>
+  <!-- Fim banner whatsapp -->
+
+  <!-- Início banner insurance -->
+  <div class="insurance floating right action circular button">
+    <img class="icon" src="/images/site/carinsurance.png" alt="">
+    <span class="text initial">
+      <span class="headline">Seguro do seu veículo?</span>
+      Faça sua contação agora
+    </span>
+  </div>
+  <!-- Fim banner insurance -->
+
+  <!-- Início aviso da LGPD -->
+  {% include 'templates/site/partials/lgpd.twig' %}
+  <!-- Fim aviso da LGPD -->
+</div>
+{% endblock body %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ js('cookies.min.js') }}
+  {{ js('site.min.js') }}
+{% endblock scripts %}

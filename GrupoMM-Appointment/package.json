@@ -1,0 +1,31 @@
+{
+  "name": "TrackerERP",
+  "description": "Um ERP de controle de rastreadores",
+  "author": "Emerson Cavalcanti <emersoncavalcanti@gmail.com>",
+  "private": "true",
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.14.0",
+    "datatables.net-fixedcolumns-se": "^4.0.1",
+    "datatables.net-plugins": "^1.10.20",
+    "datatables.net-se": "^1.10.22",
+    "datatables.net-select-se": "1.3.1",
+    "fomantic-ui": "^2.8.8",
+    "jquery": "^3.5.1",
+    "js-cookie": "^2.2.1",
+    "natives": "^1.1.6"
+  },
+  "devDependencies": {
+    "del": "^3.0.0",
+    "gulp": "^3.9.1",
+    "gulp-babel-minify": "^0.5.0",
+    "gulp-concat": "^2.6.1",
+    "gulp-help": "^1.6.1",
+    "gulp-rename": "^1.4.0",
+    "gulp-sass": "^4.0.2",
+    "merge-stream": "^1.0.1"
+  },
+  "scripts": {
+    "build": "gulp build",
+    "build-prod": "gulp"
+  }
+}

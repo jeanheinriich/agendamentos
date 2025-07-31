@@ -1,0 +1,709 @@
+{% extends 'templates/stc/layout.twig' %}
+{% import "templates/stc/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento de jornadas de trabalho{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.main.basic.segment .searchbar.fields .field.customer {
+      flex-grow: 1;
+      min-width: 250px;
+    }
+
+    {% if authorization.user.groupid < 6 %}
+    @media only screen and (min-width: 813px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+    }
+    {% else %}
+    .ui.main.basic.segment .searchbar.fields .field.searchbox {
+      flex-grow: 1;
+      min-width: 455px;
+    }
+    @media only screen and (max-width: 767px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 200px;
+      }
+    }
+
+    @media only screen and (min-width: 768px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+    }
+    {% endif %}
+    
+    #result_wrapper {
+      width: 100%;
+    }
+
+    /* --------------------------------------------------------------
+     * Personalizações das linhas do datagrid apenas para este módulo
+     * -------------------------------------------------------------- */
+    .blocked > td {
+      color: #7f7f7f
+    }
+    .blocked > td {
+      background-color: #fff6f6 !important;
+      color: DarkRed;
+    }
+    tr.blocked:hover > td {
+      background-color: #f6e7e7 !important;
+    }
+    .ui.celled.table tr th.sunday {
+      border-left: 1px solid rgba(34,36,38,.1) !important;
+      background-color: rgba(255,0,0,.06);
+      color: DarkRed;
+    }
+    .ui.celled.table tr:nth-of-type(odd) td.sunday {
+      background-color: rgba(255,0,0,.06) !important;
+      color: DarkRed;
+    }
+    .ui.celled.table tr:nth-of-type(even) td.sunday {
+      background-color: rgba(255,0,0,.08) !important;
+      color: DarkRed;
+    }
+    .ui.celled.table tr th.saturday {
+      border-left: 1px solid rgba(34,36,38,.1) !important;
+      background-color: rgba(255,153,0,.06);
+      color: #ff7b25;
+    }
+    .ui.celled.table tr:nth-of-type(odd) td.saturday {
+      background-color: rgba(255,153,0,.06) !important;
+      color: #ff7b25;
+    }
+    .ui.celled.table tr:nth-of-type(even) td.saturday {
+      background-color: rgba(255,153,0,.08) !important;
+      color: #ff7b25;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set add = { 'URL': 'STC\\Parameterization\\Cadastral\\Journeys\\Add', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('stc/journeys.svg', 'Jornadas de trabalho') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento das jornadas de trabalho
+                <div class="sub header">
+                  Permite gerenciar as jornadas de trabalho a serem
+                  cumpridas pelos motoristas.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(add.URL, add.method) %}
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Adiciona uma jornada de trabalho"
+                      data-position="top left" type="button"
+                      onclick="location.href='{{ path_for(add.URL) }}'">
+                <i class="add icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            {% if authorization.user.groupid < 6 %}
+            <div class="field customer">
+              <input placeholder="Informe o cliente..." type="text"
+                     name="customerName"
+                     value="{{ journey.customer.name }}">
+              <input type="hidden" name="customerID"
+                     value="{{ journey.customer.id }}" >
+            </div>
+            {% endif %}
+          {% if authorization.user.groupid < 6 %}
+          </div>
+
+          <div class="flex">
+          {% endif %}
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite o nome da jornada..."
+                       value="{{ journey.name }}">
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza uma jornada de trabalho"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início Datatables -->
+    <table class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0" id="result">
+      <thead>
+        <tr>
+          <th rowspan="2">ID</th>
+          <th rowspan="2">Cliente</th>
+          <th rowspan="2">Jornada de trabalho</th>
+          <th rowspan="2">Duração</th>
+          <th colspan="7" class="dt-center">Jornada diária</th>
+          <th rowspan="2" {{ tooltip.add('left', 'Indicador de jornada de trabalho padrão') }}><i class="check darkgreen icon"></i></th>
+          <th rowspan="2" {{ tooltip.add('left', 'Permite remover a jornada de trabalho') }}><i class="remove darkred icon"></i></th>
+        </tr>
+        <tr>
+          <th class="sunday">Dom</th>
+          <th>Seg</th>
+          <th>Ter</th>
+          <th>Qua</th>
+          <th>Qui</th>
+          <th>Sex</th>
+          <th class="saturday">Sáb</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/stc/partials/dialogs/error.twig' %}
+  {% include 'templates/stc/partials/dialogs/info.twig' %}
+  {% include 'templates/stc/partials/dialogs/question.twig' %}
+  {% include 'templates/stc/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/DateFormatter.min.js') }}
+  {{ lib('datatables/formatters/DeleteFormatter.min.js') }}
+  {{ lib('datatables/formatters/EnableFormatter.min.js') }}
+  
+  {% set getData       = { 'URL': 'STC\\Parameterization\\Cadastral\\Journeys\\Get', 'method': 'PATCH' } %}
+  {% set edit          = { 'URL': 'STC\\Parameterization\\Cadastral\\Journeys\\Edit', 'method': 'GET' } %}
+  {% set remove        = { 'URL': 'STC\\Parameterization\\Cadastral\\Journeys\\Delete', 'method': 'DELETE' } %}
+  {% set toggleDefault = { 'URL': 'STC\\Parameterization\\Cadastral\\Journeys\\ToggleDefault', 'method': 'PUT' } %}
+
+  {% set getCustomerNameCompletion = { 'URL': 'STC\\Cadastre\\Customers\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      table,
+      groupColumn = 1
+    ;
+    
+    // Um formatador de tempo de duração da jornada de trabalho
+    var durationFormatter = function ( value, type, row, meta ) {
+      if (value > 0) {
+        return fancyTimeFormat(value*5)
+          + ' mensais <span class="darkgrey">('
+          + fancyTimeFormat(value)
+          + ' semanais)</span>'
+        ;
+      }
+      
+      return '<span class="silver">---</span>';
+    };
+
+    // Um formatador de tempo de duração do dia de trabalho
+    var dayDurationFormatter = function ( value, type, row, meta ) {
+      if (value > 0) {
+        return fancyTimeFormat(value, false, false);
+      }
+      
+      return '<span class="silver">00:00</span>';
+    };
+    
+    $(document).ready(function() {
+      // --------------------------------[ Componentes da Searchbar ]---
+      {% if authorization.user.groupid < 6 %}
+      $("input[name='customerName']")
+        .autocomplete(customerNameCompletionOptions)
+      ;
+      {% endif %}
+      $('#searchValue')
+        .keypress(forceSearch)
+      ;
+
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "id",
+            "data": "id",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "customername",
+            "data": "customername",
+            "visible": false,
+            "orderable": false },
+          { "targets": 2,
+            "name": "customers.name, journeys.name",
+            "data": "name",
+            "visible": true,
+            "orderable": true },
+          { "targets": 3,
+            "name": "duration",
+            "data": "duration",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "80px",
+            "render": durationFormatter },
+          { "targets": 4,
+            "name": "sunday",
+            "data": "sunday",
+            "className": "dt-center sunday",
+            "visible": true,
+            "orderable": false,
+            "width": "40px",
+            "render": dayDurationFormatter },
+          { "targets": 5,
+            "name": "monday",
+            "data": "monday",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "40px",
+            "render": dayDurationFormatter },
+          { "targets": 6,
+            "name": "tuesday",
+            "data": "tuesday",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "40px",
+            "render": dayDurationFormatter },
+          { "targets": 7,
+            "name": "wednesday",
+            "data": "wednesday",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "40px",
+            "render": dayDurationFormatter },
+          { "targets": 8,
+            "name": "thursday",
+            "data": "thursday",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "40px",
+            "render": dayDurationFormatter },
+          { "targets": 9,
+            "name": "friday",
+            "data": "friday",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "40px",
+            "render": dayDurationFormatter },
+          { "targets": 10,
+            "name": "saturday",
+            "data": "saturday",
+            "className": "dt-center saturday",
+            "visible": true,
+            "orderable": false,
+            "width": "40px",
+            "render": dayDurationFormatter },
+          { "targets": 11,
+            "name": "asdefault",
+            "data": "asdefault",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": enableFormatter("Esta é a jornada padrão") },
+          { "targets": 12,
+            "name": "delete",
+            "data": "id",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": deleteFormatter("Remover esta jornada de trabalho") }
+        ],
+        order: [[ 2, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.searchValue  = $('#searchValue').val();
+            params.clientID     = $("input[name='customerID']").val();
+            params.customerName = $("input[name='customerName']").val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+          {% if authorization.user.groupid < 6 %}
+          {% set colspan = 11 %}
+
+          // Agrupamento de linhas
+          var
+            api          = this.api(),
+            rows         = api.rows( {page:'current'} ).nodes(),
+            lastGroup    = null
+          ;
+
+          api.column(groupColumn, {page:'current'} ).data().each(function( group, i ) {
+            if (lastGroup !== group) {
+              // Informações do cliente
+
+              // 1. Coluna expandida com os dados do cliente
+
+              // Monta os dados dos cabeçalhos das colunas
+              var
+                groupedCellData = ''
+                  + '<span {{ tooltip.add("right", "Cliente") }}>'
+                  +   '<i class="fas fa-house-user"></i> '
+                  + '</span>' + group,
+                $column1 = $("<td colspan='{{ colspan }}'>")
+                  .html(groupedCellData)
+                  .css("font-weight", "600");
+              ;
+
+              // Adiciona uma nova linha e, internamente, as colunas
+              var
+                $newRow = $("<tr>")
+                  .addClass('group')
+                  .append($column1)
+              ;
+
+              // Adiciona a nova linha de agrupamento antes da linha
+              // atual
+              $(rows)
+                .eq( i )
+                .before(
+                  $newRow
+                )
+              ;
+
+              lastGroup = group;
+            }
+          } );
+          {% endif %}
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        }
+      });
+
+      // Manipula os eventos de click
+      table
+        .on('user-select', function (e, dt, type, cell, originalEvent) {
+          if (type === 'cell') {
+            var
+              // Recupera os dados da célula selecionada
+              index   = cell[0][0],
+
+              // Recupera a jornada de trabalho selecionada
+              journey = dt.rows( index.row ).data().toArray()[0]
+            ;
+
+            // Em função da coluna onde ocorreu o clique, executa a ação
+            // correspondente
+            switch (index.column) {
+              {% if authorization.getAuthorizationFor(toggleDefault.URL, toggleDefault.method) %}
+              case 11:
+                if (journey.asdefault === false) {
+                  // Questiona se deve definir esta jornada de trabalho
+                  // selecionada como a jornada padrão para novos
+                  // motoristas
+                  questionDialog(
+                    'Definição de jornada padrão',
+                    'Você deseja realmente definir esta jornada de '
+                    + 'trabalho <b>&ldquo;' + journey.name + '&rdquo;'
+                    + '</b> como o padrão para novos motoristas da '
+                    + 'empresa <b>&ldquo;' + journey.customername
+                    + '&rdquo;</b>?',
+                    function() {
+                      // Define a jornada como padrão para este cliente
+                      var
+                        url  = "{{ buildURL(toggleDefault.URL, {'journeyID': 'journey.id'}) }}"
+                      ;
+                      
+                      putJSONData(url, [],
+                      function (data, params, message) {
+                        // Atualiza a tabela
+                        searchLoad();
+                      });
+                    },
+                    function() {
+                      table
+                        .rows()
+                        .deselect()
+                      ;
+                      table
+                        .draw('page')
+                      ;
+                    });
+                }
+    
+                break;
+              {% endif %}
+              {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}
+              case 12:
+                // Questiona se deve apagar a jornada de trabalho
+                // selecionada
+                questionDialog(
+                  'Remover tipo de contrato',
+                  'Você deseja realmente remover o tipo de contrato <b>&ldquo;' + journey.name + '&rdquo;</b>? Esta ação não poderá ser desfeita.',
+                  function() {
+                    // Remove a jornada de trabalho selecionado
+                    var url  = "{{ buildURL(remove.URL, {'journeyID': 'journey.id'}) }}";
+                    
+                    deleteJSONData(url, [],
+                    function (data, params, message) {
+                      // Atualiza a tabela
+                      searchLoad();
+                    });
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  }
+                );
+
+                break;
+              {% endif %}
+              default:
+                {% if authorization.getAuthorizationFor(edit.URL, edit.method) %}
+                // Coloca a jornada em edição
+                window.location.href = "{{ buildURL(edit.URL, {'journeyID': 'journey.id'}) }}";
+                {% endif %}
+            }
+
+            e.preventDefault();
+          }
+        }
+      );
+
+      // Força a atualização da tabela para reajustar as colunas após
+      // a carga
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 1500);
+    });
+
+
+    // =================================================[ Options ]=====
+
+    {% if authorization.user.groupid < 6 %}
+    // As opções para o componente de autocompletar o nome do cliente
+    var customerNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      showClearValue: true,
+      ajax: {
+        url: "{{ path_for(getCustomerNameCompletion.URL) }}",
+        type: "{{ getCustomerNameCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'customer';
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        return ''
+          + '<div class="content">'
+          +   '<div class="title">' + suggestion.name + '<br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       suggestion.nationalregister
+          +     '</span>'
+          +   '</div>'
+          + '</div>'
+        ;
+      },
+      onSelect: function(element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='customerID']")
+          .val(suggestion.id)
+        ;
+
+        searchLoad();
+      },
+      onInvalidateSelection: function() {
+        // Limpa os dados
+        $("input[name='customerID']")
+          .val(0)
+        ;
+
+        searchLoad();
+      }
+    };
+    {% endif %}
+
+
+    // ================================================[ Handlers ]=====
+
+    // Executa a pesquisa
+    function searchLoad() {
+      table
+        .ajax
+        .reload()
+      ;
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 500);
+    }
+
+    // Força a atualização da tabela
+    function forceSearch(event) {
+      if (event.which == 13) {
+        searchLoad();
+      }
+    }
+
+    // Converte um valor em segundos para um valor em formato de tempo
+    var fancyTimeFormat = function(duration, includeSeconds = false,
+      humanized = true) {
+      var
+        hours        = ~~(duration / 3600),
+        minutes      = ~~((duration % 3600) / 60),
+        seconds      = ~~duration % 60,
+        ret          = "",
+        hoursLabel   = (hours > 1 ? "horas":"hora"),
+        minutesLabel = (minutes > 1 ? "minutos":"minuto"),
+        secondsLabel = (seconds > 1 ? "segundos":"segundo")
+      ;
+
+      if (humanized) {
+        // Devolve o valor como "1 hora e 1 minuto" ou "4 horas e
+        // 3 minutos e 59 segundos" ou "123 horas e 3 minutos e
+        // 59 segundos"
+        if (hours > 0) {
+          ret = "" + hours + " " + hoursLabel
+            + (minutes > 0
+              ? " e "
+              : ((seconds > 0) && includeSeconds
+                ? " e "
+                :""
+                )
+              )
+          ;
+        }
+        if (minutes > 0) {
+          ret += "" + minutes + " " + minutesLabel
+            + ((seconds > 0) && includeSeconds
+              ? " e "
+              : ""
+              )
+          ;
+        }
+        if ((seconds > 0) && includeSeconds) {
+          ret += "" + seconds + " " + secondsLabel;
+        }
+      } else {
+        // Devolve o valor como "1:01" ou "4:03:59" ou "123:03:59"
+        ret = "" + (hours < 10 ? "0" : "") + hours
+          + ":" + (minutes < 10 ? "0" : "")
+        ;
+        ret += "" + minutes;
+        if (includeSeconds) {
+          ret += ":" + (seconds < 10 ? "0" : "") + seconds;
+        }
+      }
+
+      return ret;
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

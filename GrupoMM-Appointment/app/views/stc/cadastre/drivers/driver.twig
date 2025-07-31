@@ -1,0 +1,900 @@
+{% extends 'templates/stc/layout.twig' %}
+{% block title %}{{ parent() }} - Editar motorista{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('dialog.min.css') }}
+  {{ css('form.min.css') }}
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('libs/semantic-ui/components/calendar.min.css') }}
+  <style>
+    .noBottomBorder {
+      border-bottom: none !important;
+    }
+    @media (max-width: 768px) {
+      .journeyEntry {
+        margin-bottom: .5em !important;
+      }
+      .journeyEntry:after {
+        border-bottom: 1px dotted rgba(34,36,38,.15);
+        content: '';
+        flex: 1;
+        padding: 2px;
+      }
+      .journeyEntry:last-child:after {
+        border-bottom: none;
+        content: '';
+        flex: 1;
+        padding: 0px;
+      }
+    }
+
+    .ui.placeholder.segment {
+      min-height: 14rem;
+    }
+
+    @media (max-width: 768px) {
+      .ui.grid .column+.ui.vertical.divider {
+        width: calc(100% - 1rem);
+      }
+    }
+
+    .ui.action.input:not([class*="left action"])>.ui.search.autocomplete {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+      border-right-color: transparent;
+    }
+    .ui.action.input:not([class*="left action"])>.ui.search.autocomplete:focus-within {
+      border-right-color: #85b7d9;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'STC\\Cadastre\\Drivers\\Add' %}
+  {% else %}
+    {% set URL = 'STC\\Cadastre\\Drivers\\Edit' %}
+  {% endif %}
+  {% set previous = 'STC\\Cadastre\\Drivers' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('stc/drivers.svg', 'Motorista') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} motorista
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  motorista.
+                </div>
+              {% else %}
+                Visualizar motorista
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um motorista.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL, { 'clientID': getValue('clientid'), 'driverID': driverID }) }}">
+        <h3 class="ui header">Dados básicos do motorista</h3>
+
+        {% if authorization.user.groupid < 6 %}
+        <div class="fields">
+          <div class="sixteen wide field{{ cssError('customername') }}">
+            <label>Cliente</label>
+            <input name="customername" type="text"
+                   placeholder="O nome da empresa onde está vinculado..."
+                   {% if formMethod == 'POST' %}
+                     {{ readonly }}
+                   {% else %}
+                     readonly
+                   {% endif %}
+                   value="{{ getValue('customername') }}">
+            <input type="hidden" name="clientid"
+                   value="{{ getValue('clientid') }}">
+            {% if hasError('customername') %}
+            <small class="helper">{{ getError('customername') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        {% else %}
+        <input type="hidden" name="customername"
+               value="{{ getValue('customername') }}">
+        <input type="hidden" name="clientid"
+               value="{{ getValue('clientid') }}">
+        {% endif %}
+
+        <div class="fields">
+          <div class="eight wide field">
+            <div class="ui checkbox{{ readonly }}" style="margin-top: 0;">
+              <input name="customerismyemployer" type="hidden"
+                     value="{% if getValue('customerismyemployer')|toBoolean %}true{% else %}false{% endif %}">
+              <input name="_customerismyemployer" type="checkbox"
+                     class="hidden" {{ readonly }}
+                     {% if getValue('customerismyemployer')|toBoolean %}checked="checked"{% endif %}>
+              <label>O empregador é a empresa onde está vinculado</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="employerdata">
+          <div class="fields">
+            <div class="sixteen wide field{{ cssError('employername') }}">
+              <label>Nome do empregador</label>
+              <div class="ui input{{ readonly }}">
+                <input name="employername" type="text" maxlength="100"
+                       placeholder="Informe o nome do empregador..."
+                       {{ readonly }}
+                       value="{{ getValue('employername') }}">
+              </div>
+              {% if hasError('employername') %}
+              <small class="helper">{{ getError('employername') }}</small>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="two wide field">
+            <label>Matrícula</label>
+            <div class="ui input{{ readonly }}">
+              <input name="driverid" type="text"
+                     placeholder="Informe a matrícula..."
+                     {{ readonly }}
+                     value="{{ getValue('driverid') }}">
+            </div>
+          </div>
+
+          <div class="eight wide field{{ cssError('name') }}">
+            <label>Nome do motorista</label>
+            <div class="ui input{{ readonly }}">
+              <input name="name" type="text" maxlength="100"
+                     placeholder="Informe o nome do motorista..."
+                     {{ readonly }}
+                     value="{{ getValue('name') }}">
+            </div>
+            {% if hasError('name') %}
+            <small class="helper">{{ getError('name') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="six wide field{{ cssError('occupation') }}">
+            <label>Ocupação</label>
+            <div class="ui input{{ readonly }}">
+              <input name="occupation" type="text" maxlength="100"
+                     placeholder="Informe a ocupação..."
+                     {{ readonly }}
+                     value="{{ getValue('occupation') }}">
+            </div>
+            {% if hasError('occupation') %}
+            <small class="helper">{{ getError('occupation') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if formMethod == 'POST' %}
+        <div class="fields">
+          <div class="eight wide field{{ cssError('journeyid') }}">
+            <label>Jornada à cumprir</label>
+            <div class="ui search selection dropdown">
+              <input name="journeyid" type="hidden"
+                     value="{{ getValue('journeyid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Selecione uma jornada...</div>
+              <div class="menu">
+                {% set journeyID = getValue('journeyid') %}
+                {% for journey in journeys %}
+                  <div class="item"
+                       data-value="{{ journey.id }}"
+                       data-text="{{ journey.name }}">
+                    {{ journey.name }}
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% if hasError('journeyid') %}
+            <small class="helper">{{ getError('journeyid') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        {% else %}
+        <div class="ui vertical segment noBottomBorder">
+          <h4>Informações de jornadas a serem cumpridas</h4>
+          <div id="journeyPerDriverList" class="journeyPerDriverList">
+            {% for journeyPerDriverNumber, journeyPerDriver in getValue('journeysperdriver') %}
+              {% include 'stc/cadastre/drivers/journeyperdriver.twig' with { journeys: journeys, journeyPerDriverNumber: journeyPerDriverNumber, journeyPerDriver: journeyPerDriver, editMode: editMode, readonly: readonly }  %}
+            {% endfor %}
+          </div>
+          {% if editMode %}
+          <button type="button" class="ui mini green right labeled icon button"
+                  onclick="addJourneyPerDriver();">
+            <i class="plus icon"></i> Nova jornada a ser cumprida
+          </button>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if formMethod == 'PUT' %}
+          {% if authorization.user.groupid < 6 %}
+        <h4 class="ui header">Envio dos dados do motorista para o teclado</h4>
+        <div class="ui placeholder segment">
+          <div class="ui two column stackable center aligned grid">
+            <div class="column">
+              <div class="ui field">
+                <div class="ui icon header">
+                  <i class="search icon"></i>
+                    Enviar para um veículo
+                </div>
+                <div class="ui action input">
+                  <input name="plate" class="prompt"
+                          type="text" placeholder="Informe a placa...">
+                  <input type="hidden" name="vehicleid"
+                         value="0">
+                  <input type="hidden" name="deviceid"
+                         value="0">
+                  <button type="button" class="ui primary icon button"
+                          name="toSingle" onclick="sendToSingle();">
+                    <i class="share icon"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="ui vertical divider">Ou</div>
+            <div class="column">
+              <div class="ui icon header">
+                <i class="share icon"></i>
+                Enviar para todos veículos
+              </div>
+              <button type="button" class="ui primary button"
+                      name="toAll" onclick="sendToKeyboard();">
+                Enviar
+              </button>
+            </div>
+          </div>
+        </div>
+          {% endif %}
+        {% endif %}
+
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock content %}
+{% block dialogs %}
+  {% include 'templates/stc/partials/dialogs/error.twig' %}
+  {% include 'templates/stc/partials/dialogs/info.twig' %}
+  {% include 'templates/stc/partials/dialogs/question.twig' %}
+  {% include 'templates/stc/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('semantic-ui/components/calendar.min.js') }}
+  {{ lib('template-engine/template.engine.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+  
+  {% set getCustomerNameCompletion = { 'URL': 'STC\\Cadastre\\Customers\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  {% set getVehicleCompletion = { 'URL': 'STC\\Cadastre\\Vehicles\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  {% set getJourneys = { 'URL': 'STC\\Parameterization\\Cadastral\\Journeys\\Get', 'method': 'PATCH' } %}
+  {% set sendDriver = { 'URL': 'STC\\Cadastre\\Drivers\\Send', 'method': 'GET' } %}
+  
+  {% apply minify %}
+  <script>
+    {% set journeysperdriver = getValue('journeysperdriver') %}
+    var
+      // O índice de contagem dos valores cobrados
+      journeysPerDriverCount = {{ journeysperdriver|length }}
+    ;
+
+    // O template de uma nova jornada
+    {% set journeyPerDriverTemplate %}
+      {% include 'stc/cadastre/drivers/journeyperdriver.twig' with { journeys: journeys, journeyPerDriverNumber: "<%=journeyPerDriverNumber%>", journeyPerDriver: { journeyperdriverid: 0, journeyid: 0, begginingat: "now"|date("d/m/Y") }, editMode: true, readonly: '' } %}
+    {% endset %}
+    var journeyPerDriverTemplate = '{{ journeyPerDriverTemplate|escape('js') }}'.replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+
+    $(document).ready(function() {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown({
+          message: {
+            addResult     : 'Adicionar <b>{term}</b>',
+            count         : '{count} jornadas selecionadas',
+            maxSelections : 'Max {maxCount} selecionados',
+            noResults     : 'Nenhuma jornada disponível'
+          }
+        })
+      ;
+      $('.ui.checkbox').checkbox({
+        onChange: function() {
+          var
+            checkbox = $(this).prop('name')
+          ;
+
+          if (checkbox.startsWith('_')) {
+            // Fazemos com que este campo contenha o valor correto
+            var
+              toggleField = checkbox.replace('_',''),
+              newValue    = this.checked
+                ? "true"
+                : "false"
+            ;
+
+            $("input[name='" + toggleField + "']")
+              .val(newValue)
+            ;
+          }
+          if (checkbox.indexOf('[_') !== -1) {
+            // Fazemos com que este campo contenha o valor correto
+            var
+              toggleField = checkbox.replace('_',''),
+              newValue    = this.checked
+                ? "true"
+                : "false"
+            ;
+
+            $("input[name='" + toggleField + "']")
+              .val(newValue)
+            ;
+          }
+        }
+      });
+      $("input[name='driverid']")
+        .mask({
+          type: 'number'
+        })
+      ;
+      {% if formMethod == 'POST' %}
+        {% if authorization.user.groupid < 6 %}
+      $("input[name='customername']")
+        .autocomplete(customerNameCompletionOptions)
+      ;
+        {% endif %}
+      {% endif %}
+      $("input[name='_customerismyemployer']")
+        .change(customerIsMyEmployerHandler)
+        .trigger('change')
+      ;
+      {% if formMethod == 'PUT' %}
+      // Força o mascaramento dos campos das jornadas
+      for (var journeyPerDriverNumber = 0; journeyPerDriverNumber < journeysPerDriverCount; journeyPerDriverNumber++) {
+        // Mascara o campo de data de início desta jornada
+        $("input[name='journeysperdriver[" + journeyPerDriverNumber + "][begginingat]']")
+          .closest('div.ui.calendar')
+          .calendar(calendarOptions)
+        ;
+        $("input[name='journeysperdriver[" + journeyPerDriverNumber + "][begginingat]']")
+          .mask({
+            type: 'date'
+          })
+        ;
+      }
+      {% endif %}
+      {% if formMethod == 'PUT' %}
+        {% if authorization.user.groupid < 6 %}
+      $("input[name='plate']")
+        .autocomplete(plateCompletionOptions)
+      ;
+        {% endif %}
+      {% endif %}
+
+      // Coloca o foco no primeiro campo
+      {% if formMethod == 'POST' %}
+        {% if authorization.user.groupid < 6 %}
+        $("input[name='customername']")
+          .focus()
+        ;
+        var
+          clientID     = $("input[name='clientid']").val(),
+          customerName = $("input[name='customername']").val()
+        ;
+        if (parseInt(clientID) > 0) {
+          updateJourneys(clientID, customerName);
+        }
+        {% else %}
+        $("input[name='driverid']")
+          .focus()
+        ;
+        {% endif %}
+      {% endif %}
+    });
+
+
+    // =================================================[ Options ]=====
+
+    {% if formMethod == 'POST' %}
+      {% if authorization.user.groupid < 6 %}
+    // As opções para o componente de autocompletar o nome do cliente
+    var customerNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      showClearValue: true,
+      ajax: {
+        url: "{{ path_for(getCustomerNameCompletion.URL) }}",
+        type: "{{ getCustomerNameCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'customer';
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        return ''
+          + '<div class="content">'
+          +   '<div class="title">' + suggestion.name + '<br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       suggestion.nationalregister
+          +     '</span>'
+          +   '</div>'
+          + '</div>'
+        ;
+      },
+      onSelect: function(element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='clientid']")
+          .val(suggestion.id)
+        ;
+
+        // Verifica se o campo de indicação de que o cliente é o
+        // empregador do motorista estava marcado
+        if ($("input[name='customerismyemployer']").val() == "true") {
+          // Coloca o nome do cliente como empregador
+          $("input[name='employername']")
+            .val(suggestion.name)
+          ;
+        }
+
+        // Atualiza a relação de jornadas
+        updateJourneys(suggestion.id, suggestion.name);
+      },
+      onInvalidateSelection: function() {
+        // Limpa os dados
+        $("input[name='clientid']")
+          .val(0)
+        ;
+        $("input[name='journeyid']")
+          .parent()
+          .dropdown('setup menu', {
+            values: []
+          })
+        ;
+
+        // Verifica se o campo de indicação de que o cliente é o
+        // empregador do motorista estava marcado
+        if ($("input[name='customerismyemployer']").val() == "true") {
+          // Limpa o nome do cliente como empregador
+          $("input[name='employername']")
+            .val('')
+          ;
+        }
+      }
+    };
+      {% endif %}
+    {% endif %}
+
+    {% if formMethod == 'PUT' %}
+    // As opções para o componente de exibição de calendário no campo de
+    // entrada de data
+    var calendarOptions = {
+      type: 'date',
+      formatInput: true,
+      monthFirst: false,
+      today: true,
+      text: {
+        days: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'],
+        months: [
+          'Janeiro', 'Fevereiro', 'Março', 'Abril',
+          'Maio', 'Junho', 'Julho', 'Agosto',
+          'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ],
+        monthsShort: [
+          'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+          'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+        ],
+        today: 'Hoje',
+        now: 'Agora',
+        am: 'AM',
+        pm: 'PM'
+      },
+      formatter: {
+        date: function (date, settings) {
+          if (!date) {
+            return '';
+          }
+
+          var day = date.getDate().toString().padLeftWithZeros(2);
+          var month = (date.getMonth()+1).toString().padLeftWithZeros(2);
+          var year = date.getFullYear();
+          return settings.type === 'year' ? year :
+            settings.type === 'month' ? month + '/' + year :
+            (settings.monthFirst ? month + '/' + day : day + '/' + month) + '/' + year;
+        },
+      }
+    };
+    {% endif %}
+
+    {% if formMethod == 'PUT' %}
+      {% if authorization.user.groupid < 6 %}
+    // As opções para o componente de autocompletar a placa do veículo
+    var plateCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      showClearValue: true,
+      fieldName: 'plate',
+      convertToUppercase: true,
+      ajax: {
+        url: "{{ path_for(getVehicleCompletion.URL) }}",
+        type: "{{ getVehicleCompletion.method }}",
+        data: function(params, options) {
+          params.clientID = $("input[name='clientid']").val();
+          params.onlyWithKeyboard = true;
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        return ''
+          + '<div class="content">'
+          +   '<div class="title">' + suggestion.plate + '<br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       suggestion.customername
+          +     '</span>'
+          +   '</div>'
+          + '</div>'
+        ;
+      },
+      onSelect: function(element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='vehicleid']")
+          .val(suggestion.id)
+        ;
+        $("input[name='deviceid']")
+          .val(suggestion.deviceid)
+        ;
+      },
+      onInvalidateSelection: function() {
+        // Limpa os dados
+        $("input[name='vehicleid']")
+          .val(0)
+        ;
+        $("input[name='deviceid']")
+          .val(0)
+        ;
+      }
+    };
+      {% endif %}
+    {% endif %}
+
+
+    // ================================================[ Handlers ]=====
+
+    // Codifica elementos para envio na requisição
+    function encodeQueryData(data) {
+      const
+        ret = []
+      ;
+
+      for (let d in data) {
+        ret
+          .push(encodeURIComponent(d) + '=' + encodeURIComponent(data[d]))
+        ;
+      }
+
+      return ret.join('&');
+    }
+    
+    // Faz o tratamento do campo que indica se o cliente é o empregador
+    // do motorista ou é um terceiro
+    function customerIsMyEmployerHandler() {
+      if ($(this).is(":checked")) {
+        // Desabilita a entrada dos dados do empregador do motorista
+        $("div.employerdata")
+          .find('div.field')
+          .addClass("disabled")
+        ;
+
+        // Coloca o nome do cliente como empregador
+        var
+          customerName = $("input[name='customername']").val()
+        ;
+
+        $("input[name='employername']")
+          .val(customerName)
+        ;
+      } else {
+        // Habilita a entrada dos dados do empregador do motorista
+        $("div.employerdata")
+          .find('div.field')
+          .removeClass("disabled")
+        ;
+      }
+    }
+
+    {% if formMethod == 'POST' %}
+      {% if authorization.user.groupid < 6 %}
+    // O atualizador de jornadas à serem cumpridas quando ocorre uma
+    // modificação do cliente selecionado
+    var updateJourneys = function(clientID, customerName) {
+      // Consulta o webservice para obter os dados pelo CEP
+      var url = "{{ path_for(getJourneys.URL) }}";
+      requestJSONData(url, { clientID: clientID,
+        customerName: customerName },
+      function (data, params, message) {
+        // Conseguiu localizar uma ou mais jornadas com base no cliente
+        // informado, então atualiza o controle para seleção
+        $("input[name='journeyid']")
+          .parent()
+          .dropdown('change values', data)
+        ;
+      },
+      function (data, params, message) {
+        // Não conseguiu localizar os dados de jornadas com base no
+        // cliente informado, então limpa os dados atuais
+        $("input[name='journeyid']")
+          .parent()
+          .dropdown('setup menu', {
+            values: []
+          })
+        ;
+      });
+    };
+      {% endif %}
+    {% endif %}
+    {% if formMethod == 'PUT' %}
+    // Faz a adição de uma nova jornada para o motorista
+    var addJourneyPerDriver = function() {
+      // Incrementa o contador de jornadas deste motorista
+      var
+        journeyPerDriverNumber = journeysPerDriverCount
+      ;
+
+      // Incrementa a quantidade de jornadas
+      journeysPerDriverCount++;
+      
+      // Adiciona um conjunto de campos para a nova jornada a ser
+      // cumprida
+      $(".journeyPerDriverList")
+        .append(TemplateEngine(journeyPerDriverTemplate,
+          { journeyPerDriverNumber: journeyPerDriverNumber }))
+      ;
+      
+      // Ativamos o dropdown de seleção da jornada
+      var
+        asDefault = $("input[name='journeysperdriver[" + journeyPerDriverNumber + "][journeyid]']")
+          .parent()
+          .children('div.menu')
+          .find("div.item[data-default='true']")
+      ;
+      if (asDefault.length) {
+        $("input[name='journeysperdriver[" + journeyPerDriverNumber + "][journeyid]']")
+          .parent()
+          .dropdown()
+          .dropdown('set selected', asDefault.data('value'))
+        ;
+      } else {
+        var
+          first = $("input[name='journeysperdriver[" + journeyPerDriverNumber + "][journeyid]']")
+            .parent()
+            .children('div.menu')
+            .find("div.item:first-child")
+        ;
+        if (first.length) {
+          $("input[name='journeysperdriver[" + journeyPerDriverNumber + "][journeyid]']")
+            .parent()
+            .dropdown()
+            .dropdown('set selected', first.data('value'))
+          ;
+        } else {
+          $("input[name='journeysperdriver[" + journeyPerDriverNumber + "][journeyid]']")
+            .parent()
+            .dropdown()
+          ;
+        }
+      }
+      
+      // Mascara o campo de data de início desta jornada
+      $("input[name='journeysperdriver[" + journeyPerDriverNumber + "][begginingat]']")
+        .closest('div.ui.calendar')
+        .calendar(calendarOptions)
+      ;
+
+      $("input[name='journeysperdriver[" + journeyPerDriverNumber + "][begginingat]']")
+        .mask({
+          type: 'date'
+        })
+      ;
+
+      // Coloca em foco o campo inicial da seleção do tipo de jornada
+      $("input[name='journeysperdriver[" + journeyPerDriverNumber + "][journeyid]']")
+        .parent()
+        .children('input.search')
+        .focus()
+      ;
+    };
+    
+    // Faz a remoção de uma jornada de trabalho
+    var delJourneyPerDriver = function(element) {
+      // Recupera o ID do valor cobrado
+      var
+        chargeNumber = parseInt($(element).attr("journey"))
+      ;
+
+      if (chargeNumber > 0) {
+        $(element)
+          .closest('.journeyEntry')
+          .remove()
+        ;
+      }
+    };
+    {% endif %}
+    {% if formMethod == 'PUT' %}
+      {% if authorization.user.groupid < 6 %}
+    var sendToSingle = function() {
+      var
+        plate = $("input[name='plate']").val(),
+        deviceID = $("input[name='deviceid']").val()
+      ;
+
+      if (parseInt(deviceID) === 0) {
+        console.error('Erro', "Nenhum veículo selecionado");
+        $("input[name='plate']").focus();
+
+        return;
+      }
+
+      sendToKeyboard(plate, deviceID);
+
+      return false;
+    };
+
+    var sendToKeyboard = function(plate = null, deviceID = 0) {
+      var
+        data = {
+          'clientID': $("input[name='clientid']").val(),
+          'deviceID': deviceID,
+          'plate'   : !plate ? '':plate,
+          'driverID': $("input[name='driverid']").val()
+        },
+        path = "{{ buildURL(sendDriver.URL, { }) }}",
+        queryString = encodeQueryData(data),
+        url = path + '?' + queryString,
+        evtSource = new EventSource(url),
+        $buttonSingle = $('button[name="toSingle"]'),
+        $buttonAll    = $('button[name="toAll"]')
+      ;
+
+      // Desabilita os botões
+      if (!$buttonSingle.prop('disabled')) {
+        $buttonSingle
+          .prop('disabled', true)
+        ;
+      }
+      if (!$buttonAll.prop('disabled')) {
+        $buttonAll
+          .prop('disabled', true)
+        ;
+      }
+
+      evtSource.onmessage = function(event)
+      {
+        syncData = JSON.parse(event.data.trim());
+
+        switch (syncData.result) {
+          case "START":
+            console.info('Inicializando');
+
+            break;
+          case "NEXT":
+            console.info('Próximo passo');
+
+            break;
+          case "PROGRESS":
+            // Atualiza as informações de progresso
+            console.info('Progresso');
+
+            break;
+          case "END":
+            console.info('Finalizado');
+            $buttonSingle
+              .prop('disabled', false)
+            ;
+            $buttonAll
+              .prop('disabled', false)
+            ;
+            
+            break;
+          case "ERROR":
+            console.error('Ocorreu um erro');
+            evtSource
+              .close()
+            ;
+            $buttonSingle
+              .prop('disabled', false)
+            ;
+            $buttonAll
+              .prop('disabled', false)
+            ;
+
+            break;
+          default:
+            console.info('Default');
+            evtSource
+              .close()
+            ;
+
+            break;
+        }
+      };
+      evtSource.onerror = function(error) {
+        // Sempre força o encerramento da sincronização
+        console.error('Ocorreu um erro', error);
+        evtSource
+          .close()
+        ;
+
+        $buttonSingle
+          .prop('disabled', false)
+        ;
+        $buttonAll
+          .prop('disabled', false)
+        ;
+      };
+      
+    };
+      {% endif %}
+    {% endif %}
+  </script>
+  {% endapply %}
+{% endblock scripts %}

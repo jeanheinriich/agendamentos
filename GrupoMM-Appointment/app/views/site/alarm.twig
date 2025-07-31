@@ -1,0 +1,313 @@
+{% extends 'templates/site/layout.twig' %}
+{% block title %}{{ parent() }} - Alarmes{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('tabularmenu.min.css') }}
+  <style>
+    .ui.attached.segment {
+      margin-bottom: 1em;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+    <main>
+      <section class="hero alarm">
+      </section>
+      <section class="description">
+        <div class="ui basic segment">
+          <!-- Início cabeçalho módulo -->
+          <h2 class="ui blue header">
+            <table cellspacing="0" cellpadding="0">
+              <tbody>
+                <tr>
+                  <td class="mobile hidden">
+                    {{ icon('site/alarm.svg', 'Alarme') }}
+                  </td>
+                  <td>
+                    <div class="content">
+                      Alarme
+                      <div class="sub header">
+                        Proteção patrimonial de residências, condomínios,
+                        comércios e indústrias, permitindo maior
+                        tranquilidade para você no seu dia-a-dia.
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </h2>
+          <!-- Fim cabeçalho módulo -->
+
+          <p>
+            O Grupo M&amp;M oferece uma combinação incomparável de
+            tecnologia superior e conhecimento abrangente em segurança.
+            Nossos equipamentos de última geração são incrivelmente
+            poderosos e simples de usar, protegendo o seu patrimônio e
+            quem é importante para você. Escolha a seguir o tipo de
+            proteção e conheça as vantagens que oferecemos para você.
+          </p>
+          <div class="ui top attached tabular steps unstackable menu">
+            <a class="active step item" target="home">
+              <i class="home icon"></i>
+              <div class="content">
+                <div class="title">Para sua casa</div>
+                <div class="description">Segurança para você e sua família</div>
+              </div>
+            </a>
+            <a class="step item" target="building">
+              <i class="building icon"></i>
+              <div class="content">
+                <div class="title">Para sua empresa</div>
+                <div class="description">Segurança para o seu patrimônio e de seus colaboradores</div>
+              </div>
+            </a>
+          </div>
+          <div class="ui bottom attached segment stepscontent" id="home">
+            <img class="ui small left floated rounded image"
+                 src="/images/site/home.jpg"
+                 alt="Início">
+            <p>
+              Todos devemos nos proteger contra o aumento crescente no
+              número de furtos e roubos à residências e na criminalidade
+              em geral. A a evolução da tecnologia empregada neste tipo
+              de equipamento de proteção tem sido crescente e visível.
+              Na tentativa de impedir que a ação de criminosos afete a
+              proteção do seu patrimônio e a segurança de você e de sua
+              família, o alarme residencial é um ótimo aliado. O sistema
+              pode ser ativado sempre que você se ausentar do imóvel,
+              permitindo que você fique tranquilo, mesmo à distância,
+              enquanto ele opera.
+            </p>
+            <br>
+            <div class="ui list">
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Monitoração em tempo real</div>
+                  <div class="description">
+                    Nossos alarmes são monitorados 24h por dia. Em caso
+                    de alguma violação detectada por um dos sensores,
+                    como uma atividade irregular, o sistema irá acionar
+                    a sirene para inibir os assaltantes e avisar a
+                    central de emergência sobre a situação. Os atendentes
+                    da central, por sua vez, comunicam a polícia. Caso
+                    você tenha um botão de pânico, o funcionamento é o
+                    mesmo, mas a sirene não será acionada. Isto lhe permite
+                    um grau de proteção excelente para você e seus
+                    familiares.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Proteção perimetral</div>
+                  <div class="description">
+                    Opcionalmente, você pode contratar uma proteção
+                    perimetral, como uma cerca elétrica ou outro dispositivo,
+                    e que alerta em caso de invasão do local. Esta proteção
+                    irá trabalhar em conjunto com seu alarme, aumentando
+                    o grau de proteção de sua residência.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Botão de pânico</div>
+                  <div class="description">
+                    Opcionalmente, você pode contratar um botão de pânico,
+                    que é um dispositivo que permite acionar silenciosamente
+                    nossa central em caso de emergência. Você pode utilizar
+                    esta proteção como auxiliar no cuidado de idosos e/ou
+                    para alertar no caso de uma situação de risco.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Central de emergência 24h</div>
+                  <div class="description">
+                  Nossa <b>Central de Emergência</b> funciona 24 horas
+                  por dia 7 dias por semana, com 0800, link de redundância
+                  e gerador próprio, permitindo seu funcionamento mesmo
+                  em situações adversas. Este diferencial é para que você
+                  tenha a segurança que precisa no monitoramento de seu
+                  alarme.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Integração com a vigilância por câmeras</div>
+                  <div class="description">
+                    Caso você tenha contratado a nossa
+                    <a href="{{ path_for('CameraSurveillance') }}" class="item">
+                    vigilância por câmeras</a>, e em caso do alarme ser
+                    acionado, nossa central irá utilizar as imagens para
+                    determinar o que está ocorrendo e acionar a polícia
+                    somente em caso de real necessidade.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ui bottom attached segment stepscontent" id="building">
+            <img class="ui small left floated rounded image"
+                 src="/images/site/building.jpg"
+                 alt="Construção">
+            <p>
+              Todos devemos nos proteger contra o aumento crescente no
+              número de furtos e roubos à comércios e empresas e na
+              criminalidade em geral. A a evolução da tecnologia empregada
+              neste tipo de equipamento de proteção tem sido crescente e
+              visível. Na tentativa de impedir que a ação de criminosos
+              afete a proteção do seu patrimônio e a segurança de você e
+              de seus colaboradores, o alarme é um ótimo aliado. O
+              sistema pode ser ativado sempre que o estabelecimento estiver
+              fechado, permitindo que você fique tranquilo, mesmo à
+              distância, enquanto ele opera.
+            </p>
+            <br>
+            <div class="ui list">
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Monitoração em tempo real</div>
+                  <div class="description">
+                    Nossos alarmes são monitorados 24h por dia. Em caso
+                    de alguma violação detectada por um dos sensores,
+                    como uma atividade irregular, o sistema irá acionar
+                    a sirene para inibir os assaltantes e avisar a
+                    central de atendimento sobre a situação. Os atendentes
+                    da central, por sua vez, comunicam a polícia. Caso
+                    você tenha um botão de pânico, o funcionamento é o
+                    mesmo, mas a sirene não será acionada. Isto lhe permite
+                    um grau de proteção excelente para você e seus
+                    colaboradores.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Proteção perimetral</div>
+                  <div class="description">
+                    Opcionalmente, você pode contratar uma proteção
+                    perimetral, como uma cerca elétrica ou outro dispositivo,
+                    e que alerta em caso de invasão do local. Esta proteção
+                    irá trabalhar em conjunto com seu alarme, aumentando
+                    o grau de proteção de sua residência. E esta proteção
+                    pode operar independente do acionamento do alarme,
+                    protegendo seu patrimônio 24h por dia.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Botão de pânico</div>
+                  <div class="description">
+                    Opcionalmente, você pode contratar um botão de pânico,
+                    que é um dispositivo que permite acionar silenciosamente
+                    nossa central em caso de emergência. Você pode utilizar
+                    esta proteção como auxiliar na prevenção de assaltos
+                    e para alertar no caso de uma situação de risco.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Central de emergência 24h</div>
+                  <div class="description">
+                  Nossa <b>Central de Emergência</b> funciona 24 horas
+                  por dia 7 dias por semana, com 0800, link de redundância
+                  e gerador próprio, permitindo seu funcionamento mesmo
+                  em situações adversas. Este diferencial é para que você
+                  tenha a segurança que precisa no monitoramento de seu
+                  alarme.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Integração com a vigilância por câmeras</div>
+                  <div class="description">
+                    Caso você tenha contratado a nossa
+                    <a href="{{ path_for('CameraSurveillance') }}" class="item">
+                    vigilância por câmeras</a>, e em caso do alarme ser
+                    acionado, nossa central irá utilizar as imagens para
+                    determinar o que está ocorrendo e acionar a polícia
+                    somente em caso de real necessidade.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p>Com nossas soluções para alarmes, você pode garantir a
+          segurança do seu patrimônio e de quem é importante para você.
+          E estamos ansiosos para trabalhar de perto com você para
+          orientar num plano de segurança adequado e que atenda as
+          suas necessidades.</p>
+          <button type="button" class="ui blue labeled icon button"
+                  onclick="location.href='{{ path_for('Home') }}';">
+            <i class="home icon"></i> Retornar para a página inicial
+          </button>
+        </div>
+      </section>
+    </main>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {% apply minify %}
+  <script>
+    $(document).ready(function() {
+      var
+        // Localiza e inicializa os elementos de nosso sistema de passos
+        allContents = $('.ui.attached.segment').hide(),
+        allSteps    = $('.ui.steps > .step').removeClass('active');
+      ;
+
+      // Inicialmente exibimos o primeiro passo
+      allContents
+        .first()
+        .show()
+      ;
+      allSteps
+        .first()
+        .addClass('active')
+      ;
+      
+      // Lidamos com os cliques de nosso sistema de passos
+      $('.ui.steps > a.step')
+        .click(function() {
+          var
+            // Localiza e inicializa os elementos de nosso sistema de
+            // passos
+            allContents = $('.ui.attached.segment').hide(),
+            allSteps    = $('.ui.steps > .step').removeClass('active'),
+            target      = $(this).prop("target")
+          ;
+
+          // Ativamos o item selecionado
+          $(this)
+            .addClass('active')
+          ;
+          $('#' + target)
+            .show()
+          ;
+        
+          return false;
+        })
+      ;
+    });
+  </script>
+  {% endapply %}
+{% endblock %}

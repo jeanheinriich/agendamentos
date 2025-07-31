@@ -1,0 +1,48 @@
+{% extends 'templates/basePDF.twig' %}
+{% block title %}
+  Anexo {{ attachment.realfilename }} do veículo placa {{ attachment.plate }}
+{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+  <style>
+    table.noborder tr td {
+      vertical-align: bottom;
+    }
+  </style>
+{% endblock %}
+{% block content %}
+  <table width="100%" class="noborder">
+    <tbody>
+      <tr class="title">
+        <td colspan="5">
+          <h1 class="title">
+            Dados do veículo
+          </h1>
+        </td>
+      </tr>
+      <tr class="content">
+        <td>
+          <span class="field">Placa:</span><br>
+          <span class="content">{{ attachment.plate }}</span>
+        </td>
+      </tr>
+      <tr class="title">
+        <td colspan="5">
+          <h1 class="title">
+            Anexo
+          </h1>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="5" style="padding-bottom: 5px;">
+          <span>{{ attachment.realfilename }}</span> <i style="color: #829fbd;">({{ attachment.size }})</i>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="1" width="100%">
+          <img src="{{ attachment.encodedImage }}">
+        </td>
+      </tr>
+    </tbody>
+  </table>
+{% endblock %}

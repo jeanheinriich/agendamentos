@@ -1,0 +1,36 @@
+                <div class="fields dayEntry">
+                  <div class="three wide field{{ cssError('days[' ~ dayNumber ~ '][dayofweekname]') }}">
+                    {% if loop.first %}
+                    <label>Dia da semana</label>
+                    {% else %}
+                    <label class="mobile only">Dia da semana</label>
+                    {% endif %}
+                    <div class="field static">
+                      <span class="lighting{% if loop.first %} red{% endif %}">
+                        {{ dayNames[dayNumber] }}&nbsp;
+                      </span>
+                      <input name="days[{{ dayNumber }}][journeyperdayid]" type="hidden"
+                             value="{{ day.journeyperdayid }}">
+                      <input name="days[{{ dayNumber }}][dayofweek]" type="hidden"
+                             value="{{ day.dayofweek }}">
+                    </div>
+                  </div>
+                  <div class="three wide field{{ cssError('days[' ~ dayNumber ~ '][seconds]') }}">
+                    {% if loop.first %}
+                    <label>Duração</label>
+                    {% else %}
+                    <label class="mobile only">Duração</label>
+                    {% endif %}
+                    <div class="ui input{{ readonly }}{% if loop.first %} red{% endif %}">
+                      <input name="days[{{ dayNumber }}][duration]"
+                             placeholder="Duração..." type="text"
+                             day="{{ dayNumber }}"
+                             value="00:00:00">
+                      <input name="days[{{ dayNumber }}][seconds]" type="hidden"
+                             value="{{ day.seconds }}">
+                    </div>
+                    {% if hasError('days[' ~ dayNumber ~ '][seconds]') %}
+                    <small class="helper">{{ getError('days[' ~ dayNumber ~ '][seconds]') }}</small>
+                    {% endif %}
+                  </div>
+                </div>

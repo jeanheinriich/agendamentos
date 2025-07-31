@@ -1,0 +1,322 @@
+{% extends 'templates/site/layout.twig' %}
+{% block title %}{{ parent() }} - Vigilância por câmeras{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('tabularmenu.min.css') }}
+  <style>
+    .ui.attached.segment {
+      margin-bottom: 1em;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+    <main>
+      <section class="hero camerasurveillance">
+      </section>
+      <section class="description">
+        <div class="ui basic segment">
+          <!-- Início cabeçalho módulo -->
+          <h2 class="ui blue header">
+            <table cellspacing="0" cellpadding="0">
+              <tbody>
+                <tr>
+                  <td class="mobile hidden">
+                    {{ icon('site/camerasurveillance.svg', 'Vigilância por câmeras') }}
+                  </td>
+                  <td>
+                    <div class="content">
+                      Vigilância por câmeras
+                      <div class="sub header">
+                        Proteja seu patrimônio, seja em sua residência
+                        ou empresa. Visualize o que ocorre em sua ausência.
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </h2>
+          <!-- Fim cabeçalho módulo -->
+
+          <p>
+            A segurança é um item fundamental em nossa vida, e a
+            possibilidade de visualizar seu patrimônio, mesmo quando
+            você não estiver no local é algo que agrega maior segurança
+            ao seu dia-a-dia. A vigilância por câmeras pode ser utilizada
+            para segurança em seu lar, laboratórios de pesquisa, em
+            escolas, empresas privadas, hospitais, aeroportos, entre
+            outros. Uma das grandes vantagens do videomonitoramento é a
+            possibilidade de vigiar o local de qualquer lugar, já que o
+            sistema permite, em tempo real, o acompanhamento das atividades
+            no local, seja pelo aplicativo em seu celular ou computador.
+            Nossos equipamentos irão permitir proteger o seu patrimônio
+            e quem é importante para você. Escolha a seguir o tipo de
+            proteção e conheça as vantagens que oferecemos para você.
+          </p>
+          <div class="ui top attached tabular steps unstackable menu">
+            <a class="active step item" target="home">
+              <i class="home icon"></i>
+              <div class="content">
+                <div class="title">Para sua casa</div>
+                <div class="description">Segurança para você e sua família</div>
+              </div>
+            </a>
+            <a class="step item" target="building">
+              <i class="building icon"></i>
+              <div class="content">
+                <div class="title">Para sua empresa</div>
+                <div class="description">Segurança para o seu patrimônio e de seus colaboradores</div>
+              </div>
+            </a>
+          </div>
+          <div class="ui bottom attached segment stepscontent" id="home">
+            <img class="ui small left floated rounded image"
+                 src="/images/site/home.jpg"
+                 alt="Sua casa">
+            <p>
+              Todos devemos nos proteger contra o aumento crescente no
+              número de furtos e roubos à residências e na criminalidade
+              em geral. E também queremos garantir que nossos familiares
+              estejam seguros quando estivermos ausentes. A a evolução
+              da tecnologia empregada neste tipo de equipamento de
+              proteção tem sido crescente e visível. Com a vigilância por
+              câmeras você aumenta a segurança contra assaltos e também
+              pode acompanhar o que acontece em sua casa quando estiver
+              fora. Nosso sistema grava imagens do local 24h por dia,
+              permitindo que você visualize o que ocorre a qualquer
+              momento, mesmo à distância, enquanto ele opera. E você
+              também pode sentir-se mais perto dos seus familiares enquanto
+              estiver ausente. Você pode utilizar a vigilância por câmeras
+              com o objetivo de assegurar o acompanhamento de idosos,
+              crianças e animais de estimação. E você pode garantir que
+              que seus entes queridos estejam livres de qualquer tipo de
+              agressão, como de cuidadores ou babás.
+            </p>
+            <p>
+              Além disto, você pode instalar nosso sistema no sítio ou
+              na casa da praia, que são pouco usados e muitas vezes
+              demora até que um furto ou anormalidade sejam percebidos.
+            </p>
+            <div class="ui list">
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Monitoração em tempo real</div>
+                  <div class="description">
+                    Nossas cãmeras funcionam 24h por dia e podem ser
+                    visualizadas por você, através de um aplicativo em
+                    seu celular, mesmo remotamente. Você não precisa
+                    ficar preso a um desktop para monitorar e checar o
+                    que acontece no local monitorado. Isto coloca a
+                    segurança do seu imóvel na palma da sua mão. Você
+                    visualiza as imagens em tempo real do que ocorre
+                    em sua casa a qualquer momento.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Proteção perimetral</div>
+                  <div class="description">
+                    O sistema de proteção perimetral é utilizado para
+                    inibir e detectar a entrada de estranhos nas áreas
+                    internas do seu imóvel. Normalmente, são empregados
+                    dispositivos eletrônicos acoplados à alarmes, como
+                    sensores infravermelhos ou cercas elétricas, dentre
+                    outros. Qualquer anormalidade detectada por estes
+                    dispositivos são enviadas para a central. Todavia,
+                    estes sistemas tornam-se muito mais eficientes quando
+                    integrados em uma plataforma unificada de operação,
+                    com o uso do alarme em conjunto com as imagens das
+                    câmeras. Além disto, as imagens externas permitem
+                    que você visualize o que ocorre fora de sua casa sem
+                    precisar sair, permitindo maior segurança ao entrar
+                    e sair do imóvel.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Integração com o alarme</div>
+                  <div class="description">
+                    Caso você tenha contratado o nosso
+                    <a href="{{ path_for('Alarm') }}" class="item">
+                    alarme</a>, e em caso do alarme ser acionado, nossa
+                    central irá utilizar as imagens para determinar o
+                    que está ocorrendo e acionar a polícia somente em
+                    caso de real necessidade. Isto elimina os casos de
+                    disparos acidentais provocados por chuvas fortes,
+                    descargas elétricas (raios), animais, etc.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Projeto personalizado</div>
+                  <div class="description">
+                    Você conta com profissionais especializados em
+                    segurança para realizar um estudo no local e oferecer
+                    um projeto dentro de suas necessidades e possibilidades.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ui bottom attached segment stepscontent" id="building">
+            <img class="ui small left floated rounded image"
+                 src="/images/site/building.jpg"
+                 alt="Seu negócio">
+            <p>
+              Todos devemos nos proteger contra o aumento crescente no
+              número de furtos e roubos à comércios e na criminalidade
+              em geral. E também queremos garantir que nossos funcionários
+              e colaboradores estejam seguros quando estivermos ausentes.
+              A a evolução da tecnologia empregada neste tipo de equipamento
+              de proteção tem sido crescente e visível. Com a vigilância por
+              câmeras você aumenta a segurança contra assaltos e também
+              pode acompanhar o que acontece em sua empresa quando estiver
+              fora. Nosso sistema grava imagens do local 24h por dia,
+              permitindo que você visualize em tempo real o que ocorre a
+              qualquer momento, mesmo à distância. E você também pode
+              acompanhar o andamento das atividades enquanto estiver
+              ausente. Você pode utilizar a vigilância por câmeras
+              com o objetivo de assegurar o acompanhamento de processos,
+              carga e descarga de mercadorias, segurança do caixa e de
+              operações que envolvam dinheiro, dentre tantas outras.
+            </p>
+            <br>
+            <div class="ui list">
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Monitoração em tempo real</div>
+                  <div class="description">
+                    Nossas cãmeras funcionam 24h por dia e podem ser
+                    visualizadas por você, através de um aplicativo em
+                    seu celular, mesmo remotamente. Você não precisa
+                    ficar preso a um desktop para monitorar e checar o
+                    que acontece no local monitorado. Isto coloca a
+                    segurança da sua empresa na palma da sua mão. Você
+                    visualiza as imagens em tempo real do que ocorre
+                    em seu estabelecimento a qualquer momento.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Proteção perimetral</div>
+                  <div class="description">
+                    O sistema de proteção perimetral é utilizado para
+                    inibir e detectar a entrada de estranhos nas áreas
+                    internas da sua empresa. Normalmente, são empregados
+                    dispositivos eletrônicos acoplados à alarmes, como
+                    sensores infravermelhos ou cercas elétricas, dentre
+                    outros. Qualquer anormalidade detectada por estes
+                    dispositivos são enviadas para a central. Todavia,
+                    estes sistemas tornam-se muito mais eficientes quando
+                    integrados em uma plataforma unificada de operação,
+                    com o uso do alarme em conjunto com as imagens das
+                    câmeras. Além disto, as imagens externas permitem
+                    que você visualize o que ocorre fora de sua empresa
+                    sem precisar sair, permitindo maior segurança ao entrar
+                    e sair do local.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Integração com o alarme</div>
+                  <div class="description">
+                    Caso você tenha contratado o nosso
+                    <a href="{{ path_for('Alarm') }}" class="item">
+                    alarme</a>, e em caso do alarme ser acionado, nossa
+                    central irá utilizar as imagens para determinar o
+                    que está ocorrendo e acionar a polícia somente em
+                    caso de real necessidade. Isto elimina os casos de
+                    disparos acidentais provocados por chuvas fortes,
+                    descargas elétricas (raios), animais, etc.
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <i class="right triangle icon"></i>
+                <div class="content">
+                  <div class="header">Projeto personalizado</div>
+                  <div class="description">
+                    Você conta com profissionais especializados em
+                    segurança para realizar um estudo no local e oferecer
+                    um projeto dentro de suas necessidades e possibilidades.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p>
+            Você está pronto para se sentir seguro? Com nossas soluções
+            para vigilância por câmeras, você pode garantir a segurança
+            do seu patrimônio e de quem é importante para você. E estamos
+            ansiosos para trabalhar de perto com você para orientar num
+            plano de segurança adequado e que atenda as suas necessidades.
+          </p>
+          <button type="button" class="ui blue labeled icon button"
+                  onclick="location.href='{{ path_for('Home') }}';">
+            <i class="home icon"></i> Retornar para a página inicial
+          </button>
+        </div>
+      </section>
+    </main>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {% apply minify %}
+  <script>
+    $(document).ready(function() {
+      var
+        // Localiza e inicializa os elementos de nosso sistema de passos
+        allContents = $('.ui.attached.segment').hide(),
+        allSteps    = $('.ui.steps > .step').removeClass('active');
+      ;
+
+      // Inicialmente exibimos o primeiro passo
+      allContents
+        .first()
+        .show()
+      ;
+      allSteps
+        .first()
+        .addClass('active')
+      ;
+      
+      // Lidamos com os cliques de nosso sistema de passos
+      $('.ui.steps > a.step')
+        .click(function() {
+          var
+            // Localiza e inicializa os elementos de nosso sistema de
+            // passos
+            allContents = $('.ui.attached.segment').hide(),
+            allSteps    = $('.ui.steps > .step').removeClass('active'),
+            target      = $(this).prop("target")
+          ;
+
+          // Ativamos o item selecionado
+          $(this)
+            .addClass('active')
+          ;
+          $('#' + target)
+            .show()
+          ;
+        
+          return false;
+        })
+      ;
+    });
+  </script>
+  {% endapply %}
+{% endblock %}

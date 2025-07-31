@@ -1,0 +1,47 @@
+<div class="ui emails modal">
+  <i class="close icon"></i>
+  <div class="header">
+    <i class="envelope icon"></i>
+    &nbsp;Situação do envio de e-mails
+  </div>
+  <div class="scrolling content">
+    <div class="description">
+      <div class="ui header">
+        <div class="sub header">
+          Título
+        </div>
+      </div>
+      <table class="ui celled emails compact table" id="emailsTable">
+        <thead>
+          <tr>
+            <th class="center aligned">Evento</th>
+            <th class="center aligned">Data</th>
+            <th class="center aligned">Enviado para</th>
+            <th class="center aligned">Tentativas</th>
+            <th class="center aligned">Situação</th>
+            <th class="center aligned">Observação</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+        <tfoot class="full-width">
+          <tr>
+            <th colspan="6">
+              <button class="ui right floated small primary labeled icon button"
+                      onclick="tableToExcel('emailsTable', 'Emails enviados')">
+                <i class="file excel icon"></i>
+                Exportar para Excel
+              </button>
+            </th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+  <div class="actions">
+    <div class="ui positive right labeled icon button">
+      Fechar
+      <i class="checkmark icon"></i>
+    </div>
+  </div>
+</div>

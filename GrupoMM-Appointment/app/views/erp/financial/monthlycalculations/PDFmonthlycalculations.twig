@@ -1,0 +1,476 @@
+{% extends 'templates/basePDF.twig' %}
+{% block title %}
+  {{ title }}
+{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+  <style>
+    table.noborder tr td {
+      vertical-align: bottom;
+    }
+
+    .duedate {
+      border: .5px solid #a0b0c0;
+      background-color: #dfefff;
+      padding: 5px;
+    }
+
+    .number {
+      color: darkred;
+      font-size: 1.4em;
+      font-weight: bold;
+    }
+    .date {
+      color: black;
+      font-size: 1.9em;
+      font-weight: bold;
+    }
+
+    .pre {
+      font-weight: normal;
+      color: #305080;
+    }
+
+    table.noborder.topalign tr td {
+      vertical-align: top !important;
+    }
+    .blue {
+      color: #305080;
+      font-weight: bold;
+    }
+    tr.bold td {
+      border-top: 1px dotted #658c9b;
+      font-weight: bold;
+      color: #187ea5;
+    }
+
+    span.symbol.bold {
+      color: #187ea5;
+      font-weight: bold;
+    }
+
+    table.noborder.alternated tr:nth-child(even) {
+      color: #187ea5;
+      background-color: #f2f2f2;
+    }
+
+    h2.blocktitle {
+      font-size: 1.1em;
+      font-weight: bold;
+      color: #658c9b;
+    }
+    .emphasize {
+      font-size: 1.1em;
+      font-weight: bold;
+      color: #5c5c5c;
+    }
+
+    span.bold {
+      font-weight: bold;
+      color: #5c5c5c;
+      font-style: italic;
+    }
+    span.totalize {
+      color: black;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% for content in invoices %}
+    {% set invoice = content.data|json_decode %}
+    {% if not loop.last %}
+    <table width="100%" class="noborder topalign">
+      <tbody>
+        <tr class="content">
+          <td colspan="5" width="40%">
+            {% if invoice.entitytypeid == 2 %}
+              <span class="field">Nome do cliente:</span><br>
+            {% else %}
+              <span class="field">Razão Social:</span><br>
+            {% endif %}
+            <span class="content">{{ invoice.customername }}</span>
+            {% if invoice.entitytypeid != 2 %}
+              / <span class="content">{{ invoice.subsidiaryname }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="field">Nº da Fatura</span><br>
+            <span class="number">
+              {{ "%08d"|format(invoice.id) }}&nbsp;
+            </span>
+          </td>
+          <td rowspan="2" width="20%" class="duedate">
+            <span class="field">Vencimento em<br></span><br>
+            <span class="date">
+              &nbsp;{{ invoice.duedate }}
+            </span>
+          </td>
+        </tr>
+        <tr class="content">
+          <td colspan="3">
+            {% if invoice.entitytypeid == 2 %}
+            <span class="field">CPF:</span><br>
+            {% else %}
+            <span class="field">CNPJ:</span><br>
+            {% endif %}
+            <span class="content">
+              {{ invoice.nationalregister }}&nbsp;
+            </span>
+          </td>
+          <td>
+            <span class="field">{{ invoice.regionaldocumenttypename }}</span><br>
+            <span class="content">
+              {{ invoice.regionaldocumentnumber }}&nbsp;
+              {% if invoice.regionaldocumentnumber != 'Isento' %}
+                /&nbsp;{{ invoice.regionaldocumentstate }}
+              {% endif %}
+            </span>
+          </td>
+          <td>
+            <span class="field">Forma pagamento:</span><br>
+            <span class="content">
+              {{ invoice.paymentmethodname }}&nbsp;
+            </span>
+          </td>
+          <td>
+            <span class="field">Data Processamento:</span><br>
+            <span class="content">
+              {{ invoice.invoicedate }}&nbsp;
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <table width="100%" class="noborder topalign">
+      <tbody>
+        {% for id, item in invoice.content %}
+          <tr class="content">
+            <td colspan="2" style="border-top: 1px dotted #a2a2a2; border-bottom: 1px dotted #b2b2b2;">
+              <h2>
+                Item de contrato: {{ item.number }} {% if invoice.customerid != item.customerID %}(*){% endif %}
+              </h2>
+            </td>
+            <td style="border-top: 1px dotted #a2a2a2; border-bottom: 1px dotted #b2b2b2;">
+              <h2>
+                Data inicial: {{ item.startDate }}
+              </h2>
+            </td>
+          </tr>
+          <tr class="content">
+            <td width="48%">
+              <h2 class="blocktitle">
+                Serviço prestado
+              </h2>
+              <table width="100%" class="noborder topalign">
+                <thead>
+                  <tr>
+                    <th class="left">Descrição</th>
+                    <th width="18%" colspan="2">Valor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% if item.servicesValues.startedAt %}
+                    <tr>
+                      <td>
+                        {{ item.servicesValues.startedAt }} à {{ item.servicesValues.endedAt }}
+                        Mensalidade
+                        {% if item.servicesValues.granted %}
+                        (valor abonado)
+                        {% endif %}
+                      </td>
+                      <td width="6%" class="right">
+                        <span class="symbol">
+                          R$
+                        </span>
+                      </td>
+                      <td width="11%" class="right noleftborder">
+                        {{ item.servicesValues.grossValue|number_format(2, ',', '.') }}
+                      </td>
+                    </tr>
+                    {% if item.servicesValues.periods|length > 1 %}
+                      {% set writePeriod = true %}
+                    {% else %}
+                      {% set writePeriod = false %}
+                    {% endif %}
+                    {% set lastPlate = '' %}
+                    {% for period in item.servicesValues.periods %}
+                      {% if period.plate != lastPlate %}
+                      <tr>
+                        <td colspan="3">
+                          &nbsp;&#8226;
+                          <span class="emphasize">{{ period.plate }}</span> - 
+                          Equipamento <span class="emphasize">{{ period.serialNumber }}</span>
+                          {% if writePeriod %}
+                          (de {{ period.startedAt }} à {{ period.endedAt }})
+                          {% endif %}
+                        </td>
+                      </tr>
+                        {% set lastPlate = period.plate %}
+                      {% endif %}
+                    {% endfor %}
+                    {% if item.servicesValues.discountValue > 0.00 %}
+                    <tr>
+                      <td>
+                        Desconto
+                      </td>
+                      <td width="6%" class="right">
+                        <span class="symbol">
+                          R$
+                        </span>
+                      </td>
+                      <td width="11%" class="right noleftborder">
+                        {{ item.servicesValues.discountValue|number_format(2, ',', '.') }}
+                      </td>
+                    </tr>
+                    {% endif %}
+                    {% set withMonthlyValue = true %}
+                  {% else %}
+                    {% set withMonthlyValue = false %}
+                  {% endif %}
+                  {% set monthlyValues = item.servicesValues.finalValue %}
+                  {% for detail in item.monthlyValues %}
+                  <tr>
+                    <td>
+                      {{ detail.name }}
+                    </td>
+                    <td width="6%" class="right">
+                      <span class="symbol">
+                        R$
+                      </span>
+                    </td>
+                    <td width="11%" class="right noleftborder">
+                      {{ detail.value|number_format(2, ',', '.') }}
+                      {% set monthlyValues = monthlyValues + detail.value %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                  {% if item.monthlyValues|length > 0 or withMonthlyValue %}
+                  <tr class="bold">
+                    <td class="right">
+                      Total plano {{ invoice.planname }}&nbsp;&nbsp;&nbsp;
+                    </td>
+                    <td width="6%" class="right">
+                      <span class="symbol bold">
+                        R$
+                      </span>
+                    </td>
+                    <td width="11%" class="right">
+                      {{ monthlyValues|number_format(2, ',', '.') }}
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td colspan="3" class="center">
+                      Nenhum valor informado
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </td>
+            <td width="2%">
+            </td>
+            <td width="50%">
+              {# A porção direita #}
+              <h2 class="blocktitle">
+                Itens eventuais
+              </h2>
+              <table width="100%" class="noborder alternated">
+                <thead>
+                  <tr>
+                    <th class="center">Dia</th>
+                    <th>Descrição</th>
+                    <th colspan="2">Valor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for detail in item.eventualValues %}
+                  <tr>
+                    <td class="center">
+                      {{ detail.day }}
+                    </td>
+                    <td width="70%">
+                      {{ detail.name }}
+                    </td>
+                    <td width="5%" class="right">
+                      <span class="symbol">
+                        R$
+                      </span>
+                    </td>
+                    <td width="11%" class="right">
+                      {{ detail.value|number_format(2, ',', '.') }}
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td colspan="3" class="center">
+                      Nenhum valor informado
+                    </td>
+                    <td width="11%" class="right noleftborder">
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </td>
+          </tr>
+          <tr class="content">
+            <td colspan="3" class="right" style="border-bottom: 1px dotted #a2a2a2;">
+              Valor total:
+              <h2>
+                <span class="symbol">R$</span>
+                <span class="total">{{ item.total }}</span>
+              </h2>
+            </td>
+          </tr>
+        {% else %}
+          <tr class="content">
+            <td colspan="2" style="border-top: 1px dotted #a2a2a2; border-bottom: 1px dotted #b2b2b2;">
+              Nenhum item de contrato a ser cobrado
+            </td>
+            <td style="border-top: 1px dotted #a2a2a2; border-bottom: 1px dotted #b2b2b2;">
+            </td>
+          </tr>
+          <tr class="content">
+            <td width="48%">
+              <h2 class="blocktitle">
+                Serviço prestado
+              </h2>
+              <table width="100%" class="noborder topalign">
+                <thead>
+                  <tr>
+                    <th class="left">Descrição</th>
+                    <th width="18%" colspan="2">Valor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="3" class="center">
+                      Nenhum valor informado
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+            <td width="2%">
+            </td>
+            <td width="50%">
+              {# A porção direita #}
+              <h2 class="blocktitle">
+                Itens eventuais
+              </h2>
+              <table width="100%" class="noborder alternated">
+                <thead>
+                  <tr>
+                    <th class="center">Dia</th>
+                    <th>Descrição</th>
+                    <th colspan="2">Valor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="3" class="center">
+                      Nenhum valor informado
+                    </td>
+                    <td width="11%" class="right noleftborder">
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+          <tr class="content">
+            <td colspan="3" class="right" style="border-bottom: 1px dotted #a2a2a2;">
+              Valor total:
+              <h2>
+                <span class="symbol">R$</span>
+                <span class="total">0,00</span>
+              </h2>
+            </td>
+          </tr>
+        {% endfor %}
+        {% if invoice.otherValues|length > 0 %}
+          <tr>
+            <td colspan="2">
+            </td>
+            <td width="50%">
+              <h2 class="blocktitle">
+                Outros valores
+              </h2>
+              <table width="100%" class="noborder alternated">
+                <tbody>
+                  {% for detail in invoice.otherValues %}
+                  <tr>
+                    <td width="70%">
+                      {{ detail.name }}
+                    </td>
+                    <td width="5%" class="right">
+                      <span class="symbol">
+                        R$
+                      </span>
+                    </td>
+                    <td width="11%" class="right">
+                      {{ detail.value|number_format(2, ',', '.') }}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        {% endif %}
+        <tr class="content">
+          <td colspan="2" class="right" style="background-color: #e6f2ff; border-top: 1px solid #a0b0c0; border-bottom: 1px solid #a0b0c0;">
+            <h2>
+              Quantidade de veículos: <span class="totalize">{{ invoice.numberofinstallationsoninvoice }}</span>
+            </h2>
+          </td>
+          <td class="right" style="background-color: #e6f2ff; border-top: 1px solid #a0b0c0; border-bottom: 1px solid #a0b0c0;">
+            <h2>
+              Valor da fatura:
+              <span class="symbol totalize">R$</span>
+              <span class="total totalize">{{ invoice.invoicevalue|number_format(2, ',', '.') }}</span>
+            </h2>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <br>
+    {% else %}
+    <table width="100%" class="noborder topalign">
+      <tbody>
+        <tr class="content">
+          <td colspan="2" class="right" style="border-top: 1px solid slant; border-bottom: 1px solid slant;">
+            <h2>
+              Quantidade de veículos: {{ invoice.totalOfInstallations }}
+            </h2>
+          </td>
+          <td class="right" style="border-top: 1px solid slant; border-bottom: 1px solid slant;">
+            <h2>
+              Total Geral:
+              <span class="symbol">R$</span>
+              <span class="total">{{ invoice.totalInGeneral|number_format(2, ',', '.') }}</span>
+            </h2>
+          </td>
+        </tr>
+        <tr class="content">
+          <td colspan="2" class="right" style="border-top: 1px solid slant; border-bottom: 1px solid slant;">
+            <h2>
+              Total serviços:
+              <span class="symbol">R$</span>
+              <span class="total">{{ invoice.totalInServices|number_format(2, ',', '.') }}</span>
+            </h2>
+          </td>
+          <td class="right" style="border-top: 1px solid slant; border-bottom: 1px solid slant;">
+            <h2>
+              Total itens eventuais:
+              <span class="symbol">R$</span>
+              <span class="total">{{ invoice.totalInEventual|number_format(2, ',', '.') }}</span>
+            </h2>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    {% endif %}
+  {% endfor %}
+{% endblock content %}

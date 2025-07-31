@@ -1,0 +1,94 @@
+{
+  "name": "grupomm/trackererp",
+  "description": "Sistema para controle de frotas e rastreadores",
+  "license": "proprietary",
+  "type": "project",
+  "keywords": ["ERP", "Tracker"],
+  "authors": [
+    {
+      "name": "Emerson Cavalcanti",
+      "email": "emersoncavalcanti@gmail.com",
+      "homepage": "http://grupomm.srv.br"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Core\\": "core",
+      "App\\": "app",
+      "App\\Commands\\": "app/commands",
+      "App\\Controllers\\": "app/controllers",
+      "App\\Controllers\\USR\\": "app/controllers/usr",
+      "App\\Controllers\\ADM\\": "app/controllers/adm",
+      "App\\Controllers\\ADM\\Cadastre\\": "app/controllers/adm/cadastre",
+      "App\\Controllers\\ADM\\Financial\\": "app/controllers/adm/financial",
+      "App\\Controllers\\ADM\\Parameterization\\": "app/controllers/adm/parameterization",
+      "App\\Controllers\\ADM\\Parameterization\\Cadastral\\": "app/controllers/adm/parameterization/cadastral",
+      "App\\Controllers\\ADM\\Parameterization\\Vehicles\\": "app/controllers/adm/parameterization/vehicles",
+      "App\\Controllers\\ADM\\Parameterization\\Devices\\": "app/controllers/adm/parameterization/devices",
+      "App\\Controllers\\ADM\\Parameterization\\Telephony\\": "app/controllers/adm/parameterization/telephony",
+      "App\\Controllers\\ERP\\": "app/controllers/erp",
+      "App\\Controllers\\ERP\\Cadastre\\": "app/controllers/erp/cadastre",
+      "App\\Controllers\\ERP\\Devices\\": "app/controllers/erp/devices",
+      "App\\Controllers\\ERP\\Financial\\": "app/controllers/erp/financial",
+      "App\\Controllers\\ERP\\Parameterization\\": "app/controllers/erp/parameterization",
+      "App\\Controllers\\ERP\\Parameterization\\Financial\\": "app/controllers/erp/parameterization/financial",
+      "App\\Controllers\\ERP\\Parameterization\\Vehicles\\": "app/controllers/erp/parameterization/vehicles",
+      "App\\Controllers\\ERP\\Parameterization\\Equipments\\": "app/controllers/erp/parameterization/equipments",
+      "App\\Controllers\\STC\\": "app/controllers/stc",
+      "App\\Controllers\\STC\\Cadastre\\": "app/controllers/stc/cadastre",
+      "App\\Controllers\\STC\\Devices\\": "app/controllers/stc/devices",
+      "App\\Controllers\\STC\\Parameterization\\": "app/controllers/stc/parameterization",
+      "App\\Controllers\\STC\\Parameterization\\Cadastral\\": "app/controllers/stc/parameterization/cadastral",
+      "App\\Controllers\\STC\\Parameterization\\Vehicles\\": "app/controllers/stc/parameterization/vehicles",
+      "App\\Controllers\\STC\\Parameterization\\Equipments\\": "app/controllers/stc/parameterization/equipments",
+      "App\\Controllers\\STC\\Data\\": "app/controllers/stc/data",
+      "App\\Controllers\\STC\\Report\\": "app/controllers/stc/report",
+      "App\\Middlewares\\": "app/middlewares",
+      "App\\Models\\": "app/models",
+      "App\\Providers\\": "app/providers"
+    }
+  },
+  "require": {
+    "php": "^7.4",
+    "slim/slim": "^3.12",
+    "slim/twig-view": "^2.4",
+    "slim/flash": "^0.4.0",
+    "slim/csrf": "^0.8.3",
+    "monolog/monolog": "^1.23",
+    "respect/validation": "^1.1",
+    "mpdf/mpdf": "^8.0",
+    "dflydev/fig-cookies": "^2.0",
+    "illuminate/database": "5.8.*",
+    "illuminate/support": "5.8.*",
+    "nesbot/carbon": "2.*",
+    "akrabat/ip-address-middleware": "^1.0",
+    "swiftmailer/swiftmailer": "^6.0",
+    "php-parallel-lint/php-console-color": "^0.3.0",
+    "picqer/php-barcode-generator": "^2.2",
+    "mpdf/qrcode": "^1.1"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.0"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "App\\": "app",
+      "Tests\\": "tests/"
+    }
+  },
+
+  "scripts": {
+    "start": "php -S 0.0.0.0:8080 -t public public/index.php",
+    "test": "phpunit --configuration phpunit.xml",
+    "test:coverage": "phpunit --configuration phpunit.xml --coverage-clover build/logs/clover.xml --coverage-html build/coverage"
+  },
+  "config": {
+    "patch-levels": [
+      "-p1"
+    ],
+    "platform": {
+      "php": "7.4"
+    }
+  },
+  "version": "1.0.0-alpha1"
+}

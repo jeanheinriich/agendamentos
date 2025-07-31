@@ -1,0 +1,164 @@
+/*!
+ * Improved Dialog Code
+ * 
+ * Code licensed under the Apache License v2.0.
+ * For details, see http://www.apache.org/licenses/LICENSE-2.0.
+ */
+
+@import '../mixin.scss';
+@import '../themes/default.scss';
+
+/* ---------------------------------------------[ Modal Dialog ]-----
+   As definições dos diálogos modais
+   ------------------------------------------------------------------ */
+
+.ui.modal > .content > .icon + .description,
+.ui.modal > .content > .image + .description {
+  padding-left: 7em;
+  display: inline-block;
+  word-break: break-word;
+  width: 100%;
+}
+
+.ui.modal > .content {
+  min-height: 8em;
+}
+
+.ui.modal {
+  .content {
+    &.image > .icon:first-child {
+      position:absolute;
+      top: 50%;
+      left: 18px;
+      transform: translateY(-50%);
+      width: 80px;
+      height: 80px;
+      padding: 7px;
+      border-radius: 50%;
+      display: inline-block;
+      line-height: 18.4px;
+      background-color: $lightTextColor;
+      
+      @media screen and (max-width: 767px) {
+        display: none;
+      }
+
+      .svg {
+        fill: $iconColor;
+        stroke: $iconColor;
+      }
+    }
+
+    //.image {
+    //  i.icon {
+    //    margin: 0;
+    //    opacity: 1;
+    //    width: auto;
+    //    line-height: 1;
+    //    font-size: 5rem;
+    //  }
+    //  
+    //  @media screen and (max-width: 767px) {
+    //    display: none;
+    //  }
+    //}
+  }
+  
+  &.success {
+    .header{
+      background-color: darken($successColor, 19%);
+      color: White;
+    }
+    
+    .content {
+      .icon {
+        background-color: $successColor;
+      }
+
+      .image {
+        color: $successColor;
+      }
+    }
+  }
+  
+  &.info {
+    .header{
+      background-color: darken($infoColor, 19%);
+      color: white;
+    }
+    
+    .content {
+      .icon {
+        background-color: $infoColor;
+      }
+
+      .image {
+        color: $infoColor;
+      }
+    }
+  }
+  
+  &.warning {
+    .header{
+      background-color: $warningColor;
+      color: white;
+    }
+    
+    .content {
+      .icon {
+        background-color: $warningColor;
+      }
+      
+      .image {
+        color: $warningColor;
+      }
+    }
+  }
+  
+  &.error {
+    .header{
+      background-color: darken($errorColor, 9%);
+      color: Yellow;
+    }
+    
+    .content {
+      .icon {
+        background-color: $errorColor;
+      }
+      
+      .image {
+        color: $errorColor;
+      }
+    }
+  }
+  
+  &.question {
+    .header{
+      background-color: LightGray;
+      color: Black;
+    }
+    
+    .content {
+      .icon {
+        background-color: DodgerBlue;
+      }
+      
+      .image {
+        color: DodgerBlue;
+      }
+    }
+  }
+  
+  &.interaction {
+    .header{
+      background-color: LightGray;
+      color: Black;
+    }
+    
+    .image.content {
+      > .icon {
+        background-color: DodgerBlue;
+      }
+    }
+  }
+}

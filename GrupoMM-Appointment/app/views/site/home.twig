@@ -1,0 +1,166 @@
+{% extends 'templates/site/layout.twig' %}
+{% block title %}{{ parent() }} - In&iacute;cio{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+  <style>
+    .lightblue {
+      color: DodgerBlue !important;
+    }
+    .textBox {
+      background-color: #181818cf;
+      width: 50%;
+      padding: 30px !important;
+    }
+    .hero .content .text h2 {
+      width: 100%;
+    }
+    @media screen and (max-width: 1024px) {
+      .textBox {
+        width: 100%;
+      }
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+    <main>
+      <section class="hero home">
+        <div class="content">
+          <div class="container">
+            <div class="text textBox">
+              <h1 class="lightblue">Rastreamento Veicular</h1>
+              <h2 class="gray">Localize, gerencie e avalie sua frota
+              com um moderno sistema de rastreamento para sua empresa</h2>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="services">
+        <h2 class="section-title">Benefícios imediatos. Retorno imediato.</h2>
+        <p class="desc">O uso do nosso sistema de rastreamento pode impulsionar seus negócios.</p>
+        <div class="container">
+          <div class="ui stackable three column grid">
+            <div class="row">
+              <div class="column">
+                <div class="media">
+                  <div class="media-left media-middle">
+                    <i class="dashboard icon"></i>
+                  </div>
+                  <div class="media-body">
+                    <h4 class="media-heading">Reduza consumo de combustível</h4>
+                    <p>Com o uso inteligente de sua frota, e
+                    o auxílio de nossas ferramentas, você pode
+                    reduzir o consumo de combustíveis em até
+                    30%. <a href="{{ path_for('FuelConsumption') }}" class="more btn btn-link" role="button">Saiba mais</a></p>
+                  </div>
+                </div>
+              </div>
+              <div class="column">
+                <div class="media">
+                  <div class="media-left media-middle">
+                    <i class="doctor icon"></i>
+                  </div>
+                  <div class="media-body">
+                    <h4 class="media-heading">Melhore a performance</h4>
+                    <p>Compreenda sua frota, otimize as suas
+                    operações e obtenha melhores resultados,
+                    refletindo diretamente em mais clientes satisfeitos.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="column">
+                <div class="media">
+                  <div class="media-left media-middle">
+                    <i class="life ring icon"></i>
+                  </div>
+                  <div class="media-body">
+                    <h4 class="media-heading">Diminua manutenções</h4>
+                    <p>Você pode reduzir os custos de manutenção
+                    através do uso de nosso sistema, obtendo
+                    as informações necessárias sobre cada
+                    veículo.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="details">
+        <div class="content">
+          <div class="container">
+            <h2 class="subtitle">SERVIÇOS DISPONÍVEIS</h2>
+            <div class="ui stackable four column grid">
+              <div class="column">
+                <div class="thumbnail">
+                  <img src="/images/site/h1.jpeg"
+                       alt="Rastreamento">
+                  <div class="caption">
+                    <h3><a href="{{ path_for('Tracking') }}">Rastreamento</a></h3>
+                    <p>Soluções perfeitas e exclusivas para gerenciar
+                    sua frota. Com nosso rastreador, você pode contar
+                    com modernos serviços para gerenciar e otimizar
+                    as suas operações e obter melhores resultados.</p>
+                    <a href="{{ path_for('Tracking') }}" class="more btn btn-link" role="button">Mais</a>
+                  </div>
+                </div>                                        
+              </div>
+              <div class="column">
+                <div class="thumbnail">
+                  <img src="/images/site/h2.jpg"
+                       class="img-responsive"
+                       alt="Monitoramento 24h">
+                  <div class="caption">
+                    <h3><a href="{{ path_for('Monitoring') }}">Monitoramento 24h</a></h3>
+                    <p>Deixe seu carro mais protegido com nossa solução de
+                    monitoramento de veículos. Proporcione maior segurança
+                    e tranquilidade para você e sua família.</p>
+                    <a href="{{ path_for('Monitoring') }}" class="more btn btn-link" role="button">Mais</a>
+                  </div>
+                </div>                                        
+              </div>
+              <div class="column">
+                <div class="thumbnail">
+                  <img src="/images/site/h3.jpeg"
+                       class="img-responsive"
+                       alt="Vigilância por câmeras">
+                  <div class="caption">
+                    <h3><a href="{{ path_for('CameraSurveillance') }}">Vigilância por Câmeras</a></h3>
+                    <p>Proteja seu patrimônio, seja em sua residência
+                    ou empresa. Melhore a segurança com nossos sistemas
+                    de câmeras para vigilância. Conte com o melhor da
+                    tecnologia para auxiliar você.</p>
+                    <a href="{{ path_for('CameraSurveillance') }}" class="more btn btn-link" role="button">Mais</a>
+                  </div>
+                </div>                                        
+              </div>
+              <div class="column">
+                <div class="thumbnail">
+                  <img src="/images/site/h4.jpeg"
+                       class="img-responsive"
+                       alt="Alarmes">
+                  <div class="caption">
+                    <h3><a href="{{ path_for('Alarm') }}">Alarmes</a></h3>
+                    <p>Alarmes para proteção patrimonial de residências,
+                    condomínios, comércios e indústrias, permitindo maior
+                    tranquilidade para você no seu dia-a-dia. Monitoramento
+                    do alarme 24h por dia.</p>
+                    <a href="{{ path_for('Alarm') }}" class="more btn btn-link" role="button">Mais</a>
+                  </div>
+                </div>                                        
+              </div>                                    
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {% apply minify %}
+  <script>
+    $(document).ready(function(){
+    });
+  </script>
+  {% endapply %}
+{% endblock scripts %}

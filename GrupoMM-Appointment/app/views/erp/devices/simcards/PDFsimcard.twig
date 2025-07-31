@@ -1,0 +1,177 @@
+{% extends 'templates/basePDF.twig' %}
+{% block title %}
+  Dados cadastrais do SIM Card ICCID {{ simcard.iccid }}
+{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+  <style>
+    .free {
+      color: DarkGreen;
+      font-weight: bold;
+    }
+  </style>
+{% endblock %}
+{% block content %}
+<table width="100%" class="noborder">
+    <tbody>
+      <tr class="title">
+        <td colspan="5">
+          <h1 class="title">
+            Dados básicos do SIM Card
+          </h1>
+        </td>
+      </tr>
+      <tr class="content">
+        <td colspan="2">
+          <span class="field">N&ordm; de série (ICCID)</span><br>
+          <span class="content">{{ simcard.iccid }}&nbsp;</span>
+        </td>
+        <td>
+          <span class="field">IMSI:</span><br>
+          <span class="content">{{ simcard.imsi }}&nbsp;</span>
+        </td>
+        <td>
+          <span class="field">Telefone:</span><br>
+          <span class="content">{{ simcard.phonenumber }}&nbsp;</span>
+        </td>
+        <td>
+          <span class="field">Operadora de telefonia:</span><br>
+          <span class="content">{{ simcard.mobileoperatorname }}&nbsp;</span>
+        </td>
+      </tr>
+      <tr class="content">
+        <td colspan="2">
+          <span class="field">Tipo de SIM Card:</span><br>
+          <span class="content">{{ simcard.simcardtypename }}&nbsp;</span>
+        </td>
+        <td>
+          <span class="field">PIN:</span><br>
+          <span class="content">{{ simcard.pincode }}&nbsp;</span>
+        </td>
+        <td>
+          <span class="field">PUK:</span><br>
+          <span class="content">{{ simcard.pukcode }}&nbsp;</span>
+        </td>
+        <td>
+          <span class="field">N&ordm; de patrimônio:</span><br>
+          <span class="content">{{ simcard.assetnumber }}&nbsp;</span>
+        </td>
+      </tr>
+      <tr class="title">
+        <td colspan="5">
+          <h1 class="title">
+            Dados de propriedade
+          </h1>
+        </td>
+      </tr>
+      <tr class="content">
+        <td rowspan="2" valign="top">
+          <span class="field">Tipo de propriedade do SIM Card:</span><br>
+          <span class="content">{{ simcard.ownershiptypename }}&nbsp;</span>
+        </td>
+        <td colspan="4" style="color: black; border-bottom: 1px dotted #a0b0c0;">
+          <span class="field">Dados do fornecedor</span><br>
+        </td>
+      </tr>
+      <tr class="content">
+        <td colspan="2" class="nospaced">
+          {% if customer.entitytypeid == 2 %}
+            <span class="field">Nome:</span><br>
+          {% else %}
+            <span class="field">Razão Social:</span><br>
+          {% endif %}
+          <span class="content">{{ simcard.suppliername }}&nbsp;</span>
+        </td>
+        <td colspan="2" class="nospaced">
+          {% if customer.entitytypeid == 2 %}
+            <span class="field">Apelido:</span><br>
+          {% else %}
+            <span class="field">Nome fantasia:</span><br>
+          {% endif %}
+          <span class="content">{{ simcard.subsidiaryname }}&nbsp;</span>
+        </td>
+      </tr>
+      {% if simcard.supplierblocked %}
+      <tr class="content">
+        <td colspan="5">
+          <span class="content danger">Atenção: Este fornecedor encontra-se bloqueado</span>
+        </td>
+      </tr>
+      {% endif %}
+      {% if simcard.blocked %}
+      <tr class="content">
+        <td colspan="5">
+          <span class="content danger">Atenção: Este SIM Card não está disponível para uso</span>
+        </td>
+      </tr>
+      {% endif %}
+      {% if simcard.attached %}
+        <tr class="title">
+          <td colspan="5">
+            <h1 class="title">
+              Dados do equipamento onde está instalado
+            </h1>
+          </td>
+        </tr>
+        <tr class="content">
+          <td>
+            <span class="field">N&ordm; de série</span><br>
+            <span class="content">{{ simcard.serialnumber }}</span>
+          </td>
+          <td>
+            <span class="field">N&ordm; do slot:</span><br>
+            <span class="content">{{ simcard.slotnumber }}</span>
+          </td>
+          <td>
+            <span class="field">Modelo do slot:</span><br>
+            <span class="content">{{ simcard.slottypename }}</span>
+          </td>
+          <td>
+            <span class="field">Modelo:</span><br>
+            <span class="content">{{ simcard.equipmentmodelname }}</span>
+          </td>
+          <td>
+            <span class="field">IMEI</span><br>
+            <span class="content">{{ simcard.imei }}&nbsp;</span>
+          </td>
+        </tr>
+        {% if ((simcard.simcardtypeid == 1) or (simcard.slottypeid == 1)) %}
+        <tr class="content">
+          <td colspan="5">
+            {% if (simcard.simcardtypeid == 1) %}
+            <span class="content danger">Atenção: Não temos a informação
+              do tamanho do SIM Card, então é preciso verificar a necessidade
+              do uso de adaptador ou se o modelo é compatível.
+            </span>
+            {% else %}
+            <span class="content danger">Atenção: Não temos a informação
+              do tamanho do slot, então é preciso verificar a necessidade
+              do uso de adaptador ou se o modelo é compatível.
+            </span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+          {% if (simcard.simcardtypeid == simcard.slottypeid) %}
+          {% else %}
+            <tr class="content">
+              <td colspan="5">
+                {% if (simcard.simcardtypeid > simcard.slottypeid) %}
+                <span class="content danger">Atenção: O SIM Card é de um
+                  tamanho diferente do exigido pelo slot do equipamento,
+                  então é necessário o uso de adaptador.
+                </span>
+                {% else %}
+                <span class="content danger">Atenção: O SIM Card é de um
+                  tamanho diferente do exigido pelo slot do equipamento e
+                  não é possível utilizar um adaptador neste caso.
+                </span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endif %}
+        {% endif %}
+      {% endif %}
+    </tbody>
+  </table>
+{% endblock %}

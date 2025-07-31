@@ -1,0 +1,260 @@
+{% extends 'templates/site/layoutsimple.twig' %}
+{% block title %}{{ parent() }} - 2ª via de boletos de cobrança{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('flash.min.css') }}
+  {{ css('form.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    .ui.items > .item > .image:not(.ui) {
+      width: 125px;
+    }
+    i.big.big.big.icon,
+    i.big.big.big.icons {
+      font-size: 3em;
+      vertical-align: middle;
+    }
+    i.lightblue.icon.icon.icon.icon.icon {
+      color: lightblue;
+    }
+
+    .backToTop {
+      --offset: 0px; 
+      
+      position: sticky;
+      bottom: 40px;
+      margin-left: 65%;
+      /**place-self: end;**/
+      margin-top: calc(100vh + var(--offset));
+      
+      /* visual styling */
+      text-decoration: none;
+      padding: 20px;
+      font-family: sans-serif;
+      color: #fff;
+      background: #2185d0;
+      border-radius: 100px;
+      white-space: nowrap;
+    }
+
+    .ui.middle.aligned .column {
+      max-width: 480px;
+    }
+
+    .left.aligned {
+      text-align: left !important;
+    }
+
+    .toggle.icon {
+      opacity: .5 !important;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+    <main>
+      <section class="description">
+        <div class="ui basic segment">
+        </div>
+
+        <div class="ui basic segment">
+          <div class="ui middle aligned center aligned grid">
+            <article class="column">
+              <!-- Start flash messages -->
+              {% include 'templates/usr/partials/flash.twig' %}
+              <!-- End flash messages -->
+
+              <!-- Start Form -->
+              <form class="ui blue secondary segment medium form" method="POST"
+                    action="{{ path_for('USR\\Login') }}">
+                <h3 class="ui dividing left aligned header">2ª via de boletos</h3>
+                <div class="sub header left aligned" style="padding-bottom: 10px;">
+                  Acesse a sua área para consulta das informações
+                  de seus boletos, como emitir a segunda via ou
+                  visualizar quais já foram pagos.
+                </div>
+
+                <div class="fields">
+                  <div class="sixteen wide left aligned field{{ cssError('name') }}">
+                    <label>Informe o seu CPF ou CNPJ</label>
+                    <input type="text" name="username"
+                           placeholder="Informe o seu CPF/CNPJ..."
+                           value="{{ getValue('username') }}"
+                           maxlength="50">
+                    {% if hasError('username') %}
+                    <small class="helper">{{ getError('username') }}</small>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="fields">
+                  <div class="sixteen wide left aligned field{{ cssError('password') }}">
+                    <label class="nowrap">Senha</label>
+                    <div class="ui icon input">
+                      <input type="password" name="password" maxlength="25"
+                             placeholder="Informe a sua senha..."
+                             value="{{ getValue('password') }}">
+                      <i class="eye grey slash toggle link icon"></i>
+                    </div>
+                    {% if hasError('password') %}
+                    <small class="helper">{{ getError('password') }}</small>
+                    {% endif %}
+                  </div>
+                </div>
+                <input type="hidden" name="uuid" value="{{ getValue('uuid') }}">
+
+                {{ csrf() }}
+                
+                <div class="fields">
+                  <div class="sixteen wide left aligned field">
+                    <button type="button"
+                            class="ui red right labeled icon button"
+                            onclick="needHelp();">
+                      <i class="question icon"></i><span class="mobile hidden">Precisa de ajuda?</span><span class="mobile only">Ajuda?</span>
+                    </button>
+
+                    <button type="submit"
+                            class="ui submit primary right labeled icon right floated button">
+                      <i class="checkmark icon"></i> Acessar
+                    </button>
+                  </div>
+                </div>
+
+                <p class="left aligned message">
+                  Esqueceu sua senha?&nbsp;<a href="{{ path_for('USR\\Forgot', { 'UUID': uuid }) }}">Recupere-a</a>
+                </p>
+                
+                <input type="hidden" name="_method" value="POST">
+              </form>
+              <!-- End Form -->
+            </article>
+          </div>
+        </div>
+
+        <div class="ui basic segment"
+             id="needHelp" style="display: none;">
+          <div class="ui middle aligned center aligned grid">
+            <article class="column">
+              <div class="ui top attached red segment">
+                <h2 class="ui left aligned header">Precisa de ajuda?</h2>
+                <div class="left aligned description">
+                  Aqui você encontra as respostas para as perguntas
+                  mais comuns.
+                </div>
+              </div>
+              <div class="ui attached form segment form">
+                <div class="ui divided items">
+                  <div class="item">
+                    <div class="image">
+                      <i class="user check lightblue big icon"></i>
+                    </div>
+                    <div class="left aligned content">
+                      <h3 class="ui header">
+                        Como acessar
+                      </h3>
+                      <div class="description">
+                        <p>
+                          Insira o CPF ou CNPJ do titular do contrato e a
+                          senha cadastrada. Se este for o seu primeiro
+                          acesso, utilize o seu CPF ou CNPJ também como
+                          senha (apenas os números).
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="item">
+                    <div class="image">
+                      <i class="question circle lightblue big icon"></i>
+                    </div>
+                    <div class="left aligned content">
+                      <h3 class="ui header">
+                        Esqueceu sua senha?
+                      </h3>
+                      <div class="description">
+                        <p>
+                          Para recuperar sua senha, nor formulário ao lado,
+                          informe o CPF ou CNPJ do titular do contrato e,
+                          na parte de baixo, após o botão de "Acessar",
+                          clique em "Recupere-a".
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="item">
+                    <div class="image">
+                      <i class="user shield lightblue big icon"></i>
+                    </div>
+                    <div class="left aligned content">
+                      <h3 class="ui header">
+                        Como criar uma senha segura:
+                      </h3>
+                      <div class="description">
+                        <p>
+                          Ela precisa ter no mínimo 8 caracteres e
+                          misturar letras e números. Você pode
+                          também incluir uma ou mais letras
+                          maiúsculas, ou símbolos como ! @ # $ % &
+                          * _ - + = < <br>
+                          <br>
+                          Exemplo 1: Bahia1931<br>
+                          Exemplo 2: 2306-Paulo
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="item">
+                    <div class="image">
+                      <i class="user lock lightblue big icon"></i>
+                    </div>
+                    <div class="left aligned content">
+                      <h3 class="ui header">
+                        Como mudar sua senha
+                      </h3>
+                      <div class="description">
+                        <p>
+                          Acesse a área do cliente e clique no canto
+                          superior direito para acessar os seus
+                          dados e escolha 'Mudar senha'.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+        <a href="#" class="backToTop" style="display: none;">
+          <i class="chevron up icon"></i>
+        </a>
+
+        <div class="ui basic segment">
+        </div>
+      </section>
+    </main>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/site/partials/dialogs/error.twig' %}
+  {% include 'templates/site/partials/dialogs/info.twig' %}
+  {% include 'templates/site/partials/dialogs/question.twig' %}
+  {% include 'templates/site/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  
+  {% apply minify %}
+  <script>
+    {% include 'usr/auth/login.js' %}
+  </script>
+  {% endapply %}
+{% endblock %}

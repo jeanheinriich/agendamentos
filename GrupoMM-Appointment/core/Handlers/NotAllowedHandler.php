@@ -1,0 +1,195 @@
+<?php
+/*
+ * This file is part of Extension Library.
+ *
+ * (c) Emerson Cavalcanti
+ *
+ * LICENSE: The MIT License (MIT)
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the 
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject
+ * to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * 
+ * ---------------------------------------------------------------------
+ * Descrição:
+ * 
+ * O manipulador de erros de método não permitido. Ele exibe a mensagem
+ * de erro e as informações de diagnóstico em JSON, XML ou HTML com base
+ * no cabeçalho Accept.
+ */
+
+/**
+ * @author Emerson Cavalcanti <emersoncavalcanti@gmail.com>
+ */
+
+namespace Core\Handlers;
+
+use Core\Handlers\Formatters\HTMLFormatter;
+use Core\Handlers\Formatters\JSONFormatter;
+use Core\Handlers\Formatters\TextFormatter;
+use Core\Handlers\Formatters\XMLFormatter;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Slim\Http\Body;
+use UnexpectedValueException;
+
+class NotAllowedHandler
+  extends AbstractHandler
+{
+  /**
+   * O método invocado para manipular o erro.
+   * 
+   * @param ServerRequestInterface $request
+   *   O objeto mais recente de Request
+   * @param ResponseInterface $response
+   *   O objeto mais recente de Response
+   * @param string[] $allowedHttpMethods
+   *   Os métodos HTTP permitidos
+   *
+   * @return ResponseInterface
+   *
+   * @throws UnexpectedValueException
+   *   Em caso de algum erro inesperado
+   */
+  public function __invoke(ServerRequestInterface $request,
+    ResponseInterface $response, array $allowedHttpMethods)
+  {
+    // Determina o endereço atual
+    $uri    = $request->getUri();
+    $path   = $uri->getPath();
+    $params = $request->getQueryParams();
+
+    // Verifica o método da solicitação
+    $method = $request->getMethod();
+
+    // Monta uma string com os métodos suportados
+    $methods = $this->buildMethodsString($allowedHttpMethods);
+
+    // Determina o tipo de conteúdo requisitado
+    $contentType = $this->determineContentType($request);
+
+    // Determina o nome da rota
+    $routeName = ltrim($path, '/');
+
+    // Determina uma mensagem de erro padrão, independente do tipo de
+    // requisição
+    if (count($allowedHttpMethods) > 1) {
+      $complement = "são permitidos os métodos";
+    } else {
+      $complement = "é permitido o método";
+    }
+    if (empty($routeName)) {
+      $errorMessage = "Desculpe, o método {$method} não é permitido "
+        . "para esta rota. Apenas {$complement} {$methods}."
+      ;
+    } else {
+      $errorMessage = "Desculpe, o método {$method} não é permitido "
+        . "para a rota {$routeName}. Apenas {$complement} {$methods}."
+      ;
+    }
+
+    // Em função do tipo de conteúdo requisitado, seleciona um formatador
+    // adequado
+    $output = '';
+    $useTemplate = false;
+    switch ($contentType) {
+      case 'application/json':
+        // Inicializa o formatador para JSON
+        $formatter = new JSONFormatter($this->displayErrorDetails);
+
+        break;
+      case 'text/xml':
+      case 'application/xml':
+        // Inicializa o formatador para XML
+        $formatter = new XMLFormatter($this->displayErrorDetails);
+
+        break;
+      case 'text/html':
+        if (PHP_SAPI == 'cli') {
+          // Inicializa o formatador para texto
+          $formatter = new TextFormatter($this->displayErrorDetails);
+        } else {
+          // Determina qual o template será utilizado
+          $this->template = $this->getTemplate($path, '4xx.twig');
+
+          // Inicializa o formatador para HTML
+          $formatter = new HTMLFormatter($this->displayErrorDetails);
+          $useTemplate = true;
+        }
+
+        break;
+      default:
+        throw new UnexpectedValueException("Não é possível processar o "
+          . "tipo de conteúdo desconhecido " . $contentType)
+        ;
+    }
+
+    // Renderiza a mensagem de erro
+    $output = $formatter->renderErrorMessage($errorMessage, $params);
+
+    // Se for necessário, usa o template para formatar o erro ao usuário
+    if ($useTemplate) {
+      // Renderiza utilizando o template
+      $output = $this->renderUsingTemplate([
+        'error' => $output,
+        'homepage' => $this->determineHomeAddress($path),
+        'public' => $this->belongsToPublicArea($path)
+      ]);
+    }
+
+    // Registra o erro no log
+    $this->error("O método HTTP {method} não é permitido para a rota "
+      . "'{route}'. Apenas {complement} {methods}.",
+      [ 'method' => $method,
+        'route' => $routeName,
+        'complement' => $complement,
+        'methods' => $methods ]
+    );
+
+    // Renderiza a resposta
+    $body = new Body(fopen('php://temp', 'r+'));
+    $body->write($output);
+    $allow = implode(', ', (array) $methods);
+    
+    return $response
+      ->withStatus(405)
+      ->withHeader('Content-type', $contentType)
+      ->withHeader('Allow', $allow)
+      ->withBody($body)
+    ;
+  }
+  
+  /**
+   * Monta uma string com os métodos suportados.
+   * 
+   * @param array $allowedHttpMethods
+   *   A matriz com as informações dos métodos HTTP suportados
+   * 
+   * @return string
+   *   Os métodos HTTP suportados de maneira legível separado por
+   *   vírgulas
+   */
+  private function buildMethodsString(array $allowedHttpMethods): string
+  {
+    $last  = array_slice($allowedHttpMethods, -1);
+    $first = join(', ', array_slice($allowedHttpMethods, 0, -1));
+    $both  = array_filter(array_merge(array($first), $last), 'strlen');
+    
+    return join(' e ', $both);
+  }
+}

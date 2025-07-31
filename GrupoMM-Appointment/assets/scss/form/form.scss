@@ -1,0 +1,554 @@
+/* -------------------------------------------===-------[ Form ]-----
+   As definições adicionais para formulários
+   ------------------------------------------------------------------ */
+
+.ui.form {
+  label.nowrap {
+    white-space: nowrap; 
+    width: 100%; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .fields > .buttons {
+    @media only screen and (max-width:767px) {
+      margin: 1em 0;
+    }
+  }
+
+  .field > label {
+    @media screen and (max-width: 768px) {
+      margin: .38571429em 0 0 0;
+    }
+  }
+  
+  // Acrescentamos os campos de sucesso modificados
+  .field.success .input,
+  .field.success label,
+  .fields.success .field .input,
+  .fields.success .field label {
+      color: #308330;
+  }
+  
+  .field.success input:not([type]),
+  .field.success input[type="date"],
+  .field.success input[type="datetime-local"],
+  .field.success input[type="email"],
+  .field.success input[type="file"],
+  .field.success input[type="number"],
+  .field.success input[type="password"],
+  .field.success input[type="search"],
+  .field.success input[type="tel"],
+  .field.success input[type="text"],
+  .field.success input[type="time"],
+  .field.success input[type="url"],
+  .field.success select,
+  .field.success textarea,
+  .fields.success .field input:not([type]),
+  .fields.success .field input[type="date"],
+  .fields.success .field input[type="datetime-local"],
+  .fields.success .field input[type="email"],
+  .fields.success .field input[type="file"],
+  .fields.success .field input[type="number"],
+  .fields.success .field input[type="password"],
+  .fields.success .field input[type="search"],
+  .fields.success .field input[type="tel"],
+  .fields.success .field input[type="text"],
+  .fields.success .field input[type="time"],
+  .fields.success .field input[type="url"],
+  .fields.success .field select,
+  .fields.success .field textarea {
+      background: #f4faf4 none repeat scroll 0 0;
+      border-color: #a3c293;
+      color: #308330;
+      border-radius: '';
+      box-shadow: none;
+  }
+
+  small.helper,
+  .column.error label {
+    color: #9f3a38;
+  }
+
+  .column.error input:not([type]),
+  .column.error input[type=date],
+  .column.error input[type=datetime-local],
+  .column.error input[type=email],
+  .column.error input[type=file],
+  .column.error input[type=number],
+  .column.error input[type=password],
+  .column.error input[type=search],
+  .column.error input[type=tel],
+  .column.error input[type=text],
+  .column.error input[type=time],
+  .column.error input[type=url],
+  .column.error select,
+  .column.error textarea {
+    color: #9f3a38;
+    background: #fff6f6;
+    border-color: #e0b4b4;
+    border-radius: '';
+    -webkit-box-shadow: none;
+    box-shadow: none;
+  }
+
+  .field.error .ui.search.autocomplete,
+  .column.error .ui.search.autocomplete {
+    border-color: #e0a4a4;
+    background: #fff6f6;
+
+    &:focus-within {
+      -webkit-box-shadow: 0 2px 3px 0 rgba(100,36,38,.15);
+      box-shadow: 0 2px 3px 0 rgba(100,36,38,.15);
+    }
+  }
+
+  .field.error input[type=text]:focus,
+  .column.error input[type=text]:focus {
+    border-color: #e0a4a4;
+    -webkit-box-shadow: 0 2px 3px 0 rgba(100,36,38,.15);
+    box-shadow: 0 2px 3px 0 rgba(100,36,38,.15);
+  }
+  .field.success input[type=text]:focus,
+  .column.success input[type=text]:focus {
+    border-color: #85b7d9;
+    -webkit-box-shadow: 0 2px 3px 0 rgba(100,36,38,.15);
+    box-shadow: 0 2px 3px 0 rgba(100,36,38,.15);
+  }
+}
+
+.form-list {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  -ms-flex-wrap: wrap;
+  flex-wrap: wrap;
+  -webkit-box-align: stretch;
+  -ms-flex-align: stretch;
+  align-items: stretch;
+}
+
+.entry.grid {
+  -webkit-box-align: stretch;
+  -ms-flex-align: stretch;
+  align-items: stretch;
+  justify-content: stretch;
+  align-content: stretch;
+  margin: 0;
+  border-top: 1px solid #d4d4d5;
+
+  &:last-child {
+    border-bottom: 1px solid #d4d4d5;
+  }
+
+  &+.grid {
+    margin-top: 0;
+  }
+
+  .fifteen.wide.column {
+    padding: 0;
+    padding-left: .5rem;
+    padding-top: .5rem;
+    padding-bottom: .5rem;
+  }
+
+  .one.wide.column {
+    background-color: #EFF5FB;
+    border-right: 2px solid #2185d0;
+    text-align: center;
+    padding: 0.2rem;
+    margin-top: 0;
+
+    > .circular.proportional.label {
+      font-size: 0.9rem;
+      line-height: 1.1rem;
+    }
+
+    @media only screen and (min-width: 768px) {
+
+      > .circular.proportional.label {
+        font-size: 1.6vw;
+        line-height: 1.8vw;
+        margin: 0.2rem;
+      }
+    }
+
+    @media only screen and (min-width: 1536px) {
+
+      > .circular.proportional.label {
+        font-size: 1.8rem;
+        line-height: 2.0rem;
+        margin: 0.2rem;
+      }
+    }
+  }
+}
+.details {
+  max-width: 100%;
+  margin: 0 auto;
+
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: horizontal;
+  -webkit-box-direction: normal;
+  -ms-flex-direction: row;
+  flex-direction: row;
+  -ms-flex-wrap: wrap;
+  flex-wrap: wrap;
+  -webkit-box-align: stretch;
+  -ms-flex-align: stretch;
+  align-items: stretch;
+
+  border-top: 1px solid #d4d4d5;
+
+  &:last-child {
+    border-bottom: 1px solid #d4d4d5;
+  }
+
+  div.detail {
+    &:first-of-type {
+      background-color: #EFF5FB;
+      border-right: 2px solid #2185d0;
+      text-align: center;
+      padding: 0.2rem;
+      //height: 4rem;
+      margin-top: 0;
+      height: 100%;
+      min-height: 100%;
+
+      > .circular.proportional.label {
+        font-size: 0.9rem;
+        line-height: 1.1rem;
+      }
+
+      @media only screen and (min-width: 768px) {
+        padding: 0.5rem;
+
+        > .circular.proportional.label {
+          font-size: 2.0vw;
+          line-height: 2.2vw;
+        }
+      }
+    }
+  }
+}
+
+.ui.input {
+  &.action:not([class*="left action"]) > input:focus {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right-color: #85b7d9;
+  }
+
+  &.action:not([class*="left action"]) > .ui.icon.input > input {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    border-right-color: transparent !important;
+
+    &:focus {
+      border-right-color: #85b7d9;
+    }
+  }
+  
+  &.icon {
+    // As definições para campos com um ícone à direita
+    > i.icon {
+      opacity: 1;
+
+      &.check {
+        color: #006400;
+      }
+
+      &.close {
+        color: #cc0000;
+      }
+    }
+    
+    // As definições para campos desabilitados
+    &.disabled {
+      pointer-events: none;
+      opacity: .45;
+    }
+
+    // As definições para campos de somente leitura
+    &.readonly {
+      pointer-events: none;
+
+      input {
+        background-color: GhostWhite;
+        color: DarkSlateGray;
+        border: 1px solid rgba(34,36,38,.15);
+      }
+
+      .ui.spinner.buttons {
+        .button {
+          pointer-events: none;
+          opacity: .45;
+        }
+      }
+    }
+  }
+
+  &.readonly {
+    pointer-events: none;
+    &.disabled {
+      opacity: 1;
+    }
+    
+    > input {
+      background-color: GhostWhite;
+      border: 1px solid rgba(34,36,38,.15);
+      color: #5C738B;
+
+      &:focus {
+        background-color: GhostWhite;
+        color: rgba(0,0,0,.95);
+        border-color: #85b7d9;
+        -webkit-box-shadow: 0 0 0 0 rgba(34,36,38,.35) inset;
+        box-shadow: 0 0 0 0 rgba(34,36,38,.35) inset;
+      }
+    }
+
+    > textarea {
+      background-color: GhostWhite;
+      color: DarkSlateGray;
+      border: 1px solid rgba(34,36,38,.15);
+    }
+  }
+}
+
+// Campos estáticos
+div.field.static {
+  span {
+    display: block;
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    -webkit-box-flex: 1;
+    -ms-flex: 1 0 auto;
+    flex: 1 0 auto;
+    outline: 0;
+    -webkit-tap-highlight-color: rgba(255,255,255,0);
+    text-align: left;
+    line-height: 1.21428571em;
+    font-family: Lato,'Helvetica Neue',Arial,Helvetica,sans-serif;
+    padding: .67857143em 1em;
+    border-radius: .28571429rem;
+    -webkit-transition: border-color .1s ease,-webkit-box-shadow .1s ease;
+    transition: border-color .1s ease,-webkit-box-shadow .1s ease;
+    transition: box-shadow .1s ease,border-color .1s ease;
+    transition: box-shadow .1s ease,border-color .1s ease,-webkit-box-shadow .1s ease;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+    white-space: nowrap;
+    overflow: hidden; 
+    text-overflow: ellipsis;
+
+    &.lighting {
+      background-color: #fafad2;
+      color: #a0522d;
+      border: 1px solid rgba(34,36,38,0.15);
+    }
+    &.darking {
+      background-color: GhostWhite;
+      color: #5C738B;
+      border: 1px solid rgba(34,36,38,0.15);
+    }
+  }
+}
+.ui.action.input:not([class*="left action"]) > div.field.static:not([class*="right"]) > span {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-right-color: transparent !important;
+}
+.ui.action.input:not([class*="left action"]) > div.field.right.static > span {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  background-color: #e8e8e8;
+}
+.ui.action.input.readonly:not([class*="left action"]) > div.field.right.static > span {
+  background-color: #f0f0ff;
+}
+.ui.form .wide.field .ui.input .field.static {
+  -webkit-box-flex: 1;
+  -ms-flex: 1 0 auto;
+  flex: 1 0 auto;
+  width: 0;
+}
+
+// Campos bloqueados
+.ui.form {
+
+  .disabled.blocked.field,
+  .disabled.blocked.fields .field,
+  .field :disabled {
+    opacity: 1;
+  }
+
+  .disabled.blocked {
+    &.field > label,
+    &.fields > label {
+      opacity: 1;
+    }
+
+    input:not([type]),
+    input[type=date],
+    input[type=datetime-local],
+    input[type=email],
+    input[type=file],
+    input[type=number],
+    input[type=password],
+    input[type=search],
+    input[type=tel],
+    input[type=text],
+    input[type=time],
+    input[type=url],
+    .selection.dropdown,
+    input.search {
+      background-color: GhostWhite;
+      color: #5C738B;
+
+      &:focus {
+        border-color: #85b7d9;
+      }
+    }
+  }
+}
+
+// Campos de pesquisa desabilitados
+.ui.disabled.search {
+  &.readonly {
+    opacity: 1;
+    background-color: GhostWhite;
+    border: 1px solid rgba(34,36,38,.15);
+    color: #5C738B;
+
+    &:focus {
+      background-color: GhostWhite;
+      color: rgba(0,0,0,.95);
+      border-color: #85b7d9;
+      -webkit-box-shadow: 0 0 0 0 rgba(34,36,38,.35) inset;
+      box-shadow: 0 0 0 0 rgba(34,36,38,.35) inset;
+    }
+  }
+}
+.ui.disabled.selection.dropdown {
+  &:focus-within {
+    border-color: #96c8da;
+    -webkit-box-shadow: 0 2px 3px 0 rgba(34,36,38,.15);
+    box-shadow: 0 2px 3px 0 rgba(34,36,38,.15);
+  }
+}
+
+div.ui.form {
+  > form {
+    > div.fields {
+      &:last-of-type {
+        @media screen and (max-width: 767px) {
+          margin-bottom: 1em !important;
+        }
+      }
+    }
+  }
+}
+
+// Definições especiais
+
+// 1. Deixa o Dropdown com uma cor diferente
+.dropDownLabel {
+  color: rgba(0,0,0,.6) !important;
+  background-color: #e8e8e8 !important;
+}
+.ui.input.readonly .dropDownLabel {
+  background-color: #f0f0ff !important;
+
+  > .dropdown.icon {
+    display: none;
+  }
+}
+// 2. Corrige o wrap em dropdown
+.ui.dropdown > .text,
+.ui.search.dropdown > .text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+.ui.selection.dropdown .menu > .item {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+.ui.selection.dropdown {
+  line-height: 1.1em;
+  padding: .74285714rem 1.8em .60285714em 1em;
+}
+.ui.selection.dropdown .menu > .item {
+  padding: .78571429rem .74285714rem !important;
+}
+// 3. Inclui um alinhamento à direita para um campo input
+input.right {
+  text-align: right !important;
+}
+// 4. Limita o crescimento do formulário
+.module {
+  max-width: 1127px;
+}
+// 5. Inclui um modo somente leitura para campos checkbox
+.ui.checkbox.readonly {
+  input:checked ~ label::before {
+    background: ghostwhite;
+    border-color: rgba(34,36,38,0.15);
+  }
+  input:checked ~ label::after {
+    color: #5C738B;
+  }
+}
+// 6. Inclui ajustes para formulários Mini
+.mini.form .ui.selection.dropdown,
+.mini.form .ui.search.dropdown {
+  font-size: 1em;
+  padding: .67857143em 1.8em .67857143em 0.6em;
+}
+.mini.form .ui.selection.dropdown > .text,
+.mini.form .ui.search.dropdown > .text {
+  font-size: 1em;
+  line-height: 1.21428571em;
+  vertical-align: middle;
+}
+.mini.form .ui.selection.dropdown > input.search,
+.mini.form .ui.search.dropdown > input.search {
+  font-size: 1em;
+  line-height: 1.21428571em;
+  padding: .67857143em 0.6em;
+}
+.mini.form .field > label {
+  font-size: 1em;
+  margin: 0 0 .18571429em 0;
+
+  @media screen and (max-width: 768px) {
+    margin: .38571429em 0 0 0;
+  }
+}
+.mini.form .fields {
+  margin: 0 -.5em 0.5em;
+}
+.mini.form .wide.field .ui.input input {
+  padding: .67857143em 0.6em;
+}
+// 7. Modifica o cabeçalho h4
+h4.ui.header {
+  margin-top: 0.142857em !important;
+}
+
+.ui.table>thead>tr>th.error {
+  color: #980000;
+}
+
+@import 'modules/mailing.scss';

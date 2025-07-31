@@ -1,0 +1,1408 @@
+{% extends 'templates/erp/layout.twig' %}
+{% import "templates/erp/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento de SIM Cards{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.main.basic.segment .searchbar.fields .field.selectbox {
+      flex-grow: 1;
+      min-width: 236px;
+    }
+    .ui.adaptable.dropdown {
+      min-width: 13em;
+    }
+    @media only screen and (min-width: 1268px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+    }
+    @media only screen and (max-width: 767px) {
+      .ui.main.basic.segment .searchbar.fields .field.selectbox {
+        min-width: 136px;
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 100px;
+        width: calc(100% - 47px);
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox input {
+        max-width: calc(100% - 125px);
+      }
+      .field.searchbox .ui.adaptable.dropdown {
+        min-width: 8em;
+      }
+      .field.searchbox .ui.adaptable.dropdown > .text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 5.8em;
+      }
+      .field.searchbox .ui.adaptable.dropdown .menu > .item {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+    @media only screen and (max-width: 350px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox input {
+        max-width: calc(100% - 192px);
+      }
+      .ui.main.basic.segment .searchbar.fields .field.selectbox {
+        max-width: calc(100% - 41px);
+      }
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+    
+    .dataTables_wrapper i.fas {
+      margin: 0 .25rem 0 0;
+      color: #6495ed;
+    }
+
+    // Cores das linhas dos SIM Cards
+    .blocked > td {
+      color: #7f7f7f
+    }
+    .blocked > td {
+      background-color: #fff6f6 !important;
+      color: DarkRed;
+    }
+    tr.blocked:hover > td {
+      background-color: #f6e7e7 !important;
+    }
+    .roundedBorder {
+      border-radius: .28571429rem !important;
+    }
+    .ui.dropdown .menu>.item>.image,
+    .ui.dropdown .menu>.item>img {
+      width: 50px !important;
+      height:16px;
+      margin-top: 0;
+      margin-bottom: 0;
+      padding-right: 5px;
+      border-right: 1px dotted rgba(34,36,38,.15);
+    }
+
+    span.status {
+      display: block;
+      color: white;
+      border-radius: .3em;
+      padding: 0.2em 0.5em;
+      min-width: 5em;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set add = { 'URL': 'ERP\\Devices\\SimCards\\Add', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/simcards.svg', 'SIM Cards') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento dos SIM Cards
+                <div class="sub header">
+                  Permite gerenciar os SIM Cards cadastrados no sistema,
+                  bem como a vinculação do mesmo à um equipamento.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(add.URL, add.method) %}
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Adiciona um SIM Card"
+                      data-position="top left" type="button"
+                      onclick="location.href='{{ path_for(add.URL) }}'">
+                <i class="add icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            <div class="field button">
+              <button class="ui black icon tool button"
+                      data-tooltip="Exibe opções avançadas de filtragem"
+                      data-position="top left" type="button"
+                      onclick="toggleAdditionalFilters(this);">
+                <i class="ellipsis horizontal icon"></i>
+              </button>
+            </div>
+
+            <div class="field selectbox">
+              <select class="ui adaptable selection dropdown"
+                      name="mobileOperatorID" id="mobileOperatorID">
+                <option value="0"{% if simcard.operator.id == 0 %} selected{% endif %}>
+                  Qualquer operadora
+                </option>
+                {% for mobileOperator in mobileOperators %}
+                <option value="{{ mobileOperator.id }}"{% if simcard.operator.id == mobileOperator.id %} selected{% endif %}>
+                  {{ mobileOperator.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="flex">
+            <div class="field selectbox">
+              <select class="ui adaptable selection dropdown"
+                      name="simcardTypeID" id="simcardTypeID">
+                <option value="0"{% if simcard.type.id == 0 %} selected{% endif %}>
+                  Qualquer tipo
+                </option>
+                {% for simcardType in simcardTypes %}
+                <option value="{{ simcardType.id }}"{% if simcard.type.id == simcardType.id %} selected{% endif %}>
+                  {{ simcardType.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite o SIM Card que procura..."
+                       value="{{ simcard.searchValue }}">
+                <select class="ui adaptable selection dropdown button"
+                        id="searchField">
+                  <option value="iccid"{% if simcard.searchField == "iccid" %} selected{% endif %}>
+                    ICCID
+                  </option>
+                  <option value="imsi"{% if simcard.searchField == "imsi" %} selected{% endif %}>
+                    IMSI
+                  </option>
+                  <option value="phoneNumber"{% if simcard.searchField == "phoneNumber" %} selected{% endif %}>
+                    Telefone
+                  </option>
+                  <option value="assetNumber"{% if simcard.searchField == "assetNumber" %} selected{% endif %}>
+                    Número patrimônio
+                  </option>
+                </select>
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza um SIM Card"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início barra adicional de pesquisa -->
+    <div class="ui toggle segment">
+      <div class="ui top black attached label">
+        Filtrar por sua localização física:
+      </div>
+      <div class="inline field">
+        <div class="ui toggle checkbox">
+          <input type="checkbox" name="storageLocation[]" value="Installed"
+                 tabindex="0" class="hidden">
+          <label>Apenas os que estejam instalados</label>
+        </div>
+      </div>
+      <div class="inline field">
+        <div class="ui toggle checkbox">
+          <input type="checkbox" name="storageLocation[]" value="StoredOnDeposit"
+                 tabindex="0" class="hidden">
+          <label>Apenas os que estejam no depósito</label>
+        </div>
+        {% if deposits|length > 1 %}
+        <div class="ui search selection dropdown">
+          <input name="depositID" type="hidden"
+                 value="{{ simcard.deposit.id }}">
+          <i class="dropdown icon"></i>
+          <div class="default text">Informe o depósito</div>
+          <div class="menu">
+          {% for deposit in deposits %}
+            <div class="item" {% if deposit.id == simcard.deposit.id %}selected{% endif %}
+                 data-value="{{ deposit.id }}"
+                 data-text="{{ deposit.name }}">
+              {{ deposit.name }}
+            </div>
+          {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <div class="field static">
+          <span class="lighting">{{ deposits[0].name }}</span>
+          <input name="depositID" type="hidden"
+                 value="{{ deposits[0].id }}">
+        </div>
+        {% endif %}
+      </div>
+      {% if technicians|length > 0 %}
+      <div class="inline field">
+        <div class="ui toggle checkbox">
+          <input type="checkbox" name="storageLocation[]" value="StoredWithTechnician"
+                 tabindex="0" class="hidden">
+          <label>Apenas os que estejam de posse do técnico</label>
+        </div>
+        {% if technicians|length > 1 %}
+        <div class="ui search selection dropdown">
+          <input name="technicianID" type="hidden"
+                 value="{{ simcard.technician.id }}">
+          <i class="dropdown icon"></i>
+          <div class="default text">Informe o técnico</div>
+          <div class="menu">
+          {% for technician in technicians %}
+            <div class="item" {% if technician.id == simcard.technician.id %}selected{% endif %}
+                 data-value="{{ technician.id }}"
+                 data-text="{{ technician.name }}">
+              {{ technician.name }}
+            </div>
+          {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <div class="ui icon disabled inactive input">
+          <input name="technicianName" type="text"
+                 readonly value="{{ technicians[0].name }}">
+          <input name="technicianID" type="hidden"
+                 readonly value="{{ technicians[0].id }}">
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+      {% if serviceProviders|length > 0 %}
+      <div class="inline field">
+        <div class="ui toggle checkbox">
+          <input type="checkbox" name="storageLocation[]" value="StoredWithServiceProvider"
+                 tabindex="0" class="hidden">
+          <label>Apenas os que estejam de posse do prestador de serviços</label>
+        </div>
+        {% if serviceProviders|length > 1 %}
+        <div class="ui search selection dropdown">
+          <input name="serviceProviderID" type="hidden"
+                 value="{{ simcard.serviceProvider.id }}">
+          <i class="dropdown icon"></i>
+          <div class="default text">Informe o prestador de serviços</div>
+          <div class="menu">
+          {% for serviceProvider in serviceProviders %}
+            <div class="item" {% if serviceProvider.id == simcard.serviceProvider.id %}selected{% endif %}
+                 data-value="{{ serviceProvider.id }}"
+                 data-text="{{ serviceProvider.name }}">
+              {{ serviceProvider.name }}
+            </div>
+          {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <div class="ui icon disabled inactive input">
+          <input name="serviceProviderName" type="text"
+                 readonly value="{{ serviceProviders[0].name }}">
+          <input name="serviceProviderID" type="hidden"
+                 readonly value="{{ serviceProviders[0].id }}">
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    <!-- Fim da barra adicional de pesquisa -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID do SIM Card</th>
+          <th>ID do fornecedor</th>
+          <th>Nome do Fornecedor</th>
+          <th>Pessoa Jurídica?</th>
+          <th>ID da unidade/filial do fornecedor</th>
+          <th>Nome fantasia/Apelido</th>
+          <th>ICCID</th>
+          <th>IMSI</th>
+          <th>Telefone</th>
+          <th>Operadora</th>
+          <th>Modelo</th>
+          <th>N&ordm; Patrimônio</th>
+          <th {{ tooltip.add('left', 'Indicador de SIM Card vinculado à um equipamento') }}><i class="linkify icon"></i></th>
+          <th>Equipamento</th>
+          <th {{ tooltip.add('left', 'Slot onde o SIM Card(s) está instalado no equipamento') }}><svg style="position: relative; top: 2px; margin: auto; text-align: center;" width="20px" height="20px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><path d="M9 38.5C7.6 38.5 6.5 37.4 6.5 36V4C6.5 2.6 7.6 1.5 9 1.5h13.8c0.7 0 1.3 0.3 1.8 0.7l8.2 8.2C33.2 10.9 33.5 11.6 33.5 12.2V36c0 1.4-1.1 2.5-2.5 2.5z" fill="#98ccfd"/><path d="m22.8 2c0.5 0 1 0.2 1.4 0.6l8.2 8.2C32.8 11.2 33 11.7 33 12.2V36c0 1.1-0.9 2-2 2H9C7.9 38 7 37.1 7 36V4C7 2.9 7.9 2 9 2h13.8m0-1H9C7.3 1 6 2.3 6 4v32c0 1.7 1.3 3 3 3h22c1.7 0 3-1.3 3-3V12.2c0-0.8-0.3-1.6-0.9-2.1L24.9 1.9C24.3 1.3 23.6 1 22.8 1Z" fill="#2a5b8a"/><text y="31.1" x="20" style="-inkscape-font-specification:\'Cantarell, Bold\';font-family:Cantarell;font-feature-settings:normal;font-size:30px;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;font-weight:bold;letter-spacing:0px;line-height:1;text-align:center;text-anchor:middle;word-spacing:0px"><tspan y="31.1" x="20">?</tspan></text></svg></th>
+          <th>IMEI</th>
+          <th {{ tooltip.add('left', 'Permite visualizar o histórico de movimentos do SIM Card') }}><i class="history icon"></i></th>
+          <th>Situação</th>
+          <th {{ tooltip.add('left', 'Indicador de simcard em comodato') }}><i class="hands helping icon"></i></th>
+          <th {{ tooltip.add('left', 'Permite gerar um PDF para impressão dos dados cadastrais do SIM Card') }}><i class="file pdf icon"></i></th>
+          <th {{ tooltip.add('left', 'Indicador de SIM Card bloqueado para uso no sistema') }}><i class="lock darkred icon"></i></th>
+          <th>Bloqueio da Unidade/filial</th>
+          <th>Bloqueio do Fornecedor</th>
+          <th>Bloqueio do SIM Card</th>
+          <th {{ tooltip.add('left', 'Permite remover o SIM Card') }}><i class="remove darkred icon"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/info.twig' %}
+  {% include 'templates/erp/partials/dialogs/interaction.twig' %}
+  {% include 'templates/erp/partials/dialogs/question.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/AttachedFormatter.min.js') }}
+  {{ lib('datatables/formatters/IconFormatter.min.js') }}
+  {{ lib('datatables/formatters/ImageFormatter.min.js') }}
+  {{ lib('datatables/formatters/DeleteFormatter.min.js') }}
+  
+  {% set getData       = { 'URL': 'ERP\\Devices\\SimCards\\Get', 'method': 'PATCH' } %}
+  {% set edit          = { 'URL': 'ERP\\Devices\\SimCards\\Edit', 'method': 'GET' } %}
+  {% set history       = { 'URL': 'ERP\\Devices\\SimCards\\History', 'method': 'GET' } %}
+  {% set getPDF        = { 'URL': 'ERP\\Devices\\SimCards\\Get\\PDF', 'method': 'GET' } %}
+  {% set toggleBlocked = { 'URL': 'ERP\\Devices\\SimCards\\ToggleBlocked', 'method': 'PUT' } %}
+  {% set remove        = { 'URL': 'ERP\\Devices\\SimCards\\Delete', 'method': 'DELETE' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      table,
+      SimCardSVG = '<svg style="position: relative; top: 2px; margin: auto; text-align: center;" width="20px" height="20px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><path d="M9 38.5C7.6 38.5 6.5 37.4 6.5 36V4C6.5 2.6 7.6 1.5 9 1.5h13.8c0.7 0 1.3 0.3 1.8 0.7l8.2 8.2C33.2 10.9 33.5 11.6 33.5 12.2V36c0 1.4-1.1 2.5-2.5 2.5z" fill="#c1#"/><path d="m22.8 2c0.5 0 1 0.2 1.4 0.6l8.2 8.2C32.8 11.2 33 11.7 33 12.2V36c0 1.1-0.9 2-2 2H9C7.9 38 7 37.1 7 36V4C7 2.9 7.9 2 9 2h13.8m0-1H9C7.3 1 6 2.3 6 4v32c0 1.7 1.3 3 3 3h22c1.7 0 3-1.3 3-3V12.2c0-0.8-0.3-1.6-0.9-2.1L24.9 1.9C24.3 1.3 23.6 1 22.8 1Z" fill="#c2#"/><text y="31.1" x="20" style="-inkscape-font-specification:\'Cantarell, Bold\';font-family:Cantarell;font-feature-settings:normal;font-size:30px;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;font-weight:bold;letter-spacing:0px;line-height:1;text-align:center;text-anchor:middle;word-spacing:0px"><tspan y="31.1" x="20">#count#</tspan></text></svg>'
+    ;
+
+    // O template de desinstalação
+    {% set uninstallTemplate %}
+      {% include 'erp/devices/simcards/uninstalldialog.twig' with { deposits: deposits, groupid: authorization.user.groupid, defaultDepositID: defaultDepositID, technicians: technicians }  %}
+    {% endset %}
+    var
+      uninstallTemplate = '{{ uninstallTemplate|escape('js') }}'.replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+    ;
+
+    // Os formatadores de colunas
+
+    // Um formatador de colunas para exibir a existência de SIM Cards
+    // associados e permitir o controle sobre sua exibição
+    var simcardFormatter = function ( value, type, row, meta ) {
+      var
+        blue1 = '#98ccfd',
+        blue2 = '#2a5b8a',
+        gray1 = '#cccccc',
+        gray2 = '#4d4d4d',
+        tooltip
+      ;
+      
+      if (value > 0) {
+        tooltip = "Instalado no slot " + value + " deste equipamento.";
+
+        return '<span data-position="left center"' +
+                     'data-blue data-inverted ' +
+                     'data-tooltip="' + tooltip + '">' +
+                 SimCardSVG.replace('#c1#', blue1).replace('#c2#', blue2).replace('#count#', value) +
+               '</span>';
+      }
+      
+      tooltip = "Não está associado a nenhum equipamento.";
+
+      return '<span data-position="left center"' +
+                   'data-blue data-inverted ' +
+                   'data-tooltip="' + tooltip + '">' +
+               SimCardSVG.replace('#c1#', gray1).replace('#c2#', gray2).replace('#count#', '-') +
+             '</span>';
+    };
+
+    // Um formatador para exibir um ícone indicativo de que o SIM Card
+    // está ou não bloqueado
+    var blockedFormatter = function ( value, type, row, meta ) {
+      var buildIcon = function (color, icon, title) {
+        return '<span data-position="left center"' +
+                     'data-blue data-inverted ' +
+                     'data-tooltip="' + title + '">' +
+                 '<i class="' + icon + ' ' + color + ' icon">' +
+                 '</i>' +
+               '</span>';
+      };
+
+      switch (value) {
+        case 1:
+          // Apenas o SIM Card está bloqueado
+          return buildIcon('lock', 'darkred', ''
+            + 'Este SIM Card está bloqueado para uso')
+          ;
+        case 2:
+          // Apenas a unidade/filial do fornecedor está bloqueada
+          return buildIcon('lock', 'darkorange', ''
+            + 'Este SIM Card está bloqueado para uso em função do '
+            + 'bloqueio na conta da unidade/filial do fornecedor')
+          ;
+        case 3:
+          // Tanto o SIM Card quanto a unidade/filial do fornecedor
+          // estão bloqueados
+          return buildIcon('lock', 'darkred', ''
+            + 'As contas da unidade/filial do fornecedor e este '
+            + 'SIM Card estão bloqueados')
+          ;
+        case 4:
+          // Apenas o fornecedor está bloqueado
+          return buildIcon('lock', 'darkorange', ''
+            + 'Este SIM Card está bloqueado para uso em função do '
+            + 'bloqueio na conta do fornecedor')
+          ;
+        case 5:
+          // Tanto a empresa/fornecedor quanto o SIM Card estão
+          // bloqueados
+          return buildIcon('lock', 'darkred', ''
+            + 'As contas do fornecedor e este SIM Card estão '
+            + 'bloqueados')
+          ;
+        case 6:
+          // Tanto a empresa/fornecedor quanto sua unidade/filial estão
+          // bloqueados
+          return buildIcon('lock', 'darkorange', ''
+            + 'Este SIM Card está bloqueado para uso em função do '
+            + 'bloqueio tanto na conta do fornecedor quanto de sua '
+            + 'unidade/filial')
+          ;
+        case 7:
+          // Tanto a empresa/fornecedor quanto sua unidade/filial e o
+          // SIM Card estão bloqueados
+          return buildIcon('lock', 'darkred', ''
+            + 'As contas do fornecedor, da unidade/filial e este '
+            + 'SIM Card estão bloqueados')
+          ;
+        case 8:
+          // O contratante está bloqueado
+          return buildIcon('lock', 'darkorange', ''
+            + 'Este SIM Card está bloqueado para uso em função do '
+            + 'bloqueio na conta do contratante')
+          ;
+        case 9:
+          // Tanto o contratante quanto o SIM Card estão bloqueados
+          return buildIcon('lock', 'darkred', ''
+            + 'As contas do contratante e este SIM Card estão '
+            + 'bloqueados')
+          ;
+        case 10:
+          // Tanto o contratante quanto a unidade/filial do fornecedor
+          // estão bloqueados
+          return buildIcon('lock', 'darkorange', ''
+            + 'Este SIM Card está bloqueado para uso em função do '
+            + 'bloqueio tanto na conta do contratante quanto da '
+            + 'unidade/filial do fornecedor')
+          ;
+        case 11:
+          // Tanto o contratante quanto a unidade/filial do fornecedor e
+          // o SIM Card estão bloqueados
+          return buildIcon('lock', 'darkred', ''
+            + 'As contas do contratante, da unidade/filial do '
+            + 'fornecedor e este SIM Card estão bloqueados')
+          ;
+        case 12:
+          // Tanto o contratante quanto o fornecedor estão bloqueados
+          return buildIcon('lock', 'darkorange', ''
+            + 'Este SIM Card está bloqueado para uso em função dos '
+            + 'bloqueios tanto na conta do contratante quanto na do '
+            + 'fornecedor')
+          ;
+        case 13:
+          // Tanto o contratante quanto a empresa/fornecedor e o
+          // SIM Card estão bloqueados
+          return buildIcon('lock', 'darkred', ''
+            + 'As contas do contratante, do fornecedor e este '
+            + 'SIM Card estão bloqueados');
+        case 14:
+          // Tanto o contratante, quanto a empresa/fornecedor e a sua
+          // unidade/filial estão bloqueados
+          return buildIcon('lock', 'darkorange', ''
+            + 'Este SIM Card está bloqueado para uso em função dos '
+            + 'bloqueios tanto na conta do contratante quanto na do '
+            + 'fornecedor e também no da unidade/filial deste '
+            + 'fornecedor')
+          ;
+        case 15:
+          // Todos estão bloqueados (contratante, empresa/fornecedora,
+          // unidade/filial da empresa/fornecedora e o SIM Card)
+          return buildIcon('lock', 'darkred', ''
+            + 'As contas do contratante, fornecedor, unidade/filial e '
+            + 'este SIM Card estão bloqueados')
+          ;
+        default:
+          // Está livre
+          return buildIcon('unlock', 'lightgrey', ''
+            + 'A conta deste SIM Card está liberada')
+          ;
+      }
+    };
+
+    // Um formatador de colunas para exibir a situação de um simcard
+    var stateFormatter = function ( value, type, row, meta ) {
+      if (row.leasedingsimcard) {
+        return ''
+          + '<span class="status" style="background-color: darkorange;">'
+          +   '<i class="hands helping icon"></i> Comodato'
+          + '</span>'
+        ;
+      }
+
+      return '';
+    };
+
+    // Um formatador de colunas para exibir a existência de comodato
+    var leasedFormatter = function ( value, type, row, meta ) {
+      const buildIcon = function (color, icon, title) {
+        return '<span data-position="left center"' +
+                     'data-blue data-inverted ' +
+                     'data-tooltip="' + title + '">' +
+                 '<i class="hands helping ' + color + ' icon">' +
+                 '</i>' +
+               '</span>';
+      };
+      const color = value == true ? 'darkorange' : 'lightgrey';
+      const title = value == true ? 'Este SIM Card está em comodato' : 'Este SIM Card não está em comodato';
+
+      return buildIcon(color, 'icon', title);
+    };
+
+    // Sobrescreve o tratamento de erros
+    $.fn.dataTable.ext.errMode = function ( settings, helpPage, message ) {
+      var
+        errorMessage = ''
+      ;
+
+      if (typeof(message) != 'undefined' && message != null) {
+        if (message.length > 38) {
+          // Exibe a mensagem de erro
+          errorMessage = message.substring(38);
+        }
+      }
+
+      if (errorMessage === 'Não temos SIM Cards cadastrados.') {
+        // Não faz nada
+      } else {
+        // Exibe a mensagem de erro
+        if (errorMessage.length > 0) {
+          warningDialog('Desculpe', errorMessage);
+        }
+      }
+    };
+
+    $(document).ready(function() {
+      var
+        groupColumn    = 2,
+        subgroupColumn = 5
+      ;
+
+      // --------------------------------[ Componentes da Searchbar ]---
+      $('.searchbar .ui.dropdown')
+        .dropdown()
+      ;
+      $('.toggle .ui.checkbox')
+        .checkbox()
+      ;
+      $('.toggle .ui.dropdown')
+        .dropdown()
+      ;
+      $("input[name='simcardTypeID']")
+        .change(simcardTypeHandler)
+      ;
+      $("input[name='mobileOperatorID']")
+        .change(mobileOperatorHandler)
+      ;
+      $("input[name*='storageLocation']")
+        .change(storageLocationHandler)
+      ;
+      $('#searchValue').keypress(function(e) {
+        if(e.which == 13) {
+          searchLoad();
+        }
+      });
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "id",
+            "data": "id",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "supplierid",
+            "data": "supplierid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 2,
+            "name": "supplier.name",
+            "data": "suppliername",
+            "visible": false },
+          { "targets": 3,
+            "name": "juridicalperson",
+            "data": "juridicalperson",
+            "visible": false },
+          { "targets": 4,
+            "name": "subsidiaryid",
+            "data": "subsidiaryid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 5,
+            "name": "subsidiaries.name",
+            "data": "subsidiaryname",
+            "visible": false },
+          { "targets": 6,
+            "name": "supplier.name, subsidiary.name, simcards.iccid",
+            "data": "iccid",
+            "visible": true,
+            "orderable": true },
+          { "targets": 7,
+            "name": "supplier.name, subsidiary.name, simcards.imsi",
+            "data": "imsi",
+            "visible": true,
+            "width": "150px",
+            "orderable": true },
+          { "targets": 8,
+            "name": "supplier.name, subsidiary.name, simcards.phonenumber",
+            "data": "phonenumber",
+            "visible": true,
+            "width": "100px",
+            "orderable": true },
+          { "targets": 9,
+            "name": "supplier.name, subsidiary.name, simcards.mobileoperatorname",
+            "data": "mobileoperatorlogo",
+            "visible": true,
+            "orderable": false,
+            "width": "50px",
+            "render": imageFormatter(50, 16) },
+          { "targets": 10,
+            "name": "supplier.name, subsidiary.name, simcardtypes.name",
+            "data": "simcardtypename",
+            "visible": true,
+            "width": "100px",
+            "orderable": true },
+          { "targets": 11,
+            "name": "supplier.name, subsidiary.name, simcards.assetnumber",
+            "data": "assetnumber",
+            "visible": true,
+            "width": "100px",
+            "orderable": true },
+          { "targets": 12,
+            "name": "attached",
+            "data": "attached",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": attachedFormatter("Este SIM Card está vinculado à um equipamento", "Este SIM Card não está em uso") },
+          { "targets": 13,
+            "name": "serialnumber",
+            "data": "serialnumber",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "80px" },
+          { "targets": 14,
+            "name": "slotnumber",
+            "data": "slotnumber",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": simcardFormatter },
+          { "targets": 15,
+            "name": "imei",
+            "data": "imei",
+            "className": "dt-center",
+            "visible": false,
+            "orderable": false },
+          { "targets": 16,
+            "name": "history",
+            "data": "id",
+            "className": "dt-center",
+            "visible": {% if authorization.getAuthorizationFor(history.URL, history.method) %}true{% else %}false{% endif %},
+            "orderable": false,
+            "width": "10px",
+            "render": iconFormatter("history", "black", "Permite visualizar os movimentos realizados neste SIM Card") },
+          { "targets": 17,
+            "name": "leasedingsimcard",
+            "data": "leasedingsimcard",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": stateFormatter },
+          { "targets": 18,
+            "name": "leasedsimcard",
+            "data": "leasedsimcard",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": leasedFormatter },
+          { "targets": 19,
+            "name": "pdf",
+            "data": "id",
+            "className": "dt-center",
+            "visible": {% if authorization.getAuthorizationFor(getPDF.URL, getPDF.method) %}true{% else %}false{% endif %},
+            "orderable": false,
+            "width": "10px",
+            "render": iconFormatter("file pdf", "black", "Permite gerar um PDF para impressão dos dados cadastrais deste SIM Card") },
+          { "targets": 20,
+            "name": "blockedlevel",
+            "data": "blockedlevel",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": blockedFormatter },
+          { "targets": 21,
+            "name": "subsidiaryblocked",
+            "data": "subsidiaryblocked",
+            "className": "dt-center",
+            "visible": false,
+            "orderable": false },
+          { "targets": 22,
+            "name": "supplierblocked",
+            "data": "supplierblocked",
+            "className": "dt-center",
+            "visible": false,
+            "orderable": false },
+          { "targets": 23,
+            "name": "simcardblocked",
+            "data": "simcardblocked",
+            "className": "dt-center",
+            "visible": false,
+            "orderable": false },
+          { "targets": 24,
+            "name": "delete",
+            "data": "id",
+            "visible": {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}true{% else %}false{% endif %},
+            "orderable": false,
+            "width": "10px",
+            "render": deleteFormatter("Remover este SIM Card") }
+        ],
+        order: [[ 6, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.searchField      = $('#searchField').val();
+            params.searchValue      = $('#searchValue').val();
+            params.simcardTypeID    = $('#simcardTypeID').val();
+            params.mobileOperatorID = $('#mobileOperatorID').val();
+
+            params.storageLocation   = $('input[name="storageLocation[]"]:checked').val();
+            if (typeof params.storageLocation === 'undefined') {
+              params.storageLocation = 'Any';
+            }
+
+            params.depositID        = $('input[name="depositID"]').val();
+            if (typeof params.depositID === 'undefined') {
+              params.depositID = 0;
+            }
+            
+            params.technicianID     = $('input[name="technicianID"]').val();
+            if (typeof params.technicianID === 'undefined') {
+              params.technicianID = 0;
+            }
+
+            params.serviceProviderID = $('input[name="serviceProviderID"]').val();
+            if (typeof params.serviceProviderID === 'undefined') {
+              params.serviceProviderID = 0;
+            }
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+
+          // Agrupamento de linhas
+          var
+            api          = this.api(),
+            rows         = api.rows( {page:'current'} ).nodes(),
+            lastGroup    = null,
+            lastSubGroup = null
+          ;
+          {% set colspan = 11 %}
+          {% if authorization.getAuthorizationFor(history.URL, history.method) %}
+          {% set colspan = colspan + 1 %}
+          {% endif %}
+
+          api.column(groupColumn, {page:'current'} ).data().each(function( group, i ) {
+            var
+              addSubGroupRow = false
+            ;
+
+            if (lastGroup !== group) {
+              // Informações do fornecedor
+
+              // Primeiramente, cria as novas colunas com seus respectivos
+              // eventos de click
+              
+              // 1. Coluna expandida com os dados do fornecedor
+              var
+                groupedCellData = ''
+                  + '<span {{ tooltip.add("right", "Fornecedor") }}>'
+                  +   '<i class="fas fa-truck-loading"></i> '
+                  + '</span>' + group,
+                $column1 = $("<td colspan='{{ colspan }}'>")
+                  .html(groupedCellData)
+                  .css("font-weight", "600")
+              ;
+
+              // 2. Coluna com o acesso ao PDF
+              {% if authorization.getAuthorizationFor(getPDF.URL, getPDF.method) %}
+              var
+                PDFCellData = iconTitleFormatter("file pdf", "black",
+                  "Permite gerar um PDF para impressão da relação " +
+                  "de SIM Cards deste fornecedor"),
+                $column2 = $("<td>")
+                  .html(PDFCellData)
+                  .prop('supplierID', rows.data()[i].supplierid)
+                  .on("click", function (event) {
+                    // Gera um PDF com a relação de SIM Cards deste fornecedor
+                    var
+                      supplierID   = $(this).prop('supplierID'),
+                      subsidiaryID = 'any'
+                    ;
+                    const
+                      url = "{{ buildURL(getPDF.URL, {'supplierID': 'supplierID', 'subsidiaryID': 'subsidiaryID'}) }}"
+                    ;
+                    
+                    window.open(url, '_blank');
+                  })
+              ;
+              {% else %}
+              var
+                $column2 = ''
+              ;
+              {% endif %}
+
+              // 3. Coluna com informações de bloqueio
+              var
+                blockedCellData =  iconTitleFormatter("unlock", "lightgrey",
+                  "O fornecedor está liberado")
+              ;
+
+              if (rows.data()[i].supplierblocked) {
+                blockedCellData =  iconTitleFormatter("lock", "darkred",
+                  "O fornecedor está bloqueado");
+              }
+
+              var
+                $column3 = $("<td>")
+                  .html(blockedCellData)
+              ;
+
+              // 4. Coluna com o acesso à remoção
+              {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}
+              var
+                deleteCellData = iconTitleFormatter("minus", "lightgrey", ""),
+                $column4 = $("<td>")
+                  .html(deleteCellData)
+              ;
+              {% else %}
+              var
+                $column4 = ''
+              ;
+              {% endif %}
+
+              // Adiciona uma nova linha e, internamente, as colunas
+              var
+                $newRow = $("<tr>")
+                  .addClass('group')
+                  .append($column1)
+                  .append($column2)
+                  .append($column3)
+                  .append($column4)
+              ;
+
+              // Altera a cor da linha em função de bloqueio
+              if (rows.data()[i].blockedlevel > 3) {
+                // Sinalizamos o bloqueio
+                $newRow.addClass('blocked');
+              }
+
+              // Adiciona a nova linha de agrupamento antes da linha atual
+              $(rows)
+                .eq( i )
+                .before(
+                  $newRow
+                )
+              ;
+
+              lastGroup = group;
+              addSubGroupRow = true;
+            }
+            if ((lastSubGroup !== rows.data()[i].subsidiaryname) ||
+                (addSubGroupRow)) {
+              // Informações da unidade/filial do fornecedor
+
+              // Primeiramente, cria as novas colunas com seus respectivos
+              // eventos de click
+              
+              // 1. Coluna expandida com os dados da unidade/filial
+              var
+                personIcon = 'universal access',
+                person     = 'titular',
+                gender     = 'O'
+              ;
+
+              if (rows.data()[i].juridicalperson) {
+                personIcon = 'plus square';
+                person     = 'unidade/filial';
+                gender     = 'A';
+              }
+
+              var
+                groupedCellData = ''
+                  + '<span {{ tooltip.add("right", "' + gender + ' '
+                  + person + ' do fornecedor") }}>'
+                  +   '<i class="' + personIcon + ' blue icon"></i>'
+                  + '</span>'
+                  + rows.data()[i].subsidiaryname,
+                $column1 = $("<td colspan='{{ colspan }}'>")
+                  .html(groupedCellData)
+                  .css("font-weight", "600")
+              ;
+
+              // 2. Coluna com o acesso ao PDF
+              {% if authorization.getAuthorizationFor(getPDF.URL, getPDF.method) %}
+              var
+                genderAlt   = (gender === 'O')? 'E':gender,
+                PDFCellData = iconTitleFormatter("file pdf", "black",
+                  "Permite gerar um PDF para impressão da relação " +
+                  "de SIM Cards dest" + genderAlt.toLowerCase() + " " +
+                  person + " do fornecedor"),
+                $column2 = $("<td>")
+                  .html(PDFCellData)
+                  .prop('supplierID', rows.data()[i].supplierid)
+                  .prop('subsidiaryID', rows.data()[i].subsidiaryid)
+                  .on("click", function (event) {
+                    // Gera um PDF com a relação de SIM Cards da
+                    // unidade/filial deste fornecedor
+                    var
+                      supplierID   = $(this).prop('supplierID'),
+                      subsidiaryID = $(this).prop('subsidiaryID')
+                    ;
+                    const
+                      url = "{{ buildURL(getPDF.URL, {'supplierID': 'supplierID', 'subsidiaryID': 'subsidiaryID'}) }}"
+                    ;
+                    
+                    window.open(url, '_blank');
+                  })
+              ;
+              {% else %}
+              var
+                $column2 = ''
+              ;
+              {% endif %}
+
+              // 3. Coluna com informações de bloqueio
+              var
+                blockedCellData =  iconTitleFormatter("unlock", "lightgrey",
+                  gender + " " + person + " está liberad" +
+                  gender.toLowerCase())
+              ;
+
+              if (rows.data()[i].subsidiaryblocked) {
+                blockedCellData =  iconTitleFormatter("lock", "darkred",
+                  gender + " " + person + " está bloquead" +
+                  gender.toLowerCase());
+              } else {
+                if (rows.data()[i].supplierblocked) {
+                  blockedCellData =  iconTitleFormatter("lock", "darkorange",
+                    gender + " " + person + " está bloquead" +
+                    gender.toLowerCase() + " em função do bloqueio " +
+                    "na conta do fornecedor");
+                }
+              }
+
+              var
+                $column3 = $("<td>")
+                  .html(blockedCellData)
+              ;
+
+              // 4. Coluna com o acesso à remoção
+              {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}
+              var
+                deleteCellData = iconTitleFormatter("minus", "lightgrey", ""),
+                $column4 = $("<td>")
+                  .html(deleteCellData)
+              ;
+              {% else %}
+              var
+                $column4 = ''
+              ;
+              {% endif %}
+
+              // Adiciona uma nova linha e, internamente, as colunas
+              var
+                $newRow = $("<tr>")
+                  .addClass('group')
+                  .append($column1)
+                  .append($column2)
+                  .append($column3)
+                  .append($column4)
+              ;
+
+              // Altera a cor da linha em função de bloqueio
+              if (rows.data()[i].blockedlevel > 1) {
+                // Sinalizamos o bloqueio
+                $newRow.addClass('blocked');
+              }
+
+              // Adiciona a nova linha de agrupamento antes da linha
+              // atual
+              $(rows)
+                .eq( i )
+                .before(
+                  $newRow
+                )
+              ;
+
+              lastSubGroup = rows.data()[i].subsidiaryname;
+            }
+          } );
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        createdRow: function(row, data, dataIndex) {
+          if (data.leasedingsimcard) {
+            $(row)
+              .addClass('broked')
+            ;
+          } else {
+            // Deixa as linhas com cores diferentes para indicar os
+            // bloqueios de SIM Cards
+            if (data.blockedlevel > 0) {
+              $(row)
+                .addClass('blocked')
+              ;
+            }
+          }
+        }
+      });
+
+      // Manipula os eventos de click
+      table
+        .on('user-select', function (e, dt, type, cell, originalEvent) {
+          if (type === 'cell') {
+            var
+              // Recupera os dados da célula selecionada
+              index   = cell[0][0],
+
+              // Recupera os dados do SIM Card selecionado
+              simcard = dt.rows( index.row ).data().toArray()[0]
+            ;
+
+            // Em função da coluna onde ocorreu o clique, executa a ação
+            // correspondente
+            switch (index.column) {
+              case 16:
+                {% if authorization.getAuthorizationFor(history.URL, history.method) %}
+                // Exibe as informações de histórico de movimentações do
+                // SIM Card
+                window.location.href = "{{ buildURL(history.URL, {'simcardID': 'simcard.id'}) }}";
+                {% endif %}
+
+                break;
+              case 19:
+                {% if authorization.getAuthorizationFor(getPDF.URL, getPDF.method) %}
+                // Gera um PDF com as informações do SIM Card
+                var
+                  supplierID   = simcard.supplierid,
+                  subsidiaryID = simcard.subsidiaryid,
+                  simcardID    = simcard.id,
+                  url          = "{{ buildURL(getPDF.URL, {'supplierID': 'supplierID', 'subsidiaryID': 'subsidiaryID', 'simcardID': 'simcardID'}) }}"
+                ;
+
+                window.open(url, '_blank');
+                {% endif %}
+
+                break;
+              case 20:
+                {% if authorization.getAuthorizationFor(toggleBlocked.URL, toggleBlocked.method) %}
+                // Alterna o bloqueio do SIM Card
+                var
+                  // Determina a ação a ser realizada
+                  action = simcard.simcardblocked
+                    ? "ativar"
+                    : "inativar"
+                ;
+
+                if (simcard.attached) {
+                  infoDialog(
+                    action.charAt(0).toUpperCase() + action.slice(1),
+                    'Você não pode ' + action + ' o SIM Card ICCID <b>&ldquo;' +
+                    simcard.iccid + '&rdquo;</b> pertencente à <b>&ldquo;' +
+                    simcard.suppliername + '&rdquo;</b> pois o mesmo ' +
+                    'encontra-se instalado em um equipamento.');
+                } else {
+                  questionDialog(
+                    action.charAt(0).toUpperCase() + action.slice(1),
+                    'Você deseja realmente ' + action + ' o SIM Card ICCID ' +
+                    '<b>&ldquo;' + simcard.iccid + '&rdquo;</b> pertencente ' +
+                    'à <b>&ldquo;' + simcard.suppliername + '&rdquo;</b>?',
+                    function() {
+                      // Alternar o bloqueio do SIM Card
+                      var
+                        url  = "{{ buildURL(toggleBlocked.URL, {'simcardID': 'simcard.id'}) }}"
+                      ;
+
+                      putJSONData(url, [],
+                      function (data, params, message) {
+                        // Atualiza a tabela
+                        searchLoad();
+                      });
+                    },
+                    function() {
+                      table
+                        .rows()
+                        .deselect()
+                      ;
+                      table
+                        .draw('page')
+                      ;
+                    });
+                }
+                {% endif %}
+
+                break;
+              case 24:
+                {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}
+                // Apaga o SIM Card selecionado
+                if (simcard.attached) {
+                  infoDialog(
+                    'Remover SIM Card',
+                    'Você não pode remover o SIM Card ICCID <b>&ldquo;' +
+                    simcard.iccid + '&rdquo;</b> pertencente à <b>&ldquo;' +
+                    simcard.suppliername + '&rdquo;</b> pois o mesmo ' +
+                    'encontra-se instalado em um equipamento.');
+                } else {
+                  questionDialog(
+                    'Remover SIM Card',
+                    'Você deseja realmente remover o SIM Card ICCID <b>&ldquo;' +
+                    simcard.iccid + '&rdquo;</b> pertencente à <b>&ldquo;' +
+                    simcard.suppliername + '&rdquo;</b>? Esta ação não poderá ser desfeita.',
+                    function() {
+                      // Remove o SIM Card selecionado
+                      var
+                        url  = "{{ buildURL(remove.URL, {'simcardID': 'simcard.id'}) }}"
+                      ;
+
+                      deleteJSONData(url, [],
+                      function (data, params, message) {
+                        // Atualiza a tabela
+                        searchLoad();
+                      });
+                    },
+                    function() {
+                      table
+                        .rows()
+                        .deselect()
+                      ;
+                      table
+                        .draw('page')
+                      ;
+                    })
+                  ;
+                }
+                {% endif %}
+
+                break;
+              default:
+                {% if authorization.getAuthorizationFor(edit.URL, edit.method) %}
+                // Coloca o SIM Card em edição
+                window.location.href = "{{ buildURL(edit.URL, {'simcardID': 'simcard.id'}) }}";
+                {% endif %}
+            }
+
+            e.preventDefault();
+          }
+        })
+      ;
+
+      // Força a atualização da tabela para reajustar as colunas após
+      // a carga
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 1500);
+    });
+
+
+    // ================================================[ Handlers ]=====
+
+    // Faz o tratamento da seleção do modelo de SIM Card
+    function simcardTypeHandler() {
+      searchLoad();
+    }
+
+    // Faz o tratamento da seleção da operadora de telefonia móvel
+    function mobileOperatorHandler() {
+      searchLoad();
+    }
+
+    // Controla a exibição de opções adicionais de filtragem
+    function toggleAdditionalFilters(element) {
+      var
+        $button = $(element)
+      ;
+
+      $button
+        .toggleClass('grey')
+        .toggleClass('green')
+      ;
+      $('.toggle.segment')
+        .toggle('active')
+      ;
+    }
+
+    // Controla a seleção única de um local de armazenamento, bem como
+    // dos campos indicativos do local (depósito, técnico, etc)
+    function storageLocationHandler(e) {
+      var
+        $toggledCheckBox = $(this),
+        selector         = $("input[name*='storageLocation']")
+      ;
+
+      // Desabilitamos os demais campos
+      $(selector)
+        .not($toggledCheckBox)
+        .prop('checked',false)
+        .closest('.inline.field')
+        .children('.icon.input')
+        .addClass('disabled')
+        .children('input')
+        .prop("readonly", true)
+      ;
+      $(selector)
+        .not($toggledCheckBox)
+        .closest('.inline.field')
+        .find('.search.selection.dropdown')
+        .addClass("disabled")
+        .addClass("readonly")
+        .find('input.search')
+        .prop('readonly', true)
+      ;
+      
+      // Lidamos com o ativo      
+      if ($toggledCheckBox.prop("checked")) {
+        $toggledCheckBox
+          .closest('.inline.field')
+          .children('.icon.input')
+          .removeClass('disabled')
+          .not('.inactive')
+          .children('input')
+          .prop("readonly", false)
+        ;
+        $toggledCheckBox
+          .closest('.inline.field')
+          .find('.search.selection.dropdown')
+          .removeClass("disabled")
+          .removeClass("readonly")
+          .find('input.search')
+          .prop('readonly', false)
+        ;
+      }
+    }
+
+    // Executa a pesquisa
+    function searchLoad() {
+      table
+        .ajax
+        .reload()
+      ;
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 500);
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

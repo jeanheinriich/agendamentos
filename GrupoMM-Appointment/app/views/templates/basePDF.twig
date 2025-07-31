@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8"/>
+
+    <title>
+      {% block title %}
+        {% if CurrentURL starts with '/adm' %}
+        Administração do TrackerERP
+        {% else %}
+          {% if CurrentURL starts with '/erp' %}
+          TrackerERP
+          {% else %}
+          Grupo M&amp;M
+          {% endif %}
+        {% endif %}
+      {% endblock %}
+    </title>
+    
+    {% block stylesheets %}
+      {{ css('pdf.min.css') }}
+    {% endblock stylesheets %}
+  </head>
+  <body>
+    {% block content %}
+    {% endblock content %}
+  </body>
+</html>

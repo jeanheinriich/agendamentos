@@ -1,0 +1,646 @@
+{% extends 'templates/stc/layout.twig' %}
+{% block title %}{{ parent() }} - Sincronizar dados de motoristas no equipamento de rastreamento{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('form.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    .ui.dropdown .menu>.item>.image,
+    .ui.dropdown .menu>.item>img {
+      width: 50px !important;
+      height:16px;
+      margin-top: 0;
+      margin-bottom: 0;
+      padding-right: 5px;
+      border-right: 1px dotted rgba(34,36,38,.15);
+    }
+
+    .ui.dropdown .menu .actual.item {
+      background: rgba(0,0,0,.03);
+      background: GhostWhite;
+      color: DodgerBlue;
+    }
+
+    .ui.dropdown .menu .item span.description {
+      font-style: italic;
+    }
+
+    .ui.dropdown .menu .actual.item span.description {
+      color: LightSteelBlue;
+    }
+
+    @media only screen and (max-width: 767.98px) and (min-width: 320px) {
+      .ui.grid>[class*="four wide mobile"].column {
+        padding-right: 0;
+      }
+    }
+
+    @media only screen and (min-width: 767.99px) and (max-width: 900px) {
+      .ui.vertical.steps .step:first-child,
+      .ui.vertical.steps .step {
+        padding: 1.14285714em 0.5em;
+      }
+    }
+
+    @media only screen and (max-width: 767.98px) {
+      .ui.vertical.steps .step:first-child,
+      .ui.vertical.steps .step {
+        padding: 1.14285714em 0.5em;
+      }
+    }
+
+    .ui.steps .abort.step,
+    .ui.steps .abort.step .description,
+    .ui.steps .abort.step .title {
+      color: #980000;
+    }
+    .ui.steps .abort.step {
+      background-color: #98000018;
+      border: 1px solid #98000055;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set URL = 'STC\\Cadastre\\Equipments\\Drivers\\Synchronize' %}
+  {% set previous = 'STC\\Cadastre\\Equipments' %}
+  {% if authorization.getAuthorizationFor(URL, 'GET') %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('stc/syncdrivers.svg', 'Sincronizar dados de motoristas no equipamento de rastreamento') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if editMode %}
+                Sincronizar dados de motoristas no equipamento de rastreamento
+                <div class="sub header">
+                  Permite verificar e sincronizar os dados de motoristas
+                  cadastrados no teclado acoplado ao equipamento de
+                  rastreamento.
+                </div>
+              {% else %}
+                Visualizar dados de motoristas no equipamento de rastreamento
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de
+                  motoristas cadastrados no equipamento de rastreamento.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="javascript:void(0);">
+        <h3 class="ui header">Dados do veículo</h3>
+        <div class="fields">
+          <div class="three wide field">
+            <label>Placa</label>
+            <div class="ui input readonly">
+              <input name="plate" type="text" readonly
+                     value="{{ equipment.plate }}">
+            </div>
+          </div>
+
+          <div class="four wide field">
+            <label>Marca</label>
+            <div class="ui input readonly">
+              <input name="vehiclebrandname" type="text" readonly
+                     value="{{ equipment.vehiclebrandname }}">
+            </div>
+          </div>
+
+          <div class="seven wide field">
+            <label>Modelo do ve&iacute;culo</label>
+            <div class="ui input readonly">
+              <input name="vehiclemodelname" type="text" readonly
+                     value="{{ equipment.vehiclemodelname }}">
+            </div>
+          </div>
+
+          <div class="three wide field">
+            <label class="nowrap">Tipo de veículo</label>
+            <div class="ui input readonly">
+              <input name="vehicletypename" type="text" readonly
+                     value="{{ equipment.vehicletypename }}">
+            </div>
+          </div>
+        </div>
+        
+        <h3 class="ui header">Dados do equipamento</h3>
+        <div class="fields">
+          <div class="four wide field">
+            <label>Número de série</label>
+            <div class="ui input readonly">
+              <input name="deviceid" type="text" readonly
+                     value="{{ equipment.deviceid }}">
+            </div>
+          </div>
+
+          <div class="four wide field">
+            <label>Fabricante</label>
+            <div class="ui input readonly">
+              <input name="manufacturename" type="text" readonly
+                     value="{{ equipment.manufacturename }}">
+            </div>
+          </div>
+
+          <div class="four wide field">
+            <label>Modelo</label>
+            <div class="ui input readonly">
+              <input name="devicemodelname" type="text" readonly
+                     value="{{ equipment.devicemodelname }}">
+            </div>
+          </div>
+
+          <div class="five wide field">
+            <label class="nowrap">Última atualização</label>
+            <div class="ui input readonly">
+              <input name="lastcommunication" type="text" readonly
+                     value="{{ equipment.lastcommunication }}">
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            <button type="button" class="ui submit primary right labeled icon button"
+                    name="sync" onclick="synchronize();">
+              <i class="refresh icon"></i> Sincronizar
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            <button type="button" class="ui submit primary right labeled icon button"
+                    name="sync" onclick="getDrivers();">
+              <i class="refresh icon"></i> Obter dados de motoristas cadastrados
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+      </form>
+      <!-- Fim formulário -->
+
+      <!-- Início do progresso do sincronismo -->
+      <div class="ui grid">
+        <div class="four wide mobile five wide tablet four wide computer column"
+             style="margin-right: -13px; padding-right: 0;">
+          <div class="ui fluid vertical steps">
+            <!--<div class="disabled step">
+              <i class="trash alternate icon"></i>
+              <div class="content">
+                <div class="title">Limpando</div>
+                <div class="description">Removendo os dados cadastrados no equipamento</div>
+              </div>
+            </div>-->
+            <div class="disabled step">
+              <i class="truck icon"></i>
+              <div class="content">
+                <div class="title">Requisitando</div>
+                <div class="description">Obtendo os dados cadastrados no equipamento</div>
+              </div>
+            </div>
+            <div class="disabled step">
+              <i class="chalkboard teacher icon"></i>
+              <div class="content">
+                <div class="title">Analisando</div>
+                <div class="description">Verificando quais motoristas estão cadastrados</div>
+              </div>
+            </div>
+            <div class="disabled step">
+              <i class="trash alternate icon"></i>
+              <div class="content">
+                <div class="title">Removendo</div>
+                <div class="description">Eliminando cadastros desnecessários</div>
+              </div>
+            </div>
+            <div class="disabled step">
+              <i class="tasks icon"></i>
+              <div class="content">
+                <div class="title">Inserindo</div>
+                <div class="description">Acrescentando cadastros novos e/ou faltantes</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="twelve wide mobile eleven wide tablet twelve wide computer column"
+             style="padding-right: 0;">
+          <table class="ui unstackable celled small table" id="iButtons">
+            <thead>
+              <tr>
+                <th colspan="5" style="border-right: none;">Motoristas cadastrados</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td data-item="0">&nbsp;</td>
+                <td data-item="1">&nbsp;</td>
+                <td data-item="2">&nbsp;</td>
+                <td data-item="3">&nbsp;</td>
+                <td data-item="4">&nbsp;</td>
+              </tr>
+              <tr>
+                <td data-item="5">&nbsp;</td>
+                <td data-item="6">&nbsp;</td>
+                <td data-item="7">&nbsp;</td>
+                <td data-item="8">&nbsp;</td>
+                <td data-item="9">&nbsp;</td>
+              </tr>
+              <tr>
+                <td data-item="10">&nbsp;</td>
+                <td data-item="11">&nbsp;</td>
+                <td data-item="12">&nbsp;</td>
+                <td data-item="13">&nbsp;</td>
+                <td data-item="14">&nbsp;</td>
+              </tr>
+              <tr>
+                <td data-item="15">&nbsp;</td>
+                <td data-item="16">&nbsp;</td>
+                <td data-item="17">&nbsp;</td>
+                <td data-item="18">&nbsp;</td>
+                <td data-item="19">&nbsp;</td>
+              </tr>
+              <tr>
+                <td data-item="20">&nbsp;</td>
+                <td data-item="21">&nbsp;</td>
+                <td data-item="22">&nbsp;</td>
+                <td data-item="23">&nbsp;</td>
+                <td data-item="24">&nbsp;</td>
+              </tr>
+              <tr>
+                <td data-item="25">&nbsp;</td>
+                <td data-item="26">&nbsp;</td>
+                <td data-item="27">&nbsp;</td>
+                <td data-item="28">&nbsp;</td>
+                <td data-item="29">&nbsp;</td>
+              </tr>
+              <tr>
+                <td data-item="30">&nbsp;</td>
+                <td data-item="31">&nbsp;</td>
+                <td data-item="32">&nbsp;</td>
+                <td data-item="33">&nbsp;</td>
+                <td data-item="34">&nbsp;</td>
+              </tr>
+              <tr>
+                <td data-item="35">&nbsp;</td>
+                <td data-item="36">&nbsp;</td>
+                <td data-item="37">&nbsp;</td>
+                <td data-item="38">&nbsp;</td>
+                <td data-item="39">&nbsp;</td>
+              </tr>
+              <tr>
+                <td data-item="40">&nbsp;</td>
+                <td data-item="41">&nbsp;</td>
+                <td data-item="42">&nbsp;</td>
+                <td data-item="43">&nbsp;</td>
+                <td data-item="44">&nbsp;</td>
+              </tr>
+              <tr>
+                <td data-item="45">&nbsp;</td>
+                <td data-item="46">&nbsp;</td>
+                <td data-item="47">&nbsp;</td>
+                <td data-item="48">&nbsp;</td>
+                <td data-item="49">&nbsp;</td>
+              </tr>
+              <tr>
+                <td data-item="50">&nbsp;</td>
+                <td data-item="51">&nbsp;</td>
+                <td data-item="52">&nbsp;</td>
+                <td data-item="53">&nbsp;</td>
+                <td data-item="54">&nbsp;</td>
+              </tr>
+              <tr>
+                <td data-item="55">&nbsp;</td>
+                <td data-item="56">&nbsp;</td>
+                <td data-item="57">&nbsp;</td>
+                <td data-item="58">&nbsp;</td>
+                <td data-item="59">&nbsp;</td>
+              </tr>
+              <tr>
+                <td data-item="60">&nbsp;</td>
+                <td data-item="61">&nbsp;</td>
+                <td data-item="62">&nbsp;</td>
+                <td data-item="63">&nbsp;</td>
+                <td data-item="64">&nbsp;</td>
+              </tr>
+              <tr>
+                <td data-item="65">&nbsp;</td>
+                <td data-item="66">&nbsp;</td>
+                <td data-item="67">&nbsp;</td>
+                <td data-item="68">&nbsp;</td>
+                <td data-item="69">&nbsp;</td>
+              </tr>
+              <tr>
+                <td data-item="70">&nbsp;</td>
+                <td data-item="71">&nbsp;</td>
+                <td data-item="72">&nbsp;</td>
+                <td data-item="73">&nbsp;</td>
+                <td data-item="74">&nbsp;</td>
+              </tr>
+              <tr>
+                <td data-item="75">&nbsp;</td>
+                <td data-item="76">&nbsp;</td>
+                <td data-item="77">&nbsp;</td>
+                <td data-item="78">&nbsp;</td>
+                <td data-item="79">&nbsp;</td>
+              </tr>
+              <tr>
+                <td data-item="80">&nbsp;</td>
+                <td data-item="81">&nbsp;</td>
+                <td data-item="82">&nbsp;</td>
+                <td data-item="83">&nbsp;</td>
+                <td data-item="84">&nbsp;</td>
+              </tr>
+              <tr>
+                <td data-item="85">&nbsp;</td>
+                <td data-item="86">&nbsp;</td>
+                <td data-item="87">&nbsp;</td>
+                <td data-item="88">&nbsp;</td>
+                <td data-item="89">&nbsp;</td>
+              </tr>
+              <tr>
+                <td data-item="90">&nbsp;</td>
+                <td data-item="91">&nbsp;</td>
+                <td data-item="92">&nbsp;</td>
+                <td data-item="93">&nbsp;</td>
+                <td data-item="94">&nbsp;</td>
+              </tr>
+              <tr>
+                <td data-item="95">&nbsp;</td>
+                <td data-item="96">&nbsp;</td>
+                <td data-item="97">&nbsp;</td>
+                <td data-item="98">&nbsp;</td>
+                <td data-item="99">&nbsp;</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Fim do progresso do sincronismo -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+
+    <!-- Início do progresso do sincronismo -->
+    <div class="ui vertical flexBorderBottom segment">
+      <div class="ui indicating progress" data-value="1" data-total="100" id="progressbar">
+        <div class="bar">
+          <div class="progress"></div>
+        </div>
+        <div class="label" id="progressbartitle">Sincronizando os dados de motoristas...</div>
+      </div>
+    </div>
+    <!-- Fim do progresso do sincronismo -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/stc/partials/dialogs/error.twig' %}
+  {% include 'templates/stc/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+
+  {% set sync = { 'URL': 'STC\\Cadastre\\Equipments\\Drivers\\Synchronize', 'method': 'GET' } %}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+
+      // Coloca o foco no botão de sincronismo
+      $("input[name='sync']")
+        .focus()
+      ;
+
+      // -----------------------[ Componentes da Barra de Progresso ]---
+      // Esconde a barra de progresso
+      $('.ui.progress')
+        .parent()
+        .hide()
+      ;
+    });
+
+    // ================================================[ Handlers ]=====
+
+    // Sincroniza as informações de motoristas cadastrados com o teclado
+    // acoplado ao equipamento de rastreamento
+    function synchronize() {
+      var
+        $progress = $('.vertical.steps'),
+        url       = "{{ buildURL(sync.URL, { 'equipmentID': equipmentID }) }}",
+        evtSource = new EventSource(url),
+        $table    = $("#iButtons"),
+        $message  = $table.find('th:eq(0)'),
+        $button   = $('button[name="sync"]'),
+        $step     = -1
+      ;
+      console.log(evtSource.withCredentials);
+      console.log(evtSource.readyState);
+      console.log(evtSource.url);
+
+      // Reinicia o progresso dos passos completados
+      $progress
+        .children('.step')
+        .removeClass('active')
+        .removeClass('completed')
+        .removeClass('abort')
+        .addClass('disabled')
+      ;
+      
+      // Limpa a matriz com os dados de iButtons
+      $message
+        .removeClass('error')
+        .html("Inicializando...")
+      ;
+      $table
+        .find('tbody tr td')
+        .removeClass('red')
+        .html("&nbsp;")
+      ;
+
+      if (!$button.prop('disabled')) {
+        $button
+          .prop('disabled', true)
+        ;
+      }
+
+      evtSource.onmessage = function(event)
+      {
+        syncData = JSON.parse(event.data.trim());
+
+        switch (syncData.result) {
+          case "START":
+            $progress
+              .children('.step').eq(0)
+              .removeClass('disabled')
+              .addClass('active')
+            ;
+            $message
+              .html('Iniciando...')
+            ;
+
+            break;
+          case "NEXT":
+            if ($step >= 0) {
+              $progress
+                .children('.step').eq($step)
+                .removeClass('active')
+                .addClass('completed')
+              ;
+            }
+            $step++;
+            $progress
+                .children('.step').eq($step)
+              .removeClass('disabled')
+              .addClass('active')
+            ;
+            $message
+              .html(syncData.message)
+            ;
+
+            break;
+          case "PROGRESS":
+            // Atualiza as informações de progresso
+            $message
+              .html(syncData.message)
+            ;
+            if (typeof syncData.data === 'object' && syncData.data !== null) {
+              if (Object.keys(syncData.data).length > 0) {
+                // Atualizamos as informações de motoristas na tabela
+                var
+                  $position = (syncData.data.position - 1),
+                  $content = syncData.data.content,
+                  $class = 'cell ' + syncData.data.class
+                ;
+                $table
+                  .find('td[data-item="' + $position + '"]')
+                  .addClass($class)
+                  .html($content)
+                ;
+              }
+            }
+
+            break;
+          case "END":
+            evtSource
+              .close()
+            ;
+            $progress
+              .children('.step').eq($step)
+              .removeClass('active')
+              .addClass('completed')
+            ;
+            $message
+              .html("Concluído")
+            ;
+            $button
+              .prop('disabled', false)
+            ;
+            
+            break;
+          case "ERROR":
+            evtSource
+              .close()
+            ;
+            if ($step < 0) {
+              $step = 0;
+            }
+            $progress
+              .children('.step').eq($step)
+              .removeClass('active')
+              .addClass('abort')
+            ;
+            $message
+              .html(syncData.message)
+            ;
+            $button
+              .prop('disabled', false)
+            ;
+
+            break;
+          default:
+            evtSource
+              .close()
+            ;
+            $progress
+              .children('.step').eq($step)
+              .removeClass('active')
+              .addClass('abort')
+            ;
+            $button
+              .prop('disabled', false)
+            ;
+
+            break;
+        }
+      };
+      evtSource.onerror = function(error) {
+        // Sempre força o encerramento da sincronização
+        evtSource
+          .close()
+        ;
+
+        // Atualiza o progresso, indicando o erro
+        if ($step < 0) {
+          $step = 0;
+        }
+        $progress
+          .children('.step').eq($step)
+          .removeClass('active')
+          .addClass('abort')
+        ;
+        $message
+          .addClass('error')
+          .html("Ops. Desculpe, mas ocorreu um erro interno no servidor.")
+        ;
+        $button
+          .prop('disabled', false)
+        ;
+      };
+      
+      return false;
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

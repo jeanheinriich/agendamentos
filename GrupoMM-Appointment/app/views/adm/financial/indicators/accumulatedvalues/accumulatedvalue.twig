@@ -1,0 +1,269 @@
+{% extends 'templates/adm/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} um valor acumulado num mês de referência para um indicador financeiro{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  {{ css('loading.min.css') }}
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ADM\\Financial\\Indicators\\AccumulatedValues\\Add' %}
+  {% else %}
+    {% set URL = 'ADM\\Financial\\Indicators\\AccumulatedValues\\Edit' %}
+  {% endif %}
+  {% set previous = 'ADM\\Financial\\Indicators\\AccumulatedValues' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('adm/accumulatedvalues.svg', 'Valor acumulado nos últimos doze meses para um indicador financeiro') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if editMode %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} valor acumulado
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  valor acumulado para um indicador financeiro num 
+                  determinado mês e ano de referência.
+                </div>
+              {% else %}
+                Visualizar valor acumulado
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um
+                  valor acumulado para um indicador financeiro num 
+                  determinado mês e ano de referência.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <div class="loading hidden">Processando...&#8230;</div>
+      <form class="ui form" method="POST" autocomplete="off"
+            onsubmit="loading();"
+            action="{% if formMethod == 'POST' %}{{ path_for('ADM\\Financial\\Indicators\\AccumulatedValues\\Add') }}{% else %}{{ path_for('ADM\\Financial\\Indicators\\AccumulatedValues\\Edit', {'accumulatedValueID': getValue('accumulatedvalueid')}) }}{% endif %}">
+        <div class="fields">
+          <div class="five wide field{{ cssError('indicatorid') }}">
+            <label class="nowrap">Indicador financeiro</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="indicatorid" type="hidden"
+                     value="{{ getValue('indicatorid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Informe o indicador...</div>
+              <div class="menu">
+              {% set indicatorID = getValue('indicatorid') %}
+              {% for indicator in indicators %}
+                <div class="item"
+                     {% if indicator.id == indicatorID %}
+                       selected
+                     {% endif %}
+                     data-value="{{ loop.index }}"
+                     data-text="{{ indicator.name }} ({{ indicator.institute }})">
+                  {{ indicator.name }} ({{ indicator.institute }})
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('indicatorname') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('indicatorid') %}
+            <small class="helper">{{ getError('indicatorid') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('month') }}">
+            <label>Mês</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="month" type="hidden"
+                     value="{{ getValue('month') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Informe o mês...</div>
+              <div class="menu">
+              {% set monthID = getValue('month') %}
+              {% for month in months %}
+                <div class="item"
+                     {% if month.id == monthID %}
+                       selected
+                     {% endif %}
+                     data-value="{{ loop.index }}"
+                     data-text="{{ month.name }}">
+                  {{ month.name }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('monthname') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('month') %}
+            <small class="helper">{{ getError('month') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="three wide field{{ cssError('year') }}">
+            <label>Ano</label>
+            <div class="ui input{{ readonly }}">
+              <input name="year" type="text" maxlength="4"
+                     placeholder="Informe o ano..."
+                     {{ readonly }}
+                     value="{{ getValue('year') }}">
+            </div>
+            {% if hasError('year') %}
+            <small class="helper">{{ getError('year') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('value') }}">
+            <label>
+              Valor <span class="tablet hidden">acumulado</span>
+              <span class="mobile hidden"
+                    data-tooltip="O valor acumulado para este indicador nos últimos 12 meses"
+                    data-content="Top Left" data-position="top right"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui right labeled input{{ readonly }}">
+              <input name="value" type="text"
+                     placeholder="Informe o valor..."
+                     {{ readonly }}
+                     value="{{ getValue('value') }}">
+              <div class="ui basic label">%</div>
+            </div>
+            {% if hasError('value') %}
+            <small class="helper">{{ getError('value') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="accumulatedvalueid" value="{{ getValue('accumulatedvalueid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+  
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      $("input[name='year")
+        .mask({ type: 'year', trim: true })
+        .blur(yearHandler)
+      ;
+      $("input[name='value")
+        .mask({
+          type: 'percentage',
+          trim: true,
+          allowNegativeValues: true,
+          decimalsPlaces: 4,
+          maxLength: 10
+        })
+        .blur(yearHandler)
+      ;
+
+      // Coloca o foco no primeiro campo
+      $("input[name='indicatorid']")
+        .closest("div")
+        .children(".search")
+        .focus();
+      ;
+    });
+
+    var loading = function() {
+      $(document.body)
+        .css({
+          'cursor' : 'wait'
+        })
+      ;
+      $(".loading")
+        .removeClass("hidden")
+      ;
+    };
+
+    // Faz o tratamento do campo ano para permitir retirar valores de
+    // ano superiores ao ano corrente
+    function yearHandler()
+    {
+      var
+        today = new Date(),
+        currentYear = today.getFullYear(),
+        year = $(this).val()
+      ;
+
+      if (year.trim().length > 0) {
+        if (parseInt(year) > currentYear) {
+          // Pega o ano corrente e coloca no campo
+          $("input[name='year")
+            .val(currentYear)
+          ;
+        }
+      } else {
+        // Pega o ano corrente e coloca no campo
+        $("input[name='year")
+          .val(currentYear)
+        ;
+      }
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

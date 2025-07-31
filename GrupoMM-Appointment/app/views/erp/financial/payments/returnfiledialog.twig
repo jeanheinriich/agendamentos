@@ -1,0 +1,45 @@
+<div class="ui small return modal">
+  <i class="close icon"></i>
+  <div class="header">
+    <i class="history icon"></i>
+    &nbsp;Processamento do arquivo de retorno
+  </div>
+  <div class="content">
+    <div class="description">
+      <div class="ui header">
+        <div class="sub header">
+          Aqui você processa o arquivo de retorno do banco, realizando
+          as atualizações nos títulos existentes.<br><br>
+        </div>
+      </div>
+    </div>
+    <div class="ui return form">
+      <h3 class="ui header">
+        Informe o arquivo a ser processado:
+      </h3>
+      <div class="fields">
+        <div class="sixteen wide field">
+          <div class="ui left action file input">
+            <label for="returnfile" class="ui blue labeled icon button">
+              <i class="file icon"></i>
+              <span>Selecione</span>
+            </label>
+            <input type="file" id="returnfile"
+                   name="returnfile" accept=".ret, .RET"
+                   required>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="ui youtube cancel right labeled icon button">
+      Cancelar
+      <i class="remove icon"></i>
+    </button>
+    <button class="ui primary ok right labeled icon button">
+      Processsar
+      <i class="checkmark icon"></i>
+    </button>
+  </div>
+</div>

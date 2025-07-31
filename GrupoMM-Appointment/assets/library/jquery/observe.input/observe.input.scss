@@ -1,0 +1,61 @@
+/* ---------------------------------------------------------------------
+ * observe.input.scss
+ * 
+ * This file is part of Extension Library.
+ *
+ * (c) Emerson Cavalcanti
+ *
+ * LICENSE: The MIT License (MIT)
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the 
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject
+ * to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * 
+ * ---------------------------------------------------------------------
+ * Descrição:
+ * 
+ * O css para o componente de observação de uma entrada.
+ * --------------------------------------------------------------------
+ * Controle de Modificações
+ * 
+ * 2020-03-02 - Emerson Cavalcanti
+ *   - Versão inicial
+ * ---------------------------------------------------------------------
+ */
+
+.ui[class*="leftandright icon"].input {
+  > input {
+    padding-left: 2.67142857em !important;
+    padding-right: 2.67142857em !important;
+
+    &.with.toggle {
+      padding-right: 4.17142857em !important;
+    }
+  }
+
+  i.icon:first-child {
+    right: auto;
+    left: 1px;
+    border-radius: .28571429rem 0 0 .28571429rem;
+  }
+  i.icon:last-child {
+    right: 1px;
+    left: auto;
+    border-radius: .28571429rem 0 0 .28571429rem;
+  }
+}

@@ -1,0 +1,794 @@
+{% extends 'templates/erp/layout.twig' %}
+{% import "templates/erp/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} lançamento de cobrança{% endblock %}
+{%  block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/semantic-ui/components/calendar.min.css') }}
+  {{ css('form.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /**
+     * Personaliza os dropdowns para permitir melhor seleção dos valores
+     */
+    .ui.dropdown .menu>.item.vertical {
+      display: -webkit-box;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: reverse;
+      -ms-flex-direction: column-reverse;
+      flex-direction: column-reverse;
+    }
+    .ui.dropdown .menu>.item.vertical>.description {
+      margin: 0;
+      color: CornflowerBlue;
+      font-style: italic;
+      border-top: 1px solid rgba(34,36,38,0.15);
+      line-height: 1.3em;
+    }
+    .ui.dropdown .menu>.item.vertical>.text {
+      margin-bottom: .25em;
+    }
+    .symbol {
+      color: gray;
+      font-size: .9em;
+    }
+    .plate,
+    .monetary {
+      color: DarkOrange;
+      font-size: 1em;
+    }
+    .ui.dropdown>.text>.description>.hidden {
+      display: none;
+    }
+    @media only screen and (max-width:767px) {
+      .ui.stackable.grid {
+        width: auto;
+        margin-top: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+      }
+    }
+
+    span.select-info {
+      display: none;
+    }
+
+    /**
+     * Personaliza os campos de valores para permitir exibir cores
+     * corretamente
+     */
+    .ui.input.info>input {
+      color: #276f86;
+      background: #f8ffff;
+      border-color: #a9d5de;
+      -webkit-box-shadow: none;
+      box-shadow: none;
+    }
+    .ui.form>.field.info>.ui.labeled.input:not(.right):not([class*="corner labeled"])>.ui.label,
+    .ui.form>.field.info>.ui.left.action.input>.ui.button,
+    .ui.labeled.input.info:not(.right):not([class*="corner labeled"])>.ui.label,
+    .ui.left.action.input.info>.ui.button,
+    .ui.action.input.info:not(.left)>input+.ui.button,
+    .ui.form>.field.info>.ui.action.input:not(.left)>input+.ui.button,
+    .ui.form>.field.info>.ui.right.labeled.input:not([class*="corner labeled"])>input+.ui.label,
+    .ui.right.labeled.input.info:not([class*="corner labeled"])>input+.ui.label {
+      color: #276f86;
+      background-color: #e1f7f7;
+    }
+
+    span.select-info {
+      display: none;
+    }
+    .ui.grid {
+      margin-right: -.5rem;
+      margin-bottom: .5rem;
+    }
+    .ui.list .list>.item .description,
+    .ui.list>.item .description {
+      position: relative;
+      padding-left: 4.45714em;
+      margin-top: .2em;
+      color: rgba(0,0,0,.5);
+    }
+
+    @media only screen and (max-width:767px) {    
+      .ui.list .list>.item,
+      .ui.list>.item {
+        margin-bottom: .5em;
+      }
+    }
+    .ui.grid>.plata.column,
+    .ui.grid>.plata.row,
+    .ui.grid>.row>.plata.column {
+      background-color: rgba(86, 61, 124, .1);
+    }
+    div.hidden:not(.mobile) {
+      display: none !important;
+    }
+    
+    .dataTables_wrapper > .ui.grid > .row:first-child {
+      padding-top: 0;
+    }
+    .dataTables_wrapper > .ui.grid > .row:last-child {
+      padding-bottom: 0;
+    }
+
+    /**
+     * Modificamos o CSS da tabela para tirar do header a última coluna
+     */
+    .ui.definition.withaction.table>thead:not(.full-width)>tr>th:last-child {
+      pointer-events: none;
+      background: #fff;
+      font-weight: 400;
+      color: rgba(0,0,0,.4);
+      -webkit-box-shadow: +0.1em -0.2em 0 0.1em #fff;
+      box-shadow: +0.1em -0.2em 0 0.1em #fff;
+      -moz-transform: scale(1);
+      border-right: none;
+    }
+    .ui.table>tfoot>tr>th.bold {
+      font-weight: bold;
+    }
+    .grouped {
+      background: #f9fafb;
+    }
+    .grouped td {
+      font-size: 1.1rem;
+    }
+
+    /**
+     * Corrigimos o botão de fechar do modal
+     */
+    .ui.modal > .close {
+      top: 1.0rem;
+      right: 1.0rem;
+      color: #000;
+    }
+    td.right.aligned input[type="text"] {
+      text-align: right;
+    }
+
+    tr.total td {
+      font-weight: bold;
+      background: rgba(0,0,0,.03);
+    }
+    .headline {
+      font-size: 1.1em;
+      font-weight: bold;
+      color: #0066cc;
+    }
+    .subheadline {
+      font-size: 0.86em;
+      font-style: italic;
+      color: rgba(0,0,0,.6);
+    }
+    .symbol {
+      color: #9aabc2;
+      font-style: oblique;
+      font-size: .9rem;
+      float: left;
+    }
+    .ui.celled.table tr td.bold {
+      color: #0066cc;
+      font-weight: bold;
+    }
+
+    table.dataTable tbody td.select-checkbox:before, table.dataTable tbody td.select-checkbox:after,
+    table.dataTable tbody th.select-checkbox:before,
+    table.dataTable tbody th.select-checkbox:after,
+    .dataTables_scrollHeadInner table.table.dataTable thead th.select-checkbox:before,
+    .dataTables_scrollHeadInner table.table.dataTable thead th.select-checkbox:after {
+      display: block;
+      position: absolute;
+      top: 1.2em;
+      left: 50%;
+      width: 16px;
+      height: 16px;
+      box-sizing: border-box;
+    }
+    table.dataTable tbody td.select-checkbox:before,
+    table.dataTable tbody th.select-checkbox:before {
+      content: ' ';
+      margin-top: -8px;
+      margin-left: -8px;
+      border: 1px solid rgba(34,36,38,.35);
+      border-radius: .21428571rem;
+    }
+    .dataTables_scrollHeadInner table.table.dataTable thead th.select-checkbox:before {
+      content: ' ';
+      margin-top: 4px;
+      margin-left: -8px;
+      border: 1px solid rgba(34,36,38,.35);
+      border-radius: .21428571rem;
+    }
+    table.dataTable tr.selected td.select-checkbox:after,
+    table.dataTable tr.selected th.select-checkbox:after
+    {
+      content: '\2714';
+      margin-top: -18px;
+      margin-left: -8px;
+      font-size: 20px;
+      width: 16px;
+      height: 16px;
+      text-align: center;
+      /*text-shadow: 1px 1px #B0BED9, -1px -1px #B0BED9, 1px -1px #B0BED9, -1px 1px #B0BED9;*/
+      text-shadow: initial;
+      color: rgba(0,100,250,0.95);
+      color: rgba(0,0,0,.95);
+    }
+    .dataTables_scrollHeadInner table.table.dataTable thead th.select-checkbox.selected:after {
+      content: '\2714';
+      margin-top: -6px;
+      margin-left: -8px;
+      font-size: 20px;
+      width: 16px;
+      height: 16px;
+      text-align: center;
+      /*text-shadow: 1px 1px #B0BED9, -1px -1px #B0BED9, 1px -1px #B0BED9, -1px 1px #B0BED9;*/
+      color: rgba(0,100,250,0.95);
+      color: rgba(0,0,0,.95);
+    }
+    .dataTables_scrollHeadInner table.table.dataTable thead th.select-checkbox.indeterminate:after {
+      content: '\2011';
+      margin-top: -6px;
+      margin-left: -8px;
+      font-size: 20px;
+      width: 16px;
+      height: 16px;
+      text-align: center;
+      /*text-shadow: 1px 1px #B0BED9, -1px -1px #B0BED9, 1px -1px #B0BED9, -1px 1px #B0BED9;*/
+      color: rgba(0,100,250,0.95);
+      color: rgba(0,0,0,.35);
+    }
+
+    .ui.input.right.align > input {
+      text-align: right;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set URL = 'ERP\\Financial\\Payments\\Add' %}
+  {% set previous = 'ERP\\Financial\\Payments' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/billings.svg', 'Emissão de cobrança') }}
+            </td>
+            <td>
+              <div class="content">
+                Emitir {{ typeOfPayment.name }}
+                <div class="sub header">
+                  {{ typeOfPayment.desc }}
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module stackable segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            onsubmit="return validateForm(this);" 
+            action="{{ path_for(URL, { 'billingID': getValue('billingid') }) }}?chosenPayment={{ chosenPayment }}">
+        <h3 class="ui header">Informe o cliente</h3>
+        <div class="fields">
+          <div class="eight wide field{{ cssError('customername') }}">
+            <label>Cliente</label>
+            <input name="customername" type="text" class="search"
+                   maxlength="100"
+                   placeholder="Informe o nome do cliente..."
+                   {{ readonly }}
+                   value="{{ getValue('customername') }}">
+            <input type="hidden" name="customerid"
+                   value="{{ getValue('customerid') }}">
+            {% if hasError('customername') %}
+            <small class="helper">{{ getError('customername') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="eight wide field{{ cssError('subsidiaryname') }}">
+            {% if getValue('entitytypeid') == 2 %}
+            <label for="subsidiarytitle">Titular ou dependente</label>
+            {% else %}
+            <label for="subsidiarytitle">Unidade/filial</label>
+            {% endif %}
+            <input name="subsidiaryname" type="text" class="search"
+                   maxlength="50"
+                   placeholder="Informe a unidade/filial..."
+                   {{ readonly }}
+                   value="{{ getValue('subsidiaryname') }}">
+            <input name="subsidiaryid" type="hidden"
+                   value="{{ getValue('subsidiaryid') }}">
+            {% if hasError('subsidiaryname') %}
+            <small class="helper">{{ getError('subsidiaryname') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if chosenPayment == 'unusual' %}
+        <div class="fields associate toggle" style="display: none;">
+          <div class="eight wide field">
+            <div class="ui checkbox">
+              <input type="hidden" name="chargeFromAssociate"
+                     value="{% if getValue('chargeFromAssociate')|toBoolean %}true{% else %}false{% endif %}">
+              <input class="hidden" type="checkbox"
+                     name="_chargeFromAssociate"
+                     {% if getValue('chargeFromAssociate')|toBoolean %}checked="checked"{% endif %}>
+              <label>
+                Cobrar do associado
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="fields associate select" style="display: none;">
+          <div class="eight wide field{{ cssError('associatename') }}">
+            <label>Nome do associado</label>
+            <div class="ui search selection dropdown">
+              <input name="associateid" type="hidden"
+                     value="{{ getValue('associateid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Informe o associado</div>
+              <div class="menu">
+              {% set associateID = getValue('associateid') %}
+              {% for associate in associates %}
+                <div class="item" {% if associate.id == associateID %}selected{% endif %}
+                     data-value="{{ associate.id }}"
+                     data-text="{{ associate.name }}">
+                  {{ associate.name }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% if hasError('associatename') %}
+            <small class="helper">{{ getError('associatename') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if chosenPayment == 'prepayment' %}
+        <h3 class="ui header">Informe o período a ser cobrado</h3>
+        <div class="fields">
+          <div class="four wide field{{ cssError('startdate') }}">
+            <label>
+              Início do período
+            </label>
+            <div class="ui calendar" id="startdate">
+              <div class="ui input left icon{{ readonly }}">
+                <i class="calendar icon"></i>
+                <input name="startdate" type="text"
+                       placeholder="Ocorrido em..."
+                       {{ readonly }}
+                       value="{{ getValue('startdate') }}">
+              </div>
+            </div>
+            {% if hasError('startdate') %}
+            <small class="helper">{{ getError('startdate') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('numberofparcels') }}">
+            <label>
+              Quantidade de parcelas
+            </label>
+            <div class="ui input right align">
+              <input name="numberofparcels" type="text"
+                     placeholder="0"
+                     value="{{ getValue('numberofparcels') }}">
+            </div>
+            {% if hasError('numberofparcels') %}
+            <small class="helper">{{ getError('numberofparcels') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+
+        {% if chosenPayment == 'carnet' %}
+        <h3 class="ui header">Informações do carnê a ser gerado</h3>
+
+        <div class="carnet fields">
+          <div class="four wide field{{ cssError('startdate') }}">
+            <label>
+              Início do período a ser cobrado
+            </label>
+            <div class="ui calendar" id="startdate">
+              <div class="ui input left icon{{ readonly }}">
+                <i class="calendar icon"></i>
+                <input name="startdate" type="text"
+                       placeholder="Ocorrido em..."
+                       {{ readonly }}
+                       value="{{ getValue('startdate') }}">
+              </div>
+            </div>
+            {% if hasError('startdate') %}
+            <small class="helper">{{ getError('startdate') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('numberofparcels') }}">
+            <label>
+              Quantidade de parcelas
+            </label>
+            <div class="ui input right align">
+              <input name="numberofparcels" type="text"
+                     placeholder="0"
+                     value="{{ getValue('numberofparcels') }}">
+            </div>
+            {% if hasError('numberofparcels') %}
+            <small class="helper">{{ getError('numberofparcels') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="five wide field{{ cssError('duedate') }}">
+            <label>
+              Data do primeiro vencimento
+            </label>
+            <div class="ui calendar" id="duedate">
+              <div class="ui input left icon{{ readonly }}">
+                <i class="calendar icon"></i>
+                <input name="duedate" type="text"
+                       placeholder="Data de vencimento..."
+                       {{ readonly }}
+                       value="{{ getValue('duedate') }}">
+              </div>
+            </div>
+            {% if hasError('duedate') %}
+            <small class="helper">{{ getError('duedate') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if chosenPayment not in ['another'] %}
+        <h3 class="ui header">
+          Selecione os itens de contrato para os quais será emitida a
+          cobrança:
+        </h3>
+        <div class="fields">
+          <div class="sixteen wide field{{ cssErrors() }}">
+            <!-- Início tabela -->
+            <table id="installations"
+                   class="ui unstackable compact selectable striped celled table nowrap"
+                   width="100%" cellspacing="0">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>ID do item de contrato</th>
+                  <th class="dt-center">Placa</th>
+                  <th class="dt-center">Marca/Modelo</th>
+                  <th class="dt-center">Item de contrato</th>
+                  <th {{ tooltip.add('left', 'Indicador da situação do item de contrato') }}><i class="check darkgreen icon"></i></th>
+                  <th class="dt-center">Mensalidade</th>
+                  <th class="dt-center">Data da<br>instalação</th>
+                  <th class="dt-center">Data da<br>desinstalação</th>
+                  <th class="dt-center">Dia de<br>vencimento</th>
+                  <th class="dt-center">Condição de<br>pagamento</th>
+                  <th class="dt-center">Número de<br>parcelas</th>
+                  <th class="dt-center">Último dia<br>cobrado</th>
+                  <th class="dt-center">Primeiro<br>vencimento</th>
+                  <th>Data da<br>assinatura</th>
+                  <th>Encerramento<br>do contrato</th>
+                  <th>Bloqueio do Veículo</th>
+                  <th>Não rastreado</th>
+                  <th>Contém dados de rastreamento</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+            <!-- Fim tabela -->
+            {% if hasErrors() %}
+              {% set errors = getErrors() %}
+              {% for field, fieldErrors in errors %}
+                <div class="ui negative message">
+                  <i class="close icon"></i>
+                  {% if field == 'installations' %}
+                    <div class="header">
+                      Lamentamos, mas não conseguimos identificar as
+                      instalações selecionadas.
+                    </div>
+                    <p>
+                      Selecione novamente o cliente.
+                    </p>
+                  {% else %}
+                    <div class="header">
+                      Erro
+                    </div>
+                    <ul class="list">
+                    {% for error in fieldErrors %}
+                      <li>{{ error }}</li>
+                    {% endfor %}
+                    </ul>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        <h3 class="ui header">Um resumo do que está sendo cobrado:</h3>
+        <div class="fields">
+          <div class="sixteen wide field{{ cssErrors() }}">
+            <!-- Início tabela -->
+            {% set additionalClasses = '' %}
+            {% if chosenPayment in ['unusual', 'closing','another'] %}
+              {% set additionalClasses = ' withaction' %}
+            {% endif %}
+            <table class="ui compact celled definition{{ additionalClasses }} table"
+                   id="billings">
+              <thead>
+                <tr>
+                  <th></th>
+                  {% if chosenPayment in ['carnet', 'prepayment'] %}
+                  <th class="four wide center aligned">Descrição</th>
+                  <th class="eight wide center aligned">Período cobrado</th>
+                  <th class="four wide center aligned">Valor</th>
+                  {% else %}
+                  <th class="eleven wide center aligned">Descrição da cobrança</th>
+                  <th class="three wide center aligned">Valor</th>
+                  <th></th>
+                  {% endif %}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  {% if chosenPayment in ['carnet', 'prepayment'] %}
+                  <td class="collapsing right aligned">
+                    1.
+                  </td>
+                  <td colspan="3" class="center aligned">Nenhum valor</td>
+                  {% else %}
+                    {% if chosenPayment == 'another' %}
+                    <td class="collapsing right aligned">
+                      1.
+                    </td>
+                    <td class="left aligned">
+                      <input type="text" name="billings[][name]" placeholder="Descreva o valor sendo cobrado" maxlength="30" value="">
+                    </td>
+                    <td class="right aligned">
+                      <input type="text" name="billings[][value]" value="0,00">
+                    </td>
+                    <td class="collapsing center aligned">
+                      <i class="large red close icon"></i>
+                    </td>
+                    {% else %}
+                    <td class="collapsing right aligned">
+                      <input type="checkbox" disabled="disabled"><label></label>
+                    </td>
+                    <td colspan="2" class="center aligned">Nenhum valor</td>
+                    <td class="collapsing">
+                    </td>
+                    {% endif %}
+                  {% endif %}
+                </tr>
+              </tbody>
+              {% if chosenPayment is not same as 'carnet' %}
+              <tfoot class="full-width">
+                <tr>
+                  {% set span = '' %}
+                  {% if chosenPayment == 'prepayment' %}
+                    {% set span = ' colspan=2' %}
+                  {% endif %}
+                  <th></th>
+                  <th{{ span }} class="bold right aligned">
+                    Total
+                  </th>
+                  <th class="tableTotal bold right aligned">
+                    <span class="symbol">R$</span>0,00
+                  </th>
+                  {% if chosenPayment not in ['carnet', 'prepayment'] %}
+                  <th class="collapsing">
+                  </th>
+                  {% endif %}
+                </tr>
+                {% if chosenPayment not in ['prepayment'] %}
+                <tr>
+                  <th colspan="4">
+                    <button class="ui right floated small primary labeled icon button"
+                            type="button"
+                            onclick="addNewBilling();">
+                      <i class="plus icon"></i> Adicionar lançamento
+                    </button>
+                  </th>
+                </tr>
+                {% endif %}
+              </tfoot>
+              {% endif %}
+            </table>
+          </div>
+        </div>
+
+        {% if chosenPayment is not same as 'carnet' %}
+          <h3 class="ui header">Informações da cobrança a ser gerada</h3>
+          <div class="payment fields">
+            <div class="five wide field{{ cssError('duedate') }}">
+              <label>
+                Data do vencimento
+              </label>
+              <div class="ui calendar" id="duedate">
+                <div class="ui input left icon{{ readonly }}">
+                  <i class="calendar icon"></i>
+                  <input name="duedate" type="text"
+                         placeholder="Ocorrido em..."
+                         {{ readonly }}
+                         value="{{ getValue('duedate') }}">
+                </div>
+              </div>
+              {% if hasError('duedate') %}
+              <small class="helper">{{ getError('duedate') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="six wide field{{ cssError('paymentconditionid') }}">
+              <label>
+                Condições de pagamento
+              </label>
+              <div class="ui search selection dropdown">
+                <input name="paymentconditionid" type="hidden"
+                       value="{{ getValue('paymentconditionid') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text">Como o valor será pago</div>
+                <div class="menu">
+                {% set paymentConditionID = getValue('paymentconditionid') %}
+                {% for paymentCondition in paymentConditions %}
+                  <div class="item" {% if paymentCondition.id == paymentConditionID %}selected{% endif %}
+                       data-value="{{ paymentCondition.id }}"
+                       data-paymentmethodid="{{ paymentCondition.paymentmethodid }}"
+                       data-definedmethodid="{{ paymentCondition.definedmethodid }}"
+                       data-paymentinterval="{{ paymentCondition.paymentinterval }}"
+                       data-timeunit="{{ paymentCondition.timeunit }}"
+                       data-text="{{ paymentCondition.name }}">
+                    {{ paymentCondition.name }}
+                  </div>
+                {% endfor %}
+                </div>
+              </div>
+              <input type="hidden" name="paymentmethodid"
+                     value="{{ getValue('paymentmethodid') }}">
+              <input type="hidden" name="definedmethodid"
+                     value="{{ getValue('definedmethodid') }}">
+              {% if hasError('paymentconditionid') %}
+              <small class="helper">{{ getError('paymentconditionid') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="five wide field{{ cssError('valuetopay') }}">
+              <label>Valor a ser pago</label>
+              <div class="ui left labeled input info{{ readonly }}">
+                <div class="ui basic label">R$</div>
+                <input name="valuetopay" type="text"
+                       placeholder="0,00"
+                       class="right" {{ readonly }}
+                       value="{{ getValue('valuetopay') }}">
+              </div>
+              {% if hasError('valuetopay') %}
+              <small class="helper">{{ getError('valuetopay') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if chosenPayment != 'prepayment' %}
+          <div class="subdivision hidden fields">
+            <div class="five wide field">
+            </div>
+
+            <div class="six wide field{{ cssError('numberofinstallments') }}">
+              <label>
+                Condições de parcelamento
+              </label>
+              <select class="ui selection dropdown"
+                      name="numberofinstallments"
+                      id="numberofinstallments">
+                <option value="1" selected>Sem parcelamento</option>
+              </select>
+              {% if hasError('numberofinstallments') %}
+              <small class="helper">{{ getError('numberofinstallments') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="five wide field{{ cssError('installmentvalue') }}">
+              <label>Valor da parcela</label>
+              <div class="ui left labeled input info{{ readonly }}">
+                <div class="ui basic label">R$</div>
+                <input name="installmentvalue" type="text"
+                       placeholder="0,00"
+                       class="right" {{ readonly }}
+                       value="{{ getValue('installmentvalue') }}">
+              </div>
+              {% if hasError('installmentvalue') %}
+              <small class="helper">{{ getError('installmentvalue') }}</small>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+        {% endif %}
+
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if attached %}Modificar{% else %}Emitir cobrança{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        <input type="hidden" name="vehicleid" value="{{ getValue('vehicleid') }}">
+      </form>
+      <!-- Fim formulário -->
+      </div>
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+  {% include 'erp/financial/payments/billingdialog.twig' %}
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/MonetaryFormatter.min.js') }}
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('semantic-ui/components/calendar.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+  
+  {% set getEntityDataCompletion = { 'URL': 'ERP\\Cadastre\\Entities\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  {% set getInstallations = { 'URL': 'ERP\\Financial\\Contracts\\Installations\\Get', 'method': 'PATCH' } %}
+  {% set getInstallationBillingsData = { 'URL': 'ERP\\Financial\\Billings\\Get', 'method': 'PATCH' } %}
+  
+  <script>
+    {% include 'erp/financial/payments/newpayment.js' with {getEntityDataCompletion: getEntityDataCompletion, getInstallations: getInstallations, chosenPayment: chosenPayment} %}
+  </script>
+{% endblock scripts %}

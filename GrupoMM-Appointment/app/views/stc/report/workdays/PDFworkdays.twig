@@ -1,0 +1,247 @@
+{% extends 'templates/basePDF.twig' %}
+{% block title %}
+  Controle diário de jornada de trabalho
+{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+  <style>
+    h1 {
+      font-weight: bold;
+      margin-bottom: 1.0em;
+    }
+    h2 {
+      font-weight: bold;
+      font-size: 1em;
+      color: #104050;
+    }
+    h3 {
+      font-weight: bold;
+      font-size: 1.3em;
+      color: #104050;
+    }
+
+    span.weekday {
+      color: #748aa8;
+      font-weight: normal;
+    }
+
+    span.bold,
+    tr.bold,
+    tr.bold td {
+      font-weight: bold;
+    }
+
+    table.zebra tfoot tr.bottomborder {
+      border-bottom: 1px solid #103040;
+    }
+
+    span.title {
+      font-size: 1.2em;
+    }
+    
+    span.resume {
+      display: block;
+      border: 1px solid red;
+    }
+
+    /* --------------------------------------------------------------
+     * Personalizações das cores de linhas
+     * -------------------------------------------------------------- */
+
+    tr.group td {
+      text-align: left;
+      background-color: #f8f8f0;
+      border-top: 1px solid #103040;
+      border-bottom: 1px solid #103040;
+    }
+    tr.start td {
+      color: #006599;
+      font-weight: bold;
+    }
+    tr.end td {
+      color: #00324c;
+      font-weight: bold;
+    }
+    tr.restart td {
+      color: #748aa8;
+      font-style: oblique;
+    }
+    tr.warning td {
+      color: #ba3101;
+    }
+    tr.error td,
+    span.error {
+      color: darkred;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if error is null %}
+  <table width="100%" class="noborder">
+    <tbody>
+      <tr class="title">
+        <td colspan="6">
+          <h1 class="title">
+            Controle diário de jornada de trabalho conforme lei 13.103/2015
+          </h1>
+        </td>
+      </tr>
+      <tr class="content">
+        <td colspan="3">
+          <span class="field">Empresa:</span><br>
+          <span class="content">{{ driver.employername }}</span>
+        </td>
+      </tr>
+      <tr class="content">
+        <td width="19%">
+          <span class="field">Matrícula:</span><br>
+          <span class="content">{{ driver.id }}</span>
+        </td>
+        <td>
+          <span class="field">Nome empregado:</span><br>
+          <span class="content">{{ driver.name }}</span>
+        </td>
+        <td>
+          <span class="field">Função:</span><br>
+          <span class="content">{{ driver.occupation }}</span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <table width="100%" class="zebra">
+    <thead>
+      <tr>
+        <th>Hora</th>
+        <th>Tipo</th>
+        <th colspan="3">Local/Mensagem</th>
+        <th>Duração</th>
+        <th>Fim</th>
+        <th>Placa</th>
+      </tr>
+    </thead>
+    <tfoot>
+      <tr class="bottomBorder">
+        <td colspan="8">
+        </td>
+      </tr>
+      <tr class="signature">
+        <td colspan="8" style="font-size: 0.8em;">
+          &nbsp;<br>
+          &nbsp;<br>
+          ________________________________________________________________________________________________________________________________________   Data: ________ / ________ / ________________________<br>
+          Nome: <span class="bold">{{ driver.name }}</span>
+        </td>
+      </tr>
+    </tfoot>
+    <tbody>
+      {% for workedDay in workedDays %}
+        <tr class="group">
+          <td colspan="2">
+            <span class="bold">Dia {{ workedDay.day }}</span>
+            <span class="weekday">({{ workedDay.dayOfWeek }})</span>
+          </td>
+          <td style="border-right: 1px dotted #103040;">
+            Horas trabalhadas:
+            <span class="bold">{{ workedDay.worked }}</span>
+          </td>
+          <td style="border-right: 1px dotted #103040;">
+            {% if computeOvertime %}Extra{% else %}Banco de horas{% endif %}:
+            <span class="bold{% if '-' in workedDay.overtime %} error{% endif %}">{{ workedDay.overtime }}</span>
+          </td>
+          <td style="border-right: 1px dotted #103040;">
+            Horário diurno:
+            <span class="bold">{{ workedDay.dayshift }}</span>
+          </td>
+          <td colspan="3" style="border-right: 1px dotted #103040;">
+            Horário noturno:
+            <span class="bold">{{ workedDay.nightshift }}</span>
+          </td>
+        </tr>
+        
+        {% for event in workedDay.events %}
+          {% set attr = [] %}
+          {% if event.typeName == 'Início de viagem' %}
+            {% set attr = attr|merge(["start"]) %}
+          {% endif %}
+          {% if event.typeName == 'Reinício de viagem' %}
+            {% set attr = attr|merge(["restart"]) %}
+          {% endif %}
+          {% if event.typeName == 'Fim de viagem' %}
+            {% set attr = attr|merge(["end"]) %}
+          {% endif %}
+
+          <tr class="{{ attr|join(' ') }}">
+            <td class="center" width="65px">
+              {{ event.time }}
+            </td>
+            <td width="160px">
+              {{ event.typeName }}
+            </td>
+            <td colspan="3" style="font-weight: normal;">
+              {{ event.location }}
+            </td>
+            <td class="center" width="65px">
+              {{ event.duration }}
+            </td>
+            <td class="center" width="65px">
+              {{ event.end }}
+            </td>
+            <td class="center" width="65px" style="border-right: 1px dotted #103040;">
+              {{ event.plate }}
+            </td>
+          </tr>
+        {% endfor %}
+      {% endfor %}
+      <tr class="none">
+        <td colspan="8">
+          <h3>Resumo do período trabalhado</h3>
+        </td>
+      </tr>
+      <tr class="none" style="border: 1px solid white;">
+        <td colspan="2" style="border: none;">
+          <span class="field">Tempo de direção:</span><br>
+          <span class="content">{{ totalizers.driving }}</span>
+        </td>
+        <td>
+          <span class="field">Tempo em espera:</span><br>
+          <span class="content">{{ totalizers.waiting }}</span>
+        </td>
+        <td>
+          <span class="field">Tempo de descanso:</span><br>
+          <span class="content">{{ totalizers.resting }}</span>
+        </td>
+        <td>
+          <span class="field">Tempo de refeição:</span><br>
+          <span class="content">{{ totalizers.feeding }}</span>
+        </td>
+        <td colspan="3" style="border: none;">
+          <span class="field">Tempo parado:</span><br>
+          <span class="content">{{ totalizers.stopped }}</span>
+        </td>
+      </tr>
+      <tr class="none" style="border: 1px solid white;">
+        <td colspan="2" style="border: none;">
+          <span class="field">Horas diurnas:</span><br>
+          <span class="content">{{ totalizers.dayshift }}</span>
+        </td>
+        <td>
+          <span class="field">Horas noturnas:</span><br>
+          <span class="content">{{ totalizers.nightshift }}</span>
+        </td>
+        <td>
+          <span class="field">Horas trabalhadas:</span><br>
+          <span class="content">{{ totalizers.worked }}</span>
+        </td>
+        <td>
+          <span class="field">{% if computeOvertime %}Horas extras{% else %}Banco de horas{% endif %}:</span><br>
+          <span class="content">{{ totalizers.overtime }}</span>
+        </td>
+        <td colspan="3" style="border: none;">
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  {% else %}
+    <span class="error">Atenção!<br><br>{{ error }}</span>
+  {% endif %}
+{% endblock content %}

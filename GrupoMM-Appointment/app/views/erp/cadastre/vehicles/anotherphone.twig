@@ -1,0 +1,38 @@
+            <div class="ui compact grid another phoning">
+              <div class="sixteen wide mobile sixteen wide tablet eight wide computer six wide large screen column{{ cssError('anotherPhones[' ~ phoneNumber ~ '][phonenumber]') }}">
+                <div class="ui action input{{ readonly }}">
+                  <input name="anotherPhones[{{ phoneNumber }}][phonenumber]"
+                         type="text" {{ readonly }}
+                         placeholder="(99) 99999-9999"
+                         value="{{ phone.phonenumber }}">
+                  <input name="anotherPhones[{{ phoneNumber }}][anotherphoneid]"
+                         type="hidden"
+                         value="{{ phone.anotherphoneid }}" />
+                  {% if editMode %}
+                  <select name="anotherPhones[{{ phoneNumber }}][phonetypeid]"
+                          class="ui dropDownLabel medium selection dropdown">
+                    {% for phoneType in phoneTypes %}
+                      <option value="{{ phoneType.id }}"{% if phoneType.id == phone.phonetypeid %} selected{% endif %}>{{ phoneType.name }}</option>
+                    {% endfor %}
+                  </select>
+                  <button class="ui mini youtube icon button"
+                          data-tooltip="Remove este número de telefone"
+                          data-position="top right" type="button"
+                          phoneNumber="{{ phoneNumber }}"
+                          {% if loop.first %}
+                          disabled
+                          {% endif %}
+                          onclick="delAnotherPhone(this);">
+                    <i class="minus icon"></i>
+                  </button>
+                  {% else %}
+                    <div class="field right static">
+                      <span class="darking">{{ phone.phonetypename }}</span>
+                    </div>
+                  {% endif %}
+                </div>
+                {% if hasError('anotherPhones[' ~ phoneNumber ~ '][phonenumber]') %}
+                <small class="helper">{{ getError('anotherPhones[' ~ phoneNumber ~ '][phonenumber]') }}</small>
+                {% endif %}
+              </div>
+            </div>

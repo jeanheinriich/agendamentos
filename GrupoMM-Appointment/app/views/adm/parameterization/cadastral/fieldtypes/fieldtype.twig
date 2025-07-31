@@ -1,0 +1,296 @@
+{% extends 'templates/adm/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} tipo de campo{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/jquery/plugins/spinner.input/spinner.input.min.css') }}
+  {{ css('form.min.css') }}
+  {{ css('loading.min.css') }}
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ADM\\Parameterization\\Cadastral\\FieldTypes\\Add' %}
+  {% else %}
+    {% set URL = 'ADM\\Parameterization\\Cadastral\\FieldTypes\\Edit' %}
+  {% endif %}
+  {% set previous = 'ADM\\Parameterization\\Cadastral\\FieldTypes' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('adm/fieldtypes.svg', 'Tipo de campo') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if editMode %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} tipo de campo
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  tipo de campo. Um campo é usado para compor um
+                  formulário de verificação, como àqueles preenchidos
+                  pelo técnico após a execução do atendimento.
+                </div>
+              {% else %}
+                Visualizar tipo de campo
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um
+                  tipo de campo de formulário.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <div class="loading hidden">Processando...&#8230;</div>
+      <form class="ui form" method="POST" autocomplete="off"
+            onsubmit="loading();"
+            action="{{ path_for(URL, { 'fieldTypeID': getValue('fieldtypeid') }) }}">
+        <div class="fields">
+          <div class="four wide field{{ cssError('name') }}">
+            <label>Tipo de campo</label>
+            <div class="ui input{{ readonly }}">
+              <input name="name" type="text" maxlength="30"
+                     placeholder="Informe o nome do tipo de campo..."
+                     {{ readonly }}
+                     value="{{ getValue('name') }}">
+            </div>
+            {% if hasError('name') %}
+            <small class="helper">{{ getError('name') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="twelve wide field{{ cssError('comments') }}">
+            <label>Descrição</label>
+            <div class="ui input{{ readonly }}">
+              <input name="comments" type="text" maxlength="30"
+                     placeholder="Informe a descrição deste tipo de campo..."
+                     {{ readonly }}
+                     value="{{ getValue('comments') }}">
+            </div>
+            {% if hasError('comments') %}
+            <small class="helper">{{ getError('comments') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="four wide field{{ cssError('fieldclass') }}">
+            <label>
+              Classe
+              <span data-tooltip="O nome da classe interna que cria este elemento"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui input{{ readonly }}">
+              <input name="fieldclass" type="text" maxlength="3"
+                     placeholder="Informe a classe do campo..."
+                     {{ readonly }}
+                     value="{{ getValue('fieldclass') }}">
+            </div>
+            {% if hasError('fieldclass') %}
+            <small class="helper">{{ getError('fieldclass') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('valuetypeid') }}">
+            <label>
+              Tipo de valor
+              <span data-tooltip="O tipo de valor armazenado por este elemento"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="valuetypeid" type="hidden"
+                     value="{{ getValue('valuetypeid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">{{ getValue('valuetypename') }}&nbsp;</div>
+              <div class="menu">
+                {% for valueType in valueTypes %}
+                  <div class="item" data-value="{{ valueType.id }}"
+                       data-text="{{ valueType.name }}">
+                    {{ valueType.name }}
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('valuetypename') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('valuetypeid') %}
+            <small class="helper">{{ getError('valuetypeid') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('fixedsize') }}">
+            <label>
+              Tamanho
+              <span data-tooltip="A largura pré-fixada que este elemento deve ter ('zero' deixa livre)"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui input{{ readonly }}">
+              <input name="fixedsize" type="text" maxlength="3"
+                     placeholder="Informe o tamanho do campo..."
+                     {{ readonly }}
+                     value="{{ getValue('fixedsize') }}">
+            </div>
+            {% if hasError('fixedsize') %}
+            <small class="helper">{{ getError('fixedsize') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('decimalplaces') }}">
+            <label>
+              Casas decimais
+              <span data-tooltip="O número de casas decimais que o valor terá (deixar zerado se não usar)"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui input{{ readonly }}">
+              <input name="decimalplaces" type="text" maxlength="3"
+                     placeholder="Informe o tamanho do campo..."
+                     {{ readonly }}
+                     value="{{ getValue('decimalplaces') }}">
+            </div>
+            {% if hasError('decimalplaces') %}
+            <small class="helper">{{ getError('decimalplaces') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('mask') }}">
+            <label>
+              Máscara
+              <span data-tooltip="O nome da máscara 'masked.input' usada no campo (deixar em branco se não usar)"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui input{{ readonly }}">
+              <input name="mask" type="text" maxlength="3"
+                     placeholder="Informe o nome da máscara..."
+                     {{ readonly }}
+                     value="{{ getValue('mask') }}">
+            </div>
+            {% if hasError('mask') %}
+            <small class="helper">{{ getError('mask') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="fieldtypeid" value="{{ getValue('fieldtypeid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+  
+  {{ lib('jquery/plugins/spinner.input/spinner.input.min.js') }}
+
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      $("input[name='fixedsize']")
+        .spinnerinput(fixedsizeOptions)
+      ;
+      $("input[name='decimalplaces']")
+        .spinnerinput(decimalplacesOptions)
+      ;
+      
+      // Coloca o foco no primeiro campo
+      $("input[name='name']")
+        .focus()
+      ;
+    });
+
+    var loading = function() {
+      $(document.body)
+        .css({
+          'cursor' : 'wait'
+        })
+      ;
+      $(".loading")
+        .removeClass("hidden")
+      ;
+    };
+    
+
+    // =================================================[ Options ]=====
+
+    // As opções para o componente de spinner para o tamanho do campo
+    var fixedsizeOptions = {
+      min: 0,
+      max: 254,
+      step: 1
+    };
+
+    // As opções para o componente de spinner para o número de casas
+    // decimais
+    var decimalplacesOptions = {
+      min: 0,
+      max: 9,
+      step: 1
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

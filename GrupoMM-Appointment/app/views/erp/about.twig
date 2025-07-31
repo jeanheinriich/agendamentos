@@ -1,0 +1,165 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - Sobre{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+  <style>
+    .ui.card:hover {
+      background-color: #efefef;
+      -webkit-box-shadow: 0 1px 3px 0 #b4b4b5,0 0 0 1px #b4b4b5;
+      box-shadow: 0 1px 3px 0 #b4b4b5,0 0 0 1px #b4b4b5;
+    }
+
+    .module {
+      max-width: 900px;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/erp.svg', 'ERP') }}
+            </td>
+            <td>
+              <div class="content">
+                Sobre o sistema de ERP de controle de frotas e rastreadores
+                <div class="sub header">
+                  Conheça um pouco mais sobre este sistema de gestão
+                  voltado especificamente para os controles de frotas e
+                  rastreadores.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <br/>
+      <!-- Início conteúdo módulo -->
+      <div class="ui vertical segment">
+        <p>
+          A evolução tecnológica, o aquecimento — ou o desaquecimento —
+          da economia, o aumento da oferta de crédito e o alcance de novos
+          mercados estão entre os fatores que elevam significativamente a
+          competitividade das empresas. Para continuar crescendo, toda as
+          empresas precisam ter gerenciamento adequado de recursos, dados
+          e processos. Um dos caminhos para isso é a adoção de soluções de
+          ERP (Enterprise Resource Planning), isto é, de sistemas de gestão
+          empresarial.
+        </p>
+        <p>
+          Empresas que realizam locação de equipamentos de rastreamento
+          precisam ser extremamente competitivas, e gerenciar um volume
+          grande de informações, tais como:
+          <ul class="ui bulleted list">
+            <li class="item">Rastreadores em estoque e em cliente</li>
+            <li class="item">Veículos de terceiros</li>
+            <li class="item">Técnicos</li>
+            <li class="item">Informações financeiras</li>
+          </ul>
+        </p>
+        <p>
+          Visando atender este mercado, desenvolvemos um sistema de gestão
+          que incorpora o melhor da tecnologia para atender a este público
+          especializado. Nosso diferencial é o de prover ferramentas simples
+          de se utilizar, aliados a um poderoso software de gestão que
+          simplifique processos e melhore o atendimento ao cliente.
+        </p>
+        <p>
+          Dentre as principais vantagens, podemos citar:
+          <ul class="ui bulleted list">
+            <li class="item">Cadastro de rastreadores separados por local
+              onde ele está armazenado (locado, no estoque central e/ou
+              com o técnico</li>
+            <li class="item">Cadastro de veículos</li>
+            <li class="item">Cadastro de técnicos</li>
+            <li class="item">Emissão e controle de boletos e serviços
+              técnicos</li>
+            <li class="item">Informações financeiras</li>
+            <li class="item">Controle de atendimentos</li>
+          </ul>
+        </p>
+        <h4 class="ui horizontal divider header"><i class="tag icon"></i> Tecnologia </h4>
+        <p>Este aplicativo foi desenvolvido com tecnologias modernas e
+        seguras. Dentre estas, destacamos as seguintes de software aberto:</p>
+        <div class="ui nine cards">
+          <div class="ui card">
+            <div class="image" data-content="Framework Slim">
+              <a href="https://www.slimframework.com">
+                <img class="ui small image"
+                     src="/images/about/slimframework.png"
+                     alt="Slim Framework">
+              </a>
+            </div>
+          </div>
+          <div class="ui card">
+            <div class="image" data-content="Framework Semantic UI">
+              <a href="https://semantic-ui.com">
+                <img class="ui small image"
+                     src="/images/about/semantic.png"
+                     alt="Semantic UI">
+              </a>
+            </div>
+          </div>
+          <div class="ui card">
+            <div class="image" data-content="Linguagem PHP">
+              <a href="http://php.net/">
+                <img class="ui small image"
+                     src="/images/about/php.png"
+                     alt="Linguagem PHP">
+              </a>
+            </div>
+          </div>
+          <div class="ui card">
+            <div class="image" data-content="Banco de Dados PostgreSQL">
+              <a href="https://www.postgresql.org/">
+                <img class="ui small image"
+                     src="/images/about/postgresql.png"
+                     alt="PostgreSQL">
+              </a>
+            </div>
+          </div>
+          <div class="ui card">
+            <div class="image" data-content="Sistema Operacional Linux">
+              <a href="https://www.linux.org">
+                <img class="ui small image"
+                     src="/images/about/linux.png"
+                     alt="Linux">
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ui vertical segment">
+        <button type="button" class="ui blue labeled icon button"
+                onclick="location.href='{{ path_for('ERP\\Home') }}';">
+          <i class="home icon"></i> Retornar para a página inicial
+        </button>
+      </div>
+    </div>
+    <!-- Fim conteúdo módulo -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {% apply minify %}
+  <script>
+    $(document).ready(function() {
+      $('.image')
+        .popup()
+      ;
+    });
+  </script>
+  {% endapply %}
+{% endblock scripts %}

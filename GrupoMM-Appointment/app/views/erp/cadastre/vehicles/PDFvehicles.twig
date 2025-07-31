@@ -1,0 +1,103 @@
+{% extends 'templates/basePDF.twig' %}
+{% block title %}
+  Relação dos veículos do cliente {{ vehicles[0].customername }}
+{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  <style>
+    table.zebra tr td.status {
+      color: white !important;
+      font-weight: bold;
+    }
+    table.zebra tr td.status.inactive {
+      background-color: #528aae !important;
+    }
+    table.zebra tr td.status.blocked {
+      background-color: #c81120 !important;
+    }
+    table.zebra tr td.status.active {
+      background-color: #4a9c35 !important;
+    }
+    table.zebra tr.inactive td {
+      font-style: italic;
+      color: #528aae;
+    }
+    table.zebra tr.blocked td {
+      color: darkred;
+    }
+
+  </style>
+{% endblock %}
+{% block content %}
+  <h5>Cliente:<br><b>{{ vehicles[0].customername }}</b></h5>
+  <p>Total de veículos: <span style="font-weight: bold;">{{ vehicles|length }}</span></p>
+  <table width="100%" cellpadding="5" class="zebra">
+    <tbody>
+      <thead>
+        <tr>
+          <th width="50px">Placa</th>
+          <th width="150px">Marca</th>
+          <th>Modelo</th>
+          <th width="50px">Situação</th>
+        </tr>
+      </thead>
+      {% set customerID = 0 %}
+      {% set subsidiaryID = 0 %}
+      {% for vehicle in vehicles %}
+      {% if subsidiaryID != vehicle.subsidiaryid %}
+        {# Inclui a linha com a informação da unidade/filial #}
+        {% set subsidiaryID = vehicle.subsidiaryid %}
+      <tr>
+        <td colspan="4" style="font-size: 1.3em; padding-top: .5em; padding-bottom: .5em;">
+          {% if vehicle.cooperative == true %}
+            {% if vehicle.affiliated == true %}
+            Associado:
+            {% else %}
+            Unidade/filial:
+            {% endif %}
+          {% else %}
+            {% if vehicle.juridicalperson == true %}
+            Unidade/filial:
+            {% else %}
+              {% if vehicle.customername == vehicle.subsidiaryname %}
+              Titular: 
+              {% else %}
+              Dependente: 
+              {% endif %}
+            {% endif %}
+          {% endif %}
+          <b>{{ vehicle.subsidiaryname }}</b>
+        </td>
+      </tr>
+      {% endif %}
+      {% if vehicle.active == true %}
+        {% if (vehicle.blockedlevel > 0) %}
+          {% set status = 'blocked' %}
+          {% set label = 'Bloqueado' %}
+        {% else %}
+          {% set status = 'active' %}
+          {% set label = 'Ativo' %}
+        {% endif %}
+      {% else %}
+        {% set status = 'inactive' %}
+        {% set label = 'Inativo' %}
+      {% endif %}
+      <tr class="{{ status }}">
+        <td align="center">
+          {{ vehicle.plate }}
+        </td>
+        <td>
+          {{ vehicle.vehiclebrandname }}
+        </td>
+        <td>
+          {{ vehicle.vehiclemodelname }}
+        </td>
+        <td align="center" class="status {{ status }}">
+          {{ label }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

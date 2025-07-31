@@ -1,0 +1,205 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} dia de vencimento{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/jquery/plugins/spinner.input/spinner.input.min.css') }}
+  {{ css('form.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    div.due.segment {
+      padding: 0.3em 1em;
+    }
+    
+    table.due {
+      font-weight: 800;
+    }
+    tr.withInterest {
+      background-color: #5e33c9;
+      background-color: rgba(0,0,0,.1);
+    }
+    tr:nth-child(2n).withInterest {
+      background-color: #663ecc !important;
+      background-color: rgba(0,0,0,.05) !important;
+    }
+    .ui.inverted.table tr.withInterest td {
+      color: yellow !important;
+    }
+
+    p.due
+    {
+      margin: 5px 0px;
+      font-size: 12px;
+      line-height: 1.4em;
+      font-weight: bold;
+    }
+
+    .interestFree
+    {
+      color: #0066cc;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Parameterization\\Financial\\DueDays\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Parameterization\\Financial\\DueDays\\Edit' %}
+  {% endif %}
+  {% set previous = 'ERP\\Parameterization\\Financial\\DueDays' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/duedays.svg', 'Dia de vencimento') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} dia de vencimento
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  dia de vencimento.
+                </div>
+              {% else %}
+                Visualizar cliente
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um dia
+                  de vencimento.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início mensagem -->
+      <div class="ui icon warning message">
+        <i class="calendar icon"></i>
+        <div class="content">
+          <div class="header">
+            Atenção
+          </div>
+          <p>
+            Quando o dia de vencimento aqui informado for superior à 28
+            e o sistema estiver processando um mês com uma quantidade
+            de dias inferior ao valor informado, será automaticamente
+            utilizado o último dia do mês.
+          </p>
+        </div>
+      </div>
+      <!-- Fim mensagem -->
+    </div>
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL, {'dueDayID': getValue('duedayid') }) }}">
+        <div class="fields">
+          <div class="four wide field{{ cssError('day') }}">
+            <label>Dia de vencimento</label>
+            <div class="ui input{{ readonly }}">
+              <input name="day" type="text" maxlength="2"
+                     placeholder="Informe o dia de vencimento..."
+                     {{ readonly }}
+                     value="{{ getValue('day') }}">
+            </div>
+            {% if hasError('day') %}
+            <small class="helper">{{ getError('day') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="duedayid" value="{{ getValue('duedayid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/spinner.input/spinner.input.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $("input[name='day']")
+        .spinnerinput(dayOptions)
+      ;
+
+      // Coloca o foco no primeiro campo
+      $("input[name='day']")
+        .focus()
+      ;
+    });
+    
+
+    // =================================================[ Options ]=====
+
+    // As opções para o componente de spinner para o número máximo de
+    // parcelas
+    var dayOptions = {
+      min: 1,
+      max: 31,
+      step: 1
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

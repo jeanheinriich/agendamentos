@@ -1,0 +1,1514 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} item de contrato{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('libs/semantic-ui/components/calendar.min.css') }}
+  {{ css('form.min.css') }}
+  <style>
+    .ui.blue.toast {
+      background-color: #0261ed;
+      color: rgba(255,255,255,1);
+    }
+
+    /* Realiza ajustes no miniform */
+    .ui.form .fields:not(.grouped):not(.inline) .field:not(:only-child) .ui.checkbox {
+      margin-top: 0.3em;
+    }
+
+    /* Realiza ajustes nos detalhes */
+    .ui.mini.form {
+      margin-bottom: 0.7em;
+    }
+    .ui.basic.label {
+      text-align: center;
+      min-width: 3.2em;
+    }
+    @media (max-width: 768px) {
+      .subsidyEntry {
+        margin-bottom: .5em !important;
+      }
+      .subsidyEntry:after {
+        border-bottom: 1px dotted rgba(34,36,38,.15);
+        content: '';
+        flex: 1;
+        padding: 2px;
+      }
+      .subsidyEntry:last-child:after {
+        border-bottom: none;
+        content: '';
+        flex: 1;
+        padding: 0px;
+      }
+    }
+    .ui.vertical.segment:first-child {
+      padding-top: 0;
+    }
+
+    /**
+     * Criamos um grid especial para exibir campos no formulário que de
+     * outra forma ficariam em algumas resoluções com tamanho muito
+     * reduzido e em outras exagerado.
+     */
+    .ui.special.grid {
+      margin-top: .38571429em;
+      margin-bottom: .38571429em;
+      margin-left: -.5rem;
+      margin-right: -.5rem;
+    }
+    .ui.special.grid>.column:not(.row),
+    .ui.special.grid>.row>.column {
+      padding-left: .5rem;
+      padding-right: .5rem;
+    }
+    @media only screen and (max-width: 767.98px) {
+      .ui.special.grid {
+        margin-top: .38571429em;
+      }
+    }
+
+    /**
+     * As formatações para os campos de formulário dinâmicos
+     */
+    .ui.vertical.segment.noBottomBorder,
+    .ui.vertical.segment.form {
+      margin-top: .38571429em;
+    }
+    .tiny.form .header {
+      margin-bottom: .5em;
+    }
+    h3.ui.header .sub.header {
+      padding-top: .5em;
+    }
+    .ui.tiny.segment {
+      margin-bottom: .5em;
+    }
+    .ui.tiny.segment .ui.search.dropdown>.text {
+      line-height: 1.2em;
+    }
+    @media only screen and (max-width: 767px) {
+      .tiny.form .fields {
+        margin-left: -1em;
+        margin-right: -1em;
+        margin-bottom: .5em;
+        border-bottom: 1px dotted rgba(34,36,38,.15);
+        padding: 5px;
+      }
+      .ui.tiny.segment {
+        margin-bottom: 0.2em;
+      }
+      .ui.form .fields>.buttons {
+        margin: 0.3em 0;
+      }
+      .ui.form .fields {
+        margin-bottom: 0.3em;
+      }
+    }
+    .ui.tiny.form .fields.hidden {
+      visibility: hidden;
+      display: none;
+    }
+    .ui.tiny.form .fields .field.date {
+      flex-basis: 15%;
+    }
+    .ui.tiny.form .fields .field.value {
+      flex-basis: 20%;
+    }
+    .ui.tiny.form .fields .field.checkbox {
+      /*flex-basis: 10%;*/
+    }
+    @media only screen and (max-width: 479px) {
+      .ui.tiny.form .fields .field {
+        flex-basis: 50%;
+      }
+      .ui.tiny.form .fields .field .ui.input {
+        flex-basis: 50%;
+      }
+      .ui.tiny.form .fields .field.amount .ui.input input{
+        width: calc(42vw - 42px);
+      }
+      .ui.tiny.form .fields .field.percentage .ui.input input{
+        width: calc(42vw - 24px);
+      }
+      .ui.tiny.form .fields .field.monetary .ui.input input{
+        width: calc(42vw - 24px);
+      }
+      .ui.tiny.form .fields .field.monetarytotal .ui.input input{
+        width: calc(42vw - 58px);
+      }
+    }
+    @media only screen and (min-width: 480px) and (max-width: 767px) {
+      .ui.tiny.form .fields .field {
+        flex-basis: 50%;
+      }
+    }
+    @media only screen and (min-width: 768px) and (max-width: 1200px) {
+      .ui.tiny.form .fields {
+        -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
+      }
+      .tiny.form .fields {
+        margin-left: -1em;
+        margin-right: -1em;
+        margin-bottom: .5em;
+        border-bottom: 1px dotted rgba(34,36,38,.15);
+        padding: 5px;
+      }
+      .ui.tiny.form .fields .field {
+        flex-basis: 50%;
+      }
+    }
+    @media only screen and (min-width: 1201px) {
+      /* Large monitor or widescreen */
+      [class*="large monitor or widescreen hidden"] {
+        display: none !important;
+      }
+    }
+    .tiny.form .ui.selection.dropdown {
+      padding: .60857143em 1.8em .60857143em 1em;
+    }
+    .tiny.form .fields:not(:first-child) .ui.tiny.button {
+      pointer-events: all !important;
+    }
+
+    .ui.list .list>.item .description,
+    .ui.list>.item .description {
+      position: relative;
+      padding-left: 1.85714em;
+      margin-top: .2em;
+      color: rgba(0,0,0,.5);
+    }
+
+    @media only screen and (max-width:767px) {    
+      .ui.list .list>.item,
+      .ui.list>.item {
+        margin-bottom: .5em;
+      }
+    }
+
+    .ui.input.success>input {
+      background-color: #fcfff5;
+      border-color: #a3c293;
+      color: #2c662d;
+      -webkit-box-shadow: none;
+      box-shadow: none;
+    }
+    .ui.form>.field.success>.ui.labeled.input:not(.right):not([class*="corner labeled"])>.ui.label,
+    .ui.form>.field.success>.ui.left.action.input>.ui.button,
+    .ui.labeled.input.success:not(.right):not([class*="corner labeled"])>.ui.label,
+    .ui.left.action.input.success>.ui.button,
+    .ui.action.input.success:not(.left)>input+.ui.button,
+    .ui.form>.field.success>.ui.action.input:not(.left)>input+.ui.button,
+    .ui.form>.field.success>.ui.right.labeled.input:not([class*="corner labeled"])>input+.ui.label,
+    .ui.right.labeled.input.success:not([class*="corner labeled"])>input+.ui.label {
+      color: #2c662d;
+      background-color: #e5f9e7;
+    }
+    .ui.input.info>input {
+      color: #276f86;
+      background: #f8ffff;
+      border-color: #a9d5de;
+      -webkit-box-shadow: none;
+      box-shadow: none;
+    }
+    .ui.form>.field.info>.ui.labeled.input:not(.right):not([class*="corner labeled"])>.ui.label,
+    .ui.form>.field.info>.ui.left.action.input>.ui.button,
+    .ui.labeled.input.info:not(.right):not([class*="corner labeled"])>.ui.label,
+    .ui.left.action.input.info>.ui.button,
+    .ui.action.input.info:not(.left)>input+.ui.button,
+    .ui.form>.field.info>.ui.action.input:not(.left)>input+.ui.button,
+    .ui.form>.field.info>.ui.right.labeled.input:not([class*="corner labeled"])>input+.ui.label,
+    .ui.right.labeled.input.info:not([class*="corner labeled"])>input+.ui.label {
+      color: #276f86;
+      background-color: #e1f7f7;
+    }
+
+    .ui.ui.ui.ui.input.darking>input {
+      background-color: GhostWhite;
+      color: #5C738B;
+    }
+    .ui.icon.input.readonly>i.icon:not(.link) {
+      color: #5C738B;
+    }
+    .ui.ui.ui.ui.input.lighting>input {
+      background-color: #fafad2;
+      color: #a0522d;
+    }
+    .ui.icon.input.success>i.icon:not(.link) {
+      color: #2c662d;
+    }
+    .ui.icon.input.info>i.icon:not(.link) {
+      color: #276f86;
+    }
+
+    .ui.form small.helper {
+      word-wrap: break-word;
+      max-width: 18em;
+      display: inline-block;
+    }
+    .ui.form .fields:not(.grouped):not(.inline) .field:not(:only-child) .ui.toggle.checkbox {
+      margin-top: 0.7em;
+    }
+
+    /**
+     * Ajustes nas tabelas de valores
+     */
+    .ui.ui.table td.neuter, .ui.ui.ui.ui.table tr.neuter {
+      -webkit-box-shadow: 0 0 0 #a3c293 inset;
+      box-shadow: 0 0 0 #a3c293 inset;
+      background: #f9fafb;
+      color: rgba(0,0,0,.87);
+    }
+    span.ui.medium.text {
+      font-size: 1.1em;
+    }
+    tr.positive>td>span.blue {
+      color: #009b00 !important;
+    }
+    .ui.table thead tr:first-child>th:last-child {
+      border-right: none;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Financial\\Contracts\\Installations\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Financial\\Contracts\\Installations\\Edit' %}
+  {% endif %}
+  {% set previous = 'ERP\\Financial\\Contracts' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/contracts.svg', 'Contracto') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} item de contrato
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  item de contrato.
+                </div>
+              {% else %}
+                Visualizar item de contrato
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um item de contrato.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL, { 'installationID': getValue('installationid') }) }}">
+        <h3 class="ui header">Dados do cliente ao qual está vinculado</h3>
+        <div class="fields">
+          <div class="eight wide field">
+            <label>Nome do cliente</label>
+            <div class="field static">
+              <span class="darking">
+                {{ getValue('customername') }}
+              </span>
+              <input type="hidden" name="customername"
+                     value="{{ getValue('customername') }}">
+            </div>
+            <input type="hidden" name="customerid"
+                   value="{{ getValue('customerid') }}">
+            <input type="hidden" name="entitytypeid"
+                   value="{{ getValue('entitytypeid') }}">
+          </div>
+
+          <div class="eight wide field">
+            {% if getValue('entitytypeid') == 2 %}
+            <label for="subsidiarytitle">Titular ou dependente</label>
+            {% else %}
+            <label for="subsidiarytitle">Unidade/filial</label>
+            {% endif %}
+            <div class="field static">
+              <span class="darking">
+                {{ getValue('subsidiaryname') }}
+              </span>
+              <input type="hidden" name="subsidiaryname"
+                     value="{{ getValue('subsidiaryname') }}">
+            </div>
+            <input type="hidden" name="subsidiaryid"
+                   value="{{ getValue('subsidiaryid') }}">
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="five wide field">
+            <label>{{ getValue('regionaldocumenttypename') }}</label>
+            <div class="field static">
+              <span class="darking">
+                {{ getValue('regionaldocumentnumber') }} / {{ getValue('regionaldocumentstate') }}
+              </span>
+              <input type="hidden" name="regionaldocumenttypename"
+                     value="{{ getValue('regionaldocumenttypename') }}">
+              <input type="hidden" name="regionaldocumentnumber"
+                     value="{{ getValue('regionaldocumentnumber') }}">
+              <input type="hidden" name="regionaldocumentstate"
+                     value="{{ getValue('regionaldocumentstate') }}">
+            </div>
+          </div>
+
+          <div class="five wide field">
+            <label>
+            {% if getValue('juridicalperson') %}
+              CNPJ
+            {% else %}
+              CPF
+            {% endif %}
+            </label>
+            <div class="field static">
+              <span class="darking">
+                {{ getValue('nationalregister') }}
+              </span>
+              <input type="hidden" name="nationalregister"
+                     value="{{ getValue('nationalregister') }}">
+            </div>
+          </div>
+
+          <div class="six wide field">
+            <label>Número do contrato</label>
+            <div class="ui action input">
+              <div class="field static">
+                <span class="lighting">
+                  {{ getValue('contractnumber') }}
+                </span>
+                <input type="hidden" name="contractnumber"
+                       value="{{ getValue('contractnumber') }}">
+              </div>
+              <button class="ui primary icon button"
+                      data-tooltip="Copia o número deste contrato para a área de transferência"
+                      data-position="top right" type="button"
+                      onclick="copyContractNumberToClipboard(this);">
+                <i class="copy outline icon"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="ui header">Condições de contratação</h3>
+        <div class="fields">
+          <div class="six wide field">
+            <label>Plano de serviços</label>
+            <div class="field static">
+              <span class="darking">{{ getValue('planname') }}&nbsp;</span>
+              <input name="planname" type="hidden"
+                     value="{{ getValue('planname') }}">
+              <input name="planid" type="hidden"
+                     value="{{ getValue('planid') }}">
+            </div>
+          </div>
+
+          <div class="six wide field">
+            <label>Forma de assinatura do plano</label>
+            <div class="field static">
+              <span class="darking">{{ getValue('subscriptionplanname') }}&nbsp;</span>
+              <input name="subscriptionplanname" type="hidden"
+                     value="{{ getValue('subscriptionplanname') }}">
+              <input name="subscriptionplanid" type="hidden"
+                     value="{{ getValue('subscriptionplanid') }}">
+            </div>
+          </div>
+
+          <div class="four wide field{{ cssError('duedayid') }}">
+            <label>Dia de vencimento</label>
+            <div class="field static">
+              <span class="darking">{{ getValue('dueday') }}&nbsp;</span>
+              <input name="dueday" type="hidden"
+                     value="{{ getValue('dueday') }}">
+              <input name="duedayid" type="hidden"
+                     value="{{ getValue('duedayid') }}">
+            </div>
+            {% if hasError('duedayid') %}
+            <small class="helper">{{ getError('duedayid') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="four wide field">
+            <label>
+              Valor do plano
+              <span data-tooltip="Valor da mensalidade no plano contratado"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui left labeled input readonly">
+              <div class="ui basic label">R$</div>
+              <input name="planmonthprice" type="text"
+                     class="right" readonly
+                     value="{{ getValue('planmonthprice')|replace({'.': ','}) }}">
+             </div>
+          </div>
+
+          <div class="four wide field">
+            <label>
+              Mensalidade
+              <span data-tooltip="Valor da mensalidade estabelecida no contrato"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui left labeled input readonly">
+              <div class="ui basic label">R$</div>
+              <input name="contractmonthprice" type="text"
+                     placeholder="0,00"
+                     class="right" readonly
+                       value="{{ getValue('contractmonthprice')|replace({'.': ','}) }}">
+            </div>
+          </div>
+
+          <div class="four wide field">
+            <label>
+              Desconto oferecido
+              <span data-tooltip="Desconto aplicado em função do plano de assinatura escolhido"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui right labeled input readonly">
+              <input name="discountrate" type="text"
+                     class="right" readonly
+                     value="{{ getValue('discountrate')|replace({'.': ','}) }}">
+              <div class="ui basic label">%</div>
+             </div>
+          </div>
+
+          <div class="four wide field ">
+            <label>
+              Valor pago
+              <span data-tooltip="O valor real da mensalidade pago já incluso o desconto oferecido"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui left labeled input readonly">
+              <div class="ui basic label">R$</div>
+              <input name="realmonthprice" type="text"
+                     placeholder="0,00"
+                     class="right" readonly
+                     value="{{ getValue('realmonthprice')|replace({'.': ','}) }}">
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="four wide field{{ cssError('signaturedate') }}">
+            <label>
+              Data da assinatura
+              <span data-tooltip="A data em que o contrato foi assinado indicando que o mesmo está ativo"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui calendar" id="signaturedate">
+              <div class="ui input left icon success">
+              <i class="calendar icon"></i>
+                <input name="signaturelabel" type="text"
+                       placeholder="Assinado em..."
+                       readonly
+                       value="{{ getValue('signaturelabel') }}">
+                <input name="signaturedate" type="hidden"
+                       value="{{ getValue('signaturedate') }}">
+              </div>
+            </div>
+            {% if hasError('signaturedate') %}
+            <small class="helper">{{ getError('signaturedate') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field">
+            <label>
+              Duração do contrato
+              <span data-tooltip="Duração do contrato determinada pelo plano"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui right labeled input readonly">
+              <input name="duration" type="text"
+                     class="right" readonly
+                     value="{{ getValue('duration') }}">
+              <div class="ui basic label">meses</div>
+             </div>
+          </div>
+
+          <div class="four wide field">
+            <label>
+              Reajuste a cada
+              <span data-tooltip="Contados à partir da instalação do equipamento"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui right labeled input readonly">
+              <input name="readjustmentperiod" type="text"
+                     class="right" readonly
+                     value="{{ getValue('readjustmentperiod') }}">
+              <div class="ui basic label">meses</div>
+              <div class="ui basic label">{{ getValue('indicatorname') }}</div>
+              <input name="indicatorname" type="hidden"
+                     value="{{ getValue('indicatorname') }}">
+             </div>
+          </div>
+
+          <div class="four wide field">
+            <label>
+              Próximo reajuste do contrato
+              <span data-tooltip="Data do próximo reajuste calculado em função da data de assinatura do contrato"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui input left icon readonly">
+              <i class="calendar icon"></i>
+              <input name="dateofnextcontractreadjustment" type="text"
+                     placeholder="Reajusta valores em..."
+                     readonly
+                     value="{{ getValue('dateofnextcontractreadjustment') }}">
+            </div>
+          </div>
+        </div>
+
+        <h3 class="ui header">Dados deste item de contrato</h3>
+        <div class="fields">
+          <div class="four wide field">
+            <label>Número de registro</label>
+            <div class="ui action input">
+              <div class="field static">
+                <span class="lighting">
+                  {{ getValue('installationnumber') }}
+                </span>
+                <input type="hidden" name="installationnumber"
+                       value="{{ getValue('installationnumber') }}">
+              </div>
+              <button class="ui primary icon button"
+                      data-tooltip="Copia o número de registro deste item de contrato para a área de transferência"
+                      data-position="top right" type="button"
+                      onclick="copyInstallationNumberToClipboard(this);">
+                <i class="copy outline icon"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="four wide field{{ cssError('startdate') }}">
+            <label>
+              Data de início
+              <span data-tooltip="A data em que a instalação do equipamento foi realizada indicando que este item de contrato está ativo"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui calendar" id="startdate">
+              <div class="ui input left icon{{ readonly }}">
+              <i class="calendar icon"></i>
+                <input name="startdate" type="text"
+                       placeholder="Data de início..."
+                       {{ readonly }}
+                       value="{{ getValue('startdate') }}">
+              </div>
+            </div>
+            {% if hasError('startdate') %}
+            <small class="helper">{{ getError('startdate') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('enddate') }}">
+            <label>
+              Data de encerramento
+              <span data-tooltip="A data em que o item de contrato foi encerrado"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui calendar" id="enddate">
+              <div class="ui input left icon{{ readonly }}">
+              <i class="calendar icon"></i>
+                <input name="enddate" type="text"
+                       placeholder="Data de instalação..."
+                       {{ readonly }}
+                       value="{{ getValue('enddate') }}">
+              </div>
+            </div>
+            {% if hasError('enddate') %}
+            <small class="helper">{{ getError('enddate') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field">
+            <label>
+              Último dia do período cobrado
+              <span data-tooltip="Data até a qual as mensalidades foram cobradas"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+
+            <div class="ui input info">
+              <input name="lastdayofbillingperiod" type="text"
+                     placeholder="Próximo reajuste" readonly
+                     value="{{ getValue('lastdayofbillingperiod') }}">
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="four wide field">
+            <label>
+              Mensalidade atual
+              <span data-tooltip="Valor da mensalidade cobrada neste item de contrato"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui left labeled input info">
+              <div class="ui basic label">R$</div>
+              <input name="monthprice" type="text"
+                     placeholder="0,00"
+                     class="right" readonly
+                     value="{{ getValue('monthprice')|replace({'.': ','}) }}">
+            </div>
+          </div>
+
+          <div class="four wide field">
+            <label>
+              Início da vigência
+              <span data-tooltip="Data do início da cobrança deste valor neste item de contrato"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui input info">
+              <input name="effectivepricedate" type="text"
+                     placeholder="Início da vigência" readonly
+                     value="{{ getValue('effectivepricedate') }}">
+            </div>
+          </div>
+
+          <div class="four wide field">
+            <label>
+              Próximo reajuste
+              <span data-tooltip="Data em que ocorrerá o próximo reajuste neste item de contrato"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui input info">
+              <input name="dateofnextreadjustment" type="text"
+                     placeholder="Próximo reajuste" readonly
+                     value="{{ getValue('dateofnextreadjustment') }}">
+            </div>
+          </div>
+
+          <div class="four wide field">
+            <label>
+              Último dia do período computado
+              <span data-tooltip="Data até a qual a aferição de valores ocorreu"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui input info">
+              <input name="lastdayofcalculatedperiod" type="text"
+                     placeholder="Próximo reajuste" readonly
+                     value="{{ getValue('lastdayofcalculatedperiod') }}">
+            </div>
+          </div>
+        </div>
+          
+        {% if getValue('loyaltyperiod') > 0 %}
+        <div class="fields">
+          <div class="sixteen wide mobile sixteen wide tablet sixteen wide computer sixteen wide large screen column }}">
+            <h4 class="ui header" style="margin-top: .5em; margin-left: .3em;">
+              Configurações específicas
+            </h4>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="four wide field">
+            <label>
+              Período de fidelidade
+              <span data-tooltip="Contados à partir da instalação do equipamento"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui right labeled input info">
+              <input name="loyaltyperiod" type="text"
+                     class="right" readonly
+                     value="{{ getValue('loyaltyperiod') }}">
+              <div class="ui basic label">meses</div>
+            </div>
+          </div>
+
+          <div class="four wide field">
+            <label>
+              Data do término do período
+              <span data-tooltip="Data em que o período de fidelidade se encerra"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui input left icon info">
+              <i class="calendar icon"></i>
+              <input name="endloyaltyperiod" type="text"
+                     placeholder="Reajusta valores em..."
+                     readonly
+                     value="{{ getValue('endloyaltyperiod') }}">
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field">
+            <div class="ui list">
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="notchargeloyaltybreak"
+                         value="{% if getValue('notchargeloyaltybreak')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_notchargeloyaltybreak"
+                         {% if getValue('notchargeloyaltybreakinallcontract')|toBoolean %}
+                         disabled
+                         {% endif %}
+                         {% if getValue('notchargeloyaltybreak')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Não cobrar multa por quebra de fidelidade</label>
+                </div>
+                <input type="hidden" name="notchargeloyaltybreakinallcontract"
+                       value="{% if getValue('notchargeloyaltybreakinallcontract')|toBoolean %}true{% else %}false{% endif %}">
+                <div class="description">
+                  Não será cobrada a multa pela quebra do período de
+                  fidelidade neste item de contrato, apesar de estar
+                  previsto no plano contratado.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <input type="hidden" name="loyaltyperiod"
+               value="{{ getValue('loyaltyperiod') }}">
+        <input type="hidden" name="notchargeloyaltybreak"
+               value="false">
+        {% endif %}
+
+        <h4>Detalhamento de equipamentos instalados</h4>
+        <div class="ui vertical segment tiny form">
+          <table class="ui compact celled definition table">
+            <thead class="full-width">
+              <tr>
+                <th></th>
+                <th class="center aligned">Veículo</th>
+                <th class="center aligned">Equipamento</th>
+                <th class="center aligned">Instalado em</th>
+                <th class="center aligned">Desinstalado em</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% set records = getValue('records') %}
+              {% for recordNumber, record in records %}
+              <tr class="{% if record.uninstalledat is not null %}neuter{% else %}positive{% endif %}">
+                <td class="center aligned">
+                  {{ recordNumber + 1 }}
+                  <input name="records[{{ recordNumber }}][installationrecordid]"
+                         type="hidden"
+                         value="{{ record.installationrecordid }}" />
+                </td>
+                <td>
+                  <span class="ui blue medium text">{{ record.plate }}</span><br>
+                  {{ record.vehiclebrandname }} / {{ record.vehiclemodelname }}
+                  <input name="records[{{ recordNumber }}][vehicleid]"
+                         type="hidden" value="{{ record.vehicleid }}">
+                  <input name="records[{{ recordNumber }}][plate]"
+                         type="hidden" value="{{ record.plate }}">
+                  <input name="records[{{ recordNumber }}][vehiclebrandname]"
+                         type="hidden" value="{{ record.vehiclebrandname }}">
+                  <input name="records[{{ recordNumber }}][vehiclemodelname]"
+                         type="hidden" value="{{ record.vehiclemodelname }}">
+                </td>
+                <td>
+                  <span class="ui blue medium text">{{ record.serialnumber }}</span><br>
+                  {{ record.equipmentbrandname }} / {{ record.equipmentmodelname }}
+                  <input name="records[{{ recordNumber }}][equipmentid]"
+                         type="hidden" value="{{ record.equipmentid }}">
+                  <input name="records[{{ recordNumber }}][serialnumber]"
+                         type="hidden" value="{{ record.serialnumber }}">
+                  <input name="records[{{ recordNumber }}][equipmentbrandname]"
+                         type="hidden" value="{{ record.equipmentbrandname }}">
+                  <input name="records[{{ recordNumber }}][equipmentmodelname]"
+                         type="hidden" value="{{ record.equipmentmodelname }}">
+                </td>
+                <td class="center aligned {{ cssError('records[' ~ recordNumber ~ '][installedat]') }}">
+                  <div class="ui calendar">
+                    <div class="ui input left icon">
+                      <i class="calendar icon"></i>
+                      <input name="records[{{ recordNumber }}][installedat]" type="text"
+                             placeholder="Data de instalação..."
+                             value="{{ record.installedat }}">
+                    </div>
+                  </div>
+                  {% if hasError('records[' ~ recordNumber ~ '][installedat]') %}
+                  <small class="helper">{{ getError('records[' ~ recordNumber ~ '][installedat]') }}</small>
+                  {% endif %}
+                </td>
+                {% if record.uninstalledat is not null %}
+                <td class="center aligned {{ cssError('records[' ~ recordNumber ~ '][uninstalledat]') }}">
+                  <div class="ui calendar">
+                    <div class="ui input left icon">
+                      <i class="calendar icon"></i>
+                      <input name="records[{{ recordNumber }}][uninstalledat]" type="text"
+                             placeholder="Data de desinstalação..."
+                             value="{{ record.uninstalledat }}">
+                    </div>
+                  </div>
+                  {% if hasError('records[' ~ recordNumber ~ '][uninstalledat]') %}
+                  <small class="helper">{{ getError('records[' ~ recordNumber ~ '][uninstalledat]') }}</small>
+                  {% endif %}
+                </td>
+                <td class="collapsing">
+                  <button class="ui tiny youtube icon button"
+                          data-tooltip="Remove este registro de instalação"
+                          data-position="top right" type="button"
+                          record="{{ recordNumber }}"
+                          onclick="delRecord(this);">
+                    <i class="minus icon"></i>
+                  </button>
+                </td>
+                {% else %}
+                <td class="center aligned">
+                  <span>Em operação</span>
+                  <input name="records[{{ recordNumber }}][uninstalledat]"
+                         type="hidden" value="{{ record.uninstalledat }}">
+                </td>
+                <td class="center aligned">
+                  <i class="large green checkmark icon"></i>
+                </td>
+                {% endif %}
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="5">
+                  Nenhum equipamento ainda instalado
+                </td>
+                <td class="collapsing">
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="ui vertical segment tiny form">
+          {% set subsidies = getValue('subsidies') %}
+          <h3 class="ui header">
+            Subsídios
+            <div class="sub header">
+              Os valores de descontos e/ou bonificações concedidos. A
+              bonificação automaticamente aplica 100% de desconto, ou
+              seja, não é cobrado nenhum valor durante o período
+              indicado. Caso não seja informado o término do período,
+              considera-se o subsídio por termpo indeterminado.
+            </div>
+          </h3>
+          <div id="subsidiesList" class="subsidiesList column row">
+            {% for subsidyNumber, subsidy in subsidies %}
+              {% include 'erp/financial/contracts/installations/subsidy.twig' with { measureTypes: measureTypes, subsidyNumber: subsidyNumber, subsidy: subsidy }  %}
+            {% else %}
+            <div class="fields">
+              <div class="field">
+              Nenhum subsídio informado
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <button type="button" class="ui mini green right labeled icon button"
+                  onclick="addSubsidy();">
+            <i class="plus icon"></i> Novo subsídio
+          </button>
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="installationid" value="{{ getValue('installationid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+      {% if formMethod == 'PUT' %}
+      <!-- Start status panel -->
+      <div class="ui segments">
+        <div class="ui grey inverted segment">
+          <h5>
+            Histórico de modificações:
+          </h5>
+          Cadastrado {{ getValue('createdat')|localizedDate('long') }} por {{ getValue('createdbyusername') }}
+          <div class="ui divider"></div>
+          Modificado {{ getValue('updatedat')|localizedDate('long') }} por {{ getValue('updatedbyusername') }}
+        </div>
+      </div>
+      <!-- End status panel -->
+      {% endif %}
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('semantic-ui/components/calendar.min.js') }}
+  {{ lib('template-engine/template.engine.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+
+  {% set getEntityDataCompletion = { 'URL': 'ERP\\Cadastre\\Entities\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    /* -------------------------------------[ Valores cobrados ]----- */
+
+    {% set subsidies = getValue('subsidies') %}
+    // O índice de contagem dos valores cobrados
+    var subsidiesCount = {{ subsidies|length }};
+    
+    // O template de um novo valor cobrado
+    {% set subsidyTemplate %}
+      {% include 'erp/financial/contracts/installations/subsidy.twig' with { measureTypes: measureTypes, subsidyNumber: '<%=subsidyNumber%>', subsidy: { subsidyid: 0, bonus: false, discounttype: 1, discountvalue: '0,0000' } }  %}
+    {% endset %}
+    var subsidyTemplate = '{{ subsidyTemplate|escape('js') }}'.replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+
+    /* -------------------------------------------------------------- */
+
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $("input[name='startdate']")
+        .mask({
+          type: 'date',
+          validate: true
+        })
+      ;
+      $("#startdate")
+        .calendar(calendarOptions)
+      ;
+      $("input[name='enddate']")
+        .mask({
+          type: 'date',
+          validate: true
+        })
+      ;
+      $("#enddate")
+        .calendar(calendarOptions)
+      ;
+      $('.ui.selection.dropdown')
+        .dropdown()
+      ;
+      $('.ui.checkbox')
+        .checkbox(checkboxOptions)
+      ;
+
+      // Força o mascaramento dos campos dos registros de instalação de
+      // equipamentos
+      {% set records = getValue('records') %}
+      var
+        recordsCount = {{ records|length }}
+      ;
+      for (var recordNumber = 0; recordNumber < recordsCount; recordNumber++) {
+        // Faz o mascaramento dos campos de data
+        $("input[name='records[" + recordNumber + "][installedat]']")
+          .mask({
+            type: 'date',
+            validate: true
+          })
+        ;
+        $("input[name='records[" + recordNumber + "][installedat]']")
+          .closest('.ui.calendar')
+          .calendar(calendarOptions)
+        ;
+
+        if ($("input[name='records[" + recordNumber + "][uninstalledat]']")
+              .attr('type') !== 'hidden') {
+          $("input[name='records[" + recordNumber + "][uninstalledat]']")
+            .mask({
+              type: 'date',
+              validate: true
+            })
+          ;
+          $("input[name='records[" + recordNumber + "][uninstalledat]']")
+            .closest('.ui.calendar')
+            .calendar(calendarOptions)
+          ;
+        }
+      }
+
+      // Força o mascaramento dos campos dos subsídios
+      for (var subsidyNumber = 0; subsidyNumber < subsidiesCount; subsidyNumber++) {
+        // Faz o mascaramento dos campos de data
+        $("input[name='subsidies[" + subsidyNumber + "][periodstartedat]']")
+          .mask({
+            type: 'date',
+            validate: true
+          })
+        ;
+        $("input[name='subsidies[" + subsidyNumber + "][periodstartedat]']")
+          .closest('.ui.calendar')
+          .calendar(calendarOptions)
+        ;
+        $("input[name='subsidies[" + subsidyNumber + "][periodendedat]']")
+          .mask({
+            type: 'date',
+            validate: true
+          })
+        ;
+        $("input[name='subsidies[" + subsidyNumber + "][periodendedat]']")
+          .closest('.ui.calendar')
+          .calendar(calendarOptions)
+        ;
+
+        // Faz o tratamento do checkbox
+        $("input[name='subsidies[" + subsidyNumber + "][bonus]']")
+          .closest('.ui.checkbox')
+          .checkbox(bonusOptions)
+        ;
+
+        // Faz o tratamento da seleção do tipo de desconto
+        $("input[name='subsidies[" + subsidyNumber + "][discounttype]']")
+          .change(discountTypeHandler)
+          .trigger('change')
+        ;
+
+        // Mascara o campo de valor
+        $("input[name='subsidies[" + subsidyNumber + "][discountvalue]']")
+          .mask({
+            type: 'monetary',
+            trim: true,
+            allowNegativeValues: false,
+            maxLength: 10,
+            decimalsPlaces: 4
+          })
+        ;
+      }
+
+      // Coloca o foco no primeiro campo
+      $("input[name='customername']")
+        .focus()
+      ;
+    });
+    
+
+    // =================================================[ Options ]=====
+
+
+    // As opções para os checkbox
+    var checkboxOptions = {
+      // Dispara ao iniciar para definir o valor, se necessário
+      onChange   : function() {
+        var
+          checkbox = $(this).prop('name'),
+          //subsidyNumber = parseInt($(this).attr("subsidy")),
+          // Invertemos o valor atual
+          checked = !($(this).attr('checked') !== undefined && $(this).attr('checked')),
+          boolValue = (checked
+            ? 'true'
+            : 'false'),
+          toggleField = checkbox.replace('_','')
+        ;
+
+        // Invertemos o checkbox fake
+        $(this)
+          .attr('checked', checked)
+        ;
+
+        // Alteramos o valor do verdadeiro input
+        $("input[name='" + toggleField + "']")
+          .val(boolValue)
+        ;
+      }
+    };
+
+    // As opções para o componente de exibição de calendário
+    var calendarOptions = {
+      type: 'date',
+      formatInput: true,
+      monthFirst: false,
+      today: true,
+      text: {
+        days: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'],
+        months: [
+          'Janeiro', 'Fevereiro', 'Março', 'Abril',
+          'Maio', 'Junho', 'Julho', 'Agosto',
+          'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ],
+        monthsShort: [
+          'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+          'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+        ],
+        today: 'Hoje',
+        now: 'Agora',
+        am: 'AM',
+        pm: 'PM'
+      },
+      formatter: {
+        date: function (date, settings) {
+          if (!date) {
+            return '';
+          }
+
+          var
+            day   = date.getDate().toString().padLeftWithZeros(2),
+            month = (date.getMonth()+1).toString().padLeftWithZeros(2),
+            year  = date.getFullYear()
+          ;
+
+          return (settings.type === 'year')
+            ? year
+            : (settings.type === 'month')
+              ? month + '/' + year
+              : ( settings.monthFirst
+                  ? month + '/' + day
+                  : day + '/' + month
+                ) + '/' + year
+          ;
+        }
+      }
+    };
+
+    // As opções para o checkbox
+    var bonusOptions = {
+      // Dispara ao iniciar para definir o valor, se necessário
+      onChange   : function() {
+        var
+          checkbox = $(this).prop('name'),
+          subsidyNumber = parseInt($(this).attr("subsidy")),
+          // Invertemos o valor atual
+          checked = !($(this).attr('checked') !== undefined && $(this).attr('checked')),
+          boolValue = (checked
+            ? 'true'
+            : 'false'),
+          toggleField = checkbox.replace('_','')
+        ;
+
+        // Invertemos o checkbox fake
+        $(this)
+          .attr('checked', checked)
+        ;
+
+        // Alteramos o valor do verdadeiro input
+        $("input[name='" + toggleField + "']")
+          .val(boolValue)
+        ;
+
+        // Determina se o desconto máximo deve ser aplicado
+        if( checked ) {
+          // Definimos o desconto como sendo de 100%
+          $("input[name='subsidies[" + subsidyNumber + "][discounttype]']")
+            .closest('div')
+            .dropdown('set selected', 2)
+          ;
+          $("input[name='subsidies[" + subsidyNumber + "][discounttype]']")
+            .closest('div')
+            .find('input.search')
+            .val("")
+            .trigger("change")
+          ;
+          $("input[name='subsidies[" + subsidyNumber + "][discountvalue]']")
+            .val('100,0000')
+          ;
+        }
+      }
+    };
+
+
+    // ================================================[ Handlers ]=====
+
+    // Faz a cópia do número do contrato para o Clipboard
+    var copyContractNumberToClipboard = function(element)
+    {
+      var
+        // Recupera o elemento que contém o número do contrato
+        contractNumber = $("input[name='contractnumber']").val()
+      ;
+      
+      copyTextToClipboard(contractNumber);
+    };
+    
+    // Faz a cópia do número de registro deste item de contrato para o
+    // Clipboard
+    var copyInstallationNumberToClipboard = function(element)
+    {
+      var
+        // Recupera o elemento que contém o número do contrato
+        installationNumber = $("input[name='installationnumber']").val()
+      ;
+
+      copyTextToClipboard(installationNumber);
+    };
+
+    /**
+     * Copia o conteúdo informado para a área de transferência.
+     *
+     * @param string content
+     *   O conteúdo a ser copiado
+     * @param string message (opcional)
+     *   Uma mensagem para alertar o usuário
+     *
+     * @return void
+     */
+    async function copyTextToClipboard(content, message = '') {
+      if (message == '') {
+        message = 'Conteúdo copiado com sucesso';
+      }
+
+      // Sempre acrescenta o ícone de cópia
+      message = '<i class="copy outline large icon"></i> ' + message;
+
+      try {
+        await navigator.clipboard.writeText(content);
+
+        $('body')
+          .toast({
+            message: message,
+            class : 'blue',
+            showProgress: 'bottom'
+          })
+        ;
+      } catch (error) {
+        message = '<i class="copy outline large icon"></i> Não foi '
+         + 'possível copiar o conteúdo'
+        ;
+
+        $('body')
+          .toast({
+            message: message,
+            class : 'red',
+            showProgress: 'bottom'
+          })
+        ;
+      }
+    }
+
+    /* ------------------------------[ Registros de instalação ]----- */
+
+    
+    // Faz a remoção de um registro de instalação
+    var delRecord = function(element) {
+      // Recupera o ID do registro
+      var
+        recordNumber = parseInt($(element).attr("record"))
+      ;
+
+      $(element)
+        .closest('tr')
+        .remove()
+      ;
+    };
+
+    /* --------------------------------------------[ Subsídios ]----- */
+
+    // Faz o tratamento da seleção do tipo de desconto, atualizando o
+    // rótulo do campo
+    var discountTypeHandler = function() {
+      var
+        discountType = $(this).val(),
+        $dropdown = $(this).closest('div.search.selection.dropdown'),
+        symbol =
+          $dropdown
+            .find('div.item[data-value=' + discountType + ']')
+            .data('symbol'),
+        subsidyNumber = parseInt($(this).attr("subsidy"))
+      ;
+
+      $("div[name='subsidies[" + subsidyNumber + "][discountlabel]']")
+        .text(symbol)
+      ;
+    };
+    
+    // Faz a adição de um subsídio
+    var addSubsidy = function()
+    {
+      // Incrementa o contador de subsídios
+      var
+        subsidyNumber = subsidiesCount
+      ;
+
+      // Incrementa a quantidade de campos
+      subsidiesCount++;
+
+      if (subsidyNumber === 0) {
+        // Limpa qualquer conteúdo anterior
+        $(".subsidiesList")
+          .empty()
+        ;
+
+        // Cria um novo conjunto de campos
+        var
+          subsidyEntry = TemplateEngine(subsidyTemplate,
+            { subsidyNumber: subsidyNumber })
+        ;
+
+        // Adiciona um conjunto de campos para o novo código de rede
+        subsidyEntry = $(".subsidiesList").append(subsidyEntry);
+
+        // Acrescenta os rótulos nos campos
+        $(subsidyEntry)
+          .find("div.field")
+          .each(function() {
+            var
+              label = $(this).find('input[label]').attr('label')
+            ;
+            
+            $(this)
+              .prepend('<label>' + label + '</label>')
+            ;
+          });
+      } else {      
+        // Adiciona um conjunto de campos para o novo subsídio
+        $(".subsidiesList")
+          .append(TemplateEngine(subsidyTemplate,
+            { subsidyNumber: subsidyNumber }))
+        ;
+      }
+      
+      $('.ui.selection.dropdown')
+        .dropdown()
+      ;
+
+      // Faz o mascaramento dos campos de data
+      $("input[name='subsidies[" + subsidyNumber + "][periodstartedat]']")
+        .mask({
+          type: 'date',
+          validate: true
+        })
+      ;
+      $("input[name='subsidies[" + subsidyNumber + "][periodstartedat]']")
+        .closest('.ui.calendar')
+        .calendar(calendarOptions)
+      ;
+      $("input[name='subsidies[" + subsidyNumber + "][periodendedat]']")
+        .mask({
+          type: 'date',
+          validate: true
+        })
+      ;
+      $("input[name='subsidies[" + subsidyNumber + "][periodendedat]']")
+        .closest('.ui.calendar')
+        .calendar(calendarOptions)
+      ;
+
+      // Faz o tratamento do checkbox
+      $("input[name='subsidies[" + subsidyNumber + "][bonus]']")
+        .closest('.ui.checkbox')
+        .checkbox(bonusOptions)
+      ;
+
+      // Faz o tratamento da seleção do tipo de desconto
+      $("input[name='subsidies[" + subsidyNumber + "][discounttype]']")
+        .change(discountTypeHandler)
+        .trigger('change')
+      ;
+
+      // Mascara o campo de valor
+      $("input[name='subsidies[" + subsidyNumber + "][discountvalue]']")
+        .mask({
+          type: 'monetary',
+          trim: true,
+          allowNegativeValues: false,
+          maxLength: 10,
+          decimalsPlaces: 4
+        })
+      ;
+
+      // Coloca em foco o campo inicial do novo subsídio
+      $("input[name='subsidies[" + subsidyNumber + "][periodstartedat]']")
+        .focus()
+      ;
+    };
+    
+    // Faz a remoção de um subsídio
+    var delSubsidy = function(element) {
+      // Recupera o ID do subsídio
+      var
+        subsidyNumber = parseInt($(element).attr("subsidy"))
+      ;
+
+      $(element)
+        .closest('.subsidyEntry')
+        .remove()
+      ;
+
+      // Decrementa o contador de subsídios
+      subsidiesCount--;
+
+      if (subsidiesCount === 0) {
+        // Adiciona uma mensagem que não temos mais subsídios
+        $(".subsidiesList")
+          .append('<div class="fields"><div class="field">Nenhum subsídio informado</div></div>')
+        ;
+      }
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

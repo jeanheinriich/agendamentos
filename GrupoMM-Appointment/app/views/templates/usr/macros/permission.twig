@@ -1,0 +1,6 @@
+{% macro add(groupID, httpMethod, value) %}
+            <td class="center aligned" permitted="{{ value }}" method="{{ httpMethod }}">
+              <i class="large {% if value == "true" %}green checkmark{% else %}red times{% endif %} icon"></i>
+              <input type="hidden" name="permissions[{{ groupID }}][{{ httpMethod }}]" value="{{ value }}">
+            </td>
+{% endmacro %}

@@ -1,0 +1,513 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} condição de pagamento{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/jquery/plugins/spinner.input/spinner.input.min.css') }}
+  {{ css('form.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    div.payment.segment {
+      padding: 0.3em 1em;
+    }
+    
+    table.payment {
+      font-weight: 800;
+    }
+    tr.withInterest {
+      background-color: #5e33c9;
+      background-color: rgba(0,0,0,.1);
+    }
+    tr:nth-child(2n).withInterest {
+      background-color: #663ecc !important;
+      background-color: rgba(0,0,0,.05) !important;
+    }
+    .ui.inverted.table tr.withInterest td {
+      color: yellow !important;
+    }
+
+    p.payment
+    {
+      margin: 5px 0px;
+      font-size: 12px;
+      line-height: 1.4em;
+      font-weight: bold;
+    }
+
+    .interestFree
+    {
+      color: #0066cc;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Parameterization\\Financial\\PaymentConditions\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Parameterization\\Financial\\PaymentConditions\\Edit' %}
+  {% endif %}
+  {% set toggleBlocked = { 'URL': 'ERP\\Parameterization\\Financial\\PaymentConditions\\ToggleBlocked', 'method': 'PUT' } %}
+  {% set previous = 'ERP\\Parameterization\\Financial\\PaymentConditions' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  {% set enableToggleBlocked = authorization.getAuthorizationFor(toggleBlocked.URL, toggleBlocked.method) %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/paymentconditions.svg', 'Condições de pagamento') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} condição de pagamento
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar uma nova {% else %}modificar as informações cadastrais de uma {% endif %}
+                  condição de pagamento. As condições de pagamento são
+                  os regulamentos que devem ser seguidos para que o
+                  cliente possa adquirir seus serviços. Por exemplo, em
+                  uma venda com parcelamento, a condição de pagamento
+                  demarcada na negociação é a de que o cliente vai pagar
+                  3 parcelas mensais de R$150,00 sem juros. A operação
+                  foi realizada em cartão de crédito, que é o meio de
+                  pagamento.
+                </div>
+              {% else %}
+                Visualizar condição de pagamento
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de uma
+                  condição de pagamento. {{ URL }} {{ formMethod }}
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <br>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL, {'paymentConditionID': getValue('paymentconditionid') }) }}">
+        <div class="ui vertical segment">
+          <div class="fields">
+            <div class="sixteen wide field{{ cssError('name') }}">
+              <label>Nome da condição de pagamento</label>
+              <div class="ui input{{ readonly }}">
+                <input name="name" type="text" maxlength="50"
+                       placeholder="Informe o nome do condição de pagamento..."
+                       {{ readonly }}
+                       value="{{ getValue('name') }}">
+              </div>
+              {% if hasError('name') %}
+              <small class="helper">{{ getError('name') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="five wide field{{ cssError('paymentmethodid') }}">
+              <label>Meio de pagamento</label>
+              {% if editMode %}
+              <div id="paymentmethodid" class="ui search selection dropdown">
+                <input name="paymentmethodid" type="hidden"
+                       value="{{ getValue('paymentmethodid') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text"></div>
+                <div class="menu">
+                  {% for paymentMethod in paymentMethods %}
+                    <div class="item"
+                         data-value="{{ paymentMethod.id }}"
+                         data-text="{{ paymentMethod.name }}"
+                         requires-settings="{%if paymentMethod.requiressettings %}true{% else %}false{% endif %}">
+                      {{ paymentMethod.name }}
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+              {% else %}
+              <div class="field static">
+                <span class="darking">{{ getValue('paymentmethodname') }}&nbsp;</span>
+              </div>
+              {% endif %}
+              {% if hasError('paymentmethodid') %}
+              <small class="helper">{{ getError('paymentmethodid') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="six wide field{{ cssError('definedmethodid') }}">
+              <label>Configuração</label>
+              {% if editMode %}
+              <div id="definedmethodid" class="ui search selection dropdown">
+                <input name="definedmethodid" type="hidden"
+                       value="{{ getValue('definedmethodid') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text"></div>
+                <div class="menu">
+                    <div class="item"
+                         data-value="0"
+                         data-text="Não necessária"
+                         paymentMethod="0">
+                      Não necessária
+                    </div>
+                  {% for definedMethod in definedMethods %}
+                    <div class="item"
+                         data-value="{{ definedMethod.id }}"
+                         data-text="{{ definedMethod.name }}"
+                         paymentMethod="{{ definedMethod.paymentmethodid }}">
+                      {{ definedMethod.name }}
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+              {% else %}
+              <div class="field static">
+                <span class="darking">{{ getValue('definedmethodname') }}&nbsp;</span>
+              </div>
+              {% endif %}
+              {% if hasError('definedmethodid') %}
+              <small class="helper">{{ getError('definedmethodid') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="five wide field{{ cssError('paymentformid') }}">
+              <label>Forma de pagamento</label>
+              {% if editMode %}
+              <div id="paymentformid" class="ui search selection dropdown">
+                <input name="paymentformid" type="hidden"
+                       value="{{ getValue('paymentformid') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text"></div>
+                <div class="menu">
+                  {% for paymentForm in paymentForms %}
+                    <div class="item" data-value="{{ paymentForm.id }}" data-text="{{ paymentForm.name }}">
+                      {{ paymentForm.name }}
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+              {% else %}
+              <div class="field static">
+                <span class="darking">{{ getValue('paymentformname') }}&nbsp;</span>
+              </div>
+              {% endif %}
+              {% if hasError('paymentformid') %}
+              <small class="helper">{{ getError('paymentformid') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="eight wide field{{ cssError('paymentinterval') }}">
+              <label>Intervalo de pagamentos</label>
+              <div class="ui input{{ readonly }}">
+                <input name="paymentinterval" type="text"
+                       placeholder="Informe o intervalo" {{ readonly }}
+                       value="{{ getValue('paymentinterval') }}">
+              </div>
+              {% if hasError('paymentinterval') %}
+              <small class="helper">{{ getError('paymentinterval') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="eight wide field{{ cssError('timeunit') }}">
+              <label>Intervalo expresso em</label>
+              {% if editMode %}
+              <div id="timeunit" class="ui search selection dropdown">
+                <input name="timeunit" type="hidden"
+                       value="{{ getValue('timeunit') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text"></div>
+                <div class="menu">
+                  {% for timeUnit in timeUnits %}
+                    <div class="item" data-value="{{ timeUnit.id }}" data-text="{{ timeUnit.name }}">
+                      {{ timeUnit.name }}
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+              {% else %}
+              <div class="field static">
+                <span class="darking">{{ getValue('timeunitname') }}&nbsp;</span>
+              </div>
+              {% endif %}
+              {% if hasError('timeunit') %}
+              <small class="helper">{{ getError('timeunit') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if editMode %}
+          <div class="fields">
+            <div class="sixteen wide field{{ cssError('usepaymentgateway') }}">
+              <div class="ui checkbox{{ readonly }}">
+                <input type="hidden" name="usepaymentgateway"
+                       value="{% if getValue('usepaymentgateway')|toBoolean %}true{% else %}false{% endif %}">
+                <input class="hidden" type="checkbox"
+                       name="_usepaymentgateway"
+                       {{ readonly }}
+                       {% if getValue('usepaymentgateway')|toBoolean %}checked="checked"{% endif %}>
+                <label>Utiliza um gateway de pagamentos</label>
+              </div>
+              {% if hasError('usepaymentgateway') %}
+              <small class="helper">{{ getError('usepaymentgateway') }}</small>
+              {% endif %}
+            </div>
+          </div>
+          {% else %}
+            {% if getValue('usepaymentgateway')|toBoolean %}
+            <div class="fields">
+              <div class="eight wide darkred field">
+                <i class="lock icon"
+                   style="font-size: 1.8em; line-height: 1em; vertical-align: middle;"></i>
+                Este condição de pagamento utiliza um gateway de pagamentos.
+              </div>
+            </div>
+            {% endif %}
+          {% endif %}
+
+          {% if editMode %}
+          <div class="fields">
+            <div class="sixteen wide field{{ cssError('formatasbooklet') }}">
+              <div class="ui checkbox{{ readonly }}">
+                <input type="hidden" name="formatasbooklet"
+                       value="{% if getValue('formatasbooklet')|toBoolean %}true{% else %}false{% endif %}">
+                <input class="hidden" type="checkbox"
+                       name="_formatasbooklet"
+                       {{ readonly }}
+                       {% if getValue('formatasbooklet')|toBoolean %}checked="checked"{% endif %}>
+                <label>Formatar como carnê de pagamentos</label>
+              </div>
+              {% if hasError('formatasbooklet') %}
+              <small class="helper">{{ getError('formatasbooklet') }}</small>
+              {% endif %}
+            </div>
+          </div>
+          {% else %}
+            {% if getValue('formatasbooklet')|toBoolean %}
+            <div class="fields">
+              <div class="eight wide darkred field">
+                <i class="lock icon"
+                   style="font-size: 1.8em; line-height: 1em; vertical-align: middle;"></i>
+                Este condição de pagamento é formatada na forma de carnê de pagamentos.
+              </div>
+            </div>
+            {% endif %}
+          {% endif %}
+
+          {% if enableToggleBlocked %}
+          <div class="fields">
+            <div class="sixteen wide field{{ cssError('blocked') }}">
+              <div class="ui checkbox{{ readonly }}">
+                <input type="hidden" name="blocked"
+                       value="{% if getValue('blocked')|toBoolean %}true{% else %}false{% endif %}">
+                <input class="hidden" type="checkbox"
+                       {{ readonly }}
+                       name="_blocked"
+                       {% if getValue('blocked')|toBoolean %}checked="checked"{% endif %}>
+                <label>Bloquear este condição de pagamento para uso no sistema</label>
+              </div>
+              {% if hasError('blocked') %}
+              <small class="helper">{{ getError('blocked') }}</small>
+              {% endif %}
+            </div>
+          </div>
+          {% else %}
+            {% if getValue('blocked')|toBoolean %}
+            <div class="fields">
+              <div class="eight wide darkred field">
+                <i class="lock icon"
+                   style="font-size: 1.8em; line-height: 1em; vertical-align: middle;"></i>
+                Este condição de pagamento está bloqueado para uso no sistema.
+              </div>
+            </div>
+            {% endif %}
+          {% endif %}
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="paymentconditionid" value="{{ getValue('paymentconditionid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('jquery/plugins/spinner.input/spinner.input.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      $('.ui.checkbox')
+        .checkbox(checkboxOptions)
+      ;
+      $("input[name='paymentmethodid']")
+        .change(paymentMethodHandler)
+        .trigger("change")
+      ;
+      $("input[name='paymentinterval']")
+        .mask({
+          type: 'interval',
+          trim: true,
+          maxLength: 50
+        })
+      ;
+
+      // Coloca o foco no primeiro campo
+      $("input[name='name']")
+        .focus()
+      ;
+    });
+
+
+    // ================================================[ Handlers ]=====
+
+    // Faz o tratamento da seleção do meio de pagamento
+    function paymentMethodHandler() {
+      var
+        $paymentMethod = $(this).val(),
+        $paymentMethodDropdown = $(this).closest('div.search.selection.dropdown'),
+        $requiresSettings =
+          $paymentMethodDropdown
+            .find('div.item[data-value=' + $paymentMethod + ']')
+            .attr('requires-settings'),
+        $dropdown = $("#definedmethodid"),
+        $reselect = false,
+        $firstID = 0
+      ;
+
+      $dropdown
+        .find('.menu .item')
+        .each(function( index ) {
+          if ($requiresSettings == 'true') {
+            if ($(this).attr('paymentMethod') == $paymentMethod) {
+              $(this)
+                .removeClass('disabled')
+              ;
+
+              if ($firstID == 0) {
+                $firstID = $(this).data('value');
+              }
+            } else {
+              $(this)
+                .addClass('disabled')
+              ;
+
+              if ($(this).hasClass('selected')) {
+                $reselect = true;
+              }
+            }
+          } else {
+            if ($(this).attr('paymentMethod') == 0) {
+              $(this)
+                .removeClass('disabled')
+              ;
+            } else {
+              $(this)
+                .addClass('disabled')
+              ;
+
+              if ($(this).hasClass('selected')) {
+                $reselect = true;
+              }
+            }
+          }
+        })
+      ;
+
+      if ($reselect) {
+        // Selecionamos o primeiro item
+        $("#definedmethodid")
+          .dropdown('set selected', $firstID)
+        ;
+      }
+    }
+    
+
+    // =================================================[ Options ]=====
+
+    // As opções para os checkbox
+    var checkboxOptions = {
+      // Dispara ao iniciar para definir o valor, se necessário
+      onChange   : function() {
+        var
+          checkbox = $(this).prop('name'),
+          // Invertemos o valor atual
+          checked = !($(this).attr('checked') !== undefined && $(this).attr('checked')),
+          boolValue = (checked
+            ? 'true'
+            : 'false'),
+          toggleField = checkbox.replace('_','')
+        ;
+
+        // Invertemos o checkbox fake
+        $(this)
+          .attr('checked', checked)
+        ;
+
+        // Alteramos o valor do verdadeiro input
+        $("input[name='" + toggleField + "']")
+          .val(boolValue)
+        ;
+      }
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

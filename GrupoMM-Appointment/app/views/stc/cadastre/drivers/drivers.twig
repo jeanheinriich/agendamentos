@@ -1,0 +1,492 @@
+{% extends 'templates/stc/layout.twig' %}
+{% import "templates/stc/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento de motoristas{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.main.basic.segment .searchbar.fields .field.customer {
+      flex-grow: 1;
+      min-width: 236px;
+    }
+
+    @media only screen and (min-width: 990px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 446px;
+      }
+    }
+
+    #result_wrapper {
+      width: 100%;
+    }
+
+    /* --------------------------------------------------------------
+     * Personalizações das linhas do datagrid apenas para este módulo
+     * -------------------------------------------------------------- */
+    .blocked > td {
+      color: #7f7f7f
+    }
+    .blocked > td {
+      background-color: #fff6f6 !important;
+      color: DarkRed;
+    }
+    tr.blocked:hover > td {
+      background-color: #f6e7e7 !important;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set add = { 'URL': 'STC\\Cadastre\\Drivers\\Add', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('stc/drivers.svg', 'Motoristas') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento dos motoristas
+                <div class="sub header">
+                  Permite gerenciar os motoristas cadastrados no sistema
+                  STC.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(add.URL, add.method) %}
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Adiciona um motorista"
+                      data-position="top left" type="button"
+                      onclick="location.href='{{ path_for(add.URL) }}'">
+                <i class="add icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            {% if authorization.user.groupid < 6 %}
+            <div class="field customer">
+              <input placeholder="Informe o cliente..." type="text"
+                     name="customerName"
+                     value="{{ driver.customer.name }}">
+              <input type="hidden" name="customerID"
+                     value="{{ driver.customer.id }}" >
+            </div>
+            {% endif %}
+          {% if authorization.user.groupid < 6 %}
+          </div>
+
+          <div class="flex">
+          {% endif %}
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite o nome do motorista que procura..."
+                       value="{{ driver.name }}">
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza um motorista"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Cliente</th>
+          <th>ID do cliente</th>
+          <th>Nome</th>
+          <th>Ocupação</th>
+          <th>Empregador</th>
+          <th {{ tooltip.add('left', 'Permite remover o motorista') }}><i class="remove darkred icon"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/stc/partials/dialogs/error.twig' %}
+  {% include 'templates/stc/partials/dialogs/info.twig' %}
+  {% include 'templates/stc/partials/dialogs/question.twig' %}
+  {% include 'templates/stc/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/DeleteFormatter.min.js') }}
+
+  {% set getData = { 'URL': 'STC\\Cadastre\\Drivers\\Get', 'method': 'PATCH' } %}
+  {% set edit    = { 'URL': 'STC\\Cadastre\\Drivers\\Edit', 'method': 'GET' } %}
+  {% set remove  = { 'URL': 'STC\\Cadastre\\Drivers\\Delete', 'method': 'DELETE' } %}
+
+  {% set getCustomerNameCompletion = { 'URL': 'STC\\Cadastre\\Customers\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      table,
+      groupColumn = 1
+    ;
+
+    $(document).ready(function() {
+      // --------------------------------[ Componentes da Searchbar ]---
+      $('#searchValue')
+        .keypress(forceSearch)
+      ;
+
+      {% if authorization.user.groupid < 6 %}
+      $("input[name='customerName']")
+        .autocomplete(customerNameCompletionOptions)
+      ;
+      {% endif %}
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "drivers.driverid",
+            "data": "id",
+            "visible": true,
+            "width": "40px",
+            "className": "dt-center",
+            "orderable": true },
+          { "targets": 1,
+            "name": "customername",
+            "data": "customername",
+            "visible": false,
+            "orderable": false },
+          { "targets": 2,
+            "name": "clientid",
+            "data": "clientid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 3,
+            "name": "customers.name, drivers.name",
+            "data": "name",
+            "visible": true,
+            "orderable": true },
+          { "targets": 4,
+            "name": "customers.name,drivers.occupation",
+            "data": "occupation",
+            "visible": true,
+            "width": "200px",
+            "orderable": true },
+          { "targets": 5,
+            "name": "customers.name, drivers.employername",
+            "data": "employername",
+            "visible": true,
+            "width": "400px",
+            "orderable": true },
+          { "targets": 6,
+            "name": "delete",
+            "data": "id",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": deleteFormatter("Remover este motorista") }
+        ],
+        order: [[ 3, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        displayStart: {{ driver.displayStart|default("0") }},
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.searchValue  = $('#searchValue').val();
+            params.clientID     = $("input[name='customerID']").val();
+            params.customerName = $("input[name='customerName']").val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+          {% if authorization.user.groupid < 6 %}
+          {% set colspan = 5 %}
+
+          // Agrupamento de linhas
+          var
+            api          = this.api(),
+            rows         = api.rows( {page:'current'} ).nodes(),
+            lastGroup    = null
+          ;
+
+          api.column(groupColumn, {page:'current'} ).data().each(function( group, i ) {
+            if (lastGroup !== group) {
+              // Informações do cliente
+
+              // 1. Coluna expandida com os dados do cliente
+
+              // Monta os dados dos cabeçalhos das colunas
+              var
+                groupedCellData = ''
+                  + '<span {{ tooltip.add("right", "Cliente") }}>'
+                  +   '<i class="fas fa-house-user"></i> '
+                  + '</span>' + group,
+                $column1 = $("<td colspan='{{ colspan }}'>")
+                  .html(groupedCellData)
+                  .css("font-weight", "600");
+              ;
+
+              // Adiciona uma nova linha e, internamente, as colunas
+              var
+                $newRow = $("<tr>")
+                  .addClass('group')
+                  .append($column1)
+              ;
+
+              // Adiciona a nova linha de agrupamento antes da linha
+              // atual
+              $(rows)
+                .eq( i )
+                .before(
+                  $newRow
+                )
+              ;
+
+              lastGroup = group;
+            }
+          } );
+          {% endif %}
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        }
+      });
+
+      // Manipula os eventos de click
+      table
+        .on('user-select', function (e, dt, type, cell, originalEvent) {
+          if (type === 'cell') {
+            var
+              // Recupera os dados da célula selecionada
+              index   = cell[0][0],
+
+              // Recupera o motorista selecionado
+              driver = dt.rows( index.row ).data().toArray()[0]
+            ;
+
+            // Em função da coluna onde ocorreu o clique, executa a ação
+            // correspondente
+            switch (index.column) {
+              {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}
+              case 6:
+                // Questiona se deve apagar o motorista selecionado
+                questionDialog('Remover motorista', 'Você deseja '
+                  + 'realmente remover o motorista <b>&ldquo;['
+                  + driver.id + '] ' + driver.name + '&rdquo;</b>? '
+                  + 'Esta ação não poderá ser desfeita.',
+                  function() {
+                    // Remove o motorista selecionado
+                    var url  = "{{ buildURL(remove.URL, {'clientID': 'driver.clientid', 'driverID': 'driver.id'}) }}";
+                    
+                    deleteJSONData(url, [],
+                    function (data, params, message) {
+                      // Atualiza a tabela
+                      searchLoad();
+                    });
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  }
+                );
+
+                break;
+              {% endif %}
+              default:
+                {% if authorization.getAuthorizationFor(edit.URL, edit.method) %}
+                // Coloca o motorista em edição
+                window.location.href = "{{ buildURL(edit.URL, { 'clientID': 'driver.clientid', 'driverID': 'driver.id'}) }}";
+                {% endif %}
+            }
+
+            e.preventDefault();
+          }
+        }
+      );
+
+      // Força a atualização da tabela para reajustar as colunas após
+      // a carga
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 1500);
+    });
+
+
+    // =================================================[ Options ]=====
+
+    {% if authorization.user.groupid < 6 %}
+    // As opções para o componente de autocompletar o nome do cliente
+    var customerNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      showClearValue: true,
+      ajax: {
+        url: "{{ path_for(getCustomerNameCompletion.URL) }}",
+        type: "{{ getCustomerNameCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'customer';
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        return ''
+          + '<div class="content">'
+          +   '<div class="title">' + suggestion.name + '<br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       suggestion.nationalregister
+          +     '</span>'
+          +   '</div>'
+          + '</div>'
+        ;
+      },
+      onSelect: function(element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='customerID']")
+          .val(suggestion.id)
+        ;
+
+        searchLoad();
+      },
+      onInvalidateSelection: function() {
+        // Limpa os dados
+        $("input[name='customerID']")
+          .val(0)
+        ;
+
+        searchLoad();
+      }
+    };
+    {% endif %}
+
+
+    // ================================================[ Handlers ]=====
+
+    // Executa a pesquisa
+    function searchLoad() {
+      table
+        .ajax
+        .reload()
+      ;
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 500);
+    }
+
+    // Força a atualização da tabela
+    function forceSearch(event) {
+      if (event.which == 13) {
+        searchLoad();
+      }
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

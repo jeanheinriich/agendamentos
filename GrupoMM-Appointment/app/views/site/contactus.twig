@@ -1,0 +1,267 @@
+{% extends 'templates/site/layout.twig' %}
+{% block title %}{{ parent() }} - Contato{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  {{ css('flash.min.css') }}
+  <style>
+    .segment.form {
+      margin-top: 0;
+    }
+    @media only screen and (max-width: 767.98px) {
+      .ui.stackable.marginless.grid>.row>.column,
+      .ui.stackable.marginless.grid>.row>.wide.column {
+        padding: 0 0 1rem 0;
+      }
+      .ui.form .fields .field {
+        margin-bottom: 1em;
+      }
+    }
+    label.nowrap {
+      white-space: nowrap; 
+      width: 100%; 
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ui.address.list {
+      font-size: 1em;
+      line-height: 1.4285em;
+      color: #303030;
+    }
+    .ui.address.list .whatsapp {
+      padding-left: 10px;
+      color: Green;
+    }
+    .ui.header {
+      margin-bottom: calc(-0.142857em + 1rem);
+    }
+    .ui.list > .item {
+      padding: .6em 0;
+      transform: rotateY(0deg);
+    }
+    .ui.list > .item > i.icon:hover {
+      transform: rotateY(360deg);
+      transition: .8s;
+      transform-style: preserve-3d;
+      position: relative;
+    }
+    a {
+      color: DimGray;
+    }
+    .item a:hover {
+      text-decoration: underline;
+      color: Dodger;
+    }
+    .item a {
+      font-weight: bold;
+    }
+    .ui.medium.form,
+    .ui.medium.form .field .dropdown,
+    .ui.medium.form .field .dropdown .menu>.item {
+      /*font-size: .92857143rem;*/
+      font-size: 1.0857143rem;
+    }
+    .ui.form .field>label {
+      font-weight: 500;
+    }
+    .item a {
+      font-family: Hind,Lato,"Helvetica Neue","Open Sans",Arial,Helvetica,sans-serif;
+      font-weight: 400;
+    }
+    .flash.message {
+      max-width: 100% !important;
+      margin-bottom: 1em;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+    <main>
+      <section class="hero contactus">
+      </section>
+      <section class="description">
+        <div class="ui basic segment">
+          <!-- Início cabeçalho módulo -->
+          <h2 class="ui blue header">
+            <table cellspacing="0" cellpadding="0">
+              <tbody>
+                <tr>
+                  <td class="mobile hidden">
+                    {{ icon('site/contactus.svg', 'Contacte-nos') }}
+                  </td>
+                  <td>
+                    <div class="content">
+                      Contacte-nos
+                      <div class="sub header">
+                        Está com dúvidas ou precisa de maiores
+                        informações? Este é o lugar certo. Aqui reunimos
+                        diversas formas de contactar-nos para solucionar
+                        suas dúvidas e/ou fazer elogios ou críticas.
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </h2>
+          <!-- Fim cabeçalho módulo -->
+
+          <div class="ui vertical segment">
+            <div class="ui marginless stackable grid">
+              <div class="row">
+                <article class="ten wide column">
+                  <!-- Start flash messages -->
+                  {% include 'templates/adm/partials/flash.twig' %}
+                  <!-- End flash messages -->
+                  
+                  <!-- Start Form -->
+                  <form class="ui blue secondary segment medium form" method="POST"
+                        action="{{ path_for('ContactUs') }}">
+                    <h3 class="ui dividing header">Formulário de contato</h3>
+                    <div class="sub header" style="padding-bottom: 10px;">
+                      Preencha o formulário abaixo e em breve estaremos respondendo.
+                    </div>
+                    <div class="fields">
+                      <div class="twelve wide field{{ cssError('name') }}">
+                        <label>Nome</label>
+                        <input name="name" placeholder="Informe o seu nome..." type="text"
+                               value="{{ getValue('name') }}" maxlength="50">
+                        {% if hasError('name') %}
+                        <small class="helper">{{ getError('name') }}</small>
+                        {% endif %}
+                      </div>
+                      <div class="four wide field{{ cssError('phonenumber') }}">
+                        <label class="nowrap">Telefone de contato</label>
+                        <input name="phonenumber" placeholder="Informe o seu telefone..." type="text"
+                               value="{{ getValue('phonenumber') }}" maxlength="20">
+                        {% if hasError('phonenumber') %}
+                        <small class="helper">{{ getError('phonenumber') }}</small>
+                        {% endif %}
+                      </div>
+                    </div>
+                    <div class="field{{ cssError('email') }}">
+                      <label>E-mail</label>
+                      <input name="email" placeholder="Informe o endereço do seu e-mail..." type="text"
+                             value="{{ getValue('email') }}" maxlength="100">
+                      {% if hasError('email') %}
+                      <small class="helper">{{ getError('email') }}</small>
+                      {% endif %}
+                    </div>
+                    <div class="field{{ cssError('subject') }}">
+                      <label>Assunto</label>
+                      <input name="subject" placeholder="Informe o assunto..." type="text"
+                             value="{{ getValue('subject') }}" maxlength="100">
+                      {% if hasError('subject') %}
+                      <small class="helper">{{ getError('subject') }}</small>
+                      {% endif %}
+                    </div>
+                    <div class="field{{ cssError('message') }}">
+                      <label>Mensagem</label>
+                      <textarea name="message"
+                                placeholder="Escreva aqui sua mensagem...">{{ getValue('message') }}</textarea>
+                      {% if hasError('message') %}
+                      <small class="helper">{{ getError('message') }}</small>
+                      {% endif %}
+                    </div>
+                    
+                    <button type="submit" class="ui submit primary right labeled icon button">
+                      <i class="checkmark icon"></i> Enviar mensagem
+                    </button>
+                    
+                    <input type="hidden" name="_method" value="POST">
+                  </form>
+                  <!-- End Form -->
+                </article>
+                
+                <aside class="six wide column">
+                  <div class="ui marginless blue form segment form">
+                    <h3 class="ui dividing header">Fale conosco</h3>
+                    <div class="sub header">
+                      Caso prefira, utilize um dos canais abaixo para falar conosco.
+                    </div>
+                    <div class="ui address list">
+                      <div class="item">
+                        <i class="marker icon"></i>
+                        <div class="middle aligned content">
+                          Rua Cinco de Maio, 12 &middot; Vila Maggi<br>
+                          07850-300 - Franco da Rocha - SP
+                        </div>
+                      </div>
+                      <div class="item">
+                        <i class="mail icon"></i>
+                        <div class="middle aligned content">
+                          <a href="mailto:{{ address('contact').email }}">
+                            {{ address('contact').email }}
+                          </a>
+                        </div>
+                      </div>
+                      <div class="item">
+                        <i class="linkify icon"></i>
+                        <div class="middle aligned content">
+                          <a href="{{ path_for('Home') }}">
+                            www.grupomm.srv.br
+                          </a>
+                        </div>
+                      </div>
+                      <div class="item">
+                        <i class="facebook icon"></i>
+                        <div class="middle aligned content">
+                          <a href="https://www.facebook.com/grupommrastreamentoealarme">
+                            Facebook
+                          </a>
+                        </div>
+                      </div>
+                      <div class="item">
+                        <i class="instagram icon"></i>
+                        <div class="middle aligned content">
+                          <a href="https://www.instagram.com/grupomm.rastreamento">
+                            Instagram
+                          </a>
+                        </div>
+                      </div>
+                      <div class="item">
+                        <i class="call icon"></i>
+                        <div class="middle aligned content">
+                          <a href="tel:+{{ address('fixo').phone }}">
+                            {{ address('fixo').number }}
+                          </a>
+                        </div>
+                      </div>
+                      <div class="item">
+                        <i class="mobile alternate icon"></i>
+                        <div class="middle aligned content">
+                          <a href="tel:+{{ address('whatsapp').phone }}">
+                            {{ address('whatsapp').number }}
+                          </a>
+                          <i class="whatsapp icon"></i>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </aside>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // Mascara os campos
+      $("input[name='phonenumber']")
+        .mask({ type: 'phoneNumber' });
+      
+      // Coloca o foco no primeiro campo
+      $("input[name='name']").focus();
+    });
+  </script>
+  {% endapply %}
+{% endblock scripts %}

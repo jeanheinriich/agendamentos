@@ -1,0 +1,158 @@
+{% extends 'templates/adm/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} tipo de veículo{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  {{ css('loading.min.css') }}
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ADM\\Parameterization\\Vehicles\\Types\\Add' %}
+  {% else %}
+    {% set URL = 'ADM\\Parameterization\\Vehicles\\Types\\Edit' %}
+  {% endif %}
+  {% set previous = 'ADM\\Parameterization\\Vehicles\\Types' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('adm/vehicletypes.svg', 'Tipo de veículo') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if editMode %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} tipo de veículo
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  tipo de veículo.
+                </div>
+              {% else %}
+                Visualizar tipo de veículo
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um
+                  tipo de veículo.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <div class="loading hidden">Processando...&#8230;</div>
+      <form class="ui form" method="POST" autocomplete="off"
+            onsubmit="loading();"
+            action="{{ path_for(URL, { 'vehicleTypeID': getValue('vehicletypeid') }) }}">
+        <div class="fields">
+          <div class="six wide field{{ cssError('name') }}">
+            <label>Tipo de veículo</label>
+            <div class="ui input{{ readonly }}">
+              <input name="name" type="text" maxlength="30"
+                     placeholder="Informe o nome do tipo de veículo..."
+                     {{ readonly }}
+                     value="{{ getValue('name') }}">
+            </div>
+            {% if hasError('name') %}
+            <small class="helper">{{ getError('name') }}</small>
+            {% endif %}
+          </div>
+          <div class="six wide field{{ cssError('singular') }}">
+            <label>Tipo de veículo no singular</label>
+            <div class="ui input{{ readonly }}">
+              <input name="singular" type="text" maxlength="30"
+                     placeholder="Informe o nome do tipo de veículo no singular..."
+                     {{ readonly }}
+                     value="{{ getValue('singular') }}">
+            </div>
+            {% if hasError('singular') %}
+            <small class="helper">{{ getError('singular') }}</small>
+            {% endif %}
+          </div>
+          <div class="four wide field{{ cssError('fipename') }}">
+            <label>Nome no sistema Fipe</label>
+            <div class="ui input{{ readonly }}">
+              <input name="fipename" type="text" maxlength="30"
+                     placeholder="Informe o nome no sistema FIPE..."
+                     {{ readonly }}
+                     value="{{ getValue('fipename') }}">
+            </div>
+            {% if hasError('fipename') %}
+            <small class="helper">{{ getError('fipename') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="vehicletypeid" value="{{ getValue('vehicletypeid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      // Coloca o foco no primeiro campo
+      $("input[name='name']")
+        .focus()
+      ;
+    });
+
+    var loading = function() {
+      $(document.body)
+        .css({
+          'cursor' : 'wait'
+        })
+      ;
+      $(".loading")
+        .removeClass("hidden")
+      ;
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

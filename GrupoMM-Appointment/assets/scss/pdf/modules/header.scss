@@ -1,0 +1,23 @@
+/* ---------------------------------------------------[ Rodapé ]-----
+   As definições do rodapé da página
+   ------------------------------------------------------------------ */
+
+table.header {
+  border-bottom: 1px solid #000000;
+  vertical-align: bottom;
+  font-weight: bold;
+  padding-bottom: 3px;
+
+  tr {
+    td.logo {
+      font-size: 21px;
+      color: #0360ebff;
+    }
+
+    td.title {
+      font-size: 1.4em;
+      font-family: $fontEmphasy;
+      line-height: 1.8em;
+    }
+  }
+}

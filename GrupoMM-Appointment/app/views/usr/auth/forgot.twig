@@ -1,0 +1,134 @@
+{% extends 'templates/site/layoutsimple.twig' %}
+{% block title %}{{ parent() }} - Redefinição de senha{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('flash.min.css') }}
+  {{ css('form.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    .ui.items > .item > .image:not(.ui) {
+      width: 125px;
+    }
+    i.big.big.big.icon,
+    i.big.big.big.icons {
+      font-size: 3em;
+      vertical-align: middle;
+    }
+    i.lightblue.icon.icon.icon.icon.icon {
+      color: lightblue;
+    }
+
+    .ui.middle.aligned .column {
+      max-width: 480px;
+    }
+
+    .left.aligned {
+      text-align: left !important;
+    }
+
+    .toggle.icon {
+      opacity: .5 !important;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+    <main>
+      <section class="description">
+        <div class="ui basic segment">
+        </div>
+
+        <div class="ui basic segment">
+          <div class="ui middle aligned center aligned grid">
+            <article class="column">
+              <!-- Start flash messages -->
+              {% include 'templates/adm/partials/flash.twig' %}
+              <!-- End flash messages -->
+
+              <!-- Start Form -->
+              <form class="ui blue secondary segment medium form" method="POST"
+                    action="{{ path_for('USR\\Forgot') }}">
+                <h3 class="ui dividing left aligned header">Esqueci da senha de acesso, e agora?</h3>
+                <div class="sub header left aligned" style="padding-bottom: 10px;">
+                  Por segurança, não armazenamos senhas dos clientes.
+                  Neste caso, enviaremos ao e-mail cadastrado as
+                  instruções para redefinição de sua senha.
+                </div>
+
+                <div class="fields">
+                  <div class="sixteen wide left aligned field{{ cssError('name') }}">
+                    <label>Informe o seu CPF ou CNPJ</label>
+                    <input type="text" name="username"
+                           placeholder="Informe o seu CPF/CNPJ..."
+                           value="{{ getValue('username') }}"
+                           maxlength="50">
+                    {% if hasError('username') %}
+                    <small class="helper">{{ getError('username') }}</small>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <input type="hidden" name="uuid" value="{{ getValue('uuid') }}">
+
+                {{ csrf() }}
+                
+                <div class="fields">
+                  <div class="sixteen wide left aligned field">
+                    <button type="button" class="ui large orange icon button"
+                            style="margin-right: 0;"
+                            data-tooltip="Retorna à página inicial do site"
+                            data-position="top left"
+                            onclick="location.href='{{ path_for('Home') }}';">
+                      <i class="home icon"></i>
+                    </button>
+
+                    <button type="button" class="ui large green icon button"
+                            style="margin-right: 0;"
+                            data-tooltip="Retorna à página de autenticação"
+                            data-position="top left"
+                            onclick="location.href='{{ path_for('USR\\Login', { 'UUID': uuid }) }}';">
+                      <i class="lock icon"></i>
+                    </button>
+
+                    <button type="submit"
+                            class="ui submit primary right labeled icon right floated button">
+                      <i class="checkmark icon"></i> Solicitar
+                    </button>
+                  </div>
+                </div>
+                
+                <input type="hidden" name="_method" value="POST">
+              </form>
+              <!-- End Form -->
+            </article>
+          </div>
+        </div>
+        <div class="ui basic segment" style="min-height: 21vh;">
+        </div>
+      </section>
+    </main>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      $("input[name='username']")
+        .mask({
+          type: 'cpforcnpj',
+          validate: true
+        })
+      ;
+
+      // Coloca o foco no primeiro campo
+      $("input[name='username']")
+        .focus()
+      ;
+    });
+  </script>
+  {% endapply %}
+{% endblock scripts %}

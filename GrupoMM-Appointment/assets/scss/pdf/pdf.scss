@@ -1,0 +1,156 @@
+/*!
+ * Improved PDF Style Code
+ * 
+ * Code licensed under the Apache License v2.0.
+ * For details, see http://www.apache.org/licenses/LICENSE-2.0.
+ */
+
+/* -----------------------------------------------------[ Base ]-----
+   As definições da formatação padrão para todas as páginas geradas
+ * no formato PDF.
+   ------------------------------------------------------------------ */
+
+// Definições globais de variáveis
+$fontBase: DejaVuSansCondensed;
+$fontEmphasy: Dhyana;
+$fontMono: DejaVuSansMono;
+$normalTextColor: #4a6368;
+$boldTextColor: #222a33;
+
+body, html {
+  font-family: $fontBase;
+  font-size: 8pt;
+  color: $normalTextColor;
+}
+
+p {
+  text-align: justify;
+  margin-bottom: 4pt;
+  margin-top:0pt;
+
+  &.reference {
+    margin-top: 5pt;
+    color: $boldTextColor;
+    font-style: italic;
+  }
+}
+
+hr {
+  width: 70%;
+  height: 1px;
+  text-align: center;
+  color: #999999;
+  margin-top: 8pt;
+  margin-bottom: 8pt;
+}
+
+a {
+  color: $boldTextColor;
+  text-decoration: underline;
+  font-weight: normal;
+}
+
+ul {
+  text-indent: 5mm;
+  margin-bottom: 9pt;
+}
+ol {
+  text-indent: 5mm;
+  margin-bottom: 9pt;
+}
+
+pre {
+  font-family: $fontMono;
+  font-size: 9pt;
+  margin-top: 5pt;
+  margin-bottom: 5pt;
+}
+
+br {
+  &.paging {
+    page-break-after: always;
+  }
+}
+
+
+/* ---------------------------------------------[ Alinhamentos ]----- */
+
+.left {
+  text-align: left;
+}
+.center {
+  text-align: center;
+}
+.right {
+  text-align: right;
+}
+
+/* ------------------------------------------------[ Atributos ]----- */
+
+.number {
+  text-align: "," center;
+}
+.index {
+  text-align: "." center;
+}
+
+/* --------------------------------------------------[ Títulos ]----- */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: $fontBase;
+  font-weight: normal;
+  margin-left: 0;
+  margin-right: 0;
+  color: $normalTextColor;
+
+  b {
+    font-family: $fontEmphasy;
+    font-weight: bold;
+    font-size: 1.4em;
+    color: $boldTextColor;
+  }
+}
+
+h1 { 
+  font-size: 1.6em;
+  margin-top: 0.67em;
+  margin-bottom: 0.67em;
+}
+h2 {
+  font-size: 1.4em;
+  margin-top: 0.83em;
+  margin-bottom: 0.83em;
+}
+h3 { 
+  font-size: 1.2em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+h4 { 
+  margin-top: 1em;
+  margin-bottom: 1.33em;
+}
+h5 { 
+  font-size: .83em;
+  margin-top: 1.67em;
+  margin-bottom: 1.67em;
+}
+h6 { 
+  font-size: .67em;
+  margin-top: 2.33em;
+  margin-bottom: 2.33em;
+}
+
+/* --------------------------------------------------[ Tabelas ]----- */
+
+table {
+  margin: 2pt 0pt;
+  border-collapse: collapse;  
+}
+
+@import 'modules/tables/noborder.scss';
+@import 'modules/tables/zebra.scss';
+@import 'modules/tables/calendar.scss';
+
+@import 'modules/header.scss';
+@import 'modules/footer.scss';

@@ -1,0 +1,1088 @@
+{% extends 'templates/erp/layout.twig' %}
+{% import "templates/erp/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento de lançamentos{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.adaptable.dropdown {
+      flex-basis: 7em;
+      min-width: 7em;
+    }
+    {% if authorization.user.groupid < 6 %}
+    .ui.main.basic.segment .searchbar.fields .field.customer {
+      flex-grow: 1;
+      min-width: 236px;
+    }
+    {% else %}
+    .ui.main.basic.segment .searchbar.fields .field.searchbox {
+      min-width: 236px;
+      width: calc(100% - 47px);
+    }
+    {% endif %}
+    @media only screen and (max-width: 767px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 100px;
+        width: calc(100% - 47px);
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox input {
+        width: calc(100% - 140px);
+      }
+    }
+
+    @media only screen and (min-width: 920px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+      {% if authorization.user.groupid < 6 %}
+      {% else %}
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        width: 538px;
+      }
+      {% endif %}
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+
+    /* --------------------------------------------------------------
+     * Personalizações das linhas do datagrid apenas para este módulo
+     * -------------------------------------------------------------- */
+    .blocked > td {
+      color: #7f7f7f
+    }
+    .blocked > td {
+      background-color: #fff6f6 !important;
+      color: DarkRed;
+    }
+    tr.blocked:hover > td {
+      background-color: #f6e7e7 !important;
+    }
+
+    .installation {
+      padding-left: 1em;
+    }
+    .symbol {
+      color: #9aabc2;
+      font-style: oblique;
+      font-size: .9rem;
+      float: left;
+    }
+    .inline.button {
+      font-size: .75714286rem;
+      vertical-align: text-bottom;
+      padding: .38571429em .18571429em .38571429em !important;
+      margin-left: .55rem;
+    }
+
+    .ui.modal>.content>.icon+.description {
+      overflow-wrap: break-word;
+      width: fit-content;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set add  = { 'URL': 'ERP\\Financial\\Billings\\Add', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/billings.svg', 'Lançamento') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento dos lançamentos
+                <div class="sub header">
+                  Permite gerenciar os lançamentos de valores de
+                  serviços executados ao longo do período de contrato e
+                  de valores adicionais em cada instalação, além de
+                  promover ajustes nos valores de cada cliente. Cada
+                  lançamento especifica um serviço de acordo com o
+                  contrato do cliente, ou outro valor adicional.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(add.URL, add.method) %}
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Adiciona um lançamento"
+                      data-position="top left" type="button"
+                      onclick="location.href='{{ path_for(add.URL) }}'">
+                <i class="add icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            <div class="field customer">
+              <input placeholder="Informe o cliente..." type="text"
+                     name="customerName"
+                     value="{{ billing.customer.name }}">
+              <input type="hidden" name="customerID"
+                     value="{{ billing.customer.id }}" >
+              <input type="hidden" name="subsidiaryID"
+                     value="{{ billing.customer.subsidiaryID }}" >
+            </div>
+          </div>
+
+          <div class="flex">
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite o que procura..."
+                       value="{{ billing.name }}">
+                <select class="ui searchfield adaptable selection dropdown button"
+                        id="searchField">
+                  <option value="plate"{% if billing.searchField == "plate" %} selected{% endif %}>
+                    Placa
+                  </option>
+                  <option value="installationNumber"{% if billing.searchField == "installationNumber" %} selected{% endif %}>
+                    Número de instalação
+                  </option>
+                  <option value="contractNumber"{% if billing.searchField == "contractNumber" %} selected{% endif %}>
+                    Número de contrato
+                  </option>
+                </select>
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza lançamentos"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID da cobrança</th>
+          <th>ID do cliente</th>
+          <th>Nome do cliente</th>
+          <th>ID da unidade/filial do cliente</th>
+          <th>Unidade/filial do cliente</th>
+          <th>ID do contrato</th>
+          <th>Número do contrato</th>
+          <th>ID do plano</th>
+          <th>Nome do plano</th>
+          <th>Dia de<br>vencimento</th>
+          <th>ID da instalação</th>
+          <th>Número da<br>instalação</th>
+          <th>ID do veículo</th>
+          <th>Placa</th>
+          <th>Data</th>
+          <th>Descrição</th>
+          <th>Valor</th>
+          <th>Número da<br>parcela</th>
+          <th>Quantidade de<br>parcelas</th>
+          <th>Renegociado</th>
+          <th>ID da renegociação</th>
+          <th {{ tooltip.add('left', 'Permite abonar o lançamento') }}><i class="comment dollar darkred icon"></i></th>
+          <th>Motivo do<br>abono</th>
+          <th>Parte de um fechamento</th>
+          <th {{ tooltip.add('left', 'Permite remover o lançamento') }}><i class="remove darkred icon"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/info.twig' %}
+  {% include 'templates/erp/partials/dialogs/interaction.twig' %}
+  {% include 'templates/erp/partials/dialogs/question.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+  {% include 'templates/erp/partials/dialogs/detail.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="interactionSound">
+    <source src="/sounds/interaction.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/DateFormatter.min.js') }}
+  {{ lib('datatables/formatters/DeleteFormatter.min.js') }}
+  {{ lib('datatables/formatters/EnableFormatter.min.js') }}
+  {{ lib('datatables/formatters/MonetaryFormatter.min.js') }}
+  
+  {% set getData     = { 'URL': 'ERP\\Financial\\Billings\\Get', 'method': 'PATCH' } %}
+  {% set add         = { 'URL': 'ERP\\Financial\\Billings\\Add', 'method': 'GET' } %}
+  {% set edit        = { 'URL': 'ERP\\Financial\\Billings\\Edit', 'method': 'GET' } %}
+  {% set remove      = { 'URL': 'ERP\\Financial\\Billings\\Delete', 'method': 'DELETE' } %}
+  {% set grante      = { 'URL': 'ERP\\Financial\\Billings\\Grante', 'method': 'PUT' } %}
+  {% set renegotiate = { 'URL': 'ERP\\Financial\\Billings\\Renegotiate', 'method': 'GET' } %}
+  
+  {% set getCustomerNameCompletion = { 'URL': 'ERP\\Cadastre\\Entities\\Autocompletion\\Get', 'method': 'PATCH' } %}
+
+  {% apply minify %}
+  <script>
+    var
+      table,
+      groupColumn    = 2,
+      subgroupColumn = 6
+    ;
+
+    // O template de abonar uma cobrança
+    {% set grantingTemplate %}
+      {% include 'erp/financial/billings/grantingdialog.twig' with { deposits: deposits, groupid: authorization.user.groupid, defaultDepositID: defaultDepositID, technicians: technicians }  %}
+    {% endset %}
+    var
+      grantingTemplate = '{{ grantingTemplate|escape('js') }}'.replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+    ;
+
+    // Um formatador (render) de coluna para exibir o ícone de abonar
+    var grantFormatter = function( tooltip ) {
+      return function ( value, type, row, meta ) {
+        // Verifica se foi solicitada a exibição do valor
+        if ( type === 'display' ) {
+          if (row.granted === false) {
+            color = 'darkred';
+
+            return '<span data-position="left center"' +
+                         'data-blue data-inverted ' +
+                         'data-tooltip="' + tooltip + '">' +
+                     '<i class="hand holding usd ' + color + ' icon">' +
+                     '</i>' +
+                   '</span>';
+          } else {
+            color = 'darkorange';
+
+            return '<span data-position="left center"' +
+                         'data-blue data-inverted ' +
+                         'data-tooltip="Visualizar motivo do abono">' +
+                     '<i class="info ' + color + ' icon">' +
+                     '</i>' +
+                   '</span>';
+          }
+        }
+
+        // Pesquisas, ordenamentos e tipos podem usar os dados originais
+        return '';
+      }
+    };
+    
+    $(document).ready(function() {
+      // --------------------------------[ Componentes da Searchbar ]---
+      $('.searchbar .ui.dropdown')
+        .dropdown()
+      ;
+      $("input[name='customerName']")
+        .autocomplete(customerNameCompletionOptions)
+      ;
+      $('#searchValue')
+        .keypress(forceSearch)
+      ;
+
+      // Lida com o pressionamento de teclas
+      $(document).on('keydown',function(event) {
+        if (event.keyCode == 27) {
+          // Limpa os dados do formulário
+          $('#searchValue').val('');
+          $("input[name='customerID']").val(0);
+          $("input[name='customerName']").val('');
+          $("input[name='subsidiaryID']").val(0);
+
+          searchLoad();
+        }
+      });
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "billings.billingid",
+            "data": "id",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "contracts.customerid",
+            "data": "customerid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 2,
+            "name": "customers.name",
+            "data": "customername",
+            "visible": false },
+          { "targets": 3,
+            "name": "contracts.subsidiaryid",
+            "data": "subsidiaryid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 4,
+            "name": "subsidiaries.name",
+            "data": "subsidiaryname",
+            "visible": false,
+            "orderable": false },
+          { "targets": 5,
+            "name": "billings.contractid",
+            "data": "contractid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 6,
+            "name": "contractnumber",
+            "data": "contractnumber",
+            "visible": false,
+            "orderable": false },
+          { "targets": 7,
+            "name": "contracts.planid",
+            "data": "planid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 8,
+            "name": "plans.name",
+            "data": "planname",
+            "visible": false,
+            "orderable": false },
+          { "targets": 9,
+            "name": "duedays.day",
+            "data": "dueday",
+            "visible": false,
+            "orderable": false },
+          { "targets": 10,
+            "name": "billings.installationid",
+            "data": "installationid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 11,
+            "name": "installations.installationnumber",
+            "data": "installationnumber",
+            "visible": false,
+            "orderable": false },
+          { "targets": 12,
+            "name": "vehicles.vehicleid",
+            "data": "vehicleid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 13,
+            "name": "vehicles.plate",
+            "data": "plate",
+            "visible": false,
+            "orderable": false },
+          { "targets": 14,
+            "name": "customers.name, installations.installationID, billings.billingDate, billings.installmentNumber",
+            "data": "billingdate",
+            "visible": true,
+            "orderable": true,
+            "width": "80px" },
+          { "targets": 15,
+            "name": "billings.name",
+            "data": "name",
+            "visible": true,
+            "orderable": false },
+          { "targets": 16,
+            "name": "billing.value",
+            "data": "billingvalue",
+            "className": "dt-right",
+            "visible": true,
+            "orderable": true,
+            "width": "80px",
+            "render": monetaryFormatter },
+          { "targets": 17,
+            "name": "installmentnumber",
+            "data": "installmentnumber",
+            "visible": false,
+            "orderable": false },
+          { "targets": 18,
+            "name": "numberofinstallments",
+            "data": "numberofinstallments",
+            "visible": false,
+            "orderable": false },
+          { "targets": 19,
+            "name": "renegotiated",
+            "data": "renegotiated",
+            "visible": false,
+            "orderable": false },
+          { "targets": 20,
+            "name": "renegotiationid",
+            "data": "renegotiationid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 21,
+            "name": "granted",
+            "data": "id",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": grantFormatter("Abonar este lançamento") },
+          { "targets": 22,
+            "name": "reasonforgranting",
+            "data": "reasonforgranting",
+            "visible": false,
+            "orderable": false },
+          { "targets": 23,
+            "name": "inmonthlycalculation",
+            "data": "inmonthlycalculation",
+            "visible": false,
+            "orderable": false },
+          { "targets": 24,
+            "name": "delete",
+            "data": "id",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": deleteFormatter("Remover este lançamento") }
+        ],
+        order: [[ 14, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        displayStart: {{ billing.displayStart|default("0") }},
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.searchValue  = $('#searchValue').val();
+            params.searchField  = $('#searchField').val();
+            params.customerID   = $("input[name='customerID']").val();
+            params.customerName = $("input[name='customerName']").val();
+            params.subsidiaryID = $("input[name='subsidiaryID']").val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+          {% set colspan = 5 %}
+
+          // Agrupamento de linhas
+          var
+            api              = this.api(),
+            rows             = api.rows( {page:'current'} ).nodes(),
+            lastGroup        = null,
+            lastSubGroup     = null,
+            lastContract     = null,
+            lastInstallation = null
+          ;
+
+          api.column(groupColumn, {page:'current'} ).data().each(function( group, i ) {
+            var
+              addSubGroupRow = false
+            ;
+
+            if (lastGroup !== group) {
+              // Informações do cliente
+
+              // Primeiramente, cria as novas colunas com seus
+              // respectivos eventos de click
+              
+              // 1. Coluna expandida com os dados do cliente
+
+              // Monta os dados dos cabeçalhos das colunas
+              var
+                groupedCellData = ''
+                  + '<span {{ tooltip.add("right", "Cliente") }}>'
+                  +   '<i class="fas fa-house-user"></i> '
+                  + '</span>' + group,
+                $column1 = $("<td colspan='{{ colspan }}'>")
+                  .html(groupedCellData)
+                  .css("font-weight", "600")
+              ;
+
+              // Adiciona uma nova linha e, internamente, as colunas
+              var
+                $newRow = $("<tr>")
+                  .addClass('group')
+                  .append($column1)
+              ;
+
+              // Adiciona a nova linha de agrupamento antes da linha
+              // atual
+              $(rows)
+                .eq( i )
+                .before(
+                  $newRow
+                )
+              ;
+
+              lastGroup = group;
+              addSubGroupRow = true;
+            }
+
+            if ((lastSubGroup !== rows.data()[i].subsidiaryname) ||
+                (addSubGroupRow)) {
+              // Informações da unidade/filial do cliente
+
+              // Primeiramente, cria as novas colunas com seus respectivos
+              // eventos de click
+              
+              // 1. Coluna expandida com os dados da unidade/filial do
+              //    cliente
+              var
+                groupedCellData = ''
+                  + rows.data()[i].subsidiaryname,
+                $column1 = $("<td colspan='{{ colspan }}'>")
+                  .html(groupedCellData)
+                  .css("font-weight", "600")
+              ;
+
+              // Adiciona uma nova linha e, internamente, as colunas
+              var
+                $newRow = $("<tr>")
+                  .addClass('group')
+                  .append($column1)
+              ;
+
+              // Adiciona a nova linha de agrupamento antes da linha
+              // atual
+              $(rows)
+                .eq( i )
+                .before(
+                  $newRow
+                )
+              ;
+
+              lastSubGroup = rows.data()[i].subsidiaryname;
+            }
+
+            if ((lastContract !== rows.data()[i].contractnumber) ||
+                (addSubGroupRow)) {
+              // Informações do contrato
+
+              // Monta os dados dos cabeçalhos das colunas
+
+              // Primeiramente, cria as novas colunas com seus respectivos
+              // eventos de click
+              
+              // 1. Coluna expandida com os dados da unidade/filial do
+              //    cliente
+              var
+                cellData = ''
+                  + '<span {{ tooltip.add("right", "O número do '
+                  +   'contrato do cliente") }}>'
+                  +   '<i class="file signature black icon"></i>'
+                  + '</span>'
+                  + rows.data()[i].contractnumber
+                $column1 = $("<td colspan='{{ colspan }}'>")
+                  .html(cellData)
+                  .css("font-weight", "600")
+              ;
+
+              // Adiciona uma nova linha e, internamente, as colunas
+              var
+                $newRow = $("<tr>")
+                  .addClass('group')
+                  .append($column1)
+              ;
+
+              // Adiciona uma nova linha e, internamente, as colunas
+              var
+                 $newRow = $("<tr>")
+                  .addClass('group')
+                  .append($column1)
+              ;
+
+              // Adiciona a nova linha de agrupamento antes da linha
+              // atual
+              $(rows)
+                .eq( i )
+                .before(
+                  $newRow
+                )
+              ;
+
+              lastContract = rows.data()[i].contractnumber;
+            }
+
+            if ((lastInstallation !== rows.data()[i].installationnumber) ||
+                (addSubGroupRow)) {
+              // Informações da instalação
+
+              // Monta os dados dos cabeçalhos das colunas
+
+              // Primeiramente, cria as novas colunas com seus respectivos
+              // eventos de click
+              
+              // 1. Coluna com o número da instalação
+              var
+                button = ''
+                  + '<button class="ui primary inline icon button"'
+                  + '        data-tooltip="Adiciona um lançamento"'
+                  + '        data-position="right center" type="button"'
+                  + '        data-blue data-inverted'
+                  + '        name="addInstallationButton">'
+                  + '  <i class="add icon" name="addBillingIcon"></i>'
+                  + '</button>',
+                cellData = ''
+                  + '<span {{ tooltip.add("right", "O número da '
+                  +   'instalação do cliente") }}>'
+                  +   '<i class="file signature black icon"></i>'
+                  + '</span>'
+                  + rows.data()[i].installationnumber
+                  + button,
+                $column1 = $('<td colspan="2">')
+                  .html(cellData)
+                  .css("font-weight", "600")
+                  .prop('customerID', rows.data()[i].customerid)
+                  .prop('customerName', rows.data()[i].customername)
+                  .prop('subsidiaryID', rows.data()[i].subsidiaryid)
+                  .prop('subsidiaryName', rows.data()[i].subsidiaryname)
+                  .prop('contractID', rows.data()[i].contractid)
+                  .prop('contractNumber', rows.data()[i].contractnumber)
+                  .prop('installationID', rows.data()[i].installationid)
+                  .prop('installationNumber', rows.data()[i].installationnumber)
+                  .on("click", function (event) {
+                    var
+                      data = {
+                        'customerID'         : $(this).prop('customerID'),
+                        'customerName'       : $(this).prop('customerName'),
+                        'subsidiaryID'       : $(this).prop('subsidiaryID'),
+                        'subsidiaryName'     : $(this).prop('subsidiaryName'),
+                        'contractID'         : $(this).prop('contractID'),
+                        'contractNumber'     : $(this).prop('contractNumber'),
+                        'installationID'     : $(this).prop('installationID'),
+                        'installationNumber' : $(this).prop('installationNumber')
+                      },
+                      url = "{{ buildURL(add.URL, {}) }}",
+                      queryString = encodeQueryData(data)
+                    ;
+
+                    // Adiciona um lançamento nesta instalação
+                    window.location.href = url + '?' + queryString;
+                  })
+              ;
+              
+              // 2. Coluna com a placa
+              var
+                cellData = 'Placa'
+                  + (rows.data()[i].plate !== null
+                    ? ' ativa: ' + rows.data()[i].plate
+                    : ' não disponível'),
+                $column2 = $('<td colspan="3">')
+                  .html(cellData)
+                  .css("font-weight", "600")
+              ;
+
+              // Adiciona uma nova linha e, internamente, as colunas
+              var
+                $newRow = $("<tr>")
+                  .addClass('group')
+                  .append($column1)
+                  .append($column2)
+              ;
+
+              // Adiciona a nova linha de agrupamento antes da linha
+              // atual
+              $(rows)
+                .eq( i )
+                .before(
+                  $newRow
+                )
+              ;
+
+              lastInstallation = rows.data()[i].installationnumber;
+            }
+          } );
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+
+        },
+        createdRow: function(row, data, dataIndex) {
+          // Deixa as linhas com cores diferentes para indicar os
+          // lançamentos que não estão ativos
+          if (data.granted) {
+            $(row)
+              .addClass('damaged')
+            ;
+            $(row)
+              .find('td')
+              .addClass('strikethrough')
+            ;
+          } else {
+            if (data.inmonthlycalculation) {
+              $(row)
+                  .addClass('saturday')
+                ;
+            } else {
+              if (data.renegotiated) {
+                $(row)
+                  .addClass('maintenance')
+                ;
+                $(row)
+                  .find('td')
+                  .addClass('strikethrough')
+                ;
+              } else {
+                if (data.renegotiationid > 0) {
+                  $(row)
+                    .addClass('broked')
+                  ;
+                }
+              }
+            }
+          }
+        }
+      });
+      
+      // Manipula os eventos de click
+      table
+        .on('user-select', function (e, dt, type, cell, originalEvent) {
+          if (type === 'cell') {
+            var
+              // Recupera os dados da célula selecionada
+              index   = cell[0][0],
+
+              // Recupera o lançamento de serviço selecionado
+              billing = dt.rows( index.row ).data().toArray()[0]
+            ;
+
+            // Em função da coluna onde ocorreu o clique, executa a ação
+            // correspondente
+            switch (index.column) {
+              {% if authorization.getAuthorizationFor(grante.URL, grante.method) %}
+              case 21:
+                if (billing.granted === false) {
+                  grantBilling(event, billing)
+                } else {
+                  showReasonForGranting(event, billing);
+                }
+                break;
+              {% endif %}
+              {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}
+              case 24:
+                if (billing.renegotiated === false) {
+                  // Questiona se deve apagar o lançamento selecionado
+                  questionDialog('Remover lançamento', 'Você deseja '
+                    + 'realmente remover o lançamento da instalação '
+                    + '<b>' + billing.installationnumber + '</b> do '
+                    + 'contrato nº <b>&ldquo;' + billing.contractnumber
+                    + '&rdquo;</b> do cliente <b>&ldquo;'
+                    + billing.customername + '&rdquo;</b>? Esta ação '
+                    + 'não poderá ser desfeita.',
+                    function() {
+                      // Remove a instalação selecionada
+                      var
+                        url  = "{{ buildURL(remove.URL, {'billingID': 'billing.id'}) }}"
+                      ;
+                      
+                      deleteJSONData(url, [],
+                      function (data, params, message) {
+                        // Atualiza a tabela
+                        searchLoad();
+                      });
+                    },
+                    function() {
+                      table
+                        .rows()
+                        .deselect()
+                      ;
+                      table
+                        .draw('page')
+                      ;
+                    }
+                  );
+                }
+
+                break;
+              {% endif %}
+              default:
+                {% if authorization.getAuthorizationFor(edit.URL, edit.method) %}
+                // Coloca o lançamento em edição
+                window.location.href = "{{ buildURL(edit.URL, { 'billingID': 'billing.id' }) }}";
+                {% endif %}
+            }
+
+            e.preventDefault();
+          }
+        }
+      );
+    });
+
+
+    // =================================================[ Options ]=====
+
+    // As opções para o componente de autocompletar o nome do cliente
+    var customerNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      showClearValue: true,
+      ajax: {
+        url: "{{ path_for(getCustomerNameCompletion.URL) }}",
+        type: "{{ getCustomerNameCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'customer';
+          params.detailed = true;
+          params.onlyCustomers = true;
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        if (suggestion.juridicalperson) {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     (
+                    (suggestion.tradingname)
+                      ? '[<span style="color: #0256C4; font-style: italic;">' + suggestion.tradingname + '</span>]<br>'
+                      : ''
+                  )
+            +     (
+                    (suggestion.items > 1)
+                      ? (' (<span style="color: CornflowerBlue; font-style: italic;">' + suggestion.subsidiaryname + '</span>)')
+                      : ''
+                  )
+            +   '</div>'
+            + '</div>'
+          ;
+        } else {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     (
+                    (suggestion.tradingname)
+                      ? '[<span style="color: #0256C4; font-style: italic;">' + suggestion.tradingname + '</span>]<br>'
+                      : ''
+                  )
+            +     (
+                    (suggestion.items > 1)
+                      ? ( ''
+                          + '<span style="color: CornflowerBlue; font-style: italic;">'
+                          +     (
+                                  (suggestion.headoffice == true)
+                                    ? 'Titular'
+                                    : ('Dependente: ' + suggestion.subsidiaryname)
+                                )
+                          +     '</span>'
+                        )
+                      : ''
+                  )
+            +   '</div>'
+            + '</div>'
+          ;
+        }
+      },
+      onSelect: function(element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='customerID']")
+          .val(suggestion.id)
+        ;
+        $("input[name='subsidiaryID']")
+          .val(suggestion.subsidiaryid)
+        ;
+
+        searchLoad();
+      },
+      onInvalidateSelection: function() {
+        // Limpa os dados
+        $("input[name='customerID']")
+          .val(0)
+        ;
+        $("input[name='subsidiaryID']")
+          .val(0)
+        ;
+
+        searchLoad();
+      }
+    };
+
+
+    // ================================================[ Handlers ]=====
+    
+    // Executa a pesquisa
+    function searchLoad() {
+      table
+        .ajax
+        .reload()
+      ;
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 500);
+    }
+
+    // Força a atualização da tabela
+    function forceSearch(event) {
+      if (event.which == 13) {
+        searchLoad();
+      }
+    }
+
+    // Abona um valor cobrado
+    function grantBilling(event, billing) {
+      {% if authorization.getAuthorizationFor(grante.URL, grante.method) %}
+      // Solicitada o abono de um valor cobrado, então precisa informar
+      // o motivo
+      interactionDialog(
+        'Abonar uma cobrança de valor',
+        grantingTemplate,
+        function() {
+          $("input[name='billingid']")
+            .val(billing.id)
+          ;
+          $("input[name='billingdate']")
+            .val(billing.billingdate)
+          ;
+          $("input[name='name']")
+            .val(billing.name)
+          ;
+          $('input[name="value"]')
+            .val(billing.billingvalue)
+          ;
+
+          $('textarea[name="reasonforgranting"]')
+            .focus()
+          ;
+        },
+        function() {
+          var
+            billingID = $('input[name="billingid"]').val(),
+            reason = $('textarea[name="reasonforgranting"]').val(),
+            // Confirmou o abono deste valor, então repassa as informações
+            params = {
+              'billingID': billingID,
+              'reasonForGranting': reason
+            },
+            url = "{{ buildURL(grante.URL, {'billingID': 'billingID'}) }}"
+          ;
+          putJSONData(url, params,
+          function (data, params, message) {
+            // Atualiza a tabela
+            table
+              .ajax
+              .reload()
+            ;
+          });
+        },
+        function() {
+          // Cancelou, então ignora
+        }
+      );
+      {% endif %}
+    }
+
+    // Exibe o motivo pelo qual o valor foi abonado
+    function showReasonForGranting(event, billing) {
+      {% if authorization.getAuthorizationFor(grante.URL, grante.method) %}
+      detailDialog(
+        'Informações sobre o valor abonado',
+        grantingTemplate,
+        function() {
+          $("input[name='billingid']")
+            .val(billing.id)
+          ;
+          $("input[name='billingdate']")
+            .val(billing.billingdate)
+          ;
+          $("input[name='name']")
+            .val(billing.name)
+          ;
+          $('input[name="value"]')
+            .val(billing.billingvalue)
+          ;
+
+          $('textarea[name="reasonforgranting"]')
+            .val(billing.reasonforgranting)
+          ;
+        }
+      );
+      {% endif %}
+    }
+
+    // Codifica elementos para envio na requisição
+    function encodeQueryData(data) {
+      const
+        ret = []
+      ;
+
+      for (let d in data) {
+        ret
+          .push(encodeURIComponent(d) + '=' + encodeURIComponent(data[d]))
+        ;
+      }
+
+      return ret.join('&');
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

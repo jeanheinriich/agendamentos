@@ -1,0 +1,62 @@
+{% extends 'templates/adm/layout.twig' %}
+{% block title %}{{ parent() }} - Página não encontrada{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+  <style>
+    .ui.header {
+      color: DarkRed !important;
+      text-shadow: 0 2px 2px rgba(0,0,0,.5);
+    }
+    .black {
+      color: black;
+      font-weight: 700;
+    }
+    .ui.image.face {
+      width: 60%;
+    }
+    b {
+      font-weight: bold;
+      color: black;
+      background-color: #F9F5F5;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+    <main>
+      <section class="description">
+        <div class="ui internally celled grid">
+          <div class="three wide column">
+            <img class="ui centered image face"
+                 src="/images/error/stop.png"
+                 alt="Página não encontrada">
+          </div>
+          <div class="ten wide column">
+            <h1 class="ui header">
+              Página não encontrada!
+            </h1>
+            <h3 class="black">O que aconteceu?</h3>
+            <h3>{{ error|raw }}</h3>
+            <h3 class="black">E agora, o que devo fazer?</h3>
+            <h3>Você pode retornar à <a onclick="goHome();">página inicial</a>.
+              Se possível, relate o ocorrido, para o administrador do
+              sistema informando este erro.</h3>
+            <br>
+            <button class="ui primary icon button" onclick="goHome();">
+              <i class="home icon"></i> Ir para a página inicial
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {% apply minify %}
+  <script>
+    function goHome() {
+      window.location.href="{{ homepage }}";
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

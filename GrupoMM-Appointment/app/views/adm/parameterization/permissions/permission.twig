@@ -1,0 +1,226 @@
+{% extends 'templates/adm/layout.twig' %}
+{% import "templates/adm/macros/permission.twig" as permissionItem %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} permissão{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  {{ css('loading.min.css') }}
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ADM\\Parameterization\\Permissions\\Add' %}
+  {% else %}
+    {% set URL = 'ADM\\Parameterization\\Permissions\\Edit' %}
+  {% endif %}
+  {% set previous = 'ADM\\Parameterization\\Permissions' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('adm/permissions.svg', 'Permissão') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if editMode %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} permissão
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar uma nova {% else %}modificar as informações cadastrais de uma {% endif %}
+                  permissão.
+                </div>
+              {% else %}
+                Visualizar tipo de permissão
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de uma
+                  permissão.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início mensagem -->
+      <div class="ui message">
+        <div class="header">
+          Atenção
+        </div>
+        <p>
+          Cada permissão indica ao sistema como será o acesso a um
+          determinado módulo. As permissões são atribuídas a cada grupo
+          de maneira totalmente independente, de forma a permitir aos
+          usuários associados ao grupo o acesso a cada módulo de acordo
+          com suas necessidades.
+        </p>
+      </div>
+      <!-- Fim mensagem -->
+
+      <!-- Início formulário -->
+      <div class="loading hidden">Processando...&#8230;</div>
+      <form class="ui form" method="POST" autocomplete="off"
+            onsubmit="loading();"
+            action="{{ path_for(URL, { 'permissionID': getValue('permissionid') }) }}">
+        <div class="fields">
+          <div class="sixteen wide field{{ cssError('name') }}">
+            <label>
+              Permissão
+              <span data-tooltip="O endereço (rota) para o módulo para o qual estamos definindo a permissão"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui input{{ readonly }}">
+              <input name="name" type="text" maxlength="100"
+                     placeholder="Informe o nome da permissão..."
+                     {{ readonly }}
+                     value="{{ getValue('name') }}">
+            </div>
+            {% if hasError('name') %}
+            <small class="helper">{{ getError('name') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide field{{ cssError('description') }}">
+            <label>Descrição</label>
+            <div class="ui input{{ readonly }}">
+              <input name="description" type="text" maxlength="100"
+                     placeholder="Informe a descrição da permissão..."
+                     {{ readonly }}
+                     value="{{ getValue('description') }}">
+            </div>
+            {% if hasError('description') %}
+            <small class="helper">{{ getError('description') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        
+        <table class="ui celled structured selectable striped compact table">
+          <thead>
+            <tr>
+              <th rowspan="2" class="center aligned">Grupo</th>
+              <th colspan="5" class="center aligned">Permissões</th>
+            </tr>
+            <tr>
+              <th class="center aligned">Ler</th>
+              <th class="center aligned">Recuperar</th>
+              <th class="center aligned">Adicionar</th>
+              <th class="center aligned">Editar</th>
+              <th class="center aligned">Apagar</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set permissions = getValue('permissions') %}
+            {% for group in groups %}
+            <tr group="{{ group.id }}">
+              <td>{{ group.name }}</td>
+              {% for httpMethod in httpMethods %}
+                {% if permissions[group.id][httpMethod] is defined %}
+                  {{ permissionItem.add(group.id, httpMethod, permissions[group.id][httpMethod]) }}
+                {% else %}
+                  {{ permissionItem.add(group.id, httpMethod, "false") }}
+                {% endif %}
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="permissionid" value="{{ getValue('permissionid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      
+      // Trata o clique na tabela para mudança de uma permissão
+      $("table tbody tr td").click(function(e) {
+        // Altera o símbolo no campo
+        if ($(this).attr('permitted') == "true") {
+          $(this).attr('permitted', "false");
+          $(this).children('i')
+                 .removeClass('green')
+                 .removeClass('checkmark')
+                 .addClass('red')
+                 .addClass('times');
+          $(this).children('input').val("false");
+        } else {
+          $(this).attr('permitted', "true");
+          $(this).children('i')
+                 .removeClass('red')
+                 .removeClass('times')
+                 .addClass('green')
+                 .addClass('checkmark');
+          $(this).children('input').val("true");
+        }
+      });
+      
+      // Coloca o foco no primeiro campo
+      $("input[name='name']")
+        .focus()
+      ;
+    });
+
+    var loading = function() {
+      $(document.body)
+        .css({
+          'cursor' : 'wait'
+        })
+      ;
+      $(".loading")
+        .removeClass("hidden")
+      ;
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

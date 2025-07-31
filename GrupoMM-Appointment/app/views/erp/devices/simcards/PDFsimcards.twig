@@ -1,0 +1,62 @@
+{% extends 'templates/basePDF.twig' %}
+{% block title %}
+  Relação dos SIM Cards do Fornecedor {{ simcards[0].suppliername }}
+{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+{% endblock %}
+{% block content %}
+  <h5>Fornecedor:<br><b>{{ simcards[0].suppliername }}</b></h5>
+  <table width="100%" cellpadding="5" class="zebra">
+    <tbody>
+      <thead>
+        <tr>
+          <th width="120px">ICCID</th>
+          <th width="120px">IMSI</th>
+          <th width="105px">Telefone</th>
+          <th>Operadora</th>
+          <th width="100px">Modelo</th>
+          <th width="50px">Patrim.</th>
+        </tr>
+      </thead>
+      {% set supplierID = 0 %}
+      {% set subsidiaryID = 0 %}
+      {% for simcard in simcards %}
+        {% if subsidiaryID != simcard.subsidiaryid %}
+          {# Inclui a linha com a informação da unidade/filial #}
+          {% set subsidiaryID = simcard.subsidiaryid %}
+          <tr class="bold">
+            <td colspan="6">
+              {% if simcard.juridicalperson == true %}
+              Unidade/filial:
+              {% else %}
+              Titular:
+              {% endif %}
+              {{ simcard.subsidiaryname }}
+            </td>
+          </tr>
+        {% endif %}
+        <tr>
+          <td align="center">
+            {{ simcard.iccid }}
+          </td>
+          <td align="center">
+            {{ simcard.imsi }}
+          </td>
+          <td align="right">
+            {{ simcard.phonenumber }}
+          </td>
+          <td align="center">
+            {{ simcard.mobileoperatorname }}
+          </td>
+          <td align="center">
+            {{ simcard.simcardtypename }}
+          </td>
+          <td align="center">
+            {{ simcard.assetnumber }}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

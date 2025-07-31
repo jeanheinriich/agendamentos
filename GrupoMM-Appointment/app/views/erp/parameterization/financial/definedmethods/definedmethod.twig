@@ -1,0 +1,700 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} configuração de meio de pagamento{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    div.defined.segment {
+      padding: 0.3em 1em;
+    }
+    
+    table.defined {
+      font-weight: 800;
+    }
+    tr.withInterest {
+      background-color: #5e33c9;
+      background-color: rgba(0,0,0,.1);
+    }
+    tr:nth-child(2n).withInterest {
+      background-color: #663ecc !important;
+      background-color: rgba(0,0,0,.05) !important;
+    }
+    .ui.inverted.table tr.withInterest td {
+      color: yellow !important;
+    }
+    @media (max-width: 768px) {
+      .tariffEntry {
+        margin-bottom: .5em !important;
+      }
+      .tariffEntry:after {
+        border-bottom: 1px dotted rgba(34,36,38,.15);
+        content: '';
+        flex: 1;
+        padding: 2px;
+      }
+      .tariffEntry:last-child:after {
+        border-bottom: none;
+        content: '';
+        flex: 1;
+        padding: 0px;
+      }
+    }
+
+    p.defined
+    {
+      margin: 5px 0px;
+      font-size: 12px;
+      line-height: 1.4em;
+      font-weight: bold;
+    }
+
+    .interestFree
+    {
+      color: #0066cc;
+    }
+
+    /**
+     * As formatações para os campos de formulário dinâmicos
+     */
+    .ui.vertical.segment.noBottomBorder,
+    .ui.vertical.segment.form {
+      margin-top: .38571429em;
+    }
+    .tiny.form .header {
+      margin-bottom: .5em;
+    }
+    .ui.header .sub.header {
+      padding-top: .5em;
+    }
+    .ui.tiny.segment {
+      margin-bottom: .5em;
+    }
+    @media only screen and (max-width: 767px) {
+      .tiny.form .fields {
+        margin-left: -1em;
+        margin-right: -1em;
+        margin-bottom: .5em;
+        border-bottom: 1px dotted rgba(34,36,38,.15);
+        padding: 5px;
+      }
+      .ui.tiny.segment {
+        margin-bottom: 0.2em;
+      }
+      .ui.form .fields>.buttons {
+        margin: 0.3em 0;
+      }
+      .ui.form .fields {
+        margin-bottom: 0.3em;
+      }
+    }
+    .ui.tiny.form .fields.hidden {
+      visibility: hidden;
+      display: none;
+    }
+    .ui.tiny.form .fields .field {
+      flex-basis: 25%;
+    }
+    @media only screen and (max-width: 479px) {
+      .ui.tiny.form .fields .field {
+        flex-basis: 50%;
+      }
+      .ui.tiny.form .fields .field .ui.input {
+        flex-basis: 50%;
+      }
+      .ui.tiny.form .fields .field.amount .ui.input input{
+        width: calc(42vw - 42px);
+      }
+      .ui.tiny.form .fields .field.percentage .ui.input input{
+        width: calc(42vw - 24px);
+      }
+      .ui.tiny.form .fields .field.monetary .ui.input input{
+        width: calc(42vw - 24px);
+      }
+      .ui.tiny.form .fields .field.monetarytotal .ui.input input{
+        width: calc(42vw - 58px);
+      }
+    }
+    @media only screen and (min-width: 480px) and (max-width: 767px) {
+      .ui.tiny.form .fields .field {
+        flex-basis: 50%;
+      }
+    }
+    @media only screen and (min-width: 768px) and (max-width: 1200px) {
+      .ui.tiny.form .fields {
+        -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
+      }
+      .tiny.form .fields {
+        margin-left: -1em;
+        margin-right: -1em;
+        margin-bottom: .5em;
+        border-bottom: 1px dotted rgba(34,36,38,.15);
+        padding: 5px;
+      }
+      .ui.tiny.form .fields .field {
+        flex-basis: 50%;
+      }
+    }
+    @media only screen and (min-width: 1201px) {
+      /* Large monitor or widescreen */
+      [class*="large monitor or widescreen hidden"] {
+        display: none !important;
+      }
+    }
+    .tiny.form .fields:not(:first-child) .ui.tiny.button {
+      pointer-events: all !important;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Parameterization\\Financial\\DefinedMethods\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Parameterization\\Financial\\DefinedMethods\\Edit' %}
+  {% endif %}
+  {% set toggleBlocked = { 'URL': 'ERP\\Parameterization\\Financial\\DefinedMethods\\ToggleBlocked', 'method': 'PUT' } %}
+  {% set previous = 'ERP\\Parameterization\\Financial\\DefinedMethods' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  {% set enableToggleBlocked = authorization.getAuthorizationFor(toggleBlocked.URL, toggleBlocked.method) %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/definedmethods.svg', 'Configurações de meios de pagamento') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} configuração de meio de pagamento
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar uma nova {% else %}modificar as informações cadastrais de uma {% endif %}
+                  configuração de meio de pagamento. Alguns meios de
+                  pagamento necessitam de parâmetros adicionais, como os
+                  boletos, onde especificamos como o documento de
+                  pagamento será gerado.
+                </div>
+              {% else %}
+                Visualizar configuração de meio de pagamento
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de uma
+                  configuração de meio de pagamento. {{ URL }} {{ formMethod }}
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <br>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL, {'definedMethodID': getValue('definedmethodid') }) }}">
+        <div class="ui vertical segment">
+          <div class="fields">
+            <div class="eight wide field{{ cssError('name') }}">
+              <label>Nome da configuração de meio de pagamento</label>
+              <div class="ui input{{ readonly }}">
+                <input name="name" type="text" maxlength="50"
+                       placeholder="Informe o nome do configuração de meio de pagamento..."
+                       {{ readonly }}
+                       value="{{ getValue('name') }}">
+              </div>
+              {% if hasError('name') %}
+              <small class="helper">{{ getError('name') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="eight wide field{{ cssError('paymentmethodid') }}">
+              <label>Meio de pagamento</label>
+              {% if editMode %}
+              <div id="paymentmethodid" class="ui search selection dropdown">
+                <input name="paymentmethodid" type="hidden"
+                       value="{{ getValue('paymentmethodid') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text">Informe um meio de pagamento...</div>
+                <div class="menu">
+                  {% for paymentMethod in paymentMethods %}
+                    <div class="item" data-value="{{ paymentMethod.id }}" data-text="{{ paymentMethod.name }}">
+                      {{ paymentMethod.name }}
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+              {% else %}
+              <div class="field static">
+                <span class="darking">{{ getValue('paymentmethodname') }}&nbsp;</span>
+              </div>
+              {% endif %}
+              {% if hasError('paymentmethodid') %}
+              <small class="helper">{{ getError('paymentmethodid') }}</small>
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="fields">
+            <div class="eight wide field{{ cssError('accountid') }}">
+              <label>Conta bancária para recebimento</label>
+              {% if editMode %}
+              <div class="ui search selection dropdown">
+                <input name="accountid" type="hidden"
+                       value="{{ getValue('accountid') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text">Informe a conta bancária...</div>
+                <div class="menu">
+                {% set accountID = getValue('accountid') %}
+                {% for account in accounts %}
+                  <div class="item"
+                       {% if account.id == accountID %}
+                         selected
+                       {% endif %}
+                       data-value="{{ account.id }}"
+                       data-text="Banco {{ account.bankid }} / Agência: {{ account.agencynumber }} / Conta: {{ account.accountnumber }} / Carteira: {{ account.wallet }}">
+                    Banco {{ account.bankid }} / Agência: {{ account.agencynumber }} / Conta: {{ account.accountnumber }} / Carteira: {{ account.wallet }}
+                  </div>
+                {% endfor %}
+                </div>
+              </div>
+              {% else %}
+              <div class="field static">
+                <span class="darking">{{ getValue('account') }}&nbsp;</span>
+              </div>
+              {% endif %}
+              {% if hasError('accountid') %}
+              <small class="helper">{{ getError('accountid') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="sixteen wide field{{ cssError('parameters') }}">
+              <label>Parâmetros adicionais</label>
+              <div class="ui input{{ readonly }}">
+                <textarea name="parameters" rows="4" {{ readonly }}
+                          placeholder="As configurações adicionais necessárias...">{{ getValue('parameters') }}</textarea>
+              </div>
+              {% if hasError('parameters') %}
+              <small class="helper">{{ getError('parameters') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="ui vertical segment tiny form">
+            {% set tariffs = getValue('tariffs') %}
+            <h3 class="ui header">
+              Tarifas
+              <div class="sub header">
+                Os valores de tarifa cobrados a cada título emitido
+                usando este meio de pagamento configurado. Caso a tarifa
+                sofra reajuste, informe a nova tarifa e a data em que a
+                mesma passou a ser considerada.
+              </div>
+            </h3>
+            <div id="tariffList" class="tariffList column row">
+              {% for number, tariff in tariffs %}
+                {% include 'erp/parameterization/financial/definedmethods/tariff.twig' with { tariff: tariff, number: number }  %}
+              {% else %}
+              <div class="fields nocontent">
+                <div class="field">
+                Nenhuma tarifa informada
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% if editMode %}
+            <button type="button" class="ui mini green right labeled icon button"
+                    onclick="addTariff();">
+              <i class="plus icon"></i> Nova tarifa
+            </button>
+            {% endif %}
+          </div>
+
+          <div class="fields">
+            <div class="eight wide field{{ cssError('billingcounter') }}">
+              <h5 class="ui header">
+                Títulos emitidos
+                <div class="sub header">
+                  Este é um contador que permite o controle das emissões
+                  realizadas e serve para fins de numeração de cada
+                  título emitido. É utilizado principalmente para
+                  numeração de boletos bancários, em que este número
+                  deve estar sincronizado com o utilizado na instituição
+                  financeira.
+                </div>
+              </h5>
+              <div class="ui input{{ readonly }}">
+                <input name="billingcounter" type="text"
+                       placeholder="0" {{ readonly }}
+                       value="{{ getValue('billingcounter') }}">
+              </div>
+              {% if hasError('billingcounter') %}
+              <small class="helper">{{ getError('billingcounter') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="eight wide field{{ cssError('shippingcounter') }}">
+              <h5 class="ui header">
+                Arquivos de remessa enviados
+                <div class="sub header">
+                  Este é um contador que permite o controle dos arquivos
+                  de remessa gerados e serve para fins de numeração de
+                  cada arquivo. É utilizado principalmente para numeração
+                  de arquivos de remessa, em que este número deve estar
+                  sincronizado com o utilizado na instituição financeira.
+                </div>
+              </h5>
+              <div class="ui input{{ readonly }}">
+                <input name="shippingcounter" type="text"
+                       placeholder="0" {{ readonly }}
+                       value="{{ getValue('shippingcounter') }}">
+              </div>
+              {% if hasError('shippingcounter') %}
+              <small class="helper">{{ getError('shippingcounter') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="eight wide field row">
+              <h5 class="ui header">
+                Controle de arquivos de remessa enviados por dia
+                <div class="sub header">
+                  Este é um contador que permite o controle dos arquivos
+                  de remessa gerados em um mesmo dia e serve para fins
+                  de nomeação de cada arquivo, em que o nome do arquivo
+                  não pode se repetir na instituição financeira.
+                </div>
+              </h5>
+              <div class="ui two column grid">
+                <div class="row">
+                  <div class="column">
+                    <label>Data</label>
+                    <div class="field static">
+                      <span class="lighting">
+                        {{ getValue('counterdate') }}&nbsp;
+                      </span>
+                      <input name="counterdate" type="hidden"
+                             value="{{ getValue('counterdate') }}">
+                    </div>
+                  </div>
+                  <div class="column">
+                    <label>Arquivos enviados</label>
+                    <div class="field static">
+                      <span class="lighting">
+                        {{ getValue('daycounter') }}
+                      </span>
+                      <input name="daycounter" type="hidden"
+                             value="{{ getValue('daycounter') }}">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {% if enableToggleBlocked %}
+          <div class="fields">
+            <div class="sixteen wide field{{ cssError('blocked') }}">
+              <div class="ui checkbox{{ readonly }}">
+                <input type="hidden" name="blocked"
+                       value="{% if getValue('blocked')|toBoolean %}true{% else %}false{% endif %}">
+                <input class="hidden" type="checkbox"
+                       {{ readonly }}
+                       name="_blocked"
+                       {% if getValue('blocked')|toBoolean %}checked="checked"{% endif %}>
+                <label>Bloquear este configuração de meio de pagamento para uso no sistema</label>
+              </div>
+              {% if hasError('blocked') %}
+              <small class="helper">{{ getError('blocked') }}</small>
+              {% endif %}
+            </div>
+          </div>
+          {% else %}
+            {% if getValue('blocked')|toBoolean %}
+            <div class="fields">
+              <div class="eight wide darkred field">
+                <i class="lock icon"
+                   style="font-size: 1.8em; line-height: 1em; vertical-align: middle;"></i>
+                Este configuração de meio de pagamento está bloqueado para uso no sistema.
+              </div>
+            </div>
+            {% endif %}
+          {% endif %}
+        
+          <div class="fields">
+            <div class="sixteen wide field buttons">
+              {% if editMode %}
+              <button type="button" class="ui youtube right labeled icon button"
+                      onclick="location.href='{{ path_for(previous) }}';">
+                <i class="remove icon"></i> Cancelar
+              </button>
+              <button type="submit" class="ui submit primary right labeled icon button">
+                <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+              </button>
+              {% else %}
+              <button type="button" class="ui blue labeled icon button"
+                      onclick="location.href='{{ path_for(previous) }}';">
+                <i class="chevron left icon"></i> Retornar
+              </button>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="definedmethodid" value="{{ getValue('definedmethodid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('template-engine/template.engine.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+  
+  {% apply minify %}
+  <script>
+    /* ----------------------------------------------[ Tarifas ]----- */
+
+    {% set tariffs = getValue('tariffs') %}
+    // O índice de contagem das tarifas
+    var tariffsCount = {{ tariffs|length }};
+    
+    // O template de uma nova tarifa
+    {% set tariffTemplate %}
+      {% include 'erp/parameterization/financial/definedmethods/tariff.twig' with { number: '<%=number%>', tariff: { definedmethodtariffid: 0, basicfare: '0.00', validfrom: 'now'|date('d/m/Y') }, editMode: true, readonly: '' }  %}
+    {% endset %}
+    var tariffTemplate = '{{ tariffTemplate|escape('js') }}'.replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      $('.ui.checkbox')
+        .checkbox(checkboxOptions)
+      ;
+      $("input[name='billingcounter']")
+        .mask({
+          type: 'number',
+          trim: true,
+          allowNegativeValues: false,
+          maxLength: 11
+        })
+      ;
+
+      // Força o mascaramento dos campos das tarifas
+      for (var tariffNumber = 0; tariffNumber < tariffsCount; tariffNumber++) {
+        $("input[name='tariffs[" + tariffNumber + "][basicfare]']")
+          .mask({
+            type: 'monetary',
+            trim: true,
+            allowNegativeValues: false,
+            maxLength: 15,
+            decimalsPlaces: 2
+          })
+          .blur(monetaryHandler)
+        ;
+        $("input[name='tariffs[" + tariffNumber + "][validfrom]']")
+          .mask({
+            type: 'date'
+          })
+        ;
+      }
+
+      // Coloca o foco no primeiro campo
+      $("input[name='name']")
+        .focus()
+      ;
+    });
+
+
+    // ================================================[ Handlers ]=====
+
+    /* -------------------------------------[ Tarifas cobradas ]----- */
+
+    // Faz o tratamento de campos que informam um valor monetário para
+    // permitir corrigir valores inválidos
+    function monetaryHandler()
+    {
+      var
+        monetary = $(this).val()
+      ;
+
+      if (monetary.trim().isEmpty()) {
+        $(this)
+          .val('0,00')
+        ;
+      }
+    }
+
+    // Faz a adição de uma tarifa
+    var addTariff = function()
+    {
+      var
+        // Determina a quantidade de planos existentes
+        tariffNumber = tariffsCount,
+        count = $(".tariffList")
+          .children('.tariffEntry').length,
+        classes = (count === 0)
+          ? ' class="large monitor or widescreen hidden"'
+          : ''
+      ;
+
+      if (count == 0) {
+        $(".tariffList")
+          .children(".nocontent")
+          .remove()
+        ;
+      }
+
+      // Incrementa a quantidade de campos
+      tariffsCount++;
+
+      // Adiciona um conjunto de campos para a nova tarifa
+      tariffEntry = $(".tariffList")
+        .append(TemplateEngine(tariffTemplate,
+          { number: tariffNumber }))
+      ;
+
+      // Modifica os rótulos nos campos quando na primeira linha
+      if (count == 0) {
+        $(tariffEntry)
+          .find("div.field")
+          .each(function() {
+            var
+              label = $(this).find('label')
+            ;
+
+            $(label)
+              .removeClass("large monitor or widescreen hidden")
+            ;
+          })
+        ;
+      }
+      
+      // Mascara os campos
+      $("input[name='tariffs[" + tariffNumber + "][basicfare]']")
+        .mask({
+          type: 'monetary',
+          trim: true,
+          allowNegativeValues: false,
+          maxLength: 15,
+          decimalsPlaces: 2
+        })
+        .blur(monetaryHandler)
+      ;
+      $("input[name='tariffs[" + tariffNumber + "][validfrom]']")
+        .mask({
+          type: 'date'
+        })
+      ;
+      
+      // Coloca em foco o campo inicial do novo plano de assinatura
+      $("input[name='tariffs[" + tariffNumber + "][basicfare]']")
+        .focus()
+      ;
+    };
+    
+    // Faz a remoção de um plano de assinatura
+    var delTariff = function(element)
+    {
+      var
+        // Determina o plano de assinatura selecionado
+        tariffNumber = parseInt($(element).attr("tariff"))
+      ;
+
+      $(element)
+        .closest('.tariffEntry')
+        .remove()
+      ;
+
+      var
+        count = $(".tariffList")
+          .children('.tariffEntry').length
+      ;
+
+      if (count == 0) {
+        // Se não tivermos nenhuma tarifa, precisamos exibir a respectiva
+        // informação de aviso desta situação
+        $(".tariffList")
+          .append(''
+            + '<div class="fields nocontent">'
+            +   '<div class="field">'
+            +     'Nenhuma tarifa informada'
+            +   '</div>'
+            + '</div>'
+          )
+        ;
+      }
+    };
+    
+
+    // =================================================[ Options ]=====
+
+    // As opções para os checkbox
+    var checkboxOptions = {
+      // Dispara ao iniciar para definir o valor, se necessário
+      onChange   : function() {
+        var
+          checkbox = $(this).prop('name'),
+          // Invertemos o valor atual
+          checked = !($(this).attr('checked') !== undefined && $(this).attr('checked')),
+          boolValue = (checked
+            ? 'true'
+            : 'false'),
+          toggleField = checkbox.replace('_','')
+        ;
+
+        // Invertemos o checkbox fake
+        $(this)
+          .attr('checked', checked)
+        ;
+
+        // Alteramos o valor do verdadeiro input
+        $("input[name='" + toggleField + "']")
+          .val(boolValue)
+        ;
+      }
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

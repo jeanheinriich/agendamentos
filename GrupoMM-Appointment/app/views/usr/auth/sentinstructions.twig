@@ -1,0 +1,70 @@
+{% extends 'templates/site/layoutsimple.twig' %}
+{% block title %}{{ parent() }} - Redefinição de senha{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  <style>
+    .ui.middle.aligned .column {
+      max-width: 480px;
+    }
+
+    .left.aligned {
+      text-align: left !important;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+    <main>
+      <section class="description">
+        <div class="ui basic segment">
+        </div>
+
+        <div class="ui basic segment">
+          <div class="ui middle aligned center aligned grid">
+            <article class="column">
+
+              <div class="ui blue secondary segment medium form">
+                <h3 class="ui dividing left aligned header">E-mail enviado com sucesso</h3>
+                <div class="sub header left aligned" style="padding-bottom: 10px;">
+                  Um e-mail foi enviado para o seu endereço de e-mail
+                  <b class="space before">{{ email }}</b>. Siga as
+                  instruções nele contida para redefinir sua senha.
+                </div>
+
+                <div class="sub header left aligned" style="padding-bottom: 10px;">
+                  Caso não consiga acessar o endereço de e-mail, ou
+                  não receba o e-mail informado, entre em contato
+                  conosco.
+                </div>
+
+                <div class="fields">
+                  <div class="sixteen wide left aligned field">
+                    <button type="button" class="ui large orange icon button"
+                            data-tooltip="Retorna à página inicial do site"
+                            data-position="top left"
+                            onclick="location.href='{{ path_for('Home') }}';">
+                      <i class="home icon"></i>
+                    </button>
+
+                    <button type="button" class="ui large green icon button"
+                            data-tooltip="Retorna à página de autenticação"
+                            data-position="top left"
+                            onclick="location.href='{{ path_for('USR\\Login', { 'UUID': uuid }) }}';">
+                      <i class="lock icon"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div class="ui basic segment" style="min-height: 25vh;">
+        </div>
+      </section>
+    </main>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+{% endblock scripts %}

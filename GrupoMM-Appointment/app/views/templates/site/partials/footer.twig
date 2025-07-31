@@ -1,0 +1,65 @@
+      <!-- Footer -->
+      <footer>
+        <div class="maps container">
+          <div class="ui stackable four column grid">
+            <div class="column">
+              <a href="{{ path_for('Home') }}" class="navbar-brand">
+                <img src="/images/logoGrupoMM.png"
+                     alt="Logo Grupo M&M">
+              </a>
+              <p class="text">Oferecemos um conjunto de serviços voltados para a
+              segurança do seu patrimônio.</p>
+              <div class="ui horizontal list">
+                <div class="item">
+                  <a href="https://www.facebook.com/grupommrastreamentoealarme"><i class="facebook square icon social"></i></a>
+                </div>
+                <div class="item">
+                  <a href="https://www.instagram.com/grupomm.rastreamento"><i class="instagram square icon social"></i></a>
+                </div>
+              </div>
+            </div>
+            <div class="column">
+              <h4>MAPA DO SITE</h4>
+              <div class="ui selection list">
+                <a href="{{ path_for('About') }}" class="item">Sobre</a>
+                <a href="{{ path_for('ContactUs') }}" class="item">Contato</a>
+                <a href="{{ path_for('Tracking') }}" class="item">Rastreamento</a>
+                <a href="{{ path_for('Monitoring') }}" class="item">Monitoramento 24h</a>
+                <a href="{{ path_for('CameraSurveillance') }}" class="item">Vigil&acirc;ncia por C&acirc;meras</a>
+                <a href="{{ path_for('Alarm') }}" class="item">Alarmes</a>
+                <!--<a href="{{ path_for('ADM\\Login') }}" class="item">&Aacute;rea restrita</a>
+                <a href="{{ path_for('ADM\\Login') }}" class="item">Administra&ccedil;&atilde;o</a>-->
+              </div>
+            </div>
+            <div class="column">
+              <h4>CONTATO</h4>
+              <p class="text">Para falar conosco:</p>
+              <p><a href="tel:+{{ address('fixo').phone }}"><i class="call icon"></i> {{ address('fixo').number }}</a></p>
+              <p><a href="tel:+{{ address('whatsapp').phone }}"><i class="call icon"></i></i> <i class="whatsapp icon"></i> {{ address('whatsapp').number }}</a></p>
+              <p><a href="mailto:{{ address('contact').email }}"><i class="mail icon"></i> {{ address('contact').email }}</a></p>
+            </div>
+            <div class="column">
+            </div>
+          </div>
+        </div>
+        <div class="copyright">
+          {% set startYear = 2018 %}
+          {% set currentYear = "now"|date('Y') %}
+          {% if startYear == currentYear %}
+            {% set copyrightYears = startYear %}
+          {% else %}
+            {% set copyrightYears = startYear ~ ' - ' ~ currentYear %}
+          {% endif %}
+          <p class="pull-left">
+            Copyright &copy; {{ copyrightYears }} - Grupo M&amp;M.
+            <i class="br flag"></i>
+            <span class="mobile hidden">
+              <a style="display: inline-block;" class="privacity"
+                 href="{{ path_for('PrivacityControl') }}">
+                Pol&iacute;tica de privacidade
+              </a>
+            </span>
+          </p>
+        </div>
+      </footer>
+      <!-- End of Footer -->

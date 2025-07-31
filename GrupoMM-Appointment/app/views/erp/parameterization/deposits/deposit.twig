@@ -1,0 +1,219 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} depósito{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  <style>
+    .ui.input.readonly > textarea {
+      background-color: GhostWhite;
+      border: 1px solid rgba(34,36,38,0.15);
+      color: DarkSlateGray;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Parameterization\\Deposits\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Parameterization\\Deposits\\Edit' %}
+  {% endif %}
+  {% set previous = 'ERP\\Parameterization\\Deposits' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/deposits.svg', 'Depósito') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} depósito
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  local de armazenamento de equipamentos.
+                </div>
+              {% else %}
+                Visualizar depósito
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um
+                  local de armazenamento de equipamentos.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{% if formMethod == 'POST' %}{{ path_for('ERP\\Parameterization\\Deposits\\Add') }}{% else %}{{ path_for('ERP\\Parameterization\\Deposits\\Edit', {'depositID': getValue('depositid') }) }}{% endif %}">
+        <div class="fields">
+          <div class="ten wide field{{ cssError('name') }}">
+            <label>Nome</label>
+            <div class="ui input{{ readonly }}">
+              <input name="name" type="text" maxlength="50"
+                     placeholder="Informe o nome do depósito..."
+                     {{ readonly }}
+                     value="{{ getValue('name') }}">
+            </div>
+            {% if hasError('name') %}
+            <small class="helper">{{ getError('name') }}</small>
+            {% endif %}
+          </div>
+          <div class="six wide field{{ cssError('devicetype') }}">
+            <label>Armazena</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="devicetype" type="hidden"
+                     value="{{ getValue('devicetype') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Informe o tipo de depósito</div>
+              <div class="menu">
+              {% set deviceTypeID = getValue('devicetype') %}
+              {% for deviceType in deviceTypes %}
+                <div class="item"
+                     {% if deviceType.id == deviceTypeID %}selected{% endif %}
+                     data-value="{{ deviceType.id }}"
+                     data-text="{{ deviceType.name }}">
+                  {{ deviceType.name }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('devicetypename') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('devicetype') %}
+            <small class="helper">{{ getError('devicetype') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field{{ cssError('master') }}">
+            <div class="ui checkbox{{ readonly }}">
+              <input type="hidden" name="master"
+                     value="{% if getValue('master')|toBoolean %}true{% else %}false{% endif %}">
+              <input class="hidden" type="checkbox"
+                     name="_master" {{ readonly }}
+                     {% if getValue('master')|toBoolean %}checked="checked"{% endif %}>
+              <label>É o depósito principal</label>
+            </div>
+            {% if hasError('master') %}
+            <small class="helper">{{ getError('master') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide field{{ cssError('comments') }}">
+            <label>Comentário</label>
+            <div class="ui input{{ readonly }}">
+              <textarea name="comments" rows="4" {{ readonly }}
+                        placeholder="Faça uma breve descrição do depósito...">{{ getValue('comments') }}</textarea>
+            </div>
+            {% if hasError('comments') %}
+            <small class="helper">{{ getError('comments') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="depositid" value="{{ getValue('depositid') }}">
+        {% endif %}
+      </form>
+      <!-- End Form -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      $('.ui.checkbox')
+        .checkbox(checkboxOptions)
+      ;
+
+      // Coloca o foco no primeiro campo
+      $("input[name='name']").focus();
+    });
+    
+
+    // =================================================[ Options ]=====
+
+    // As opções para os checkbox
+    var checkboxOptions = {
+      // Dispara ao iniciar para definir o valor, se necessário
+      onChange   : function() {
+        var
+          checkbox = $(this).prop('name'),
+          // Invertemos o valor atual
+          checked = !($(this).attr('checked') !== undefined && $(this).attr('checked')),
+          boolValue = (checked
+            ? 'true'
+            : 'false'),
+          toggleField = checkbox.replace('_','')
+        ;
+
+        // Invertemos o checkbox fake
+        $(this)
+          .attr('checked', checked)
+        ;
+
+        // Alteramos o valor do verdadeiro input
+        $("input[name='" + toggleField + "']")
+          .val(boolValue)
+        ;
+      }
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

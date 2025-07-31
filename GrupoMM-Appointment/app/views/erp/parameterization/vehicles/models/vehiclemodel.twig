@@ -1,0 +1,333 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} modelo de veículo{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('form.min.css') }}
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Parameterization\\Vehicles\\Models\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Parameterization\\Vehicles\\Models\\Edit' %}
+  {% endif %}
+  {% set previous = 'ERP\\Parameterization\\Vehicles\\Models' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/vehiclemodels.svg', 'Modelo de veículo') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} modelo de veículo
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  modelo de veículo.
+                </div>
+              {% else %}
+                Visualizar modelo de veículo
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um modelo de veículo.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL, { 'vehicleModelID': getValue('vehiclemodelid') }) }}">
+        <div class="fields">
+          <div class="four wide field{{ cssError('vehicletypeid') }}">
+            <label>Tipo de veículo</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="vehicletypeid" type="hidden"
+                     value="{{ getValue('vehicletypeid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Informe o tipo de veículo...</div>
+              <div class="menu">
+              {% set vehicleTypeID = getValue('vehicletypeid') %}
+              {% for vehicleType in vehicleTypes %}
+                <div class="item" {% if vehicleType.id == vehicleTypeID %}selected{% endif %}
+                     data-value="{{ vehicleType.id }}"
+                     data-text="{{ vehicleType.name }}">
+                  {{ vehicleType.name }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('vehicletypename') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('vehicletypeid') %}
+            <small class="helper">{{ getError('vehicletypeid') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field{{ cssError('vehiclesubtypeid') }}">
+            <label>Sub-tipo</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="vehiclesubtypeid" type="hidden"
+                     value="{{ getValue('vehiclesubtypeid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Informe o subtipo de veículo...</div>
+              <div class="menu">
+              {% set vehicleSubtypeID = getValue('vehiclesubtypeid') %}
+              {% for vehicleSubtype in vehicleSubtypesPerType[vehicleTypeID] %}
+                <div class="item" {% if vehicleSubtype.id == vehicleSubtypeID %}selected{% endif %}
+                     data-value="{{ vehicleSubtype.id }}"
+                     data-text="{{ vehicleSubtype.name }}">
+                  {{ vehicleSubtype.name }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('vehiclesubtypename') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('vehiclesubtypeid') %}
+            <small class="helper">{{ getError('vehiclesubtypeid') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="eight wide field{{ cssError('vehiclebrandname') }}">
+            <label>Marca do veículo</label>
+            <input name="vehiclebrandname" type="text" maxlength="30"
+                   placeholder="Informe a marca do veículo..."
+                   {{ readonly }}
+                   value="{{ getValue('vehiclebrandname') }}">
+            <input type="hidden"
+                   name="vehiclebrandid"
+                   value="{{ getValue('vehiclebrandid') }}" >
+            <input type="hidden"
+                   name="vehicletypeperbrandid"
+                   value="{{ getValue('vehicletypeperbrandid') }}" >
+            {% if hasError('vehiclebrandname') %}
+            <small class="helper">{{ getError('vehiclebrandname') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="fourteen wide field{{ cssError('name') }}">
+            <label>Modelo de veículo</label>
+            <div class="ui input{{ readonly }}">
+              <input name="name" type="text" maxlength="50"
+                     placeholder="Informe o nome do modelo de veículo..."
+                     {{ readonly }}
+                     value="{{ getValue('name') }}">
+            </div>
+            {% if hasError('name') %}
+            <small class="helper">{{ getError('name') }}</small>
+            {% endif %}
+          </div>
+          <div class="two wide field{{ cssError('fipeid') }}">
+            <label>Código Fipe</label>
+            <div class="ui input{{ readonly }}">
+              <input name="fipeid" type="text"
+                     placeholder="Informe o código no sistema Fipe..."
+                     {{ readonly }}
+                     value="{{ getValue('fipeid') }}">
+            </div>
+            {% if hasError('fipeid') %}
+            <small class="helper">{{ getError('fipeid') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="vehiclemodelid" value="{{ getValue('vehiclemodelid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  
+  {% set getBrandNameCompletion = { 'URL': 'ERP\\Parameterization\\Vehicles\\Brands\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    /* ---------------------------------[ Subtipos de veículos ]----- */
+    var
+      vehicleSubtypes = {
+      {% for vehicleTypeID, vehicleSubtypes in vehicleSubtypesPerType %}
+        {{ vehicleTypeID }}: [
+        {% for vehicleSubtype in vehicleSubtypes %}
+          {
+            'name': '{{ vehicleSubtype.name }}',
+            'value': {{ vehicleSubtype.id }}
+          },
+        {% endfor %}
+        ],
+      {% endfor %}
+      }
+    ;
+    /* -------------------------------------------------------------- */
+
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      $("input[name='vehicletypeid']")
+        .change(vehicleTypeHandler)
+      ;
+      $("input[name='vehiclesubtypeid']")
+        .closest('div.search.selection.dropdown')
+        .dropdown({
+          message: {
+            noResults : 'Nenhum subtipo disponível. '
+              + 'Selecione um tipo de veículo primeiramente.'
+          }
+        })
+      ;
+      $("input[name='vehiclebrandname']")
+        .autocomplete(brandNameCompletionOptions)
+      ;
+      $("input[name='fipeid']")
+        .mask({
+          type: 'number',
+          maxlength: 10
+        })
+      ;
+      
+      // Coloca o foco no primeiro campo
+      $("input[name='vehicletypeid']")
+        .closest('div')
+        .find('input.search')
+        .focus()
+      ;
+    });
+    
+
+    // =================================================[ Options ]=====
+
+    // As opções para o componente de autocompletar o nome da marca do
+    // veículo
+    var brandNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      ajax: {
+        url: "{{ path_for(getBrandNameCompletion.URL) }}",
+        type: "{{ getBrandNameCompletion.method }}",
+        data: function(params, options) {
+          params.vehicleTypeID = $("input[name='vehicletypeid']").val();
+          params.includeTypePerBrand = 'true';
+        }
+      },
+      onSelect: function (element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='vehiclebrandid']")
+          .val(suggestion.id)
+        ;
+        $("input[name='vehicletypeperbrandid']")
+          .val(suggestion.vehicletypeperbrandid)
+        ;
+      },
+      onInvalidateSelection: function() {
+        // Limpa os dados
+        $("input[name='vehiclebrandid']")
+          .val(0)
+        ;
+        $("input[name='vehicletypeperbrandid']")
+          .val(0)
+        ;
+      }
+    };
+
+
+    // ================================================[ Handlers ]=====
+
+    // Trata as modificações do tipo de veículo selecionado
+    function vehicleTypeHandler() {
+      var
+        typeID = parseInt($(this).val())
+      ;
+
+      if (typeID > 0) {
+        // Limpa o campo de seleção da marca do veículo
+        $("input[name='vehiclebrandname']")
+          .val('')
+        ;
+        $("input[name='vehiclebrandid']")
+          .val(0)
+        ;
+
+        var
+          $dropdown = $("input[name='vehiclesubtypeid']")
+            .closest('div.ui.search.selection.dropdown'),
+          firstSubtypeID = vehicleSubtypes[typeID][0]['value']
+        ;
+
+        // Ajustamos os subtipos de veículos ofertados
+        $dropdown
+          .dropdown('change values', vehicleSubtypes[typeID])
+        ;
+
+        // Definimos o primeiro subtipo disponível
+        $dropdown
+          .dropdown('set selected', firstSubtypeID)
+        ;
+        $dropdown
+          .dropdown('refresh')
+        ;
+      }
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

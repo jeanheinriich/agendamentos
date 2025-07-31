@@ -1,0 +1,900 @@
+{% extends 'templates/adm/layout.twig' %}
+{% import "templates/adm/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento dos contratantes{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.main.basic.segment .searchbar.fields .field.searchbox {
+      flex-grow: 1;
+      min-width: 455px;
+    }
+    .ui.adaptable.dropdown {
+      min-width: 10em;
+    }
+    @media only screen and (max-width: 767px) {
+      .ui.adaptable.dropdown {
+        min-width: 8.3em;
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 100px;
+        width: calc(100% - 47px);
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox input {
+        max-width: calc(100% - 141px);
+      }
+    }
+    @media only screen and (max-width: 336px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox input {
+        max-width: calc(100% - 165px);
+      }
+    }
+
+    @media only screen and (min-width: 768px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+
+    .blue.icon {
+      color: rgba(0,102,255,0.9) !important;
+    }
+    
+    .dataTables_wrapper i.fas {
+      margin: 0 .25rem 0 0;
+      color: #6495ed;
+    }
+    .dataTables_wrapper i.fas.blue {
+      margin: 0 .25rem 0 0;
+      color: #2465bd;
+    }
+
+    /* --------------------------------------------------------------
+     * Personalizações das linhas do datagrid apenas para este módulo
+     * -------------------------------------------------------------- */
+    tr.grouped td {
+      background-color: rgba(103, 120, 128,.12);
+      font-weight: bold;
+    }
+    tr.subgrouped:nth-of-type(odd) td {
+      background-color: rgba(103, 120, 128,.07);
+    }
+    tr.subgrouped:nth-of-type(even) td {
+      background-color: rgba(103, 120, 128,.08);
+    }
+    tr.inactived:nth-of-type(odd) td {
+      font-style: italic;
+      color: rgba(40,40,40,.5);
+      background-color: rgba(0,60,240,.05);
+    }
+    tr.inactived:nth-of-type(even) td {
+      font-style: italic;
+      color: rgba(40,40,40,.5);
+      background-color: rgba(0,60,240,.06);
+    }
+    tr.inactived.blocked td {
+      color: darkred;
+    }
+
+    span.status {
+      display: block;
+      color: white;
+      border-radius: .3em;
+      padding: 0.5em;
+      min-width: 6em;
+    }
+    span.status.darkgreen {
+      background-color: darkgreen;
+    }
+    span.status.darkred {
+      background-color: darkred;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set add  = { 'URL': 'ADM\\Cadastre\\Contractors\\Add', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('adm/contractors.svg', 'Contratantes') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento dos contratantes
+                <div class="sub header">
+                  Permite gerenciar os contratantes cadastrados no sistema.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(add.URL, add.method) %}
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Adiciona um contratante"
+                      data-position="top left" type="button"
+                      onclick="location.href='{{ path_for(add.URL) }}'">
+                <i class="add icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite o contratante que procura..."
+                       value="{{ contractor.searchValue }}">
+                <select class="ui searchfield adaptable selection dropdown button"
+                        name="searchField" id="searchField">
+                  <option value="name"{% if contractor.searchField == "name" %} selected{% endif %}>
+                    Nome
+                  </option>
+                  <option value="nationalregister"{% if contractor.searchField == "nationalregister" %} selected{% endif %}>
+                    CPF/CNPJ
+                  </option>
+                </select>
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza um contratante"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID do contratante</th>
+          <th>ID da unidade/filial</th>
+          <th>Indicador de pessoa jurídica</th>
+          <th>Indicador de matriz</th>
+          <th>Indicador de tipo</th>
+          <th>Indicador de nível</th>
+          <th>Nome do contratante</th>
+          <th>Nome fantasia/apelido</th>
+          <th>Bloqueio</th>
+          <th>Cidade</th>
+          <th>CPF/CNPJ</th>
+          <th>Situação</th>
+          <th {{ tooltip.add('left', 'Permite gerar um PDF para impressão dos dados cadastrais do contratante') }}><i class="file pdf icon"></i></th>
+          <th {{ tooltip.add('left', 'Indicador de contratante bloqueado para uso no sistema') }}><i class="lock darkred icon"></i></th>
+          <th {{ tooltip.add('left', 'Permite remover o contratante') }}><i class="remove darkred icon"></i></th>
+          <th>Disponível desde</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/adm/partials/dialogs/error.twig' %}
+  {% include 'templates/adm/partials/dialogs/info.twig' %}
+  {% include 'templates/adm/partials/dialogs/question.twig' %}
+  {% include 'templates/adm/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/IconFormatter.min.js') }}
+  {{ lib('datatables/formatters/DeleteFormatter.min.js') }}
+  
+  {% set getData       = { 'URL': 'ADM\\Cadastre\\Contractors\\Get', 'method': 'PATCH' } %}
+  {% set add           = { 'URL': 'ADM\\Cadastre\\Contractors\\Add', 'method': 'GET' } %}
+  {% set edit          = { 'URL': 'ADM\\Cadastre\\Contractors\\Edit', 'method': 'GET' } %}
+  {% set getPDF        = { 'URL': 'ADM\\Cadastre\\Contractors\\Get\\PDF', 'method': 'GET' } %}
+  {% set remove        = { 'URL': 'ADM\\Cadastre\\Contractors\\Delete', 'method': 'DELETE' } %}
+  {% set toggleBlocked = { 'URL': 'ADM\\Cadastre\\Contractors\\ToggleBlocked', 'method': 'PUT' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      table
+    ;
+
+    // Os formatadores de colunas
+
+    // Um formatador de colunas para exibir um ícone antes do nome de um
+    // associado de uma associação
+    var nameFormatter = function ( value, type, row, meta ) {
+      var
+        icon  = 'fas fa-house-user',
+        type = 'Contratante',
+        label = value
+      ;
+
+      switch (row.level) {
+        case 0:
+          icon = 'fas fa-house-user';
+
+          break;
+        case 1:
+          if (row.juridicalperson) {
+            icon = 'plus square grey icon';
+            if (row.headoffice) {
+              type = 'Matriz';
+            } else {
+              type = 'Unidade/filial';
+            }
+          } else {
+            icon = 'fas fa-user';
+            if (row.headoffice) {
+              type = 'Titular';
+            } else {
+              type = 'Dependente';
+            }
+          }
+
+          break;
+        case 2:
+          icon = 'fas fa-house-user';
+
+          break;
+        default:
+          icon = 'fas fa-info-circle';
+          type = 'Desconhecido';
+      }
+
+      if (row.tradingname) {
+        // Acrescenta o apelido ou nome fantasia do contratante
+        label += ' '
+          + '<i style="color: #0073cf; font-weight: bold;"> [ '
+          + row.tradingname
+          + ' ]</i>'
+        ;
+      }
+
+      if (row.active) {
+        if (row.level !== 1) {
+          if (row.type == 1) {
+            label += '<br>'
+              + '<i style="color: SlateGray; font-size: .9em; padding-left: 1.6em;">Nosso contratante há '
+              +   getAge(row.createdat.substring(0, 10))
+              + '</i>'
+            ;
+          } else {
+            label += '<br>'
+              + '<i style="color: SlateGray; font-size: .9em; padding-left: 1.6em;">Associado há '
+              +   getAge(row.createdat.substring(0, 10))
+              + '</i>'
+            ;
+          }
+        }
+      }
+
+      return ''
+        + '<span data-position="right center"'
+        +       'data-blue data-inverted '
+        +       'data-tooltip="' + type + '">'
+        +   '<i class="' + icon + '"></i>'
+        + '</span>' + label
+      ;
+    };
+
+    // Um formatador (render) de coluna para exibir o texto indicativo
+    // de situação do cadastro
+    var activeFormatter = function ( value, type, row, meta ) {
+      // Verifica se foi solicitada a exibição do valor
+      if ( type === 'display' ) {
+        //if (row.active === false) {
+        //  // Retornamos um texto indicando que está inativo
+        //  return '<span class="status" style="background-color: #528aae;">' +
+        //           'Inativo' +
+        //         '</span>';
+        //} else {
+          if (row.blockedlevel > 0) {
+            // Retornamos um texto indicando que está inativo
+            return '<span class="status" style="background-color: #c81120;">' +
+                     'Bloqueado' +
+                   '</span>';
+          } else {
+            // Retornamos um texto indicando que está ativo
+            return '<span class="status" style="background-color: #4a9c35;">' +
+                     'Ativo' +
+                   '</span>';
+          }
+        //}
+      }
+
+      // Pesquisas, ordenamentos e tipos podem usar os dados originais
+      return value;
+    };
+    
+    // Um formatador para exibir um ícone indicativo de que o contratante
+    // está ou não bloqueado
+    var blockedFormatter = function ( value, type, row, meta ) {
+      var
+        buildIcon = function (color, icon, title) {
+          return '<span data-position="left center"' +
+                       'data-blue data-inverted ' +
+                       'data-tooltip="' + title + '">' +
+                   '<i class="' + icon + ' ' + color + ' icon">' +
+                   '</i>' +
+                 '</span>';
+        }
+      ;
+
+      switch (value) {
+        case 1:
+          // O contratante está bloqueado
+          return buildIcon('lock', 'darkred', ''
+            + 'A conta deste contratante está bloqueada'
+          );
+
+          break;
+        case 2:
+          // Apenas a unidade/filial está bloqueada
+          if (row.juridicalperson === true) {
+            if (row.headoffice === true) {
+              person = 'a matriz';
+            } else {
+              person = 'a unidde/filial';
+            }
+          } else {
+            if (row.headoffice === true) {
+              person = 'o titular';
+            } else {
+              person = 'o dependente';
+            }
+          }
+
+          return buildIcon('lock', 'darkorange', ''
+            + 'A conta d' + person + ' está bloqueada'
+          );
+
+          break;
+        default:
+          // Está livre
+          return buildIcon('unlock', 'lightgrey', ''
+            + 'Nenhum bloqueio nesta conta'
+          );
+      }
+    };
+
+    $(document).ready(function() {
+      var groupColumn = 1;
+
+      // --------------------------------[ Componentes da Searchbar ]---
+      $('.searchbar .ui.dropdown')
+        .dropdown()
+      ;
+      $('#searchValue').keypress(function(e) {
+        if (e.which == 13) {
+          searchLoad();
+        }
+      });
+
+      // Lida com o pressionamento de teclas
+      $(document).on('keydown',function(event) {
+        if (event.keyCode == 27) {
+          // Limpa o campo de pesquisa
+          $('#searchValue')
+            .val('')
+          ;
+
+          searchLoad();
+        }
+      });
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}"
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "id",
+            "data": "id",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "subsidiaryid",
+            "data": "subsidiaryid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 2,
+            "name": "juridicalperson",
+            "data": "juridicalperson",
+            "visible": false,
+            "orderable": false },
+          { "targets": 3,
+            "name": "headoffice",
+            "data": "headoffice",
+            "visible": false,
+            "orderable": false },
+          { "targets": 4,
+            "name": "type",
+            "data": "type",
+            "visible": false,
+            "orderable": false },
+          { "targets": 5,
+            "name": "level",
+            "data": "level",
+            "visible": false,
+            "orderable": false },
+          { "targets": 6,
+            "name": "NULL",
+            "data": "name",
+            "visible": true,
+            "orderable": false,
+            "render": nameFormatter },
+          { "targets": 7,
+            "name": "tradingname",
+            "data": "tradingname",
+            "visible": false,
+            "orderable": false },
+          { "targets": 8,
+            "name": "blocked",
+            "data": "blocked",
+            "visible": false,
+            "orderable": false },
+          { "targets": 9,
+            "name": "cityname",
+            "data": "cityname",
+            "visible": true,
+            "orderable": false },
+          { "targets": 10,
+            "name": "nationalregister",
+            "data": "nationalregister",
+            "visible": true,
+            "orderable": false,
+            "width": "100px" },
+          { "targets": 11,
+            "name": "active",
+            "data": "active",
+            "className": "dt-center",
+            "visible": true,
+            "width": "30px",
+            "orderable": false,
+            "render": activeFormatter },
+          { "targets": 12,
+            "name": "pdf",
+            "data": "id",
+            "className": "dt-center",
+            "visible": {% if authorization.getAuthorizationFor(getPDF.URL, getPDF.method) %}true{% else %}false{% endif %},
+            "orderable": false,
+            "width": "10px",
+            "render": iconFormatter("file pdf", "black", "Permite gerar um PDF para impressão dos dados cadastrais") },
+          { "targets": 13,
+            "name": "blockedlevel",
+            "data": "blockedlevel",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": blockedFormatter },
+          { "targets": 14,
+            "name": "delete",
+            "data": "delete",
+            "className": "dt-center",
+            "visible": {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}true{% else %}false{% endif %},
+            "orderable": false,
+            "width": "10px",
+            "visible": false,
+            "render": iconFormatter("minus", "lightgrey", "") },
+          { "targets": 15,
+            "name": "createdat",
+            "data": "createdat",
+            "visible": false,
+            "orderable": false }
+        ],
+        order: [[ 6, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        displayStart: {{ contractor.displayStart|default("0") }},
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.searchValue = $('#searchValue').val();
+            params.searchField = $('#searchField').val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        createdRow: function(row, data, dataIndex) {
+          if (data.level == 0) {
+            // Expande a coluna
+            $('td:eq(0)', row).attr('colspan', 3);
+            $('td:eq(1)', row).css('display', 'none');
+            $('td:eq(2)', row).css('display', 'none');
+          }
+
+          // Deixa as linhas com cores diferentes para indicar bloqueio
+          // if ( data.active == false ) {
+          //   // Adiciona o estado de inativo
+          //   if (data.blockedlevel > 0) {
+          //     $(row).addClass('blocked');
+          //   }
+          //   
+          //   // Adiciona o estado de negativado
+          //   $(row).addClass('inactived');
+          // } else {
+            if (data.blockedlevel > 0) {
+              $(row).addClass('blocked');
+            } else {
+              switch (data.level) {
+                case 0:
+                  $(row).addClass('grouped');
+
+                  break;
+                default:
+                  // Não faz nada
+              }
+            }
+          //}
+        }
+      });
+
+      // Manipula os eventos de click
+      table
+        .on('user-select', function (e, dt, type, cell, originalEvent) {
+          if (type === 'cell') {
+            var
+              // Recupera os dados da célula selecionada
+              index   = cell[0][0],
+
+              // Recupera o contratante selecionado
+              contractor = dt.rows( index.row ).data().toArray()[0]
+            ;
+
+            // Em função da coluna onde ocorreu o clique, executa a ação
+            // correspondente
+            switch (index.column) {
+              {% if authorization.getAuthorizationFor(getPDF.URL, getPDF.method) %}
+              case 12:
+                var
+                  url
+                ;
+
+                // Gera um PDF com as informações cadastrais
+                switch (contractor.level) {
+                  case 0, 2:
+                    // Do contratante
+                    url = "{{ buildURL(getPDF.URL, {'contractorID': 'contractor.id'}) }}";
+
+                    break;
+                  case 1:
+                    // Da unidade/filial do contratante
+                    url = "{{ buildURL(getPDF.URL, {'contractorID': 'contractor.id', 'subsidiaryID': 'contractor.subsidiaryid'}) }}";
+
+                    break;
+                }
+                window.open(url, '_blank');
+
+                break;
+              {% endif %}
+              {% if authorization.getAuthorizationFor(toggleBlocked.URL, toggleBlocked.method) %}
+              case 13:
+                // Alterna o bloqueio da unidade/filial
+                var
+                  action = contractor.blocked
+                    ? "desbloquear"
+                    : "bloquear",
+                  person,
+                  complement = ''
+                ;
+
+                switch (contractor.level) {
+                  case 0:
+                    // O contratante
+                    person = 'o contratante';
+
+                    break;
+                  case 1:
+                    // A unidade/filial
+                    if (contractor.juridicalperson) {
+                      person = 'a unidade';
+                    } else {
+                      if (contractor.headoffice) {
+                        person = 'o titular';
+                      } else {
+                        person = 'o dependente';
+                      }
+                    }
+
+                    complement = ' deste contratante';
+
+                    break;
+                  case 2:
+                    // O contratante
+                    person = 'o contratante';
+  
+                    break;
+                }
+
+                questionDialog(
+                  action.charAt(0).toUpperCase() + action.slice(1), ''
+                    + 'Você deseja realmente ' + action + ' ' + person
+                    + ' <b>&ldquo;' + contractor.name
+                    + '&rdquo;</b>' + complement + '?',
+                  function() {
+                    // Alternar o bloqueio da unidade/filial do contratante
+                    // selecionado
+                    var url;
+
+                    switch (contractor.level) {
+                      case 0:
+                      case 2:
+                        // O contratante
+                        url = "{{ buildURL(toggleBlocked.URL, {'contractorID': 'contractor.id'}) }}";
+
+                        break;
+                      case 1:
+                        // A unidade/filial
+                        url = "{{ buildURL(toggleBlocked.URL, {'contractorID': 'contractor.id', 'subsidiaryID': 'contractor.subsidiaryid'}) }}";
+
+                        break;
+                    }
+
+                    putJSONData(url, [],
+                      function (data, params, message) {
+                        // Atualiza a tabela
+                        searchLoad();
+                      }
+                    );
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  }
+                );
+
+                break;
+                {% endif %}
+              case 14:
+                // Remover unidade/filial
+                // Não faz nada
+                break;
+              default:
+                {% if authorization.getAuthorizationFor(edit.URL, edit.method) %}
+                // Coloca o contratante em edição
+                window.location.href = "{{ buildURL(edit.URL, {'contractorID': 'contractor.id'}) }}";
+                {% endif %}
+            }
+
+            e.preventDefault();
+          }
+        }
+      );
+
+      // Força a atualização da tabela para reajustar as colunas após
+      // a carga
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 1500);
+    });
+
+
+    // ================================================[ Handlers ]=====
+
+    // Executa a pesquisa
+    function searchLoad() {
+      table
+        .ajax
+        .reload()
+      ;
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 500);
+    }
+
+    // Recupera a idade a partir de uma data
+    function getAge(date) {
+      function plularize(name, value, separator) {
+        var
+          result = ''
+        ;
+
+        if (value > 0) {
+          if (name === 'mês') {
+            if (value > 1) {
+              result = value + ' meses';
+            } else {
+              result = value + ' mês';
+            }
+          } else {
+            result = value + ' ' + name;
+
+            if (value > 1) result += 's';
+          }
+
+          result += separator;
+        }
+
+        return result;
+      }
+
+      var
+        date_part   = date.split("-"),
+        day         = date_part[2],
+        month       = date_part[1],
+        year        = date_part[0],
+
+        // Recuperamos a data atual
+        today       = new Date(),
+        today_year  = today.getYear(),
+        today_month = today.getMonth() + 1,
+        today_day   = today.getDate()
+      ;
+
+      // Realizamos os cálculos
+      var
+        age = (today_year + 1900) - year
+      ;
+
+      if (today_month < month) {
+        age--;
+      }
+      if ((month == today_month) && (today_day < day)) {
+        age--;
+      }
+      if (age > 1900) {
+        age -= 1900;
+      }
+
+      // Calculamos os meses
+      var
+        months = 0
+      ;
+
+      if (today_month > month && day > today_day) {
+        months = today_month - month - 1;
+      }
+      else if (today_month > month) {
+        months = today_month - month
+      }
+
+      if (today_month < month && day < today_day) {
+        months = 12 - (month - today_month);
+      }
+      else if (today_month < month) {
+        months = 12 - (month - today_month + 1);
+      }
+
+      if (today_month == month && day > today_day) {
+        months = 11;
+      }
+
+      // Calculamos os dias
+      var
+        days = 0
+      ;
+
+      if (today_day > day) {
+        days = today_day - day;
+      }
+      if (today_day < day) {
+        var
+          lastDayOfMonth = new Date(today_year, today_month - 1, 0)
+        ;
+
+        days = lastDayOfMonth.getDate() - (day - today_day);
+      }
+
+      if (age > 0) {
+        if (months > 0) {
+          return plularize('ano', age, ' e ') +
+                 plularize('mês', months, '');
+        } else {
+          return plularize('ano', age, '');
+        }
+      } else {
+        if (months > 0) {
+          if (days > 0) {
+            return plularize('mês', months, ' e ') +
+                   plularize('dia', days, '');
+          } else {
+            return plularize('mês', months, '');
+          }
+        } else {
+          if (days > 0) {
+            return plularize('dia', days, '');
+          } else {
+            return 'menos de um dia';
+          }
+        }
+      }
+
+      return plularize('mês', months, '');
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

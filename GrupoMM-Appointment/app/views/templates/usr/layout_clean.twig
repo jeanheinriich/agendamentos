@@ -1,0 +1,69 @@
+{# Layout para a página inicial do site do ERP #}
+{% extends 'templates/base.twig' %}
+{% block schema %}SoftwareApplication{% endblock schema %}
+{% block meta %}
+  <!-- Chrome, Firefox OS and Opera -->
+  <meta name="theme-color" content="#2e67fe">
+  <!-- Windows Phone -->
+  <meta name="msapplication-navbutton-color" content="#2e67fe">
+  <!-- iOS Safari -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="#2e67fe">
+  <!-- Windows Phone -->
+  <meta name="msapplication-navbutton-color" content="#2e67fe">
+  <!-- iOS Safari -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+{% endblock meta %}
+{% block title %}
+  ERP
+  {{ parent() }}
+{% endblock title %}
+{% block head %}
+  <meta name="description" content="Um sistema de gestão voltado especificamente para os controles de frotas e rastreadores." />
+  <meta name="keywords" content="ERP">
+  <meta name="author" content="Emerson Cavalcanti">
+  <meta itemprop="name" content="ERP de controle de frotas e rastreadores">
+  <meta itemprop="description" content="Um sistema de gestão voltado especificamente para os controles de frotas e rastreadores.">
+  <meta itemprop="applicationCategory" content="ERP">
+  <meta itemprop="author" content="Emerson Cavalcanti">
+{% endblock head %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/semantic-ui/semantic.min.css') }}
+  
+  {{ css('clearfix.min.css') }}
+  {{ css('responsive.min.css') }}
+  {{ css('flash.min.css') }}
+{% endblock stylesheets %}
+{% block body %}
+  <!-- Início mensagens instantâneas -->
+  <div class="ui message-box">
+    {% block flash %}
+      {% include 'templates/usr/partials/flash.twig' %}
+    {% endblock %}
+  </div>
+  <!-- Fim mensagens instantâneas -->
+  
+  <!-- Início conteúdo -->
+  {% block content %}
+  {% endblock content %}
+  <!-- Fim conteúdo -->
+
+  <!-- Início diálogos modais -->
+  {% block dialogs %}
+  {% endblock dialogs %}
+  <!-- Fim diálogos modais -->
+{% endblock body%}
+{% block scripts %}
+  {{ parent() }}
+
+  {% apply minify %}
+  <script>
+    // ------------------------------------[ Mensagens Instantâneas ]---
+    $('.flash.message .close').on('click', function () {
+      $(this).closest('.flash.message').hide('500');
+    });
+  </script>
+  {% endapply %}
+{% endblock scripts %}

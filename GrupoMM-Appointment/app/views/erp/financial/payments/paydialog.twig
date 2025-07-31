@@ -1,0 +1,134 @@
+<div class="ui pay small modal">
+  <i class="close icon"></i>
+  <div class="header">
+    <i class="donate icon"></i>
+    &nbsp;Informar pagamento
+  </div>
+  <div class="content">
+    <div class="description">
+      <div class="ui header">
+        <div class="sub header">
+          Título
+        </div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="ui pay form">
+        <div class="fields">
+          <span class="ui error text"></span>
+          <input type="hidden" name="payID"
+                 value="0">
+          <input type="hidden" name="payMethodID"
+                 value="0">
+        </div>
+        <div class="fields">
+          <div class="six wide field">
+            <label>
+              Data de vencimento:
+            </label>
+            <div class="ui calendar">
+              <div class="ui input left icon info">
+                <i class="calendar icon"></i>
+                <input name="duedate" type="text"
+                       placeholder="Data de vencimento..."
+                       readonly
+                       value="">
+              </div>
+            </div>
+          </div>
+
+          <div class="five wide field">
+            <label>
+              Data de pagamento:
+            </label>
+            <div class="ui calendar" id="paiddate">
+              <div class="ui input left icon">
+                <i class="calendar icon"></i>
+                <input name="paiddate" type="text"
+                       placeholder="Data de pagamento..."
+                       value="">
+              </div>
+            </div>
+          </div>
+
+          <div class="five wide field">
+            <label>
+              Data do crédito:
+            </label>
+            <div class="ui calendar" id="creditdate">
+              <div class="ui input left icon">
+                <i class="calendar icon"></i>
+                <input name="creditdate" type="text"
+                       placeholder="Data do crédito..."
+                       value="">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="six wide field">
+            <label>
+              Valor do documento:
+            </label>
+            <div class="ui left labeled input info">
+              <div class="ui basic label">R$</div>
+              <input name="valuetopay" type="text"
+                     placeholder="0,00"
+                     class="right" readonly
+                     value="0,00">
+            </div>
+          </div>
+
+          <div class="five wide field">
+            <label>
+              Valor de abatimento:
+            </label>
+            <div class="ui left labeled input info">
+              <div class="ui basic label">R$</div>
+              <input name="abatementvalue" type="text"
+                     placeholder="0,00"
+                     class="right" readonly
+                     value="0,00">
+            </div>
+          </div>
+
+          <div class="five wide field">
+            <label>
+              Valor pago:
+            </label>
+            <div class="ui left labeled input">
+              <div class="ui basic label">R$</div>
+              <input name="paidvalue" type="text"
+                     placeholder="0,00"
+                     class="right"
+                     value="0,00">
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field">
+            <label>
+              Observações sobre o pagamento:
+            </label>
+            <div class="ui input">
+              <textarea name="paidreasons" rows="6"
+                        placeholder="Faça um breve comentário sobre o pagamento..."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="ui youtube cancel right labeled icon button">
+      Cancelar
+      <i class="remove icon"></i>
+    </button>
+    <button class="ui primary ok right labeled icon button">
+      Confirmar
+      <i class="checkmark icon"></i>
+    </button>
+  </div>
+</div>

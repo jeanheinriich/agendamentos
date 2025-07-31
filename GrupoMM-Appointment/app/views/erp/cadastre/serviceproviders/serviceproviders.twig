@@ -1,0 +1,283 @@
+{% extends 'templates/erp/layout.twig' %}
+{% import "templates/erp/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento dos prestadores de serviços{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.main.basic.segment .searchbar.fields .field.selectbox {
+      flex-grow: 1;
+      min-width: 236px;
+    }
+    .ui.main.basic.segment .searchbar.fields .field.searchbox {
+      flex-grow: 1;
+      min-width: 455px;
+    }
+    .ui.adaptable.dropdown {
+      min-width: 10em;
+    }
+    @media only screen and (max-width: 767px) {
+      .ui.adaptable.dropdown {
+        min-width: 8.3em;
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 100px;
+        width: calc(100% - 47px);
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox input {
+        max-width: calc(100% - 141px);
+      }
+    }
+    @media only screen and (max-width: 336px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox input {
+        max-width: calc(100% - 165px);
+      }
+    }
+
+    @media only screen and (min-width: 768px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+
+    .blue.icon {
+      color: rgba(0,102,255,0.9) !important;
+    }
+    
+    .dataTables_wrapper i.fas {
+      margin: 0 .25rem 0 0;
+      color: #6495ed;
+    }
+
+    .ui.blue.toast {
+      background-color: #0261ed;
+      color: rgba(255,255,255,1);
+    }
+
+    .inline.button {
+      font-size: .75714286rem;
+      vertical-align: text-bottom;
+      padding: .38571429em .28571429em .38571429em !important;
+    }
+
+    /* --------------------------------------------------------------
+     * Personalizações das linhas do datagrid apenas para este módulo
+     * -------------------------------------------------------------- */
+    tr.technician td {
+      color: #8a6d07;
+      font-style: italic;
+    }
+    tr.grouped td {
+      background-color: rgba(103, 120, 128,.12);
+      font-weight: bold;
+    }
+    tr.subgrouped:nth-of-type(odd) td {
+      background-color: rgba(103, 120, 128,.07);
+    }
+    tr.subgrouped:nth-of-type(even) td {
+      background-color: rgba(103, 120, 128,.08);
+    }
+    tr.inactived:nth-of-type(odd) td {
+      font-style: italic;
+      color: rgba(40,40,40,.5);
+      background-color: rgba(0,60,240,.05);
+    }
+    tr.inactived:nth-of-type(even) td {
+      font-style: italic;
+      color: rgba(40,40,40,.5);
+      background-color: rgba(0,60,240,.06);
+    }
+    tr.inactived.blocked td {
+      color: darkred;
+    }
+
+    span.status {
+      display: block;
+      color: white;
+      border-radius: .3em;
+      padding: 0.5em;
+      min-width: 6em;
+    }
+    span.status.darkgreen {
+      background-color: darkgreen;
+    }
+    span.status.darkred {
+      background-color: darkred;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set add = { 'URL': 'ERP\\Cadastre\\ServiceProviders\\Add', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/serviceproviders.svg', 'Prestadores de serviço') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento dos prestadores de serviços e seus técnicos
+                <div class="sub header">
+                  Permite gerenciar os prestadores de serviços
+                  cadastrados no sistema, bem como dos seus respectivos
+                  técnicos.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(add.URL, add.method) %}
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Adiciona um prestador de serviços"
+                      data-position="top left" type="button"
+                      onclick="location.href='{{ path_for(add.URL) }}'">
+                <i class="add icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            <div class="field selectbox">
+              <select class="ui adaptable selection dropdown"
+                      name="filterType" id="filterType">
+                {% for filter in filters %}
+                <option value="{{ filter.id }}"{% if serviceProvider.filter.type == filter.id %} selected{% endif %}>
+                  {{ filter.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="flex">
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite o prestador de serviços que procura..."
+                       value="{{ serviceProvider.searchValue }}">
+                <select class="ui searchfield adaptable selection dropdown button"
+                        name="searchField" id="searchField">
+                  <option value="name"{% if serviceProvider.searchField == "name" %} selected{% endif %}>
+                    Nome
+                  </option>
+                  <option value="nationalregister"{% if serviceProvider.searchField == "nationalregister" %} selected{% endif %}>
+                    CPF/CNPJ
+                  </option>
+                </select>
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza um prestador de serviços"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID do prestador</th>
+          <th>ID da unidade/filial</th>
+          <th>ID do técnico</th>
+          <th>Indicador de pessoa jurídica</th>
+          <th>Indicador de que o técnico é o próprio prestador</th>
+          <th>Indicador de nível</th>
+          <th>Nome do prestador de serviços</th>
+          <th>Nome fantasia/apelido</th>
+          <th>Bloqueio</th>
+          <th>Cidade</th>
+          <th>Área de atuação</th>
+          <th>CPF/CNPJ</th>
+          <th>Telefones</th>
+          <th>Situação</th>
+          <th {{ tooltip.add('left', 'Permite gerar um PDF para impressão dos dados cadastrais do prestador de serviços') }}><i class="file pdf icon"></i></th>
+          <th {{ tooltip.add('left', 'Indicador de prestador de serviços bloqueado para uso no sistema') }}><i class="lock darkred icon"></i></th>
+          <th>Disponível desde</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/info.twig' %}
+  {% include 'templates/erp/partials/dialogs/question.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/IconFormatter.min.js') }}
+  
+  {% set getData          = { 'URL': 'ERP\\Cadastre\\ServiceProviders\\Get', 'method': 'PATCH' } %}
+  {% set add              = { 'URL': 'ERP\\Cadastre\\ServiceProviders\\Add', 'method': 'GET' } %}
+  {% set edit             = { 'URL': 'ERP\\Cadastre\\ServiceProviders\\Edit', 'method': 'GET' } %}
+  {% set getPDF           = { 'URL': 'ERP\\Cadastre\\ServiceProviders\\Get\\PDF', 'method': 'GET' } %}
+  {% set toggleBlocked    = { 'URL': 'ERP\\Cadastre\\ServiceProviders\\ToggleBlocked', 'method': 'PUT' } %}
+  {% set addTechnician    = { 'URL': 'ERP\\Cadastre\\ServiceProviders\\Technicians\\Add', 'method': 'GET' } %}
+  {% set editTechnician   = { 'URL': 'ERP\\Cadastre\\ServiceProviders\\Technicians\\Edit', 'method': 'GET' } %}
+  {% set toggleTechnician = { 'URL': 'ERP\\Cadastre\\ServiceProviders\\Technicians\\ToggleBlocked', 'method': 'PUT' } %}
+  
+  {% apply minify %}
+  <script>
+    {% include 'erp/cadastre/serviceproviders/serviceproviders.js' with {
+      getData: getData,
+      add: add,
+      edit: edit,
+      getPDF: getPDF,
+      toggleBlocked: toggleBlocked,
+      addTechnician,
+      editTechnician,
+      toggleTechnician
+    } %}
+  </script>
+  {% endapply %}
+{% endblock scripts %}

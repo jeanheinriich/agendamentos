@@ -1,0 +1,658 @@
+{% extends 'templates/adm/layout.twig' %}
+{% import "templates/adm/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento de valores acumulados nos últimos 12 meses para um indicador financeiro{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.main.basic.segment .searchbar.fields .field.year .ui.input>input {
+      width: calc(100% - 50px);
+    }
+    .ui.main.basic.segment .searchbar.fields .field.searchbox {
+      flex-grow: 1;
+      min-width: 455px;
+    }
+    .ui.adaptable.dropdown {
+      min-width: 7em;
+    }
+    @media only screen and (max-width: 767px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 100px;
+        width: calc(100% - 47px);
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox input {
+        max-width: calc(100% - 141px);
+      }
+    }
+    @media only screen and (max-width: 336px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox input {
+        max-width: calc(100% - 165px);
+      }
+    }
+
+    @media only screen and (min-width: 768px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set add  = { 'URL': 'ADM\\Financial\\Indicators\\AccumulatedValues\\Add', 'method': 'GET' } %}
+  {% set update = { 'URL': 'ADM\\Financial\\Indicators\\AccumulatedValues\\Update', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('adm/accumulatedvalues.svg', 'Valores acumulados nos últimos doze meses de cada indicador financeiro') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento de valores acumulados
+                <div class="sub header">
+                  Permite gerenciar os valores acumulados nos últimos
+                  doze meses para cada indicador financeiro cadastrado
+                  no sistema.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(add.URL, add.method) %}
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Adiciona um valor acumulado"
+                      data-position="top left" type="button"
+                      onclick="location.href='{{ path_for(add.URL) }}'">
+                <i class="add icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            {% if authorization.getAuthorizationFor(update.URL, update.method) %}
+            <div class="field button">
+              <button class="ui primary icon button" id="update"
+                      data-tooltip="Atualiza os indices dos indicadores financeiros"
+                      data-position="top left" type="button"
+                      onclick="update();">
+                <i class="refresh icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            <div class="field selectbox">
+              <select class="ui adaptable selection dropdown"
+                      name="indicatorID" id="indicatorID">
+                <option value="0"{% if accumulatedValue.indicatorID == 0 %} selected{% endif %}>
+                  Todos indicadores
+                </option>
+                {% for indicator in indicators %}
+                <option value="{{ indicator.id }}"{% if accumulatedValue.indicatorID == indicator.id %} selected{% endif %}>
+                  {{ indicator.name }} ({{ indicator.institute }})
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="field selectbox">
+              <select class="ui adaptable selection dropdown"
+                      name="month" id="month">
+                <option value="0"{% if accumulatedValue.month == 0 %} selected{% endif %}>
+                  Todos mêses
+                </option>
+                {% for month in months %}
+                <option value="{{ month.id }}"{% if accumulatedValue.month == month.id %} selected{% endif %}>
+                  {{ month.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="field year">
+              <div class="ui action input">
+                <input placeholder="Ano..." type="text"
+                       name="year" id="year"
+                       value="{{ holiday.year }}">
+                <button class="ui icon button"
+                        data-tooltip="Limpa a seleção do ano"
+                        data-position="top left" type="button"
+                        onclick="clearYearHandler()">
+                  <i class="times icon"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Localiza um indicador"
+                      data-position="top right"
+                      type="button" onclick="searchLoad();">
+                <i class="search icon"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início da barra de progresso -->
+    <div class="ui vertical flexBorderBottom segment">
+      <div class="ui indicating progress" data-value="1" data-total="100" id="progressbar">
+        <div class="bar">
+          <div class="progress"></div>
+        </div>
+        <div class="label" id="progressbartitle">Atualizando os indices dos indicadores financeiros...</div>
+      </div>
+    </div>
+    <!-- Fim da barra de progresso -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>Código do valor acumulado</th>
+          <th>Código do indicador financeiro</th>
+          <th>Sigla do indicador</th>
+          <th>Sigla da instituição</th>
+          <th>Mês de referência</th>
+          <th>Ano</th>
+          <th>Valor acumulado</th>
+          <th {{ tooltip.add('left', 'Permite remover o valor acumulado') }}><i class="remove darkred icon"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/adm/partials/dialogs/error.twig' %}
+  {% include 'templates/adm/partials/dialogs/info.twig' %}
+  {% include 'templates/adm/partials/dialogs/question.twig' %}
+  {% include 'templates/adm/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/DeleteFormatter.min.js') }}
+  {{ lib('datatables/formatters/PercentageFormatter.min.js') }}
+  
+  {% set getData = { 'URL': 'ADM\\Financial\\Indicators\\AccumulatedValues\\Get', 'method': 'PATCH' } %}
+  {% set add     = { 'URL': 'ADM\\Financial\\Indicators\\AccumulatedValues\\Add', 'method': 'GET' } %}
+  {% set edit    = { 'URL': 'ADM\\Financial\\Indicators\\AccumulatedValues\\Edit', 'method': 'GET' } %}
+  {% set remove  = { 'URL': 'ADM\\Financial\\Indicators\\AccumulatedValues\\Delete', 'method': 'DELETE' } %}
+  {% set update  = { 'URL': 'ADM\\Financial\\Indicators\\AccumulatedValues\\Update', 'method': 'GET' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      table
+      months = {
+        {% for month in months %}
+          {{ month.id }}: '{{ month.short }}',
+        {% endfor %}
+      }
+    ;
+    
+    // Um formatador de nome do mês
+    var monthFormatter = function ( value, type, row, meta ) {
+      if (value > 0) {
+        return months[ value ] + '/' + row.year;
+      }
+
+      return '<span class="silver">---/----</span>';
+    };
+    
+    $(document).ready(function()
+    {
+      // --------------------------------[ Componentes da Searchbar ]---
+      $('.searchbar .ui.dropdown')
+        .dropdown()
+      ;
+      $("input[name='year")
+        .mask({ type: 'year', trim: true })
+        .blur(yearHandler)
+      ;
+      $('#year')
+        .keypress(forceSearch)
+      ;
+      $('#searchValue').keypress(function(e) {
+        if (e.which == 13) {
+          searchLoad();
+        }
+      });
+
+      // -----------------------[ Componentes da Barra de Progresso ]---
+      // Esconde a barra de progresso
+      $('.ui.progress')
+        .parent()
+        .hide()
+      ;
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "id",
+            "data": "id",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "indicatorid",
+            "data": "indicatorid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 2,
+            "name": "indicators.name, accumulatedvalues.year, accumulatedvalues.month",
+            "data": "name",
+            "visible": true,
+            "orderable": true },
+          { "targets": 3,
+            "name": "indicators.institute, indicators.name, accumulatedvalues.year, accumulatedvalues.month",
+            "data": "institute",
+            "visible": true,
+            "orderable": true },
+          { "targets": 4,
+            "name": "accumulatedvalues.year, accumulatedvalues.month, indicators.name",
+            "data": "month",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": true,
+            "width": "20px",
+            "render": monthFormatter },
+          { "targets": 5,
+            "name": "year",
+            "data": "year",
+            "className": "dt-center",
+            "visible": false,
+            "orderable": false,
+            "width": "20px" },
+          { "targets": 6,
+            "name": "accumulatedvalues.value",
+            "data": "value",
+            "className": "dt-right",
+            "visible": true,
+            "orderable": true,
+            "width": "40px",
+            "render": percentageFormatter },
+          { "targets": 7,
+            "name": "delete",
+            "data": "id",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": deleteFormatter("Remover este valor acumulado") }
+        ],
+        order: [[ 4, 'desc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.indicatorID   = $('#indicatorID').val();
+            params.indicatorName = $('#indicatorID option:selected').text();
+            params.year          = $('#year').val();
+            params.month         = $('#month').val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        }
+      });
+
+      // Manipula os eventos de click
+      table
+        .on('user-select', function (e, dt, type, cell, originalEvent) {
+          if (type === 'cell') {
+            var
+              // Recupera os dados da célula selecionada
+              index   = cell[0][0],
+
+              // Recupera o banco selecionado
+              accumulatedValue = dt.rows( index.row ).data().toArray()[0]
+            ;
+
+            // Em função da coluna onde ocorreu o clique, executa a ação
+            // correspondente
+            switch (index.column) {
+              case 7:
+                {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}
+                // Permite apagar o valor acumulado selecionado
+                questionDialog('Remover valor acumulado', ''
+                  + 'Você deseja realmente remover o valor acumulado '
+                  + 'nos últimos 12 meses para o indicador <b>&ldquo;'
+                  + accumulatedValue.name + ' (' + accumulatedValue.institute
+                  + ')&rdquo;</b> no mês de <i>'
+                  + months[ accumulatedValue.month ] + '/'
+                  + accumulatedValue.year + '</i>?<br>Esta ação não '
+                  + 'poderá ser desfeita.',
+                  function() {
+                    // Remove o banco selecionado
+                    var url  = "{{ buildURL(remove.URL, {'accumulatedValueID': 'accumulatedValue.id'}) }}";
+                    
+                    deleteJSONData(url, [],
+                    function (data, params, message) {
+                      // Atualiza a tabela
+                      searchLoad();
+                    });
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  }
+                );
+                {% endif %}
+
+                break;
+              default:
+                {% if authorization.getAuthorizationFor(edit.URL, edit.method) %}
+                // Coloca o banco em edição
+                window.location.href = "{{ buildURL(edit.URL, {'accumulatedValueID': 'accumulatedValue.id'}) }}";
+                {% endif %}
+            }
+
+            e.preventDefault();
+          }
+        }
+      );
+
+      // Força a atualização da tabela para reajustar as colunas após
+      // a carga
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 1500);
+    });
+
+
+    // ================================================[ Handlers ]=====
+
+    // Executa a pesquisa
+    function searchLoad() {
+      table
+        .ajax
+        .reload()
+      ;
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 500);
+    }
+
+    // Força a atualização da tabela
+    function forceSearch(event) {
+      if (event.which == 13) {
+        searchLoad();
+      }
+    }
+
+    // Faz o tratamento do campo ano para permitir atualizar os valores
+    // acumulados nos últimos meses quando ocorrer uma mudança. Permite
+    // apenas anos iguais ou inferiores ao ano corrente
+    function yearHandler()
+    {
+      var
+        today = new Date(),
+        currentYear = today.getFullYear(),
+        year = $(this).val()
+      ;
+
+      if (year.trim().length > 0) {
+        if (parseInt(year) <= currentYear) {
+          // Atualiza a tabela
+          searchLoad();
+        } else {
+          // Pega o ano corrente e coloca no campo
+          $('#year')
+            .val(currentYear)
+          ;
+
+          // Atualiza a tabela
+          searchLoad();
+        }
+      }
+    }
+
+    function clearYearHandler()
+    {
+      var
+        year = $('#year').val()
+      ;
+
+      if (year.trim().length > 0) {
+        // Limpa quaisquer informações
+        $('#year')
+          .val('')
+        ;
+
+        // Atualiza a tabela
+        searchLoad();
+      }
+    }
+
+    // Sincroniza os modelos de veículos com o sistema FIPE
+    function update() {
+      var
+        $progress = $('#progressbar'),
+        url       = "{{ buildURL(update.URL, {}) }}",
+        evtSource = new EventSource(url),
+        $button   = $("#update")
+      ;
+      
+      // Reinicia a contagem
+      $progress
+        .progress('reset')
+        .progress('set label', 'Solicitando...')
+        .progress('set total', 100)
+      ;
+      if ($progress.is(":hidden")) {
+        $progress
+          .parent()
+          .transition('slide down')
+        ;
+      }
+      if (!$button.prop('disabled')) {
+        $button
+          .prop('disabled', true)
+        ;
+      }
+
+      evtSource.onmessage = function(event)
+      {
+        updateData = JSON.parse(event.data);
+        
+        switch (updateData.result) {
+          case "START":
+            $progress
+              .progress('set active')
+              .progress('set label', updateData.message)
+              .progress('reset')
+              .progress('update progress', 0)
+            ;
+
+            break;
+          case "PROGRESS":
+            // Seta a barra de progresso
+            var
+              progress = Math.round((updateData.count/updateData.total) * 100)
+            ;
+            $progress
+              .progress('set label', updateData.message)
+              .progress('update progress', progress)
+            ;
+            
+            break;
+          case "END":
+            evtSource
+              .close()
+            ;
+            $progress
+              .progress('set label', updateData.message)
+              .progress('complete')
+            ;
+            setTimeout(function(){
+              $progress
+                .parent()
+                .transition('slide up')
+              ;
+            }, 2000);
+            $button
+              .prop('disabled', false)
+            ;
+
+            // Força a atualização dos dados
+            searchLoad();
+            
+            break;
+          case "ERROR":
+            console.error('Erro', updateData.message);
+            evtSource
+              .close()
+            ;
+            $progress
+              .progress('set error', updateData.message)
+            ;
+            $button
+              .prop('disabled', false)
+            ;
+
+            break;
+          default:
+            evtSource
+              .close()
+            ;
+            setTimeout(function(){
+              $progress
+                .parent()
+                .transition('slide up')
+              ;
+            }, 2000);
+            $button
+              .prop('disabled', false)
+            ;
+
+            break;
+        }
+      };
+      evtSource.onerror = function(error) {
+        console.error("Ocorreu um erro na sincronização:", error);
+
+        // Sempre força o encerramento da sincronização
+        evtSource
+          .close()
+        ;
+
+        // Atualiza o progresso, indicando o erro
+        $progress
+          .progress('set error', 'Erro interno do servidor')
+        ;
+        $button
+          .prop('disabled', false)
+        ;
+      };
+      
+      return false;
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

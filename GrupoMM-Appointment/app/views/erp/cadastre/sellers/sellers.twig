@@ -1,0 +1,800 @@
+{% extends 'templates/erp/layout.twig' %}
+{% import "templates/erp/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento dos vendedores{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.main.basic.segment .searchbar.fields .field.searchbox {
+      flex-grow: 1;
+      min-width: 455px;
+    }
+    .ui.adaptable.dropdown {
+      min-width: 10em;
+    }
+    @media only screen and (max-width: 767px) {
+      .ui.adaptable.dropdown {
+        min-width: 8.3em;
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 100px;
+        width: calc(100% - 47px);
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox input {
+        max-width: calc(100% - 141px);
+      }
+    }
+    @media only screen and (max-width: 336px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox input {
+        max-width: calc(100% - 165px);
+      }
+    }
+
+    @media only screen and (min-width: 768px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+
+    .blue.icon {
+      color: rgba(0,102,255,0.9) !important;
+    }
+    
+    .dataTables_wrapper i.fas {
+      margin: 0 .25rem 0 0;
+      color: #6495ed;
+    }
+
+    /* --------------------------------------------------------------
+     * Personalizações das linhas do datagrid apenas para este módulo
+     * -------------------------------------------------------------- */
+    tr.grouped td {
+      background-color: rgba(103, 120, 128,.12);
+      font-weight: bold;
+    }
+    tr.subgrouped:nth-of-type(odd) td {
+      background-color: rgba(103, 120, 128,.07);
+    }
+    tr.subgrouped:nth-of-type(even) td {
+      background-color: rgba(103, 120, 128,.08);
+    }
+
+    tr.inactived:nth-of-type(odd) td {
+      font-style: italic;
+      color: rgba(40,40,40,.5);
+      background-color: rgba(0,60,240,.05);
+    }
+    tr.inactived:nth-of-type(even) td {
+      font-style: italic;
+      color: rgba(40,40,40,.5);
+      background-color: rgba(0,60,240,.06);
+    }
+
+    span.status {
+      display: block;
+      color: white;
+      border-radius: .3em;
+      padding: 0.5em;
+      min-width: 6em;
+    }
+    span.status.darkgreen {
+      background-color: darkgreen;
+    }
+    span.status.darkred {
+      background-color: darkred;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set add  = { 'URL': 'ERP\\Cadastre\\Sellers\\Add', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/sellers.svg', 'Vendedores') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento dos vendedores
+                <div class="sub header">
+                  Permite gerenciar os vendedores cadastrados no sistema.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(add.URL, add.method) %}
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Adiciona um vendedor"
+                      data-position="top left" type="button"
+                      onclick="location.href='{{ path_for(add.URL) }}'">
+                <i class="add icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite o vendedor que procura..."
+                       value="{{ seller.searchValue }}">
+                <select class="ui searchfield adaptable selection dropdown button"
+                        name="searchField" id="searchField">
+                  <option value="name"{% if seller.searchField == "name" %} selected{% endif %}>
+                    Nome
+                  </option>
+                  <option value="nationalregister"{% if seller.searchField == "nationalregister" %} selected{% endif %}>
+                    CPF/CNPJ
+                  </option>
+                </select>
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza um vendedor"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>ID da unidade/filial</th>
+          <th>Indicador de pessoa jurídica</th>
+          <th>Indicador de matriz</th>
+          <th>Indicador de nível</th>
+          <th>Nome do vendedor</th>
+          <th>Nome fantasia/apelido</th>
+          <th>Bloqueio</th>
+          <th>Cidade</th>
+          <th>CPF/CNPJ</th>
+          <th {{ tooltip.add('left', 'Permite gerar um PDF para impressão dos dados cadastrais do vendedor') }}><i class="file pdf icon"></i></th>
+          <th {{ tooltip.add('left', 'Indicador de vendedor bloqueado para uso no sistema') }}><i class="lock darkred icon"></i></th>
+          <th {{ tooltip.add('left', 'Permite remover o vendedor') }}><i class="remove darkred icon"></i></th>
+          <th>Disponível desde</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/info.twig' %}
+  {% include 'templates/erp/partials/dialogs/question.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/IconFormatter.min.js') }}
+  {{ lib('datatables/formatters/DeleteFormatter.min.js') }}
+  
+  {% set getData       = { 'URL': 'ERP\\Cadastre\\Sellers\\Get', 'method': 'PATCH' } %}
+  {% set add           = { 'URL': 'ERP\\Cadastre\\Sellers\\Add', 'method': 'GET' } %}
+  {% set edit          = { 'URL': 'ERP\\Cadastre\\Sellers\\Edit', 'method': 'GET' } %}
+  {% set getPDF        = { 'URL': 'ERP\\Cadastre\\Sellers\\Get\\PDF', 'method': 'GET' } %}
+  {% set remove        = { 'URL': 'ERP\\Cadastre\\Sellers\\Delete', 'method': 'DELETE' } %}
+  {% set toggleBlocked = { 'URL': 'ERP\\Cadastre\\Sellers\\ToggleBlocked', 'method': 'PUT' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      table
+    ;
+
+    // Os formatadores de colunas
+
+    // Um formatador de colunas para exibir um ícone antes do nome de um
+    // vendedor
+    var nameFormatter = function ( value, type, row, meta ) {
+      var
+        icon  = 'user-tie',
+        type  = 'Vendedor',
+        label = value
+      ;
+
+      if (row.tradingname) {
+        // Acrescenta o apelido ou nome fantasia do vendedor
+        label += ' '
+          + '<i style="color: #0073cf; font-weight: bold;"> [ '
+          + row.tradingname
+          + ' ]</i>'
+        ;
+      }
+
+      if (row.level == 1) {
+        if (row.juridicalperson) {
+          icon = 'plus square outline grey icon';
+          if (row.headoffice) {
+            type = 'Matriz';
+          } else {
+            type = 'Unidade/filial';
+          }
+        } else {
+          icon = 'fas fa-user';
+          if (row.headoffice) {
+            type = 'Titular';
+          } else {
+            type = 'Dependente';
+          }
+        }
+      } else {
+        label += '<br>'
+          + '<i style="color: SlateGray; font-size: .9em;">Nosso '
+          +   type.toLowerCase() + ' há '
+          +   getAge(row.createdat.substring(0, 10))
+          + '</i>'
+        ;
+      }
+
+      return ''
+        + '<span data-position="right center"'
+        +       'data-blue data-inverted '
+        +       'data-tooltip="' + type + '">'
+        +   '<i class="fas fa-' + icon + '"></i>'
+        + '</span>' + label
+      ;
+    };
+    
+    // Um formatador para exibir um ícone indicativo de que o vendedor
+    // está ou não bloqueado
+    var blockedFormatter = function ( value, type, row, meta ) {
+      var
+        buildIcon = function (color, icon, title) {
+          return '<span data-position="left center"' +
+                       'data-blue data-inverted ' +
+                       'data-tooltip="' + title + '">' +
+                   '<i class="' + icon + ' ' + color + ' icon">' +
+                   '</i>' +
+                 '</span>';
+        }
+      ;
+
+      switch (value) {
+        case 1:
+          // Apenas a unidade/filial está bloqueada
+          return buildIcon('lock', 'darkred', ''
+            + 'A conta deste vendedor está bloqueada')
+          ;
+        case 2:
+          // Apenas a unidade/filial está bloqueada
+          if (row.juridicalperson === true) {
+            if (row.headoffice === true) {
+              person = 'a matriz';
+            } else {
+              person = 'a unidde/filial';
+            }
+          } else {
+            if (row.headoffice === true) {
+              person = 'o titular';
+            } else {
+              person = 'o dependente';
+            }
+          }
+
+          return buildIcon('lock', 'darkorange', ''
+            + 'A conta d' + person + ' deste vendedor '
+            + ' está bloqueada'
+          );
+        default:
+          // Está livre
+          return buildIcon('unlock', 'lightgrey', ''
+            + 'Nenhum bloqueio nesta conta')
+          ;
+      }
+    };
+    
+    // Sobrescreve o tratamento de erros
+    $.fn.dataTable.ext.errMode = function ( settings, helpPage, message ) {
+      var
+        errorMessage = ''
+      ;
+
+      if (typeof(message) != 'undefined' && message != null) {
+        if (message.length > 38) {
+          // Exibe a mensagem de erro
+          errorMessage = message.substring(38);
+        }
+      }
+
+      if (errorMessage.startsWith('Não temos vendedores cadastrados')) {
+        // Não faz nada
+      } else {
+        // Exibe a mensagem de erro
+        if (errorMessage.length > 0) {
+          infoDialog('Desculpe-nos', errorMessage);
+        }
+      }
+    };
+
+    $(document).ready(function() {
+      var groupColumn = 3;
+
+      // --------------------------------[ Componentes da Searchbar ]---
+      $('.searchbar .ui.dropdown')
+        .dropdown()
+      ;
+      $('#searchValue').keypress(function(e) {
+        if (e.which == 13) {
+          searchLoad();
+        }
+      });
+
+      // Lida com o pressionamento de teclas
+      $(document).on('keydown',function(event) {
+        if (event.keyCode == 27) {
+          // Limpa os dados do formulário
+          $('#filterType').val('');
+
+          searchLoad();
+        }
+      });
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}"
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "id",
+            "data": "id",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "subsidiaryid",
+            "data": "subsidiaryid",
+            "visible": false,
+            "orderable": false },
+          { "targets": 2,
+            "name": "juridicalperson",
+            "data": "juridicalperson",
+            "visible": false,
+            "orderable": false },
+          { "targets": 3,
+            "name": "headoffice",
+            "data": "headoffice",
+            "visible": false,
+            "orderable": false },
+          { "targets": 4,
+            "name": "level",
+            "data": "level",
+            "visible": false,
+            "orderable": false },
+          { "targets": 5,
+            "name": "NULL",
+            "data": "name",
+            "visible": true,
+            "orderable": false,
+            "render": nameFormatter },
+          { "targets": 6,
+            "name": "tradingname",
+            "data": "tradingname",
+            "visible": false,
+            "orderable": false },
+          { "targets": 7,
+            "name": "blocked",
+            "data": "blocked",
+            "visible": false,
+            "orderable": false },
+          { "targets": 8,
+            "name": "cityname",
+            "data": "cityname",
+            "visible": true,
+            "orderable": false },
+          { "targets": 9,
+            "name": "nationalregister",
+            "data": "nationalregister",
+            "visible": true,
+            "orderable": false,
+            "width": "100px" },
+          { "targets": 10,
+            "name": "pdf",
+            "data": "id",
+            "className": "dt-center",
+            "visible": {% if authorization.getAuthorizationFor(getPDF.URL, getPDF.method) %}true{% else %}false{% endif %},
+            "orderable": false,
+            "width": "10px",
+            "render": iconFormatter("file pdf", "black", "Permite gerar um PDF para impressão dos dados cadastrais desta unidade/filial") },
+          { "targets": 11,
+            "name": "blockedlevel",
+            "data": "blockedlevel",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": blockedFormatter },
+          { "targets": 12,
+            "name": "delete",
+            "data": "delete",
+            "className": "dt-center",
+            "visible": {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}true{% else %}false{% endif %},
+            "orderable": false,
+            "width": "10px",
+            "render": iconFormatter("minus", "lightgrey", "") },
+          { "targets": 13,
+            "name": "createdat",
+            "data": "createdat",
+            "visible": false,
+            "orderable": false }
+        ],
+        order: [[ 5, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        displayStart: {{ seller.displayStart|default("0") }},
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.searchValue = $('#searchValue').val();
+            params.searchField = $('#searchField').val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        createdRow: function(row, data, dataIndex) {
+          if (data.level == 0) {
+            // Expande a coluna
+            $('td:eq(0)', row).attr('colspan', 3);
+            $('td:eq(1)', row).css('display', 'none');
+            $('td:eq(2)', row).css('display', 'none');
+          }
+
+          // Deixa as linhas com cores diferentes para indicar bloqueio
+          if (data.blockedlevel > 0) {
+            $(row).addClass('blocked');
+          } else {
+            if (data.level == 0) {
+              $(row).addClass('grouped');
+            }
+          }
+        }
+      });
+
+      // Manipula os eventos de click
+      table
+        .on('user-select', function (e, dt, type, cell, originalEvent) {
+          if (type === 'cell') {
+            var
+              // Recupera os dados da célula selecionada
+              index   = cell[0][0],
+
+              // Recupera o vendedor selecionado
+              seller = dt.rows( index.row ).data().toArray()[0]
+            ;
+
+            // Em função da coluna onde ocorreu o clique, executa a ação
+            // correspondente
+            switch (index.column) {
+              {% if authorization.getAuthorizationFor(getPDF.URL, getPDF.method) %}
+              case 10:
+                var url;
+
+                // Gera um PDF com as informações cadastrais
+                if (seller.level == 1) {
+                  // Da unidade/filial do vendedor
+                  url = "{{ buildURL(getPDF.URL, {'sellerID': 'seller.id', 'subsidiaryID': 'seller.subsidiaryid'}) }}";
+                } else {
+                  // Do vendedor
+                  url = "{{ buildURL(getPDF.URL, {'sellerID': 'seller.id'}) }}";
+                }
+
+                window.open(url, '_blank');
+
+                break;
+              {% endif %}
+              {% if authorization.getAuthorizationFor(toggleBlocked.URL, toggleBlocked.method) %}
+              case 11:
+                // Alterna o bloqueio da unidade/filial
+                var
+                  action = seller.subsidiaryblocked
+                    ? "desbloquear"
+                    : "bloquear",
+                  person,
+                  complement = ''
+                ;
+
+                if (seller.level == 1) {
+                  person = (seller.juridicalperson === true)
+                    ? 'a unidade/filial'
+                    : 'o titular'
+                  ;
+                  complement = ' deste vendedor';
+                } else {
+                  person = 'o vendedor';
+                }
+
+                questionDialog(
+                  action.charAt(0).toUpperCase() + action.slice(1), ''
+                    + 'Você deseja realmente ' + action + ' ' + person
+                    + ' <b>&ldquo;' + seller.name
+                    + '&rdquo;</b>' + complement + '?',
+                  function() {
+                    // Alternar o bloqueio da entidade selecionada
+                    var url;
+
+                    if (seller.level == 1) {
+                      url  = "{{ buildURL(toggleBlocked.URL, {'sellerID': 'seller.id', 'subsidiaryID': 'seller.subsidiaryid'}) }}";
+                    } else {
+                      url  = "{{ buildURL(toggleBlocked.URL, {'sellerID': 'seller.id'}) }}";
+                    }
+
+                    putJSONData(url, [],
+                    function (data, params, message) {
+                      // Atualiza a tabela
+                      searchLoad();
+                    });
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  }
+                );
+
+                break;
+              {% endif %}
+              case 12:
+                // Remover unidade/filial
+                // Não faz nada
+                break;
+              default:
+                {% if authorization.getAuthorizationFor(edit.URL, edit.method) %}
+                // Coloca o vendedor em edição
+                window.location.href = "{{ buildURL(edit.URL, {'sellerID': 'seller.id'}) }}";
+                {% endif %}
+            }
+
+            e.preventDefault();
+          }
+        }
+      );
+
+      // Força a atualização da tabela para reajustar as colunas após
+      // a carga
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 1500);
+    });
+
+
+    // ================================================[ Handlers ]=====
+
+    // Executa a pesquisa
+    function searchLoad() {
+      table
+        .ajax
+        .reload()
+      ;
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 500);
+    }
+
+    // Recupera a idade a partir de uma data
+    function getAge(date) {
+      function plularize(name, value, separator) {
+        var
+          result = ''
+        ;
+
+        if (value > 0) {
+          if (name === 'mês') {
+            if (value > 1) {
+              result = value + ' meses';
+            } else {
+              result = value + ' mês';
+            }
+          } else {
+            result = value + ' ' + name;
+
+            if (value > 1) result += 's';
+          }
+
+          result += separator;
+        }
+
+        return result;
+      }
+
+      var
+        date_part   = date.split("-"),
+        day         = date_part[2],
+        month       = date_part[1],
+        year        = date_part[0],
+
+        // Recuperamos a data atual
+        today       = new Date(),
+        today_year  = today.getYear(),
+        today_month = today.getMonth() + 1,
+        today_day   = today.getDate()
+      ;
+
+      // Realizamos os cálculos
+      var
+        age = (today_year + 1900) - year
+      ;
+
+      if (today_month < month) {
+        age--;
+      }
+      if ((month == today_month) && (today_day < day)) {
+        age--;
+      }
+      if (age > 1900) {
+        age -= 1900;
+      }
+
+      // Calculamos os meses
+      var
+        months = 0
+      ;
+
+      if (today_month > month && day > today_day) {
+        months = today_month - month - 1;
+      }
+      else if (today_month > month) {
+        months = today_month - month
+      }
+
+      if (today_month < month && day < today_day) {
+        months = 12 - (month - today_month);
+      }
+      else if (today_month < month) {
+        months = 12 - (month - today_month + 1);
+      }
+
+      if (today_month == month && day > today_day) {
+        months = 11;
+      }
+
+      // Calculamos os dias
+      var
+        days = 0
+      ;
+
+      if (today_day > day) {
+        days = today_day - day;
+      }
+      if (today_day < day) {
+        var
+          lastDayOfMonth = new Date(today_year, today_month - 1, 0)
+        ;
+
+        days = lastDayOfMonth.getDate() - (day - today_day);
+      }
+
+      if (age > 0) {
+        if (months > 0) {
+          return plularize('ano', age, ' e ') +
+                 plularize('mês', months, '');
+        } else {
+          return plularize('ano', age, '');
+        }
+      } else {
+        if (months > 0) {
+          if (days > 0) {
+            return plularize('mês', months, ' e ') +
+                   plularize('dia', days, '');
+          } else {
+            return plularize('mês', months, '');
+          }
+        } else {
+          if (days > 0) {
+            return plularize('dia', days, '');
+          } else {
+            return 'menos de um dia';
+          }
+        }
+      }
+
+      return plularize('mês', months, '');
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

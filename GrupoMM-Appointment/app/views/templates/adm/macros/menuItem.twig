@@ -1,0 +1,10 @@
+{% macro addItem(address, icon, item) %}
+  {% if authorization.getAuthorizationFor(address, 'GET') %}
+  <li class="item {% if path_for(address) != '/adm' and CurrentURL starts with path_for(address) %}active{% else %}{% if path_for(address) == '/adm' and CurrentURL == '/adm' %}active{% endif %}{% endif %}">
+    <a href="{{ path_for(address) }}">
+      <i class="fas fa-{{ icon }}"></i>
+      {{ item }}
+    </a>
+  </li>
+  {% endif %}
+{% endmacro %}

@@ -1,0 +1,504 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} tipo de parcelamento{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/jquery/plugins/spinner.input/spinner.input.min.css') }}
+  {{ css('form.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    div.installment.segment {
+      padding: 0.3em 1em;
+    }
+    
+    table.installment {
+      font-weight: 800;
+    }
+    tr.withInterest {
+      background-color: #5e33c9;
+      background-color: rgba(0,0,0,.1);
+    }
+    tr:nth-child(2n).withInterest {
+      background-color: #663ecc !important;
+      background-color: rgba(0,0,0,.05) !important;
+    }
+    .ui.inverted.table tr.withInterest td {
+      color: yellow !important;
+    }
+
+    p.installment
+    {
+      margin: 5px 0px;
+      font-size: 12px;
+      line-height: 1.4em;
+      font-weight: bold;
+    }
+
+    .interestFree
+    {
+      color: #0066cc;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Parameterization\\Financial\\InstallmentTypes\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Parameterization\\Financial\\InstallmentTypes\\Edit' %}
+  {% endif %}
+  {% set toggleBlocked = { 'URL': 'ERP\\Parameterization\\Financial\\InstallmentTypes\\ToggleBlocked', 'method': 'PUT' } %}
+  {% set previous = 'ERP\\Parameterization\\Financial\\InstallmentTypes' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  {% set enableToggleBlocked = authorization.getAuthorizationFor(toggleBlocked.URL, toggleBlocked.method) %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/installmenttypes.svg', 'Tipo de parcelamento') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} tipo de parcelamento
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  tipo de parcelamento.
+                </div>
+              {% else %}
+                Visualizar tipo de parcelamento
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um
+                  tipo de parcelamento.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <div class="ui centered grid">
+        <!-- Dividimos a tela em duas partes. Na esquerda colocamos os
+             campos de preenchimento e na direita um exemplo de como
+             ficará o parcelamento.                                  -->
+        <!-- Início porção esquerda -->
+        <div class="sixteen wide tablet eight wide computer column">
+          <!-- Início formulário -->
+          <form class="ui form" method="POST" autocomplete="off"
+                action="{{ path_for(URL, {'installmentTypeID': getValue('installmenttypeid') }) }}">
+            <div class="fields">
+              <div class="sixteen wide field{{ cssError('name') }}">
+                <label>Nome do tipo de parcelamento</label>
+                <div class="ui input{{ readonly }}">
+                  <input name="name" type="text" maxlength="30"
+                         placeholder="Informe o nome do tipo de parcelamento..."
+                         {{ readonly }}
+                         value="{{ getValue('name') }}">
+                </div>
+                {% if hasError('name') %}
+                <small class="helper">{{ getError('name') }}</small>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="fields">
+              <div class="eight wide field{{ cssError('minimuminstallmentvalue') }}">
+                <label>Valor m&iacute;nimo da parcela</label>
+                <div class="ui left labeled input{{ readonly }}">
+                  <div class="ui basic label">R$</div>
+                  <input name="minimuminstallmentvalue" type="text"
+                         placeholder="0,00"
+                         value="{{ getValue('minimuminstallmentvalue') }}">
+                </div>
+                {% if hasError('minimuminstallmentvalue') %}
+                <small class="helper">{{ getError('minimuminstallmentvalue') }}</small>
+                {% endif %}
+              </div>
+              <div class="eight wide field{{ cssError('maxnumberofinstallments') }}">
+                <label>Quantidade máxima de parcelas</label>
+                <div class="ui input{{ readonly }}">
+                  <input name="maxnumberofinstallments" type="text"
+                         placeholder="0" {{ readonly }}
+                         value="{{ getValue('maxnumberofinstallments') }}">
+                </div>
+                {% if hasError('maxnumberofinstallments') %}
+                <small class="helper">{{ getError('maxnumberofinstallments') }}</small>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="fields">
+              <div class="eight wide field{{ cssError('interestrate') }}">
+                <label>Taxa de juros</label>
+                <div class="ui right labeled input{{ readonly }}">
+                  <input name="interestrate" type="text"
+                         placeholder="0.000" {{ readonly }}
+                         value="{{ getValue('interestrate') }}">
+                  <div class="ui basic label">%</div>
+                </div>
+                {% if hasError('interestrate') %}
+                <small class="helper">{{ getError('interestrate') }}</small>
+                {% endif %}
+              </div>
+              <div class="eight wide field{{ cssError('interestfrom') }}">
+                <label>Cobrar juros a partir da parcela</label>
+                <div class="ui input{{ readonly }}">
+                  <input name="interestfrom" type="text"
+                         placeholder="0" {{ readonly }}
+                         value="{{ getValue('interestfrom') }}">
+                </div>
+                {% if hasError('interestfrom') %}
+                <small class="helper">{{ getError('interestfrom') }}</small>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="fields">
+              <div class="eight wide field{{ cssError('calculationformula') }}">
+                <label>F&oacute;rmula de c&aacute;lculo dos juros</label>
+                {% if editMode %}
+                <div id="calculationformula" class="ui search selection dropdown">
+                  <input name="calculationformula" type="hidden"
+                         value="{{ getValue('calculationformula') }}">
+                  <i class="dropdown icon"></i>
+                  <div class="default text"></div>
+                  <div class="menu">
+                    {% for calculationFormula in calculationFormulas %}
+                      <div class="item" data-value="{{ calculationFormula.id }}" data-text="{{ calculationFormula.name }}">
+                        {{ calculationFormula.name }}
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+                {% else %}
+                <div class="field static">
+                  <span class="darking">{{ getValue('calculationformulaname') }}&nbsp;</span>
+                </div>
+                {% endif %}
+                {% if hasError('calculationformula') %}
+                <small class="helper">{{ getError('calculationformula') }}</small>
+                {% endif %}
+              </div>
+            </div>
+
+            {% if enableToggleBlocked %}
+            <div class="fields">
+              <div class="sixteen wide field{{ cssError('blocked') }}">
+                <div class="ui checkbox{{ readonly }}">
+                  <input type="hidden" name="blocked"
+                         value="{% if getValue('blocked')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         {{ readonly }}
+                         name="_blocked"
+                         {% if getValue('blocked')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Bloquear este tipo de parcelamento para uso no sistema</label>
+                </div>
+                {% if hasError('blocked') %}
+                <small class="helper">{{ getError('blocked') }}</small>
+                {% endif %}
+              </div>
+            </div>
+            {% else %}
+              {% if getValue('blocked')|toBoolean %}
+              <div class="fields">
+                <div class="eight wide darkred field">
+                  <i class="lock icon"
+                     style="font-size: 1.8em; line-height: 1em; vertical-align: middle;"></i>
+                  Este tipo de parcelamento está bloqueado para uso no sistema.
+                </div>
+              </div>
+              {% endif %}
+            {% endif %}
+
+            <div class="fields">
+              <div class="sixteen wide field buttons">
+                {% if editMode %}
+                <button type="button" class="ui youtube right labeled icon button"
+                        onclick="location.href='{{ path_for(previous) }}';">
+                  <i class="remove icon"></i> Cancelar
+                </button>
+                <button type="submit" class="ui submit primary right labeled icon button">
+                  <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+                </button>
+                {% else %}
+                <button type="button" class="ui blue labeled icon button"
+                        onclick="location.href='{{ path_for(previous) }}';">
+                  <i class="chevron left icon"></i> Retornar
+                </button>
+                {% endif %}
+              </div>
+            </div>
+
+            {{ csrf() }}
+
+            <input type="hidden" name="_method" value="{{ formMethod }}">
+            {% if formMethod == 'PUT' %}
+            <input type="hidden" name="installmenttypeid" value="{{ getValue('installmenttypeid') }}">
+            {% endif %}
+          </form>
+          <!-- Fim formulário -->
+        </div>
+        <!-- Fim porção esquerda -->
+
+        <!-- Início porção direita -->
+        <div class="sixteen wide tablet eight wide computer column">
+          <div class="ui message">
+            <div class="header">
+              <a class="ui blue circular label" onclick="refreshInstallmentPlanExample();" data-content="Clique para atualizar o exemplo de parcelamento"><i class="sync icon" style="margin:0 !important;"></i></a>
+              Exemplo de parcelamento
+            </div>
+            <p>
+              Como exemplo, simulamos um exemplo de parcelamento de um
+              valor de R$ 1.000,00 com base nos valores fornecidos.
+              <div id="installmentPlanContent"></div>
+            </p>
+          </div>
+        </div>
+        <!-- Fim porção direita -->
+      </div>
+
+      {% if formMethod == 'PUT' %}
+      <!-- Início painel informativo de modificações -->
+      <div class="ui segments">
+        <div class="ui grey inverted segment">
+          <h5>
+            Histórico de modificações:
+          </h5>
+          Cadastrado {{ getValue('createdat')|localizedDate('long') }} por {{ getValue('createdbyusername') }}
+          <div class="ui divider"></div>
+          Modificado {{ getValue('updatedat')|localizedDate('long') }} por {{ getValue('updatedbyusername') }}
+        </div>
+      </div>
+      <!-- Fim painel informativo de modificações -->
+      {% endif %}
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('jquery/plugins/spinner.input/spinner.input.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      $('.ui.checkbox')
+        .checkbox(checkboxOptions)
+      ;
+      $("input[name='minimuminstallmentvalue']")
+        .mask({
+          type: 'monetary',
+          trim: true,
+          allowNegativeValues: false,
+          decimalsPlaces: 2,
+          maxLength: 12
+        })
+        .blur(function() {
+          refreshInstallmentPlanExample();
+        })
+      ;
+      $("input[name='maxnumberofinstallments']")
+        .spinnerinput(maxnumberofinstallmentsOptions)
+      ;
+      $("input[name='interestrate']")
+        .mask({
+          type: 'percentage',
+          trim: true,
+          allowNegativeValues: false,
+          decimalsPlaces: 3,
+          maxLength: 7
+        })
+        .blur(function() {
+          refreshInstallmentPlanExample();
+        })
+      ;
+      $("input[name='interestfrom']")
+        .spinnerinput(interestfromOptions)
+      ;
+      $("input[name='calculationformula']")
+        .blur(function()
+        {
+          refreshInstallmentPlanExample();
+        })
+        .change(function()
+        {
+          refreshInstallmentPlanExample();
+        })
+      ;
+      
+      // Força a atualização do exemplo de parcelamento
+      refreshInstallmentPlanExample();
+
+      // Coloca o foco no primeiro campo
+      $("input[name='name']")
+        .focus()
+      ;
+    });
+    
+
+    // =================================================[ Options ]=====
+
+    // As opções para os checkbox
+    var checkboxOptions = {
+      // Dispara ao iniciar para definir o valor, se necessário
+      onChange   : function() {
+        var
+          checkbox = $(this).prop('name'),
+          // Invertemos o valor atual
+          checked = !($(this).attr('checked') !== undefined && $(this).attr('checked')),
+          boolValue = (checked
+            ? 'true'
+            : 'false'),
+          toggleField = checkbox.replace('_','')
+        ;
+
+        // Invertemos o checkbox fake
+        $(this)
+          .attr('checked', checked)
+        ;
+
+        // Alteramos o valor do verdadeiro input
+        $("input[name='" + toggleField + "']")
+          .val(boolValue)
+        ;
+      }
+    };
+
+    // As opções para o componente de spinner para o número máximo de
+    // parcelas
+    var maxnumberofinstallmentsOptions = {
+      min: 1,
+      max: 60,
+      step: 1,
+      onChange: function() {
+        var
+          max          = $(this).val(),
+          interestfrom = $("input[name='interestfrom']").val()
+        ;
+
+        if (interestfrom > max) {
+          $("input[name='interestfrom']").val(max);
+        }
+
+        refreshInstallmentPlanExample();
+      }
+    };
+
+    // As opções para o componente de spinner para o número da parcela a
+    // partir da qual será cobrado os juros
+    var interestfromOptions = {
+      min: 0,
+      max: 60,
+      step: 1,
+      onChange: function() {
+        refreshInstallmentPlanExample();
+      },
+      onLimite: function(value) {
+        var
+          max = $("input[name='maxnumberofinstallments']").val()
+        ;
+
+        if (value > max) {
+          value = max;
+        }
+
+        return value;
+      }
+    };
+
+
+    // ================================================[ Handlers ]=====
+
+    // Atualiza o exemplo de como fica o parcelamento
+    var refreshInstallmentPlanExample = function() {
+      var
+        // Converte um valor monetário em um número float
+        parseMonetary = function (value) {
+          // Remove qualquer caractere, deixando apenas os dígitos
+          value = value.replace(/\D/g,"");
+          
+          // Coloca a virgula antes dos 2 últimos dígitos
+          value = value.replace(/(\d)(\d{2})$/,"$1.$2");
+          
+          return parseFloat(value);
+        },
+
+        // Converte um valor em percentagem em um número float
+        parsePercentage = function (value) {
+          // Remove qualquer caractere, deixando apenas os dígitos
+          value = value.replace(/\D/g,"");
+          
+          // Coloca a virgula antes dos 3 últimos dígitos
+          value = value.replace(/(\d)(\d{3})$/,"$1.$2");
+          
+          return parseFloat(value);
+        },
+
+        minimumInstallmentValue = parseMonetary($("input[name='minimuminstallmentvalue']").val()),
+        maxNumberOfInstallments = parseInt($("input[name='maxnumberofinstallments']").val()),
+        interestRate            = parsePercentage($("input[name='interestrate']").val()),
+        interestFrom            = parseInt($("input[name='interestfrom']").val()),
+        calculationFormula      = $("input[name='calculationformula']").val(),
+
+        // Recupera uma tabela de demonstração do cálculo dos juros
+        url  = "{{ path_for('ERP\\Parameterization\\Financial\\InstallmentTypes\\InstallmentPlan\\Get') }}"
+      ;
+
+      requestJSONData(url, {
+        value: 1000,
+        minimumInstallmentValue: minimumInstallmentValue,
+        maxNumberOfInstallments: maxNumberOfInstallments,
+        interestRate: interestRate,
+        interestFrom: interestFrom,
+        calculationFormula: calculationFormula
+      },
+      function (data, params, message) {
+        $('#installmentPlanContent')
+          .html(data)
+          .trigger("change")
+        ;
+      },
+      function () {
+        // Limpa os dados em caso de erro
+        $('#installmentPlanContent')
+          .html("Erro")
+          .trigger("change")
+        ;
+      });
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

@@ -1,0 +1,214 @@
+/* -------------------------------------------------[ Calendar ]-----
+   As definições de calendário dentro da barra lateral
+   ------------------------------------------------------------------ */
+
+// O controle da visibilidade dos calendários
+.calendar.wrap {
+  position: relative;
+  display: block;
+  height: $calendar-height;
+  border-top: 1px solid $invertedDividerBackground;
+  border-bottom: 1px solid $invertedDividerBackground; 
+  
+  > table.calendar {
+    float: left;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 250px;
+  }
+
+  > .vertical.date {
+    display: none;
+    z-index: 1;
+    float: left;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  
+  @media only screen and (max-height: 768px) {
+    //display: none;
+  }
+}
+
+.vertical.date {
+  background-color: $sidebarBackground;
+  height: 186px;
+  padding-top: 5px;
+  
+  .year,
+  .month,
+  .day,
+  .dayofweek {
+    width: 100%;
+    display: block;
+    text-align: center;
+  }
+
+  .month {
+    color: $invertedMenuTextColor;
+    font-size: 1.2em;
+  }
+
+  .year {
+    color: $dimmerColor;
+    font-size: 3em;
+    padding: .25em .25em;
+    position: relative;
+    width: 50px;
+    left: 44px;
+    top: 70px;
+    font-weight: 600;
+    background-color: $dimmerShadowColor;
+    text-shadow: 1px 1px 0px $dimmerShadowColor;
+    -webkit-background-clip: text;
+       -moz-background-clip: text;
+            background-clip: text;
+
+    @include rotate(270deg);
+    @include origin(bottom left);
+  }
+
+  .day {
+    color: $invertedActiveBackground;
+    font-size: 2.2em;
+    font-weight: 600;
+    padding: .3em 0;
+  }
+
+  .dayofweek {
+    color: $invertedActiveTextColor;
+    font-size: 1.1em;
+    font-weight: 600;
+  }
+}
+
+table.calendar {
+  width: 100%;
+  margin: 5px 0;
+  border-spacing: 0px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: $invertedMenuTextColor;
+  
+  thead {
+    tr {
+      th {
+        .header {
+          position: relative;
+
+          .title {
+            text-align: center;
+            line-height: 2.3em;
+
+            .month {
+              position: relative;
+              padding-right: 15px;
+              color: $dimmerShadowColor;
+
+              &:before {
+                display: block;
+                position: absolute;
+                top: 5px;
+                right: 0;
+                width: 5px;
+                height: 5px;
+                content: '';
+                
+                background: $invertedActiveBackground;
+                
+                @include border-radius(5px);
+              }
+            }
+
+            .year {
+              padding-left: 8px;
+              color: $dimmerShadowColor;
+            }
+          }
+
+          .btn {
+            position: absolute;
+            top: -2px;
+            padding: 5px;
+            cursor: pointer;
+            text-align: center;
+
+            &.prev {
+              left: 0;
+            }
+
+            &.today {
+              right: 29px;
+            }
+
+            &.next {
+              right: 0;
+            }
+          }
+        }
+
+        &.day {
+          padding: .1em .1em;
+
+          &.saturday {
+            color: $saturday;
+          }
+
+          &.sunday {
+            color: $sunday;
+          }
+        }
+      }
+    }
+  }
+
+  tbody {
+    td.day {
+      padding: 0;
+      border: 1px solid transparent;
+
+      &.saturday {
+        color: $saturday;
+      }
+
+      &.sunday {
+        color: $sunday;
+      }
+
+      &:hover {
+        border: 1px solid $invertedMenuTextColor;
+        background: $invertedHoveredBackground;
+        color: $invertedHoveredTextColor;
+      }
+
+      &.today {
+        background: $invertedActiveBackground;
+        color: $invertedActiveTextColor;
+
+        &:hover {
+          background: $invertedActiveBackground;
+          color: $invertedActiveTextColor;
+        }
+      }
+
+      &.another-month {
+        color: darken( $invertedMenuTextColor, 50% );
+        
+        &.saturday {
+          color: darken( $saturday, 10% );
+        }
+        
+        &.sunday {
+          color: darken( $sunday, 10% );
+        }
+
+        &:hover {
+          border: 1px solid $invertedMenuTextColor;
+          color: darken( $invertedHoveredTextColor, 40%);
+        }
+      }
+    }
+  }
+}

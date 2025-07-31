@@ -1,0 +1,56 @@
+/* -------------------------------------------===-------[ Form ]-----
+   As definições para o seletor de cores de veículos e/ou exibição de
+   cores nas tabelas
+   ------------------------------------------------------------------ */
+
+.ui.empty.square.label,
+.ui.empty.square.labels .label {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  width: .5em;
+  height: .5em;
+  vertical-align: baseline;
+}
+.ui.square.label,
+.ui.square.labels .label {
+  padding: .5em!important;
+  line-height: 1em;
+  text-align: center;    
+  border: 1px solid rgba(34,36,38,.1) !important;
+  border-radius: 0;
+}
+.ui.bege.label,
+.ui.bege.labels .label {
+  background-color: #deb887!important;
+  color: #000!important;
+}
+.ui.fantasy.label,
+.ui.fantasy.labels .label {
+  background-color: #1e9600 !important;
+  background: #1e9600 !important; /* fallback for old browsers */ /* Chrome 10-25, Safari 5.1-6 */
+  background: -webkit-linear-gradient(left, #1e9600, #fff200, #ff0000) !important;
+  background: -o-linear-gradient(left, #1e9600, #fff200, #ff0000) !important;
+  background: linear-gradient(to right, #1e9600, #fff200, #ff0000) !important; /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  color: #000 !important;
+}
+.ui.white.label,
+.ui.white.labels .label {
+  background-color: #ffffff!important;
+  color: #000!important;
+}
+.ui.golden.label,
+.ui.golden.labels .label {
+  background-color: #daa520!important;
+  color: #000!important;
+}
+.ui.grena.label,
+.ui.grena.labels .label {
+  background-color: #831d1c!important;
+  color: #fff!important;
+}
+.ui.silver.label,
+.ui.silver.labels .label {
+  background-color: #c0c0c0!important;
+  color: #000!important;
+}

@@ -1,0 +1,122 @@
+{% extends 'templates/erp/layout.twig' %}
+
+{% block title %}{{ parent() }} - Calendário de Agendamentos{% endblock %}
+
+{% block stylesheets %}
+  {{ parent() }}
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@3.10.2/dist/fullcalendar.min.css" rel="stylesheet" />
+  <style>
+    #calendar {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    }
+    .fc-event {
+      font-size: 13px;
+      padding: 4px;
+    }
+    .calendar-controls {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 10px;
+      gap: 10px;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+
+  <div class="ui main basic segment">
+    <h2 class="ui blue header">
+      <i class="calendar alternate outline icon"></i>
+      <div class="content">
+        Calendário de Agendamentos
+        <div class="sub header">Visualize todos os agendamentos do sistema</div>
+      </div>
+    </h2>
+
+    <div class="calendar-controls">
+      <button class="ui primary button" id="btn-novo-agendamento">
+        <i class="plus icon"></i> Novo Agendamento
+      </button>
+      <button class="ui button" id="btn-filtro">
+        <i class="filter icon"></i> Filtros
+      </button>
+    </div>
+
+    <div id="calendar"></div>
+  </div>
+
+  <div class="ui modal" id="eventDetailsModal">
+    <i class="close icon"></i>
+    <div class="header">Detalhes do Agendamento</div>
+    <div class="content">
+      <p><strong>Cliente:</strong> <span id="modal-title"></span></p>
+      <p><strong>Serviço:</strong> <span id="modal-service"></span></p>
+      <p><strong>Início:</strong> <span id="modal-start"></span></p>
+    </div>
+    <div class="actions">
+      <div class="ui approve button">Fechar</div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {{ parent() }}
+  <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@3.10.2/dist/fullcalendar.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@3.10.2/dist/locale/pt-br.js"></script>
+
+  <script>
+    var dados = [
+      {% for appointment in appointments %}
+        {% if appointment.status == 'Pendente' %}
+          {% set color = '#F59E0B' %} {# Laranja #}
+        {% elseif appointment.status == 'Concluido' %}
+          {% set color = '#10B981' %} {# Verde #}
+        {% elseif appointment.status == 'Cancelado' %}
+          {% set color = '#EF4444' %} {# Vermelho #}
+        {% else %}
+          {% set color = '#6B7280' %} {# Cinza padrão #}
+        {% endif%}
+      {
+        id: {{ appointment.id }},
+        title: "{{ appointment.title }}",
+        service: "{{ appointment.servicetype }}",
+        start: "{{ appointment.scheduledat }}",
+        color: "{{ color }}"
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ];
+    $(document).ready(function () {
+      $('#calendar').fullCalendar({
+        locale: 'pt-br',
+        height: 'auto',
+        defaultView: 'month',
+        editable: false,
+        eventLimit: true,
+        header: {
+          left: 'prev,next today',
+          center: 'title', 
+          right: 'month,agendaWeek,agendaDay,listMonth'
+        },
+        events: dados,
+        eventClick: function(event) {
+          $('#modal-title').text(event.title);
+          $('#modal-service').text(event.service);
+          $('#modal-start').text(moment(event.start).format('DD/MM/YYYY HH:mm'));
+          $('#eventDetailsModal').modal('show');
+        }
+      });
+
+      $('#btn-novo-agendamento').click(function () {
+        window.location.href = '/erp/appointments/newAppointment';
+      });
+
+      $('#btn-filtro').click(function () {
+        alert('Funcionalidade de filtro em desenvolvimento.');
+      });
+    });
+  </script>
+{% endblock %}

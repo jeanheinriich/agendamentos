@@ -1,0 +1,222 @@
+{% extends 'templates/stc/layout.twig' %}
+{% block title %}{{ parent() }} - Visualizar cliente{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  <style>
+    @media screen and (max-width: 1100px) {
+      .contactList .ui.selection.dropdown {
+        min-width: 70px !important;
+        width: 70px !important;
+      }
+    }
+
+    @media screen and (max-width: 767px) {
+      .ui.form .field .ui.reduced.input input {
+        width: 110px;
+      }
+      .contactList .ui.selection.dropdown {
+        min-width: 125px !important;
+        width: 125px !important;
+      }
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set URL = 'STC\\Cadastre\\Customers\\View' %}
+  {% if authorization.user.groupid < 6 %}
+    {% set previous = 'STC\\Cadastre\\Customers' %}
+  {% else %}
+    {% set previous = 'STC\\Home' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('stc/customers.svg', 'Cliente') }}
+            </td>
+            <td>
+              <div class="content">
+                {% if authorization.user.groupid < 6 %}
+                Visualizar cliente
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um
+                  cliente.
+                </div>
+                {% else %}
+                Meus dados cadastrais
+                <div class="sub header">
+                  Permite visualizar as minhas informações cadastrais.
+                </div>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL, {'clientID': getValue('clientid') }) }}">
+        <h3 class="ui header">
+          Dados básicos do cliente
+          <span data-tooltip="Os dados cadastrais são importados do sistema STC e sua modificação é bloqueada."
+                data-content="Top Left" data-position="top left"
+                data-inverted="" data-blue>
+            <i class="question circle olive outline icon"></i>
+          </span>
+        </h3>
+
+        <div class="fields">
+          <div class="twelve wide field">
+            <label>Cliente</label>
+            <div class="ui input readonly">
+              <input name="name" type="text"
+                     placeholder="O nome do cliente..."
+                     readonly
+                     value="{{ getValue('name') }}">
+            </div>
+          </div>
+
+          <div class="four wide field">
+            <label>Tipo de cliente</label>
+            <div class="ui input readonly">
+              <input name="entitytypename" type="text"
+                     placeholder="O tipo do cliente..."
+                     readonly
+                     value="{{ getValue('entitytypename') }}">
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="five wide field">
+            <label class="nowrap">N&uacute;mero do documento</label>
+            <div class="ui input readonly">
+              <input name="regionaldocumentnumber"
+                     type="text" readonly
+                     placeholder="Número do documento..."
+                     value="{{ getValue('regionaldocumentnumber') }}">
+            </div>
+          </div>
+          <div class="four wide field">
+            <label for="nationalregister">CPF/CNPJ</label>
+            <div class="ui icon input readonly">
+              <input name="nationalregister"
+                     type="text" maxlength="18" readonly
+                     placeholder="CPF ou CNPJ..."
+                     value="{{ getValue('nationalregister') }}">
+              <i class="id card outline icon"></i>
+            </div>
+          </div>
+          <div class="eleven wide field">
+            <label>E-mail</label>
+            <div class="ui input readonly">
+              <input name="email"
+                     type="text" maxlength="100" readonly
+                     placeholder="Endereço de e-mail..."
+                     value="{{ getValue('email') }}">
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="seven wide field">
+            <label>Endereço</label>
+            <div class="ui input readonly">
+              <input name="address"
+                     type="text" maxlength="100" readonly
+                     placeholder="Endereço..."
+                     value="{{ getValue('address') }}">
+            </div>
+          </div>
+          <div class="three wide field">
+            <label>Complemento</label>
+            <div class="ui input readonly">
+              <input name="complement"
+                     type="text" maxlength="50" readonly
+                     placeholder="Complemento..."
+                     value="{{ getValue('complement') }}">
+            </div>
+          </div>
+          <div class="six wide field">
+            <label>Bairro</label>
+            <div class="ui input readonly">
+              <input name="district"
+                     type="text" maxlength="50" readonly
+                     placeholder="Bairro..."
+                     value="{{ getValue('district') }}">
+            </div>
+          </div>
+        </div>
+        <div class="fields">
+          <div class="four wide field">
+            <label>CEP</label>
+            <div class="ui icon input readonly">
+              <input name="postalcode"
+                     placeholder="CEP..."
+                     type="text" maxlength="9" readonly
+                     value="{{ getValue('postalcode') }}">
+              <i class="search icon grey"></i>
+            </div>
+          </div>
+          <div class="ten wide field">
+            <label>Cidade</label>
+            <div class="ui input readonly">
+              <input name="cityname"
+                     type="text" maxlength="50" readonly
+                     placeholder="Cidade..."
+                     value="{{ getValue('cityname') }}">
+            </div>
+            <input type="hidden" name="cityid"
+                   value="{{ getValue('cityid') }}" >
+          </div>
+          <div class="two wide readonly field">
+            <label>UF</label>
+            <div class="ui readonly input">
+              <input name="state"
+                     placeholder="UF..." type="text"
+                     value="{{ getValue('state') }}" maxlength="2"
+                     readonly>
+            </div>
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide readonly field">
+            <label>Informações</label>
+            <div class="ui readonly input">
+              <textarea readonly>{{ getValue('info') }}</textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+          </div>
+        </div>
+
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+      </form>
+      <!-- Fim formulário -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock content %}
+{% block scripts %}
+  {{ parent() }}
+{% endblock scripts %}

@@ -1,0 +1,181 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} perfil de envio de notificação{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('form.min.css') }}
+  <style>
+    .ui.input.readonly > textarea {
+      background-color: GhostWhite;
+      border: 1px solid rgba(34,36,38,0.15);
+      color: DarkSlateGray;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Parameterization\\MailingProfiles\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Parameterization\\MailingProfiles\\Edit' %}
+  {% endif %}
+  {% set previous = 'ERP\\Parameterization\\MailingProfiles' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/mailingprofiles.svg', 'Perfil de envio de notificações') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} perfil de envio de notificações
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  perfil de envio de notificações ao cliente. Um perfil
+                  define para quais eventos o sistema irá enviar
+                  notificações, sejam SMS ou E-mail, ao endereço
+                  cadastrado.
+                </div>
+              {% else %}
+                Visualizar perfil
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um
+                  perfil de envio de notificações ao cliente. Um perfil
+                  define para quais eventos o sistema irá enviar
+                  notificações, sejam SMS ou E-mail, ao endereço
+                  cadastrado.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{% if formMethod == 'POST' %}{{ path_for('ERP\\Parameterization\\MailingProfiles\\Add') }}{% else %}{{ path_for('ERP\\Parameterization\\MailingProfiles\\Edit', {'mailingProfileID': getValue('mailingprofileid') }) }}{% endif %}">
+        <div class="fields">
+          <div class="sixteen wide field{{ cssError('name') }}">
+            <label>Nome do perfil</label>
+            <div class="ui input{{ readonly }}">
+              <input name="name" type="text" maxlength="30"
+                     placeholder="Informe o nome do perfil..."
+                     {{ readonly }}
+                     value="{{ getValue('name') }}">
+            </div>
+            {% if hasError('name') %}
+            <small class="helper">{{ getError('name') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field{{ cssError('description') }}">
+            <label>Descrição do perfil</label>
+            <div class="ui input{{ readonly }}">
+              <textarea name="description" rows="4" {{ readonly }}
+                        placeholder="Faça uma breve descrição do perfil...">{{ getValue('description') }}</textarea>
+            </div>
+            {% if hasError('description') %}
+            <small class="helper">{{ getError('description') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="sixteen wide grouped fields">
+          <div class="ui items">
+            <div class="item">
+              <div class="content">
+                <a class="header">
+                  Eventos do sistema:
+                </a>
+                <div class="meta">
+                  <span>
+                    Indique para quais eventos serão enviadas
+                    notificações aos integrantes deste perfil. Caso não
+                    deseje que sejam enviadas notificações, simplesmente
+                    não marque nenhum evento.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% set selectedSystemActions = getValue('systemactions') %}
+          {% for systemAction in systemActions %}
+          <div class="field">
+            <div class="ui checkbox{{ readonly }}">
+              <input class="hidden" type="checkbox"
+                     {{ readonly }}
+                     name="systemactions[]" tabindex="0"
+                     value="{{ systemAction.id }}"
+                     {% if systemAction.id in selectedSystemActions %}checked{% endif %}>
+              <label>{{ systemAction.name }}</label>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="mailingprofileid" value="{{ getValue('mailingprofileid') }}">
+        {% endif %}
+      </form>
+      <!-- End Form -->
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.ui.checkbox')
+        .checkbox()
+      ;
+
+      // Coloca o foco no primeiro campo
+      $("input[name='name']").focus();
+    });
+  </script>
+  {% endapply %}
+{% endblock scripts %}

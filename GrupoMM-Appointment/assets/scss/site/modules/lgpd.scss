@@ -1,0 +1,58 @@
+/* --------------------------------------------------[ Banners ]-----
+   As definições da mensagem da LGPD
+   ------------------------------------------------------------------ */
+
+$fontBase: Hind, Lato, 'Helvetica Neue', "Open Sans", Arial, Helvetica, sans-serif;
+
+.ui.lgpd.bottom.nag {
+  bottom: -100vh;
+
+  background-color: rgba(64, 64, 64, 0.9);
+
+  box-shadow: 4px 4px 4px 0 rgba(0, 0, 0, 0.41);
+  border-radius: 5px;
+
+  right: 10%;
+  left: 10%;
+  width: 80%;
+
+  display: flex;
+  flex-direction: row;
+
+  font-family: $fontBase;
+
+  &.show {
+    bottom: 20px;
+    animation-duration: 1s;
+    animation-name: slidein;
+  }
+
+  @keyframes slidein {
+    from {
+      bottom: -100vh;
+    }
+
+    to {
+      bottom: 20px;
+    }
+  }
+
+  .col {
+    align-self: center;
+  }
+
+  .link {
+    color: #39ABFF;
+
+    &:hover {
+      color: #8ACDFF;
+      text-decoration: underline;
+    }
+  }
+
+  @media screen and (max-width:768px) {
+    height: auto;
+    flex-wrap: wrap;
+    flex-direction: column;
+  }
+}

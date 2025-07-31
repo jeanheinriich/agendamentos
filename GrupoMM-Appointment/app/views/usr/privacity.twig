@@ -1,0 +1,775 @@
+{% extends 'templates/usr/layout.twig' %}
+{% block title %}{{ parent() }} - Pol&iacute;tica de privacidade{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+  <style>
+    /* Importamos a família Hind */
+    @font-face {
+      font-family: "Hind";
+      src: url("/assets/fonts/Hind-Light.ttf") format("truetype");
+      font-weight: 300;
+      font-style: normal;  
+    }
+    @font-face {
+      font-family: "Hind";
+      src: url("/assets/fonts/Hind-Regular.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;  
+    }
+    @font-face {
+      font-family: "Hind";
+      src: url("/assets/fonts/Hind-Medium.ttf") format("truetype");
+      font-weight: 500;
+      font-style: normal;  
+    }
+    @font-face {
+      font-family: "Hind";
+      src: url("/assets/fonts/Hind-Semibold.ttf") format("truetype");
+      font-weight: 600;
+      font-style: normal;  
+    }
+    @font-face {
+      font-family: "Hind";
+      src: url("/assets/fonts/Hind-Bold.ttf") format("truetype");
+      font-weight: 700;
+      font-style: normal;  
+    }
+
+    .module {
+      max-width: 900px;
+    }
+    .ui.basic.segment p {
+      font-size: 1.2em;
+      color: #8c8c8c;
+      font-family: Hind, Lato, 'Helvetica Neue', "Open Sans", Arial, Helvetica, sans-serif;
+      font-weight: 300;
+      margin: 0 0 1em;
+      line-height: 1.5285em;
+    }
+    .ui.basic.segment span {
+      font-weight: 400;
+      color: #606070;
+      padding: 0 0.2em;
+    }
+    h4.ui.header {
+      font-size: 1.18571429rem;
+      font-weight: 500;
+      color: #1b2c3d;
+    }
+    .ui.list {
+      font-size: 1.2em;
+      font-family: Hind, Lato, 'Helvetica Neue', "Open Sans", Arial, Helvetica, sans-serif;
+      font-weight: 300;
+      color: #8c8c8c;
+    }
+    .ui.list .content .header {
+      font-size: 1.18571429rem;
+      padding-bottom: 5px;
+      font-weight: 500;
+      color: rgba(0,0,0,.87);
+    }
+    .ui.list .content .description {
+      font-family: Hind, Lato, 'Helvetica Neue', "Open Sans", Arial, Helvetica, sans-serif;
+      line-height: 1.4285em;
+      color: #8c8c8c;
+    }
+    .ui.list>.item>.icon+.content {
+      padding-left: 0;
+    }
+    .ui.vertical.segment {
+      border-bottom: none;
+    }
+    .ui.header {
+      font-family: Hind, Lato, 'Helvetica Neue', "Open Sans", Arial, Helvetica, sans-serif;
+      font-weight: 600;
+      font-size: 1.8em;
+    }
+    h3.ui.header {
+      font-size: 1.38571429rem;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/privacity.svg', 'Política de privacidade') }}
+            </td>
+            <td>
+              <div class="content">
+                Políticas de privacidade
+                <div class="sub header">
+                  Entenda as nossas políticas de privacidade ao fazer uso
+                  deste site
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    <br/>
+    <!-- Início conteúdo módulo -->
+    <div class="ui vertical module segment">
+      <p>
+        Por favor, leia esta <span>Política de Privacidade</span>
+        cuidadosamente para entender nossas políticas e práticas
+        sobre seus <span>Dados Pessoais</span> e como os trataremos.
+        Esta <span>Política</span> se aplica a indivíduos que interagem
+        com serviços por nós oferecidos. Esta <span>Política</span>
+        explica como seus <span>Dados Pessoais</span> são coletados,
+        usados e divulgados pelo <span>Grupo M&amp;M</span>. Ela
+        também informa como você pode acessar e atualizar seus
+        <span>Dados Pessoais</span> e tomar certas decisões sobre
+        como seus <span>Dados Pessoais</span> são utilizados.
+      </p>
+      <p>
+        Esta <span>Política</span> abrange nossas atividades de
+        coleta de dados online e offline, abrangendo os
+        <span>Dados Pessoais</span> que <span>Nós</span> coletamos
+        por meio de nossos vários canais, incluindo websites,
+        aplicativos, redes sociais de terceiros e Serviço de
+        Atendimento ao Consumidor. Por favor, note que <span>Nós</span>
+        poderemos agregar <span>Dados Pessoais</span> de diferentes
+        fontes (website e contatos telefônicos, por exemplo). Como
+        parte disso, <span>Nós</span> combinamos os <span>Dados
+        Pessoais</span> que foram originalmente coletados por
+        diferentes entidades do <span>Grupo M&amp;M</span>.
+      </p>
+      <p>
+        Se você não nos fornecer os <span>Dados Pessoais</span>
+        necessários (indicaremos quando for o caso, por exemplo,
+        esclarecendo essa informação em nossos formulários de
+        registro), <span>Nós</span> talvez não possamos fornecer a
+        você nossos produtos e/ou serviços.
+      </p>
+      <h3 class="ui black header">Fontes de dados pessoais</h3>
+      <p>
+        Esta <span>Política</span> se aplica aos <span>Dados
+        Pessoais</span> que coletamos de ou sobre você por meio das
+        das seguintes fontes:
+        <div class="ui list">
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">Site do Grupo M&amp;M</div>
+              <div class="description">
+                Sites voltados para o consumidor e operados pelo ou
+                para o <span>Grupo M&amp;M</span>, incluindo sites
+                que <span>Nós</span> operamos sob nossos próprios
+                domínios/URLs e mini sites que <span>Nós</span>
+                mantemos em redes sociais de terceiros, como o
+                Facebook.
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">Aplicativos móveis</div>
+              <div class="description">
+                Aplicativos móveis voltados para o consumidor e
+                operados pelo ou para o <span>Grupo M&amp;M</span>,
+                como aplicativos para smartphones.
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">E-mails e mensagens</div>
+              <div class="description">
+                Interações com comunicações eletrônicas entre
+                <span>Você</span> e o <span>Grupo M&amp;M</span>,
+                tais e-mails, mensagens de textos e outras mensagens
+                eletrônicas.
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">Contatos telefônicos</div>
+              <div class="description">
+                Interações com comunicações telefônicas entre
+                <span>Você</span> e o <span>Grupo M&amp;M</span>.
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">Outras fontes</div>
+              <div class="description">
+                Redes sociais de terceiros (como Facebook, Google),
+                pesquisas de mercado (se o retorno não for dado de
+                forma anônima), agregadores de dados de terceiros e
+                parceiros promocionais do <span>Grupo M&amp;M</span>.
+              </div>
+            </div>
+          </div>
+        </div>
+      </p>
+      <h3 class="ui black header">
+        O que coletamos e como fazemos isto
+      </h3>
+      <p>
+        Dependendo de como você interage com o <span>Grupo M&amp;M</span>
+        (online, offline, por telefone e etc.), <span>Nós</span>
+        coletamos vários tipos de informações sobre você, conforme
+        descrevemos a seguir:
+        <div class="ui list">
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">Informações pessoais de contato</div>
+              <div class="description">
+                Incluem quaisquer informações que você <span>Nos</span>
+                fornece e que possa nos permitir contatá-lo, como
+                seu nome, endereço postal, e-mail, detalhes de redes
+                sociais ou número de telefone.
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">Informações de login em conta</div>
+              <div class="description">
+                Qualquer informação que seja necessária para lhe dar
+                acesso ao seu perfil de conta específico. Exemplos
+                incluem seu endereço de e-mail, nome de usuário,
+                senha em formato irrecuperável e/ou pergunta e
+                resposta de segurança.
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">Informações demográficas e interesses</div>
+              <div class="description">
+                Qualquer informação que descreva seus dados
+                demográficos ou suas características comportamentais.
+                Exemplos incluem sua data de nascimento, idade ou
+                faixa etária, sexo, localização geográfica (por
+                exemplo CEP), produtos favoritos, hobbies, interesses
+                e informações familiares ou sobre seu estilo de vida.
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">Informações técnicas sobre o computador ou dispositivo móvel</div>
+              <div class="description">
+                Qualquer informação sobre o sistema de computador ou
+                outro dispositivo que você utiliza para acessar um
+                de nossos sites ou aplicativos, como o endereço IP
+                utilizado para conectar seu computador ou dispositivo
+                à internet, o tipo de sistema operacional e o tipo e
+                a versão do navegador da web. Se você acessar um site
+                ou aplicativo do <span>Grupo M&amp;M</span> usando um
+                dispositivo móvel, como um smartphone, as informações
+                coletadas também incluirão, sempre que permitido, o
+                ID de dispositivo exclusivo de seu telefone, o ID de
+                publicidade, a localização geográfica e outros dados
+                similares do dispositivo móvel.
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">Informações de utilização de sites/comunicação</div>
+              <div class="description">
+                Conforme você navega e interage com nossos sites,
+                <span>Nós</span> utilizamos tecnologias de coleta
+                automática de dados para coletar determinadas
+                informações sobre as suas ações. Isso inclui
+                informações como em quais links você clica, quais
+                páginas ou conteúdos você visualiza e por quanto
+                tempo e outras informações e estatísticas semelhantes
+                sobre suas interações, como tempos de resposta a
+                conteúdo, erros de download e duração das visitas a
+                determinadas páginas. Essas informações são capturadas
+                por meio de tecnologias automatizadas, como Cookies
+                (Cookies de navegador), e também via rastreamento de
+                terceiros. Você tem o direito de se opor à utilização
+                de tais tecnologias, no entanto, isso poderá alterar
+                a forma como interage com o nosso website e/ou
+                aplicativos.
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">Pesquisas de mercado e feedback de consumidores</div>
+              <div class="description">
+                Isso inclui informações que você compartilha
+                voluntariamente <span>Conosco</span> sobre sua
+                experiência de uso de nossos produtos e serviços.
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">Informações financeiras e de pagamento</div>
+              <div class="description">
+                Quaisquer informações que <span>Nós</span> precisemos
+                para atender a um pedido, ou que você usa para fazer
+                uma compra, como os dados de seu cartão de débito ou
+                crédito (nome do titular do cartão, número do cartão,
+                data de validade e etc.) ou outras formas de pagamento
+                (se disponibilizadas). Em qualquer caso, <span>Nós</span>
+                ou nossos prestadores de serviço de processamento de
+                pagamentos lidamos com as informações financeiras e
+                de pagamento em conformidade com as leis, normas e
+                os padrões de segurança aplicáveis.
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">Chamadas ao Serviço de Atendimento ao Consumidor</div>
+              <div class="description">
+                Comunicações com um <span>Serviço de Atendimento ao
+                Consumidor</span> podem ser gravadas ou ouvidas, de
+                acordo com as leis aplicáveis, para necessidades
+                operacionais locais (por exemplo, por motivos de
+                qualidade ou treinamento). Detalhes do cartão de
+                pagamento não são gravados. Quando exigido por lei,
+                você será informado sobre tal gravação no início de
+                sua chamada.
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">Dados Pessoais Sensíveis</div>
+              <div class="description">
+                Não temos a intenção de coletar ou processor dados
+                pessoais sensíveis no curso normal de nossas
+                atividades. Quando for necessário processar seus
+                dados pessoais sensíveis por qualquer motivo, nos
+                apoiaremos em seu prévio e expresso consentimento
+                para qualquer processamento que for voluntário
+                (por exemplo, para finalidades de marketing). Se
+                processarmos seus dados pessoais sensíveis para
+                outras finalidades, <span>Nós</span> nos apoiamos
+                nas seguintes bases legais:<br>
+                (i) detecção e prevenção de crime (incluindo a
+                prevenção de fraude); e<br>
+                (ii) cumprimento da lei aplicável.
+              </div>
+            </div>
+          </div>
+        </div>
+      </p>
+      <h3 class="ui black header">
+        Cookies/tecnologias similares e arquivos de log
+      </h3>
+      <p>
+        Usamos <span>Cookies</span> para melhorar o uso e a
+        funcionalidade dos sites do <span>Grupo M&amp;M</span> e
+        entender melhor como nossos visitantes usam os sites do
+        <span>Grupo M&amp;M</span>, bem como as ferramentas e
+        serviços ali oferecidos. Os <span>Cookies</span> nos ajudam
+        a adaptar os sites do <span>Grupo M&amp;M</span> às suas
+        necessidades pessoais, facilitar cada vez mais o seu uso,
+        receber feedback da satisfação do consumidor e nos
+        comunicarmos com você de outros locais na internet.
+      </p>
+      <h4 class="ui header">
+        Mas o que são Cookies?
+      </h4>
+      <p>
+        Cookies são pequenos arquivos de texto colocados no seu
+        computador por sites que você visita. São amplamente utilizados
+        para fazer os sites funcionarem, ou funcionarem de forma mais
+        eficiente, bem como para fornecer informações aos proprietários
+        do site.
+      </p>
+      <h4 class="ui header">
+        Que tipos de Cookies ou tecnologias são usados nos nossos
+        sites?
+      </h4>
+      <p>
+        <div class="ui list">
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">
+                Cookies persistentes
+              </div>
+              <div class="description">
+                Utilizamos cookie que permanecem no seu navegador
+                até você deletá-los manualmente ou até o seu navegador
+                deletá-los de acordo com o período de duração
+                estabelecido pelo cookie. Esses cookies reconhecerão
+                seu retorno como visitante, permitindo a segurança
+                em operações que precisem identificá-lo, como o
+                login em um aplicativo.
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">
+                Cookies de sessão
+              </div>
+              <div class="description">
+                Utilizamos cookie temporários e que são apagados
+                quando você fecha o seu navegador. Quando você
+                reinicia o seu navegador e volta para o site que
+                criou o cookie, esse site trata você como um novo
+                visitante.
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">
+                Outras tecnologias similares
+              </div>
+              <div class="description">
+                Os sites do <span>Grupo M&amp;M</span> também usam
+                outras tecnologias de rastreamento, inclusive
+                endereços IP e arquivos de registro, que também nos
+                ajudam a adaptar os sites do <span>Grupo M&amp;M</span>
+                às suas necessidades pessoais e para garantir a
+                segurança dos sistemas ofertados para você.<br><br>
+                Um endereço de IP é um número usado por computadores
+                na rede para identificar seu computador todas as
+                vezes que você se conecta na internet. Podemos
+                registrar <span>Endereços de IP</span> para as
+                seguintes finalidades:<br>
+                (i) registro de problemas técnicos,<br>
+                (ii) manutenção da proteção e segurança do
+                <span>Site</span>,<br>
+                (iii) melhor compreensão de como nossos sites são
+                utilizados, e,<br>
+                (iv) conteúdo mais bem adaptado às suas necessidades,
+                dependendo do país ou local em que você estiver.<br><br>
+                <span>Nós</span> (ou um terceiro em nosso nome)
+                poderemos coletar informações na forma de arquivos de
+                registro que registram as atividades do site e coletam
+                estatísticas sobre os hábitos de navegação do usuário.
+                Em geral, esses registros são gerados anonimamente e
+                nos ajudam a coletar (entre outras coisas):<br>
+                (i) o tipo de navegador e o sistema do usuário;<br>
+                (ii) informações sobre a sessão do usuário (como seu
+                URL de origem, a data, hora e quais páginas o usuário
+                visitou em nosso site e quanto tempo permaneceu
+                nele); e,<br>
+                (iii) outros dados de navegação ou de contagem de
+                cliques (p.ex., relatório de tráfego de site e
+                contagem de visitantes únicos).
+              </div>
+            </div>
+          </div>
+        </div>
+      </p>
+      <h4 class="ui header">
+        Gerenciamento de seus Cookies/preferências
+      </h4>
+      <p>
+        Você deve se assegurar que as configurações do seu computador
+        reflitam se você consente em aceitar <span>Cookies</span> ou
+        não. Você pode configurar o seu navegador para avisá-lo antes
+        de aceitar <span>Cookies</span> ou simplesmente recusá-los.
+        Você não precisa ter <span>Cookies</span> para usar ou
+        navegar a maior parte dos sites do <span>Grupo M&amp;M</span>,
+        apesar de que, provavelmente, não conseguirá acessar todos
+        os seus recursos nesse caso. Veja no botão “ajuda” no seu
+        navegador (p.ex., internet Explorer, Firefox) como você
+        pode fazer isso. Lembre-se que se você usar computadores
+        diferentes em locais diferentes, você precisará se assegurar
+        de que cada navegador está ajustado para suas preferências
+        de cookies.
+      </p>
+      <h3 class="ui black header">
+        Uso dos seus dados pessoais
+      </h3>
+      <p>
+        Usamos seus dados pessoais para as seguintes finalidades:
+      </p>
+      <h4 class="ui header">
+        Serviço ao consumidor
+      </h4>
+      <p>
+        Usamos seus <span>Dados Pessoais</span> para finalidade de
+        serviços ao consumidor, incluindo responder aos seus
+        questionamentos. Isso, normalmente, requer o uso de certas
+        informações pessoais de contato e informações sobre o motivo
+        de seu questionamento (por exemplo situação do pedido,
+        problema técnico, questão ou reclamação sobre produto,
+        questionamento em geral e etc).
+      </p>
+      <h4 class="ui header">
+        Redes sociais de terceiros
+      </h4>
+      <p>
+        Nós usamos seus <span>Dados Pessoais</span> quando você
+        interage com funções de redes sociais de terceiros, como
+        “curtir”, para servi-lo com anúncios e interagir com
+        <span>Você</span> em redes sociais de terceiros. Você pode
+        saber mais sobre como essas funções funcionam, os dados de
+        perfil que <span>Nós</span> obtemos sobre Você, e descobrir
+        como cancelá-los (“opt-out”) revisando as políticas de
+        privacidade nas respectivas redes sociais de terceiros.
+      </p>
+      <h4 class="ui header">
+        Personalização
+      </h4>
+      <p>
+        Com seu consentimento (quando necessário), <span>Nós</span>
+        usamos seus <span>Dados Pessoais</span><br>
+        (i) para analisar suas preferências e hábitos,<br>
+        (ii) para antecipar suas necessidades, baseadas na nossa
+        análise do seu perfil,<br>
+        (iii) para melhorar e personalizar sua experiência em nossos
+        sites e aplicativos;<br>
+        (iv) para assegurar quer o conteúdo de nossos sites/aplicativos
+        seja otimizado para você e para seu computador ou aparelho;<br>
+        (v) para enviar a <span>Você</span> publicidade e conteúdo
+        dirigidos, e<br>
+        (vi) para permitir que <span>Você</span> participe de funções
+        interativas, quando decidir fazê-lo. Por exemplo, <span>Nós</span>
+        lembramos do seu login, endereço de e-mail ou nome de tela,
+        para que você possa fazer login rapidamente na próxima vez
+        que visitar nosso site. Com base neste tipo de informação, e
+        com seu consentimento (quando necessário), <span>Nós</span>
+        também mostramos a <span>Você</span> conteúdo ou promoções
+        específicas do <span>Grupo M&amp;M</span> adaptadas aos seus
+        interesses.<br><br>
+        O uso de seus <span>Dados Pessoais</span> é voluntário, o que
+        significa que você pode se opor ao processamento de seus
+        <span>Dados Pessoais</span> para este propósito.
+      </p>
+      <h4 class="ui header">
+        Atendimento a pedidos
+      </h4>
+      <p>
+        Nós usamos seus <span>Dados pessoais</span> para processar e
+        enviar seus pedidos, informá-lo sobre a situação dos seus pedidos,
+        corrigir endereços e conduzir verificação de identidade e outras
+        atividades para verificação de fraudes. Isso envolve o uso de
+        certos <span>Dados Pessoais</span> e informações de pagamento.<br>
+        Outras finalidades em geral (ex.: pesquisa interna ou de mercado,
+        análises, segurança). De acordo com as leis aplicáveis,
+        <span>Nós</span> usamos seus <span>Dados Pessoais</span> para
+        outras finalidades gerais de negócio, como fazer manutenção em
+        sua conta, conduzir pesquisas internas ou de mercado e medir a
+        efetividade de nossas campanhas publicitárias. Nós também usamos
+        seus <span>Dados Pessoais</span> para gerenciamento e operação
+        de nossas comunicações, TI e sistemas de segurança.
+      </p>
+      <h4 class="ui header">
+        Motivos legais
+      </h4>
+      <p>
+        Divulgaremos seus <span>Dados Pessoais</span> a terceiros:
+        <br>
+        (i) quando requerido pela lei aplicável;<br>
+        (ii) em resposta a procedimentos legais;<br>
+        (iii) em resposta a um pedido da autoridade legal
+        competente;<br>
+        (iv) para proteger nossos direitos, privacidade, segurança
+        ou propriedade; ou<br>
+        (v) para fazer cumprir os termos de qualquer acordo ou os
+        termos do nosso <span>Site</span>.
+      </p>
+      <h3 class="ui black header">
+        Divulgação dos seus dados pessoais
+      </h3>
+      <p>
+        Nós compartilhamos seus <span>Dados Pessoais</span> com os
+        seguintes tipos de organizações de terceiros:
+        <div class="ui list">
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">
+                Provedores de serviços
+              </div>
+              <div class="description">
+                Estas são companhias externas que <span>Nós</span>
+                usamos para nos auxiliar a operar nosso negócio
+                (ex.: atendimento a pedidos, processamento de
+                pagamentos, detecção de fraudes e verificação de
+                identidade, operação de sites, empresas de pesquisa
+                de mercado, serviços de suporte, promoções,
+                desenvolvimento de sites, análise de dados, SAC e
+                etc.). Provedores de serviços e seus colaboradores
+                selecionados, só estão autorizados a acessar seus
+                <span>Dados Pessoais</span> em <span>Nosso</span>
+                nome, para as tarefas específicas que forem
+                requisitadas a eles, com base em nossas instruções,
+                e são obrigados a manter seus <span>Dados Pessoais</span>
+                confidenciais e seguros.
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">
+                Agências de análise de crédito/cobrança de dívidas
+              </div>
+              <div class="description">
+                Na medida em que for permitido pela lei aplicável,
+                agências de análise de crédito e/ou de cobrança de
+                dívidas são empresas externas que <span>Nós</span>
+                usamos para nos auxiliarem a verificar a situação do
+                seu crédito (particularmente por pedidos feitos por
+                boleto) ou para coletar boletos vencidos.
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">
+                Empresas terceiras que usam dados pessoais para suas
+                próprias finalidades de marketing
+              </div>
+              <div class="description">
+                Exceto em situações nas quais você deu seu
+                consentimento, <span>Nós</span> não licenciamos ou
+                vendemos seus <span>Dados Pessoais</span> a empresas
+                terceiras para suas próprias finalidades de marketing.
+                A identidade destas será revelada assim que seu
+                consentimento for solicitado.
+              </div>
+            </div>
+          </div>
+        </div>
+      </p>
+      <h3 class="ui black header">
+        Retenção dos seus dados pessoais
+      </h3>
+      <p>
+        De acordo com as leis aplicáveis, <span>Nós</span> usaremos
+        seus <span>Dados Pessoais</span> por quanto tempo for
+        necessário para satisfazer as finalidades para as quais seus
+        <span>Dados Pessoais</span> foram coletados (como descrito
+        na Seção 5 acima) ou para cumprir com os requerimentos legais
+        aplicáveis. <span>Dados Pessoais</span> usados para fornecer
+        uma experiência personalizada a <span>Você</span> serão
+        mantidos pelo tempo permitido pelas leis aplicáveis.
+      </p>
+      <h3 class="ui black header">
+        Divulgação, armazenamento e/ou transferência de seus dados
+        pessoais
+      </h3>
+      <p>
+        Nós usamos as medidas adequadas (descritas abaixo) para manter
+        seus <span>Dados Pessoais</span> confidenciais e seguros.
+        Note, entretanto, que estas proteções não se aplicam a
+        informações que você tenha escolhido compartilhar em áreas
+        públicas, como redes sociais de terceiros.
+        <div class="ui list">
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">
+                Pessoas que podem acessar seus dados pessoais
+              </div>
+              <div class="description">
+                Seus <span>Dados Pessoais</span> serão processados
+                por nossos colaboradores ou agentes autorizados,
+                desde que estes precisem ter acesso a tais informações,
+                dependendo dos propósitos específicos para os quais
+                seus <span>Dados Pessoais</span> tenham sido coletados
+                (ex.: nossos colaboradores encarregados de assuntos
+                relacionados ao atendimento ao consumidor terão
+                acesso aos seus registros de consumo).
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">
+                Medidas tomadas em ambientes operacionais
+              </div>
+              <div class="description">
+                Armazenamos seus <span>Dados Pessoais</span> em
+                ambientes operacionais que usam medidas de segurança
+                razoáveis para prevenir acesso não autorizado.
+                Seguimos protocolos razoáveis para proteger
+                <span>Dados Pessoais</span>. A transmissão de
+                informação pela internet, infelizmente, não é
+                completamente segura e, apesar de fazermos
+                <span>Nosso</span> melhor para proteger seus
+                <span>Dados Pessoais</span>, não podemos garantir a
+                segurança dos dados durante transmissão por nossos
+                sites/aplicativos.
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <i class="right triangle icon"></i>
+            <div class="content">
+              <div class="header">
+                Medidas que esperamos que você tome
+              </div>
+              <div class="description">
+                É importante que <span>Você</span> também tenha um
+                papel em manter seus <span>Dados Pessoais</span>
+                seguros. Quando criar uma conta online, por favor,
+                assegure-se de escolher uma senha que seja difícil
+                para que os outros adivinhem e nunca revele sua senha
+                a outras pessoas. Você é responsável por manter esta
+                senha confidencial e por qualquer uso de sua conta.
+                Se você usar um computador compartilhado ou público,
+                nunca escolha a opção de lembrar seu ID de login,
+                endereço de e-mail ou senha e certifique-se que você
+                saiu da sua conta (“log out”) sempre que sair do
+                computador. Você também deve usar quaisquer
+                configurações de privacidade ou controles que
+                <span>Nós</span> forneçamos em nosso site ou
+                aplicativo.
+              </div>
+            </div>
+          </div>
+        </div>
+      </p>
+      <h3 class="ui black header">
+        Alterações a esta política
+      </h3>
+      <p>
+        Se <span>Nós</span> mudarmos a forma que tratamos seus
+        <span>Dados Pessoais</span>, vamos atualizar esta
+        <span>Política</span>. Nos reservamos o direito de fazer
+        alterações às nossas práticas e a esta <span>Política</span>
+        a qualquer tempo. Por favor, acesse-a frequentemente para ver
+        quaisquer atualizações ou mudanças à nossa <span>Política</span>.
+      </p>
+    </div>
+    <div class="ui vertical segment">
+      <button type="button" class="ui blue labeled icon button"
+              onclick="location.href='{{ path_for('USR\\Home') }}';">
+        <i class="home icon"></i> Retornar para a página inicial
+      </button>
+    </div>
+    <!-- Fim conteúdo módulo -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+{% endblock scripts %}

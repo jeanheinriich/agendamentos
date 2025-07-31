@@ -1,0 +1,845 @@
+{% extends 'templates/adm/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} modelo de equipamento{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('libs/jquery/plugins/spinner.input/spinner.input.min.css') }}
+  {{ css('form.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    .ui.grid {
+      margin-right: -.5rem;
+      margin-bottom: .5rem;
+    }
+    .ui.list .list>.item .description,
+    .ui.list>.item .description {
+      position: relative;
+      padding-left: 1.85714em;
+      margin-top: .2em;
+      color: rgba(0,0,0,.5);
+    }
+    .ui.list .list>.item.hidden,
+    .ui.list>.item.hidden {
+      display: none;
+    }
+    .withMarginLeft {
+      margin-left: 0.1em !important;
+    }
+
+    @media only screen and (max-width:767px) {    
+      h3.ui.header {
+        margin-bottom: 1rem !important;
+      }
+
+      .ui.list .list>.item,
+      .ui.list>.item {
+        margin-bottom: .5em;
+      }
+    }
+    .ui.grid>.plata.column,
+    .ui.grid>.plata.row,
+    .ui.grid>.row>.plata.column {
+      background-color: rgba(86, 61, 124, .1);
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ADM\\Parameterization\\Devices\\Models\\Add' %}
+  {% else %}
+    {% set URL = 'ADM\\Parameterization\\Devices\\Models\\Edit' %}
+  {% endif %}
+  {% set previous = 'ADM\\Parameterization\\Devices\\Models' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('adm/equipmentmodels.svg', 'Modelo de equipamento') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} modelo de equipamento
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  modelo de equipamento.
+                </div>
+              {% else %}
+                Visualizar modelo de equipamento
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um modelo de equipamento.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início conteúdo da mensagem -->
+      <div class="ui message">
+        <div class="header">
+          Atenção
+        </div>
+        <p>
+          Cada modelo de equipamento de rastreamento permite a inserção de
+          um ou mais SIM Cards para permitir a comunicação por GPRS. No
+          campo de &ldquo;Slots disponíveis&rdquo; você deve informar a
+          quantidade máxima de SIM Cards permitidos neste equipamento (um
+          SIM Card por Slot). Com isto será possível vincular posteriormente
+          estes SIM Cards, conforme a necessidade, em cada equipamento.
+        </p>
+      </div>
+      <!-- Fim conteúdo da mensagem -->
+      
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL, {'equipmentModelID': getValue('equipmentmodelid') }) }}">
+        <div class="ui compact grid">
+          <div class="eight wide mobile eight wide tablet five wide computer column{{ cssError('equipmentbrandname') }}">
+            <label>Marca do equipamento</label>
+            <input name="equipmentbrandname" type="text" maxlength="30"
+                   placeholder="Informe a marca do equipamento..."
+                   {{ readonly }}
+                   value="{{ getValue('equipmentbrandname') }}">
+            <input type="hidden"
+                   name="equipmentbrandid"
+                   value="{{ getValue('equipmentbrandid') }}" >
+            {% if hasError('equipmentbrandname') %}
+            <small class="helper">{{ getError('equipmentbrandname') }}</small>
+            {% endif %}
+          </div>
+          
+          <div class="eight wide mobile eight wide tablet four wide computer column{{ cssError('name') }}">
+            <label>Modelo de equipamento</label>
+            <div class="ui input{{ readonly }}">
+              <input name="name" type="text" maxlength="50"
+                     placeholder="Informe o nome do modelo de equipamento..."
+                     {{ readonly }}
+                     value="{{ getValue('name') }}">
+            </div>
+            {% if hasError('name') %}
+            <small class="helper">{{ getError('name') }}</small>
+            {% endif %}
+          </div>
+          
+          <div class="six wide mobile six wide tablet three wide computer column{{ cssError('maxsimcards') }}">
+            <label>Slots disponíveis</label>
+            <div class="ui input{{ readonly }}">
+              <input name="maxsimcards" type="text"
+                     placeholder="0"
+                     {{ readonly }}
+                     value="{{ getValue('maxsimcards') }}">
+            </div>
+            {% if hasError('maxsimcards') %}
+            <small class="helper">{{ getError('maxsimcards') }}</small>
+            {% endif %}
+          </div>
+          
+          <div class="ten wide mobile ten wide tablet four wide computer column{{ cssError('simcardtypeid') }}">
+            <label>Modelo de SIM Card</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="simcardtypeid" type="hidden"
+                     value="{{ getValue('simcardtypeid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Informe o tipo (modelo)</div>
+              <div class="menu">
+              {% set simcardTypeID = getValue('simcardtypeid') %}
+              {% for simcardType in simcardTypes %}
+                <div class="item" {% if simcardType.id == simcardTypeID %}selected{% endif %}
+                     data-value="{{ simcardType.id }}"
+                     data-text="{{ simcardType.name }}">
+                  {{ simcardType.name }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('simcardtypename') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('simcardtypeid') %}
+            <small class="helper">{{ getError('simcardtypeid') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="ui compact grid">
+          <div class="ten wide mobile ten wide tablet five wide computer column{{ cssError('protocolid') }}">
+            <label>Protocolo</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="protocolid" type="hidden"
+                     value="{{ getValue('protocolid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Informe o protocolo</div>
+              <div class="menu">
+              {% set protocolID = getValue('protocolid') %}
+              {% for protocol in protocols %}
+                <div class="item" {% if protocol.id == protocolID %}selected{% endif %}
+                     data-value="{{ protocol.id }}"
+                     data-text="{{ protocol.name }}">
+                  {{ protocol.name }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('protocolname') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('protocolid') %}
+            <small class="helper">{{ getError('protocolid') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="ten wide mobile ten wide tablet four wide computer column{{ cssError('protocolvariantid') }}">
+            <label>Variante</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="protocolvariantid" type="hidden"
+                     value="{{ getValue('protocolvariantid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Informe a variante</div>
+              <div class="menu">
+              {% set protocolVariantID = getValue('protocolvariantid') %}
+              {% set protocoliID = getValue('protocolid') %}
+              {% for variant in protocolVariants[protocolID] %}
+                <div class="item" {% if variant.value == protocolVariantID %}selected{% endif %}
+                     data-value="{{ variant.value }}"
+                     data-text="{{ variant.name }}">
+                  {{ variant.name }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('protocolvariantname') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('protocolvariantid') %}
+            <small class="helper">{{ getError('protocolvariantid') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="eight wide mobile six wide tablet three wide computer column{{ cssError('serialnumbersize') }}">
+            <label>Tamanho do nº de série</label>
+            <div class="ui input{{ readonly }}">
+              <input name="serialnumbersize" type="text"
+                     placeholder="0"
+                     {{ readonly }}
+                     value="{{ getValue('serialnumbersize') }}">
+            </div>
+            {% if hasError('serialnumbersize') %}
+            <small class="helper">{{ getError('serialnumbersize') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="eight wide mobile six wide tablet four wide computer column{{ cssError('reducednumbersize') }}">
+            <label>Tamanho reduzido do nº de série</label>
+            <div class="ui input{{ readonly }}">
+              <input name="reducednumbersize" type="text"
+                     placeholder="0"
+                     {{ readonly }}
+                     value="{{ getValue('reducednumbersize') }}">
+            </div>
+            {% if hasError('reducednumbersize') %}
+            <small class="helper">{{ getError('reducednumbersize') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="ui compact grid">
+          <div class="ten wide mobile ten wide tablet five wide computer column{{ cssError('operatingfrequenceid') }}">
+            <label>Frequência de operação</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="operatingfrequenceid" type="hidden"
+                     value="{{ getValue('operatingfrequenceid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Informe a frequência de operação</div>
+              <div class="menu">
+              {% set operatingFrequenceID = getValue('operatingfrequenceid') %}
+              {% for operatingFrequence in operatingFrequencies %}
+                <div class="item" {% if operatingFrequence.id == operatingFrequenceID %}selected{% endif %}
+                     data-value="{{ operatingFrequence.id }}"
+                     data-text="{{ operatingFrequence.name }}">
+                  {{ operatingFrequence.name }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('protocolname') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('protocolid') %}
+            <small class="helper">{{ getError('protocolid') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <h3 class="ui header">Portas de comunicação</h3>
+
+        <div class="ui compact grid">
+          <div class="sixteen wide mobile eight wide tablet eight wide computer column">
+            <div class="ui compact celled grid withMarginLeft">
+              <div class="eight wide mobile eight wide tablet eight wide computer plata column">
+                <label>Portas analógicas</label>
+                <div class="sixteen wide field{{ cssError('analoginput') }}">
+                  <label>Entradas</label>
+                  <div class="ui input{{ readonly }}">
+                    <input name="analoginput" type="text" maxlength="2"
+                           placeholder="Informe as entradas..."
+                           {{ readonly }}
+                           value="{{ getValue('analoginput') }}">
+                  </div>
+                  {% if hasError('analoginput') %}
+                  <small class="helper">{{ getError('analoginput') }}</small>
+                  {% endif %}
+                </div>
+                
+                <div class="sixteen wide field{{ cssError('analogoutput') }}">
+                  <label>Saídas</label>
+                  <div class="ui input{{ readonly }}">
+                    <input name="analogoutput" type="text" maxlength="2"
+                           placeholder="Informe as saídas..."
+                           {{ readonly }}
+                           value="{{ getValue('analogoutput') }}">
+                  </div>
+                  {% if hasError('analogoutput') %}
+                  <small class="helper">{{ getError('analogoutput') }}</small>
+                  {% endif %}
+                </div>
+              </div>
+              
+              <div class="eight wide mobile eight wide tablet eight wide computer plata column">
+                <label>Portas digitais</label>
+                <div class="sixteen wide field{{ cssError('digitalinput') }}">
+                  <label>Entradas</label>
+                  <div class="ui input{{ readonly }}">
+                    <input name="digitalinput" type="text" maxlength="2"
+                           placeholder="Informe as entradas..."
+                           {{ readonly }}
+                           value="{{ getValue('digitalinput') }}">
+                  </div>
+                  {% if hasError('digitalinput') %}
+                  <small class="helper">{{ getError('digitalinput') }}</small>
+                  {% endif %}
+                </div>
+                
+                <div class="sixteen wide field{{ cssError('digitaloutput') }}">
+                  <label>Saídas</label>
+                  <div class="ui input{{ readonly }}">
+                    <input name="digitaloutput" type="text" maxlength="2"
+                           placeholder="Informe as saídas..."
+                           {{ readonly }}
+                           value="{{ getValue('digitaloutput') }}">
+                  </div>
+                  {% if hasError('digitaloutput') %}
+                  <small class="helper">{{ getError('digitaloutput') }}</small>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="ui header">Características do equipamento</h3>
+
+        <div class="fields">
+          <div class="sixteen wide field">
+            <div class="ui list">
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="hasrfmodule"
+                         value="{% if getValue('hasrfmodule')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_hasrfmodule"
+                         {% if getValue('hasrfmodule')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Possui módulo RF</label>
+                </div>
+                
+                <div class="description">
+                  O módulo de rádio frequência (RF) pode ser usado como
+                  redundância para a comunicação por GPRS tradicional,
+                  ou servindo como um sistema de localização em casos
+                  excepcionais. A radiofrequência tem um ponto positivo
+                  na questão de localização, porque permite determinar a
+                  posição onde o veículo está localizado sem a ameaça de
+                  ser bloqueado por Jammers.
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="hasonoffbutton"
+                         value="{% if getValue('hasonoffbutton')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_hasonoffbutton"
+                         {% if getValue('hasonoffbutton')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Possui botão liga/desliga</label>
+                </div>
+                
+                <div class="description">
+                  O botão liga/desliga é utilizado em modelos de
+                  rastreadores de carga, permitindo uma maneira de ligar
+                  o equipamento apenas no momento do uso, preservando a
+                  bateria.
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="hasboxopensensor"
+                         value="{% if getValue('hasboxopensensor')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_hasboxopensensor"
+                         {% if getValue('hasboxopensensor')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Possui sensor de caixa aberta</label>
+                </div>
+                
+                <div class="description">
+                  O sensor de caixa aberta permite determinar a
+                  ocorrência da violação do pacote em equipamentos
+                  utilizados no rastreamento de carga.
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="hasrs232interface"
+                         value="{% if getValue('hasrs232interface')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_hasrs232interface"
+                         {% if getValue('hasrs232interface')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Possui interface RS232</label>
+                </div>
+                
+                <div class="description">
+                  A interface RS232 permite a conexão de periféricos,
+                  tais como teclados, ao equipamento de rastreamento.
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="hasibuttoninput"
+                         value="{% if getValue('hasibuttoninput')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_hasibuttoninput"
+                         {% if getValue('hasibuttoninput')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Possui entrada no padrão 1-Wire para iButton</label>
+                </div>
+                
+                <div class="description">
+                  O padrão 1-Wire é utilizado em leitoras de iButton.
+                  O ibutton, nome inglês para denominar um “botão
+                  inteligente”, é basicamente um chip dentro de um botão
+                  de aço que consegue armazenar dados e serem carregados
+                  por qualquer pessoa, para qualquer lugar. São usados
+                  para identificação do motorista no veículo.
+                </div>
+              </div>
+
+              <div id="memsize" class="item {% if not getValue('hasibuttoninput')|toBoolean %}hidden{% endif %}" style="padding-left: 1.45714em;">
+                <div class="four wide field{{ cssError('ibuttonsmemsize') }}">
+                  <label>Número máximo de iButtons armazenáveis</label>
+                  <div class="ui input{{ readonly }}">
+                    <input name="ibuttonsmemsize" type="text" maxlength="4"
+                          placeholder="Informe o tamanho da memória..."
+                          {{ readonly }}
+                          {% if not getValue('hasibuttoninput')|toBoolean %}disabled{% endif %}
+                          value="{{ getValue('ibuttonsmemsize') }}">
+                  </div>
+                  {% if hasError('ibuttonsmemsize') %}
+                  <small class="helper">{{ getError('ibuttonsmemsize') }}</small>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="hasantijammer"
+                         value="{% if getValue('hasantijammer')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_hasantijammer"
+                         {% if getValue('hasantijammer')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Possui Anti Jammer</label>
+                </div>
+                
+                <div class="description">
+                  O Jammer é um pequeno aparelho que cria um sinal capaz
+                  de interromper a frequência de comunicação do rastreador
+                  com as antenas celulares. Este sinal impede que a
+                  central receba o sinal de localização do veículo,
+                  facilitando o roubo. O Anti Jammer permite que o
+                  equipamento execute alguma ação em caso de perceber
+                  este tipo de sinal tentando bloquear a comunicação.
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="hasrpminput"
+                         value="{% if getValue('hasrpminput')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_hasrpminput"
+                         {% if getValue('hasrpminput')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Possui entrada para sensor RPM</label>
+                </div>
+                
+                <div class="description">
+                  É uma entrada específica para acoplamento do sensor de
+                  pulsos da velocidade do motor (RPM). Permite determinar
+                  com precisão a velocidade do motor.
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="hasodometerinput"
+                         value="{% if getValue('hasodometerinput')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_hasodometerinput"
+                         {% if getValue('hasodometerinput')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Possui entrada para odômetro</label>
+                </div>
+                
+                <div class="description">
+                  É uma entrada específica para acoplamento do odômetro.
+                  O odômetro permite determinar a distância percorrida
+                  (quilometragem) pelo veículo.
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="hasaccelerometer"
+                         value="{% if getValue('hasaccelerometer')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_hasaccelerometer"
+                         {% if getValue('hasaccelerometer')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Possui sensor de acelerômetro</label>
+                </div>
+                
+                <div class="description">
+                  É um sensor específico que permite capturar acelerações,
+                  frenagens e curvas bruscas executadas pelo motorista
+                  durante a direção do veículo.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="equipmentmodelid" value="{{ getValue('equipmentmodelid') }}">
+        {% endif %}
+      </form>
+      <!-- End Form -->
+      {% if formMethod == 'PUT' %}
+      <!-- Start status panel -->
+      <div class="ui segments">
+        <div class="ui grey inverted segment">
+          <h5>
+            Histórico de modificações:
+          </h5>
+          Cadastrado {{ getValue('createdat')|localizedDate('long') }} por {{ getValue('createdbyusername') }}
+          <div class="ui divider"></div>
+          Modificado {{ getValue('updatedat')|localizedDate('long') }} por {{ getValue('updatedbyusername') }}
+        </div>
+      </div>
+      <!-- End status panel -->
+      {% endif %}
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/adm/partials/dialogs/question.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('jquery/plugins/spinner.input/spinner.input.min.js') }}
+  
+  {% set getBrandNameCompletion = { 'URL': 'ADM\\Parameterization\\Devices\\Brands\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    /* -------------------------------[ Variantes do protocolo ]----- */
+    var
+      protocolVariants = {
+      {% for protocolID, variants in protocolVariants %}
+        {{ protocolID }}: [
+        {% for variant in variants %}
+          {
+            'value': {{ variant.value }},
+            'name': '{{ variant.name }}'
+          },
+        {% endfor %}
+        ],
+      {% endfor %}
+      }
+    ;
+    /* -------------------------------------------------------------- */
+
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      $('.ui.checkbox')
+        .checkbox(checkboxOptions)
+      ;
+      $("input[name='equipmentbrandname']")
+        .autocomplete(brandNameCompletionOptions)
+      ;
+      $("input[name='maxsimcards']")
+        .spinnerinput({
+          min: 1,
+          max: 9,
+          step: 1
+        })
+      ;
+      $("input[name='protocolid']")
+        .change(protocolHandler)
+      ;
+      $("input[name='protocolvariationid']")
+        .closest('div.search.selection.dropdown')
+        .dropdown({
+          message: {
+            noResults : 'Nenhuma variante disponível. '
+              + 'Selecione um protocolo primeiramente.'
+          }
+        })
+      ;
+      $("input[name='serialnumbersize']")
+        .spinnerinput({
+          min: 1,
+          max: 99,
+          step: 1
+        })
+      ;
+      $("input[name='reducednumbersize']")
+        .spinnerinput({
+          min: 0,
+          max: 99,
+          step: 1
+        })
+      ;
+      $("input[name='_hasibuttoninput']")
+        .change(function() {
+          var
+            checked = $(this).prop('checked')
+          ;
+
+          // Habilitamos/desabilitamos o campo de entrada do tamanho da
+          // memória de iButtons em função deste campo
+          $("input[name='ibuttonsmemsize']")
+            .prop('disabled', !checked)
+          ;
+
+          // Exibimos/ocultamos o campo de entrada do tamanho da memória
+          // de iButtons em função deste campo
+          $('#memsize')
+            .toggleClass('hidden', !checked)
+          ;
+        })
+      ;
+      $('form')
+        .on('submit', submitFormHandler)
+      ;
+      
+      // Coloca o foco no primeiro campo
+      $("input[name='equipmentbrandname']")
+        .focus()
+      ;
+    });
+    
+
+    // =================================================[ Options ]=====
+
+    // As opções para os checkbox
+    var checkboxOptions = {
+      // Dispara ao iniciar para definir o valor, se necessário
+      onChange   : function() {
+        var
+          checkbox = $(this).prop('name'),
+          // Invertemos o valor atual
+          checked = !($(this).attr('checked') !== undefined && $(this).attr('checked')),
+          boolValue = (checked
+            ? 'true'
+            : 'false'),
+          toggleField = checkbox.replace('_','')
+        ;
+
+        // Invertemos o checkbox fake
+        $(this)
+          .attr('checked', checked)
+        ;
+
+        // Alteramos o valor do verdadeiro input
+        $("input[name='" + toggleField + "']")
+          .val(boolValue)
+        ;
+      }
+    };
+
+    // As opções para o componente de autocompletar o nome da marca do
+    // equipamento
+    var brandNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      ajax: {
+        url: "{{ path_for(getBrandNameCompletion.URL) }}",
+        type: "{{ getBrandNameCompletion.method }}"
+      },
+      onSelect: function (element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='equipmentbrandid']")
+          .val(suggestion.id)
+        ;
+      },
+      onInvalidateSelection: function() {
+        // Limpa os dados
+        $("input[name='equipmentbrandid']")
+          .val(0)
+        ;
+      }
+    };
+
+
+    // ================================================[ Handlers ]=====
+
+    function protocolHandler() {
+      // Exibe as variantes de protocolo disponíveis para o protocolo
+      // selecionado
+      var
+        protocolID = $(this).val(),
+        $selected = 
+          $(this)
+            .closest('div.search.selection.dropdown')
+            .dropdown('get item', protocolID),
+        $dropdown = $("input[name='protocolvariantid']")
+          .closest('div.ui.search.selection.dropdown'),
+        firstProtocolVariantID = protocolVariants[protocolID][0]['value']
+      ;
+
+      // Ajustamos as variantes de protocolo disponíveis
+      $dropdown
+        .dropdown('change values', protocolVariants[protocolID])
+      ;
+
+      // Limpamos quaisquer seleções anteriores
+      $dropdown
+        .dropdown('clear')
+      ;
+
+      // Definimos a primeira variante disponível
+      $dropdown
+        .dropdown('set selected', firstProtocolVariantID)
+      ;
+      $dropdown
+        .dropdown('refresh')
+      ;
+    }
+
+    // Valida o formulário antes de permitir o envio
+    function submitFormHandler(e)
+    {
+      // Impede o envio do formulário automaticamente
+      e.preventDefault();
+
+      var
+        brandID   = $("input[name='equipmentbrandid']").val(),
+        brandName = $("input[name='equipmentbrandname']").val()
+      ;
+
+      if (parseInt(brandID) === 0) {
+        // Verificamos se temos um nome de fabricante preenchido
+        if (brandName.length < 3) {
+          // Envia o formulário normalmente pois o erro será capturado
+          this.submit();
+        } else {
+          var
+            ourForm = this
+          ;
+
+          // Questiona o usuário sobre a adição de um novo fabricante
+          questionDialog(
+            '{% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} modelo de equipamento de rastreamento',
+            'O fabricante "' + brandName+ '" ainda não está ' +
+            'cadastrado no sistema.<br>' +
+            'Deseja prosseguir e cadastrar o novo modelo e o fabricante?',
+            function() {
+              // Envia o formulário normalmente
+              ourForm.submit();
+            },
+            function() {
+              // Coloca o foco no campo
+              $("input[name='equipmentbrandname']").focus();
+            });
+        }
+      } else {
+        // Envia o formulário normalmente
+        this.submit();
+      }
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

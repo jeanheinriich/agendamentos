@@ -1,0 +1,128 @@
+-- Acrescentamos a coluna para determinar que nos dias em que o motorista
+-- trabalhar menos horas do que o estipulado, o saldo devedor deve ser
+-- descontado do banco de horas (se configurado)
+ALTER TABLE stc.journeys
+ ADD COLUMN discountWorkedLessHours boolean
+    DEFAULT false;
+
+
+DROP FUNCTION stc.getJourneysForDriveOnPeriod(FcontractorID int,
+  FclientID int, FdriverID int, FstartDate date, FendDate date);
+DROP TYPE stc.driverJourney;
+
+CREATE TYPE stc.driverJourney AS
+(
+  contractorID            integer,      -- Número de identificação do
+                                        -- contratante no sistema ERP
+  clientID                integer,      -- Número de identificação do cliente
+                                        -- no sistema STC
+  driverID                integer,      -- ID do motorista
+  journeyID               integer,      -- ID da jornada
+  name                    varchar(50),  -- Nome da jornada
+  begginingAt             date,         -- Data de início do cumprimento
+  startDayTime            time,         -- O horário de início do período diurno
+  endDayTime              time,         -- O horário de término do período diurno
+  startNightTime          time,         -- O horário de início do período noturno
+  endNightTime            time,         -- O horário de término do período noturno
+  computeOvertime         boolean,      -- A flag que indica que horas adicionais serão computadas como horas extras
+  discountWorkedLessHours boolean       -- A flag que indica que horas trabalhadas à menos serão descontadas do banco de horas
+);
+
+-- Stored Procedure que recupera as jornadas a serem cumpridas durante o
+-- período informado para um motorista. Nos permite calcular as horas
+-- trabalhadas para um motorista
+CREATE OR REPLACE FUNCTION stc.getJourneysForDriveOnPeriod(FcontractorID int,
+  FclientID int, FdriverID int, FstartDate date, FendDate date)
+RETURNS SETOF stc.driverJourney AS
+$$
+DECLARE
+  driverJourney   stc.driverJourney%rowtype;
+BEGIN
+  -- Recuperamos, primeiramente, a informação de jornada cujo início de
+  -- cumprimento ocorreu antes do início do período solicitado
+  SELECT journeyPerDriver.contractorID,
+         journeyPerDriver.clientID,
+         journeyPerDriver.driverID,
+         journeyPerDriver.journeyID,
+         journeys.name,
+         journeyPerDriver.begginingAt,
+         journeys.startDayTime,
+         (journeys.startNightTime::time - interval '1 second') AS endDayTime,
+         journeys.startNightTime,
+         (journeys.startDayTime::time - interval '1 second') AS endNightTime,
+         journeys.computeOvertime,
+         CASE
+           WHEN journeys.computeOvertime THEN false
+           ELSE journeys.discountWorkedLessHours
+         END AS discountWorkedLessHours
+    INTO driverJourney
+    FROM stc.journeyPerDriver
+   INNER JOIN stc.journeys USING (journeyID)
+   WHERE journeyPerDriver.contractorID = FcontractorID
+     AND journeyPerDriver.clientID = FclientID
+     AND journeyPerDriver.driverID = FdriverID
+     AND journeyPerDriver.begginingAt::date <= FstartDate::date
+   ORDER BY journeyPerDriver.begginingAt DESC
+   LIMIT 1;
+
+  IF FOUND THEN
+    RETURN NEXT driverJourney;
+  ELSE
+    -- Tentamos localizar a jornada padrão para o motorista
+    SELECT journeys.contractorID,
+           journeys.clientID,
+           FdriverID AS driverID,
+           journeys.journeyID,
+           journeys.name,
+           FstartDate::date AS begginingAt,
+           journeys.startDayTime,
+           (journeys.startNightTime::time - interval '1 second') AS endDayTime,
+           journeys.startNightTime,
+           (journeys.startDayTime::time - interval '1 second') AS endNightTime,
+           journeys.computeOvertime,
+           CASE
+             WHEN journeys.computeOvertime THEN false
+             ELSE journeys.discountWorkedLessHours
+           END AS discountWorkedLessHours
+      INTO driverJourney
+      FROM stc.journeys
+     WHERE journeys.contractorID = FcontractorID
+       AND journeys.clientID = FclientID
+       AND journeys.asDefault = true
+     LIMIT 1;
+    IF FOUND THEN
+      RETURN NEXT driverJourney;
+    END IF;
+  END IF;
+
+  -- Recuperamos a informação de jornadas cujo início de cumprimento
+  -- ocorram dentro do período solicitado
+  FOR driverJourney IN
+    SELECT journeyPerDriver.contractorID,
+           journeyPerDriver.clientID,
+           journeyPerDriver.driverID,
+           journeyPerDriver.journeyID,
+           journeys.name,
+           journeyPerDriver.begginingAt,
+           journeys.startDayTime,
+           (journeys.startNightTime::time - interval '1 second') AS endDayTime,
+           journeys.startNightTime,
+           (journeys.startDayTime::time - interval '1 second') AS endNightTime,
+           journeys.computeOvertime,
+           CASE
+             WHEN journeys.computeOvertime THEN false
+             ELSE journeys.discountWorkedLessHours
+           END AS discountWorkedLessHours
+      FROM stc.journeyPerDriver
+     INNER JOIN stc.journeys USING (journeyID)
+     WHERE journeyPerDriver.contractorID = FcontractorID
+       AND journeyPerDriver.clientID = FclientID
+       AND journeyPerDriver.driverID = FdriverID
+       AND journeyPerDriver.begginingAt::date > FstartDate::date
+       AND journeyPerDriver.begginingAt::date < FendDate::date
+     ORDER BY journeyPerDriver.begginingAt ASC loop
+    RETURN NEXT driverJourney;
+  END loop;
+END
+$$
+LANGUAGE 'plpgsql';

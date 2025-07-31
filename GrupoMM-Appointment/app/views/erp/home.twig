@@ -1,0 +1,429 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - In&iacute;cio{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  <style>
+    .welcome {
+      width: 100%;
+      background-color: #F08000;
+      border-radius: 2rem;
+      padding: 1.5rem;
+      background-image: url("/images/erp/header.png");
+      background-repeat: no-repeat;
+      background-position: left top;
+      background-size: 40%;
+      min-height: 13rem;
+    }
+    .welcome .content {
+      color: white;
+      font-size: 2.5rem;
+      line-height: 3.2rem;
+      font-weight: bold;
+      text-align: right;
+    }
+    .welcome .content .sub.header {
+      font-size: 1.4rem;
+      color: #fffba8;
+    }
+
+    /* Calendário da semana */
+    .week {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      width: 100%;
+    }
+    .weekdays {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      padding: 1rem;
+      width: 100%;
+      border-top: 1px solid rgba(34,36,38,.15);
+      border-bottom: 1px solid rgba(34,36,38,.15);
+    }
+
+    .weekdays li.day {
+      list-style: none;
+      padding: 1.5rem 1rem;
+      font-size: 1.2em;
+    }
+    .weekdays li.day.saturday {
+      color: #cc8500;
+    }
+    .weekdays li.day.sunday {
+      color: darkred;
+    }
+    .weekdays li.day.active {
+      background-color: #0260eb;
+      color: white;
+      border-radius: 1rem;
+      box-shadow: 0 1px 2px rgb(0 0 0 / 7%), 0 2px 4px rgb(0 0 0 / 7%), 0 4px 8px rgb(0 0 0 / 7%), 0 8px 16px rgb(0 0 0 / 7%), 0 16px 32px rgb(0 0 0 / 7%), 0 32px 64px rgb(0 0 0 / 7%);
+    }
+    .weekdays li.day.saturday.active {
+      background-color: #F08000;
+    }
+    .weekdays li.day.sunday.active {
+      background-color: #ba2a2a;
+    }
+
+    .module {
+      max-width: 1127px;
+    }
+
+    h4.page-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: #333333;
+      line-height: 30px;
+      margin-bottom: 20px;
+    }
+
+    .ui.statistic>.label, .ui.statistics .statistic>.label {
+      text-transform: none;
+      color: rgba(0,0,0,.6);
+    }
+
+    .summary.grid .cell {
+      background-color: rgba(86, 61, 124, .15);
+      box-shadow: 0px 0px 0px 1px rgb(86 61 124 / 20%) inset;
+      display: block;
+      min-height: 50px;
+      border-radius: .5rem;
+      border: 1px solid rgba(34,36,38,.15);
+    }
+
+    .summary.grid .cell .content {
+      padding: 15px 15px 10px 15px;
+      color: white;
+      text-align: center;
+    }
+
+    .summary.grid .cell .content .category {
+      margin-top: 0;
+      margin-bottom: 0px;
+      font-size: 1em;
+      font-weight: 400;
+    }
+
+    .summary.grid .cell .content .value {
+      margin-top: 0;
+      margin-bottom: 0px;
+      font-size: 3rem;
+      font-weight: 600;
+      line-height: 1.6;
+    }
+
+    @media only screen and (max-width: 767px) {
+      .summary.grid .cell {
+        min-height: 90px;
+      }
+      .summary.grid .cell .content {
+        padding: 5px 5px 3px 5px;
+      }
+      .summary.grid .cell .content .value {
+        font-size: 2rem;
+      }
+    }
+
+    .summary.grid .cell.orange {
+      background-color: #f2711c;
+    }
+    .summary.grid .cell.gray {
+      background-color: #708090;
+    }
+    .summary.grid .cell.green {
+      background-color: #097969;
+    }
+    .summary.grid .cell.graygreen {
+      background-color: #899499;
+    }
+    .summary.grid .cell.red {
+      background-color: #db2828;
+    }
+    .summary.grid .cell.blue {
+      background-color: #0260eb;
+    }
+    .summary.grid .cell.darkblue {
+      background-color: #32297c;
+    }
+
+    canvas {
+      border: 1px solid #eaeaea;
+    }
+
+    .chart-container {
+      position: relative;
+      margin: auto;
+      height: calc((100vw - 270px) / 2);
+      width: calc(100vw - 270px);
+      max-width: 1107px;
+      max-height: 540px;
+      margin-bottom: 20px;
+    }
+    @media only screen and (max-width: 767px) {
+      .chart-container {
+        width: calc(100vw - 20px);
+        height: calc((100vw - 20px) / 2);
+      }
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  <div class="ui main basic module segment">
+    <!-- Início cabeçalho módulo -->
+    <div class="welcome">
+      <div class="content">
+        Olá, {{ name }}
+        <div class="sub header">
+          Seja bem-vindo novamente
+        </div>
+      </div>
+    </div>
+    <!-- Fim cabeçalho módulo -->
+
+    <!-- Início calendário semana -->
+    <section class="week">
+      <ul class="weekdays">
+        {% for day in days %}
+        <li class="day{% if day.number == today %} active{% endif %}{% if day.number == 0 %} sunday{% endif %}{% if day.number == 6 %} saturday{% endif %}">{{ day.name }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+    <!-- Fim calendário semana -->
+
+    <h4 class="page-title">Informações de clientes</h4>
+
+    <div class="ui statistics">
+      {% set totalCustomers = summary.activeCustomers + summary.activeCooperatives %}
+      <div class="blue statistic">
+        <div class="value">
+          {{ summary.activeCustomers }}
+        </div>
+        <div class="label">
+          Clientes ativos
+        </div>
+      </div>
+
+      <div class="grey statistic">
+        <div class="value">
+          {{ summary.inactiveCustomers }}
+        </div>
+        <div class="label">
+          Clientes inativos
+        </div>
+      </div>
+
+      <div class="pink statistic">
+        <div class="value">
+          {{ summary.activeCooperatives }}
+        </div>
+        <div class="label">
+          Associações
+        </div>
+      </div>
+
+      <div class="brown statistic">
+        <div class="value">
+          {{ totalCustomers }}
+        </div>
+        <div class="label">
+          Total de clientes ativos
+        </div>
+      </div>
+    </div>
+
+    <h4 class="page-title">Veículos de clientes</h4>
+
+    <div class="ui statistics">
+      {% set totalVehicles = summary.activeVehicles %}
+      <div class="green statistic">
+        <div class="value">
+          {{ summary.activeVehicles }}
+        </div>
+        <div class="label">
+          Veículos ativos
+        </div>
+      </div>
+
+      <div class="grey statistic">
+        <div class="value">
+          {{ summary.inactiveVehicles }}
+        </div>
+        <div class="label">
+          Veículos inativos
+        </div>
+      </div>
+    </div>
+
+    {% if summary.activeAffiliateds|length > 0 %}
+    <h4 class="page-title">Informações das associações</h4>
+
+    <div class="ui statistics">
+      {% set totalAffiliateds = 0 %}
+      {% for affiliated in summary.activeAffiliateds %}
+      <div class="pink statistic">
+        <div class="value">
+          {{ affiliated.count }}
+          {% set totalAffiliateds = totalAffiliateds + affiliated.count %}
+        </div>
+        <div class="label">
+          {{ affiliated.name }}
+        </div>
+      </div>
+      {% endfor %}
+
+      <div class="brown statistic">
+        <div class="value">
+          {{ totalAffiliateds }}
+        </div>
+        <div class="label">
+          Total de associados ativos
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if summary.activeAffiliatedVehicles|length > 0 %}
+    <h4 class="page-title">Veículos de associados</h4>
+
+    <div class="ui statistics">
+      {% for affiliatedVehicle in summary.activeAffiliatedVehicles %}
+      {% set totalActiveVehicles = summary.activeVehicles %}
+      <div class="olive statistic">
+        <div class="value">
+          {{ affiliatedVehicle.count }}
+          {% set totalVehicles = totalVehicles + affiliatedVehicle.count %}
+        </div>
+        <div class="label">
+          Veículos ativos {{ affiliatedVehicle.name }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="ui statistics">
+      <div class="brown statistic">
+        <div class="value">
+          {{ totalVehicles }}
+        </div>
+        <div class="label">
+          Total de veículos ativos
+        </div>
+      </div>
+    </div>
+
+    <h4 class="page-title">Indicadores financeiros</h4>
+
+    <div class="chart-container">
+      <canvas id="financialIndicators"></canvas>
+    </div>
+  </div>
+{% endblock %}
+{% block dialogs %}
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('jquery/plugins/chart/chart.js') }}
+
+  {% apply minify %}
+  <script>
+    var
+      colors = [
+        'rgba(253, 152, 38, 1)',
+        'rgba(41, 121, 255, 1)',
+        'rgba(218, 58, 12, 1)',
+        'rgba(28, 148, 35, 1)',
+        'rgba(151, 19, 151, 1)',
+        'rgba(18, 158, 188, 1)'
+      ]
+    ;
+
+    $(document).ready(function() {
+      var
+        ctx = $('#financialIndicators'),
+        myChart = new Chart(ctx, {
+          type: 'line',
+          locale: 'pt-BR',
+          data: {
+            labels: [
+              {% for label in indicators.labels %}
+                '{{ label }}',
+              {% endfor %}
+            ],
+
+            datasets: [
+            {% for label,values in indicators.dataset %}
+              {
+                label: '{{ label }}',
+                data: [
+                  {% for value in values %}{{ value }}, {% endfor %}
+                ],
+                borderColor: [
+                  colors[{{ loop.index0 }}]
+                ],
+                borderWidth: 2,
+                backgroundColor: [
+                  colors[{{ loop.index0 }}]
+                ],
+              },
+            {% endfor %}
+            ]
+          },
+          options: graphOptions
+        })
+      ;
+    });
+
+    // =================================================[ Options ]=====
+
+    // As opções para o componente de exibição do gráfico de indicadores
+    var
+      graphOptions = {
+        responsive: true,
+        maintainAspectRatio: true,
+        cutoutPercentage: 80,
+        defaultFontFamily: "Lato,'Helvetica Neue',Arial,Helvetica,sans-serif",
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                var
+                  label = context.dataset.label || ''
+                ;
+
+                if (label) {
+                  label += ': ';
+                }
+
+                if (context.parsed.y !== null) {
+                  label += context.parsed.y.toFixed(2).replace(/\./g,',') + '%';
+                }
+
+                return label;
+              }
+            }
+          },
+          legend: {
+            labels: {
+              boxWidth: 12,
+              font: {
+                family: "Lato,'Helvetica Neue',Arial,Helvetica,sans-serif",
+                size: 12
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    ;
+  </script>
+  {% endapply %}
+{% endblock scripts %}

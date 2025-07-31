@@ -1,0 +1,404 @@
+{% extends 'templates/erp/layout.twig' %}
+{% import "templates/erp/macros/blueTooltip.twig" as tooltip %}
+{% block title %}{{ parent() }} - Gerenciamento de depósitos{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/datatables/dataTables.semanticui.min.css') }}
+  {{ css('libs/datatables/plugins/select/select.semanticui.min.css') }}
+  {{ css('searchbar.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    /* --------------------------------------------------------------
+     * Personalizações na barra de pesquisas apenas para este módulo
+     * -------------------------------------------------------------- */
+    .ui.main.basic.segment .searchbar.fields .field.searchbox {
+      flex-grow: 1;
+      min-width: 409px;
+    }
+    @media only screen and (min-width: 768px) {
+      .ui.main.basic.segment .flex {
+        flex-grow: 0;
+      }
+    }
+    @media only screen and (max-width: 767px) {
+      .ui.main.basic.segment .searchbar.fields .field.searchbox {
+        min-width: 100px;
+        width: calc(100% - 98px);
+      }
+      .ui.main.basic.segment .searchbar.fields .field.searchbox input {
+        max-width: calc(100% - 38px);
+      }
+    }
+    
+    #result_wrapper {
+      width: 100%;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% set add  = { 'URL': 'ERP\\Parameterization\\Deposits\\Add', 'method': 'GET' } %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/deposits.svg', 'Depósitos') }}
+            </td>
+            <td>
+              <div class="content">
+                Gerenciamento de depósitos
+                <div class="sub header">
+                  Permite gerenciar os locais onde os dispositivos podem
+                  ser armazenados.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início barra de pesquisa -->
+    <div class="ui vertical segment noborder">
+      <div class="ui form">
+        <div class="searchbar fields">
+          <div class="flex">
+            {% if authorization.getAuthorizationFor(add.URL, add.method) %}
+            <div class="field button">
+              <button class="ui primary icon button"
+                      data-tooltip="Adiciona um depósito"
+                      data-position="top left" type="button"
+                      onclick="location.href='{{ path_for(add.URL) }}'">
+                <i class="add icon"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            <div class="field searchbox">
+              <div class="ui action input">
+                <input type="text" id="searchValue"
+                       placeholder="Digite o depósito que procura..."
+                       value="{{ deposit.name }}">
+                <button class="ui primary icon button"
+                        data-tooltip="Localiza um depósito ou local de armazenamento"
+                        data-position="top right"
+                        type="button" onclick="searchLoad();">
+                  <i class="search icon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Fim barra de pesquisa -->
+
+    <!-- Início Datatables -->
+    <table id="result"
+           class="ui unstackable compact selectable striped celled table nowrap"
+           width="100%" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nome</th>
+          <th>Comentário</th>
+          <th>Armazena</th>
+          <th {{ tooltip.add('left', 'Indicador de depósito principal') }}><i class="star darkorange icon"></i></th>
+          <th {{ tooltip.add('left', 'Permite remover o depósito') }}><i class="remove darkred icon"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <!-- Fim Datatables -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/info.twig' %}
+  {% include 'templates/erp/partials/dialogs/question.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('datatables/jquery.dataTables.min.js') }}
+  {{ lib('datatables/dataTables.semanticui.min.js') }}
+  {{ lib('datatables/plugins/handleErrors/handleErrors.js') }}
+  {{ lib('datatables/plugins/select/dataTables.select.min.js') }}
+  {{ lib('datatables/plugins/select/select.semanticui.min.js') }}
+  {{ lib('datatables/formatters/DeleteFormatter.min.js') }}
+  
+  {% set getData       = { 'URL': 'ERP\\Parameterization\\Deposits\\Get', 'method': 'PATCH' } %}
+  {% set add           = { 'URL': 'ERP\\Parameterization\\Deposits\\Add', 'method': 'GET' } %}
+  {% set edit          = { 'URL': 'ERP\\Parameterization\\Deposits\\Edit', 'method': 'GET' } %}
+  {% set remove        = { 'URL': 'ERP\\Parameterization\\Deposits\\Delete', 'method': 'DELETE' } %}
+  
+  {% apply minify %}
+  <script>
+    var
+      table
+    ;
+
+    // Um formatador de colunas para exibir o comentário limitando seu
+    // conteúdo e acrescentando '...' quando exceder o limite
+    var ellipsisFormatter = function ( value, type, row, meta ) {
+      var splitted = value.split("\n");
+
+      if (splitted.length > 1) {
+        return splitted[0].trim() + '…';
+      }
+
+      return value;
+    };
+
+    // Um formatador (render) de coluna para exibir o ícone de habilitação
+    var masterFormatter = function( title ) {
+      return function ( value, type, row, meta ) {
+        // Verifica se foi solicitada a exibição do valor
+        if ( type === 'display' ) {
+          if (value) {
+            // Retornamos um ícone de que o atributo está habilitado
+            return '<span data-position="left center"' +
+                         'data-blue data-inverted ' +
+                         'data-tooltip="' + title + '">' +
+                     '<i class="star darkorange icon">' +
+                     '</i>' +
+                   '</span>';
+          } else {
+            // Retornamos um ícone de que o atributo está desabilitado
+            return '<i class="icon"></i>';
+          }
+        }
+
+        // Pesquisas, ordenamentos e tipos podem usar os dados originais
+        return value;
+      }
+    };
+
+    // Um formatador de colunas para exibir o tipo de depósito
+    var deviceTypeFormatter = function ( value, type, row, meta ) {
+      var name;
+
+      var deviceTypes = {
+        {% for deviceType in deviceTypes %}
+          {{ deviceType.id }}: "{{ deviceType.name }}",
+        {% endfor %}
+      };
+
+      return deviceTypes[value];
+    };
+    
+    $(document).ready(function() {
+      // --------------------------------[ Componentes da Searchbar ]---
+      $('#searchValue').keypress(function(e) {
+        if (e.which == 13) {
+          searchLoad();
+        }
+      });
+
+      // ----------------------------------------------[ Datatables ]---
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // alternância da barra lateral
+      $('#ResizeSidebarMenu').click(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      // Atualiza a tabela para reajustar as colunas em caso de
+      // redimensionamento da janela
+      $(window).resize(function() {
+        setTimeout(function() {
+          table
+            .columns
+            .adjust()
+          ;
+        }, 500);
+      });
+
+      table = $('#result').DataTable({
+        pagingType: "first_last_numbers",
+        lengthChange: false,
+        searching: false,
+        scrollX: true,
+        language: {
+          url: "{{ i18n('datatables/plugins/i18n/Portuguese-Brasil.json') }}",
+        },
+        columnDefs: [
+          { "targets": 0,
+            "name": "id",
+            "data": "id",
+            "visible": false,
+            "orderable": false },
+          { "targets": 1,
+            "name": "name",
+            "data": "name",
+            "visible": true,
+            "orderable": true },
+          { "targets": 2,
+            "name": "comments",
+            "data": "comments",
+            "visible": true,
+            "orderable": false,
+            "render": ellipsisFormatter },
+          { "targets": 3,
+            "name": "devicetype, name",
+            "data": "devicetype",
+            "visible": true,
+            "orderable": true,
+            "className": "dt-center",
+            "width": "140px",
+            "render": deviceTypeFormatter },
+          { "targets": 4,
+            "name": "master, name",
+            "data": "master",
+            "className": "dt-center",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": masterFormatter("Depósito principal") },
+          { "targets": 5,
+            "name": "delete",
+            "data": "id",
+            "visible": true,
+            "orderable": false,
+            "width": "10px",
+            "render": deleteFormatter("Remover este depósito") }
+        ],
+        order: [[ 1, 'asc' ]],
+        select: {
+          style: 'single',
+          items: 'cell'
+        },
+        processing: true,
+        serverSide: true,
+        ajax: {
+          url: "{{ path_for(getData.URL) }}",
+          type: "{{ getData.method }}",
+          data: function ( params ) {
+            params.searchValue = $('#searchValue').val();
+          },
+          error: handleAjaxError
+        },
+        responsive: true,
+        drawCallback: function( oSettings ) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        },
+        initComplete: function(settings, json) {
+          // Unstack Pagination
+          $('div.ui.pagination.menu')
+            .removeClass('stackable')
+            .addClass('unstackable')
+          ;
+        }
+      });
+
+      // Manipula os eventos de click
+      table
+        .on('user-select', function (e, dt, type, cell, originalEvent) {
+          if (type === 'cell') {
+            var
+              // Recupera os dados da célula selecionada
+              index   = cell[0][0],
+
+              // Recupera o depósito selecionado
+              deposit = dt.rows( index.row ).data().toArray()[0]
+            ;
+
+            // Em função da coluna onde ocorreu o clique, executa a ação
+            // correspondente
+            switch (index.column) {
+              {% if authorization.getAuthorizationFor(remove.URL, remove.method) %}
+              case 5:
+                // Apaga o depósito selecionado
+                questionDialog(
+                  'Remover depósito',
+                  'Você deseja realmente remover o depósito <b>&ldquo;' + deposit.name + '&rdquo;</b>?<br>Esta ação não poderá ser desfeita.',
+                  function() {
+                    // Remove o depósito selecionado
+                    var
+                      url  = "{{ buildURL(remove.URL, {'depositID': 'deposit.id'}) }}"
+                    ;
+
+                    deleteJSONData(url, [],
+                    function (data, params, message) {
+                      // Atualiza a tabela
+                      searchLoad();
+                    });
+                  },
+                  function() {
+                    table
+                      .rows()
+                      .deselect()
+                    ;
+                    table
+                      .draw('page')
+                    ;
+                  }
+                );
+
+                break;
+              {% endif %}
+              default:
+                {% if authorization.getAuthorizationFor(edit.URL, edit.method) %}
+                // Coloca o depósito em edição
+                window.location.href = "{{ buildURL(edit.URL, {'depositID': 'deposit.id'}) }}";
+                {% endif %}
+            }
+
+            e.preventDefault();
+          }
+        }
+      );
+
+      // Força a atualização da tabela para reajustar as colunas após
+      // a carga
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 1500);
+    });
+
+
+    // ================================================[ Handlers ]=====
+    
+    // Executa a pesquisa
+    function searchLoad() {
+      table
+        .ajax
+        .reload()
+      ;
+      setTimeout(function() {
+        table
+          .columns
+          .adjust()
+        ;
+      }, 500);
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}

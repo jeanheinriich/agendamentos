@@ -1,0 +1,89 @@
+// Cross Browser Mixins 
+@mixin transition($args...) {
+  -webkit-transition: $args;
+  -moz-transition: $args;
+  -ms-transition: $args;
+  -o-transition: $args;
+  transition: $args;
+}
+@mixin opacity($opacity) {
+  opacity: $opacity;
+  $opacity-ie: $opacity * 100;
+  filter: alpha(opacity=$opacity-ie);
+}
+@mixin box-shadow($args...) {
+  box-shadow: $args;
+  -webkit-box-shadow: $args;
+  -moz-box-shadow: $args;
+}
+@mixin border-radius($radius) {
+  border-radius: $radius;
+  -webkit-border-radius: $radius;
+  -moz-border-radius: $radius;
+}
+@mixin rotate($degrees) {
+  transform: rotate($degrees);
+  -webkit-transform: rotate($degrees);
+  -moz-transform: rotate($degrees);
+  -ms-transform: rotate($degrees);
+  -o-transform: rotate($degrees);
+}
+@mixin origin($args...) {
+  transform-origin: $args;
+  -webkit-transform-origin: $args;
+  -moz-transform-origin: $args;
+  -ms-transform-origin: $args;
+}
+@mixin background-linear($args...) {
+  background-image: -webkit-linear-gradient($args);
+  background-image: -moz-linear-gradient($args);
+  background-image: -o-linear-gradient($args);
+  background-image: linear-gradient($args);
+}
+@mixin background-radial($args...) {
+  background-image: -webkit-radial-gradient($args);
+  background-image: -moz-radial-gradient($args);
+  background-image: -o-radial-gradient($args);
+  background-image: radial-gradient($args);
+}
+@mixin user-select($args...) {
+  -ms-user-select: $args;
+  -mos-user-select: $args;
+  -webkit-user-select: $args;
+  -o-user-select: $args;
+  user-select: $args;
+}
+@mixin border-radii($topleft, $topright, $bottomright, $bottomleft) {
+  border-top-left-radius: $topleft;
+  border-top-right-radius: $topright;
+  border-bottom-right-radius: $bottomright;
+  border-bottom-left-radius: $bottomleft;
+  -webkit-border-top-left-radius: $topleft;
+  -webkit-border-top-right-radius: $topright;
+  -webkit-border-bottom-right-radius: $bottomright;
+  -webkit-border-bottom-left-radius: $bottomleft;
+  -moz-border-radius-topleft: $topleft;
+  -moz-border-radius-topright: $topright;
+  -moz-border-radius-bottomright: $bottomright;
+  -moz-border-radius-bottomleft: $bottomleft;
+}
+@mixin border-radii-default($topleft, $topright, $bottomright, $bottomleft) {
+  border-top-left-radius: $topleft !important;
+  border-top-right-radius: $topright !important;
+  border-bottom-right-radius: $bottomright !important;
+  border-bottom-left-radius: $bottomleft !important;
+  -webkit-border-top-left-radius: $topleft !important;
+  -webkit-border-top-right-radius: $topright !important;
+  -webkit-border-bottom-right-radius: $bottomright !important;
+  -webkit-border-bottom-left-radius: $bottomleft !important;
+  -moz-border-radius-topleft: $topleft !important;
+  -moz-border-radius-topright: $topright !important;
+  -moz-border-radius-bottomright: $bottomright !important;
+  -moz-border-radius-bottomleft: $bottomleft !important;
+}
+@mixin gradient($color1, $color2) {
+  background-color: $color1;
+  filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#{$color1}, endColorstr=#{$color2});
+  background-image: -moz-linear-gradient(center top, $color1, $color2);
+  background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from($color1), to($color2));
+}

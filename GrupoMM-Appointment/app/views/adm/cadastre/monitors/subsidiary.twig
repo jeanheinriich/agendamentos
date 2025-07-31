@@ -1,0 +1,472 @@
+{% if not loop.first %}
+<div class="subsidiary entry">
+  <div class="sixteen wide column">
+    <h3 class="ui header">
+      {% if juridicalperson %}
+        Dados da {{ subsidiaryIndicator }}ª unidade/filial
+      {% else %}
+        Dados do {{ subsidiaryIndicator }}º dependente
+      {% endif %}
+    </h3>
+  </div>
+{% endif %}
+  <div class="ui vertical segment noBottomBorder noTopPadding attachedBottomPadding">
+    <input name="subsidiaries[{{ subsidiaryNumber }}][headoffice]"
+           type="hidden"
+           value="{% if subsidiary.headoffice|toBoolean %}true{% else %}false{% endif %}">
+    {% if loop.first %}
+    <input name="subsidiaries[{{ subsidiaryNumber }}][name]"
+           type="hidden" value="{{ subsidiary.name }}">
+    <input name="subsidiaries[{{ subsidiaryNumber }}][subsidiaryid]"
+           type="hidden" value="{{ subsidiary.subsidiaryid }}">
+    {% else %}
+    <div class="fields">
+      <div class="sixteen wide field{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][name]') }}">
+        <label for="subsidiarytitle">
+        {% if juridicalperson %}
+          Nome da unidade/filial
+        {% else %}
+          Nome do dependente
+        {% endif %}
+        </label>
+        {% if editMode %}
+        <div class="ui action input">
+          <input name="subsidiaries[{{ subsidiaryNumber }}][name]"
+                 placeholder="Informe o nome da unidade/filial e/ou titular..."
+                 type="text" value="{{ subsidiary.name }}"
+                 maxlength="100">
+          <button class="ui mini youtube icon button"
+                  data-tooltip="Remove esta unidade/filial"
+                  data-position="top right" type="button"
+                  onclick="delSubsidiary(this);">
+            <i class="minus icon"></i>
+          </button>
+        </div>
+        {% else %}
+        <div class="field static">
+          <span class="darking">{{ subsidiary.name }}&nbsp;</span>
+          <input name="subsidiaries[{{ subsidiaryNumber }}][name]"
+                 type="hidden" value="{{ subsidiary.name }}">
+        </div>
+        {% endif %}
+        {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][name]') %}
+        <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][name]') }}</small>
+        {% endif %}
+        <input name="subsidiaries[{{ subsidiaryNumber }}][subsidiaryid]"
+               type="hidden" value="{{ subsidiary.subsidiaryid }}">
+      </div>
+    </div>
+    {% endif %}
+
+    {% if enableToggleBlocked %}
+      {% if formMethod == 'PUT' %}
+      <div class="fields">
+        <div class="eight wide field">
+          <div class="ui checkbox">
+            <input type="hidden" name="subsidiaries[{{ subsidiaryNumber }}][blocked]"
+                   value="{% if subsidiary.blocked|toBoolean %}true{% else %}false{% endif %}">
+            <input class="hidden" type="checkbox"
+                   name="subsidiaries[{{ subsidiaryNumber }}][_blocked]"
+                   {% if subsidiary.blocked|toBoolean %}checked="checked"{% endif %}>
+            <label>
+              Bloquear apenas
+              {% if loop.first %}
+                {% if juridicalperson %}
+                  a matriz da empresa de monitoramento
+                {% else %}
+                  o titular
+                {% endif %}
+              {% else %}
+                {% if juridicalperson %}
+                  esta unidade/filial
+                {% else %}
+                  este dependente
+                {% endif %}
+              {% endif %}
+            </label>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    {% else %}
+      {% if subsidiary.blocked|toBoolean %}
+      <div class="eight wide darkred field">
+        <i class="lock icon"
+           style="font-size: 1.8em; line-height: 1em; vertical-align: middle;"></i>
+        Esta unidade/filial da empresa de monitoramento está bloqueada.
+      </div>
+      {% endif %}
+    {% endif %}
+
+    <div class="fields">
+      <div class="four wide field{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][regionaldocumenttype]') }}">
+        <label class="nowrap">
+          Tipo de documento
+        </label>
+        {% if editMode %}
+        <div class="ui search selection dropdown">
+          <input name="subsidiaries[{{ subsidiaryNumber }}][regionaldocumenttype]" type="hidden"
+                 value="{{ subsidiary.regionaldocumenttype }}">
+          <i class="dropdown icon"></i>
+          <div class="default text"></div>
+          <div class="menu">
+          {% for documentType in documentTypes %}
+            {% if juridicalperson %}
+              {% if documentType.juridicalperson|toBoolean %}
+                {% set disabled='' %}
+              {% else %}
+                {% set disabled='disabled' %}
+              {% endif %}
+            {% else %}
+              {% if documentType.juridicalperson|toBoolean %}
+                {% set disabled='disabled' %}
+              {% else %}
+                {% set disabled='' %}
+              {% endif %}
+            {% endif %}
+            <div class="item {{ disabled }}" {% if documentType.id == subsidiary.regionaldocumenttype %}selected{% endif %}
+                 {% if documentType.juridicalperson|toBoolean %}
+                 juridicalperson="true"
+                 {% else %}
+                 juridicalperson="false"
+                 {% endif %}
+                 data-value="{{ documentType.id }}"
+                 data-text="{{ documentType.name }}">
+              {{ documentType.name }}
+            </div>
+          {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <div class="field static">
+          <span class="darking">{{ subsidiary.regionaldocumenttypename }}&nbsp;</span>
+        </div>
+        {% endif %}
+        {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][regionaldocumenttype]') %}
+        <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][regionaldocumenttype]') }}</small>
+        {% endif %}
+      </div>
+
+      <div class="five wide field{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][regionaldocumentnumber]') }}">
+        <label class="nowrap">N&uacute;mero do documento</label>
+        <div class="ui input{{ readonly }}">
+          <input name="subsidiaries[{{ subsidiaryNumber }}][regionaldocumentnumber]"
+                 type="text" {{ readonly }}
+                 placeholder="Número do documento..."
+                 value="{{ subsidiary.regionaldocumentnumber }}">
+        </div>
+        {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][regionaldocumentnumber]') %}
+        <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][regionaldocumentnumber]') }}</small>
+        {% endif %}
+      </div>
+      <div class="two wide field{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][regionaldocumentstate]') }}">
+        <label>UF</label>
+        <div class="ui input{{ readonly }}">
+          <input name="subsidiaries[{{ subsidiaryNumber }}][regionaldocumentstate]"
+                 type="text" maxlength="2" {{ readonly }}
+                 placeholder="UF..."
+                 value="{{ subsidiary.regionaldocumentstate }}">
+        </div>
+        {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][regionaldocumentstate]') %}
+        <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][regionaldocumentstate]') }}</small>
+        {% endif %}
+      </div>
+
+      <div class="five wide field{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][nationalregister]') }}">
+        <label for="nationalregister">
+          {% if juridicalperson %}
+            CNPJ
+          {% else %}
+            CPF
+          {% endif %}
+        </label>
+        <div class="ui icon input{{ readonly }}">
+          <input name="subsidiaries[{{ subsidiaryNumber }}][nationalregister]"
+                 type="text" maxlength="18" {{ readonly }}
+                 {% if juridicalperson %}
+                   placeholder="Informe o CNPJ..."
+                 {% else %}
+                   placeholder="Informe o CPF..."
+                 {% endif %}
+                 value="{{ subsidiary.nationalregister }}">
+          <i class="id card outline icon"></i>
+        </div>
+        {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][nationalregister]') %}
+        <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][nationalregister]') }}</small>
+        {% endif %}
+      </div>
+    </div>
+    <div class="fields physical person"{% if juridicalperson %} style="display: none;"{% endif %}>
+      <div class="four wide field{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][birthday]') }}">
+        <label>Data de nascimento</label>
+        <div class="ui input{{ readonly }}">
+          <input name="subsidiaries[{{ subsidiaryNumber }}][birthday]"
+                 type="text" maxlength="10" {{ readonly }}
+                 placeholder="Nascimento..."
+                 value="{{ subsidiary.birthday }}"
+                 subsidiary="{{ subsidiaryNumber }}">
+        </div>
+        {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][birthday]') %}
+        <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][birthday]') }}</small>
+        {% endif %}
+      </div>
+
+      <div class="three wide field">
+        <label>Idade</label>
+        <div class="ui readonly input">
+          <input name="subsidiaries[{{ subsidiaryNumber }}][age]"
+                 placeholder="Idade..." type="text"
+                 value="{{ subsidiary.age }}"
+                 subsidiary="{{ subsidiaryNumber }}"
+                 readonly>
+        </div>
+      </div>
+
+      <div class="five wide field{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][maritalstatusid]') }}">
+        <label class="nowrap">
+          Estado cívil
+        </label>
+        {% if editMode %}
+        <div class="ui search selection dropdown">
+          <input name="subsidiaries[{{ subsidiaryNumber }}][maritalstatusid]" type="hidden"
+                 value="{{ subsidiary.maritalstatusid }}">
+          <i class="dropdown icon"></i>
+          <div class="default text"></div>
+          <div class="menu">
+          {% for civilState in maritalStatus %}
+            <div class="item" {% if civilState.id == subsidiary.maritalstatusid %}selected{% endif %}
+                 data-value="{{ civilState.id }}"
+                 data-text="{{ civilState.name }}">
+              {{ civilState.name }}
+            </div>
+          {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <div class="field static">
+          <span class="darking">{{ subsidiary.maritalstatusname }}&nbsp;</span>
+        </div>
+        {% endif %}
+        {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][maritalstatusid]') %}
+        <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][maritalstatusid]') }}</small>
+        {% endif %}
+      </div>
+
+      <div class="four wide field{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][genderid]') }}">
+        <label class="nowrap">
+          Sexo
+        </label>
+        {% if editMode %}
+        <div class="ui search selection dropdown">
+          <input name="subsidiaries[{{ subsidiaryNumber }}][genderid]" type="hidden"
+                 value="{{ subsidiary.genderid }}">
+          <i class="dropdown icon"></i>
+          <div class="default text"></div>
+          <div class="menu">
+          {% for gender in genders %}
+            <div class="item" {% if gender.id == subsidiary.genderid %}selected{% endif %}
+                 data-value="{{ gender.id }}"
+                 data-text="{{ gender.name }}">
+              {{ gender.name }}
+            </div>
+          {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <div class="field static">
+          <span class="darking">{{ subsidiary.gendername }}&nbsp;</span>
+        </div>
+        {% endif %}
+        {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][genderid]') %}
+        <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][genderid]') }}</small>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="fields">
+      <div class="four wide field{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][postalcode]') }}">
+        <label>CEP</label>
+        <div class="ui icon input{{ readonly }}">
+          <input name="subsidiaries[{{ subsidiaryNumber }}][postalcode]"
+                 placeholder="CEP..."
+                 type="text" maxlength="9" {{ readonly }}
+                 value="{{ subsidiary.postalcode }}"
+                 subsidiary="{{ subsidiaryNumber }}">
+          <i class="search icon grey"></i>
+        </div>
+        {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][postalcode]') %}
+        <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][postalcode]') }}</small>
+        {% endif %}
+      </div>
+
+      <div class="nine wide field{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][address]') }}">
+        <label>Endereço</label>
+        <div class="ui input{{ readonly }}">
+          <input name="subsidiaries[{{ subsidiaryNumber }}][address]"
+                 type="text" maxlength="100" {{ readonly }}
+                 placeholder="Endereço..."
+                 value="{{ subsidiary.address }}">
+        </div>
+        {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][address]') %}
+        <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][address]') }}</small>
+        {% endif %}
+      </div>
+
+      <div class="three wide field{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][streetnumber]') }}">
+        <label>N&ordm;</label>
+        <div class="ui input{{ readonly }}">
+          <input name="subsidiaries[{{ subsidiaryNumber }}][streetnumber]"
+                 type="text" maxlength="10" {{ readonly }}
+                 placeholder="Número..."
+                 value="{{ subsidiary.streetnumber }}">
+        </div>
+        {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][streetnumber]') %}
+        <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][streetnumber]') }}</small>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="fields">
+      <div class="sixteen wide field{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][complement]') }}">
+        <label>Complemento</label>
+        <div class="ui input{{ readonly }}">
+          <input name="subsidiaries[{{ subsidiaryNumber }}][complement]"
+                 type="text" maxlength="30" {{ readonly }}
+                 placeholder="Complemento..."
+                 value="{{ subsidiary.complement }}">
+        </div>
+        {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][complement]') %}
+        <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][complement]') }}</small>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="fields">
+      <div class="six wide field{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][district]') }}">
+        <label>Bairro</label>
+        <div class="ui input{{ readonly }}">
+          <input name="subsidiaries[{{ subsidiaryNumber }}][district]"
+                 type="text" maxlength="50" {{ readonly }}
+                 placeholder="Bairro..."
+                 value="{{ subsidiary.district }}">
+        </div>
+        {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][district]') %}
+        <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][district]') }}</small>
+        {% endif %}
+      </div>
+
+      <div class="eight wide field{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][cityname]') }}">
+        <label>Cidade</label>
+        <input name="subsidiaries[{{ subsidiaryNumber }}][cityname]"
+               type="text" class="search" maxlength="50" {{ readonly }}
+               placeholder="Selecione uma cidade..."
+               value="{{ subsidiary.cityname }}"
+               subsidiary="{{ subsidiaryNumber }}">
+        <input type="hidden" name="subsidiaries[{{ subsidiaryNumber }}][cityid]"
+               value="{{ subsidiary.cityid }}" >
+        {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][cityname]') %}
+        <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][cityname]') }}</small>
+        {% endif %}
+      </div>
+
+      <div class="two wide readonly field{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][state]') }}">
+        <label>UF</label>
+        <div class="ui readonly input">
+          <input name="subsidiaries[{{ subsidiaryNumber }}][state]"
+                 placeholder="UF..." type="text"
+                 value="{{ subsidiary.state }}" maxlength="2"
+                 subsidiary="{{ subsidiaryNumber }}"
+                 readonly>
+        </div>
+        {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][state]') %}
+        <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][state]') }}</small>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="fields juridical person"{% if not juridicalperson %} style="display: none;"{% endif %}>
+      <div class="eight wide field{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][personname]') }}">
+        <label>Contato</label>
+        <div class="ui input{{ readonly }}">
+          <input name="subsidiaries[{{ subsidiaryNumber }}][personname]"
+                 type="text" maxlength="50" {{ readonly }}
+                 placeholder="Nome do contato..."
+                 value="{{ subsidiary.personname }}">
+        </div>
+        {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][personname]') %}
+        <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][personname]') }}</small>
+        {% endif %}
+      </div>
+
+      <div class="eight wide field{{ cssError('subsidiaries[' ~ subsidiaryNumber ~ '][department]') }}">
+        <label>Departamento</label>
+        <input name="subsidiaries[{{ subsidiaryNumber }}][department]"
+               type="text" class="search" maxlength="50" {{ readonly }}
+               placeholder="Departamento..."
+               value="{{ subsidiary.department }}"
+               subsidiary="{{ subsidiaryNumber }}">
+        {% if hasError('subsidiaries[' ~ subsidiaryNumber ~ '][department]') %}
+        <small class="helper">{{ getError('subsidiaries[' ~ subsidiaryNumber ~ '][department]') }}</small>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="ui vertical segment form noTopPadding noBottomPadding">
+    <div class="phoneList" subsidiary="{{ subsidiaryNumber }}">
+      <div class="sixteen wide mobile sixteen wide tablet eight wide computer six wide large screen column">
+        <label>Telefone principal</label>
+      </div>
+      {% for phoneNumber, phone in subsidiary.phones %}
+        {% include 'erp/cadastre/suppliers/phone.twig' with { phoneTypes: phoneTypes, subsidiaryNumber: subsidiaryNumber, phoneNumber: phoneNumber, phone: phone, editMode: editMode, readonly: readonly }  %}
+      {% endfor %}
+    </div>
+    {% if editMode %}
+    <div class="ui bottom attached vertical segment">
+      <button type="button" class="ui mini green right labeled icon button"
+              onclick="addPhone( {{ subsidiaryNumber }} );">
+        <i class="plus icon"></i> Novo telefone
+      </button>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="ui vertical segment form noTopPadding noBottomPadding">
+    <div class="emailList" subsidiary="{{ subsidiaryNumber }}">
+      <div class="sixteen wide mobile sixteen wide tablet eight wide computer six wide large screen column">
+        <label>E-mail</label>
+      </div>
+      {% for emailNumber, mailing in subsidiary.emails %}
+        {% include 'erp/cadastre/suppliers/mailing.twig' with { subsidiaryNumber: subsidiaryNumber, emailNumber: emailNumber, mailing: mailing, editMode: editMode, readonly: readonly }  %}
+      {% endfor %}
+    </div>
+    {% if editMode %}
+    <div class="ui bottom attached vertical segment">
+      <button type="button" class="ui mini green right labeled icon button"
+              onclick="addEmail( {{ subsidiaryNumber }} );">
+        <i class="plus icon"></i> Novo e-mail
+      </button>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="ui vertical segment mini form noTopPadding noBottomPadding">
+    <h4 class="ui header">Contatos adicionais</h4>
+    <div class="contactList" subsidiary="{{ subsidiaryNumber }}">
+      <span class="nocontent">Nenhum contato adicional</span>
+      {% for contactNumber, contact in subsidiary.contacts %}
+        {% include 'erp/cadastre/suppliers/mailingaddress.twig' with { mailingProfiles:mailingProfiles, phoneTypes: phoneTypes, subsidiaryNumber: subsidiaryNumber, contactNumber: contactNumber, contact: contact, editMode: editMode, readonly: readonly, juridicalperson: juridicalperson }  %}
+      {% endfor %}
+    </div>
+    {% if editMode %}
+    <div class="ui bottom attached vertical segment">
+      <button type="button" class="ui mini green right labeled icon button"
+              onclick="addContact( {{ subsidiaryNumber }} );">
+        <i class="plus icon"></i> Novo contato
+      </button>
+    </div>
+    {% endif %}
+  </div>
+{% if not loop.first %}
+</div>
+{% endif %}

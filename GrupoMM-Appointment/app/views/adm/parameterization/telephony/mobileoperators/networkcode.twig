@@ -1,0 +1,40 @@
+          <div class="fields networkCodeEntry">
+            <div class="field{{ cssError('networkcodes[' ~ number ~ '][mcc]') }}">
+              {% if loop.first %}
+              <label class="column mobile hidden">Código do país (MCC)</label>
+              {% endif %}
+              <input name="networkcodes[{{ number }}][mcc]"
+                     placeholder="MCC..." type="text"
+                     value="{{ networkCode.mcc }}"
+                     label="Código do país (MCC)"
+                     maxlength="3">
+              <input name="networkcodes[{{ number }}][mobilenetworkcodeid]"
+                     type="hidden"
+                     value="{{ networkCode.mobilenetworkcodeid }}" />
+              {% if hasError('networkcodes[' ~ number ~ ']') %}
+              <small class="helper">{{ getError('networkcodes[' ~ number ~ '][mcc]') }}</small>
+              {% endif %}
+            </div>
+            <div class="field{{ cssError('networkcodes[' ~ number ~ '][mnc]') }}">
+              {% if loop.first %}
+              <label class="ui mobile hidden">Código da rede (MNC)</label>
+              {% endif %}
+              <div class="ui action input">
+                <input name="networkcodes[{{ number }}][mnc]"
+                       placeholder="MNC..." type="text"
+                       value="{{ networkCode.mnc }}"
+                       label="Código da rede (MNC)"
+                       maxlength="3">
+                <button class="ui mini youtube icon button"
+                        data-tooltip="Remove este código de rede"
+                        data-position="top right" type="button"
+                        networkcode="{{ number }}"
+                        onclick="delNetworkCode(this);">
+                  <i class="minus icon"></i>
+                </button>
+              </div>
+              {% if hasError('networkcodes[' ~ number ~ ']') %}
+              <small class="helper">{{ getError('networkcodes[' ~ number ~ '][mnc]') }}</small>
+              {% endif %}
+            </div>
+          </div>

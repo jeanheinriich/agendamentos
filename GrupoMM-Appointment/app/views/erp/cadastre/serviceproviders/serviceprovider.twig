@@ -1,0 +1,1037 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} prestador de serviços{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('form.min.css') }}
+  {{ css('dialog.min.css') }}
+  <style>
+    .medium {
+      min-width: 9em !important;
+      max-width: 9em;
+    }
+    .minimum {
+      min-width: 7em !important;
+      max-width: 7em;
+    }
+    .grouped.withMargin {
+      margin-bottom: 1em;
+    }
+    h3.ui.header .sub.header {
+      padding-top: .5em;
+    }
+
+    /**
+     * Criamos um grid especial para exibir campos agrupados no
+     * formulário e que precisam estar realçados de forma a se entender
+     * que ambos se relacionam entre si, e que de outra forma ficariam
+     * em algumas resoluções com tamanho muito reduzido e em outras
+     * exagerado.
+     */
+    .grouped {
+      display: -webkit-box;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-orient: horizontal;
+      -webkit-box-direction: normal;
+      -ms-flex-direction: row;
+      flex-direction: row;
+      -ms-flex-wrap: wrap;
+      flex-wrap: wrap;
+      -webkit-box-align: stretch;
+      -ms-flex-align: stretch;
+      align-items: stretch;
+      width: calc(100% + .5em);
+      margin-left: -.5em;
+      margin-right: -.5em;
+      padding: 0;
+    }
+    .grouped > .column {
+      position: relative;
+      display: inline-block;
+      vertical-align: top;
+      padding-left: .5em;
+    }
+    .grouped.two.columns > .column {
+      width: 50%;
+    }
+    .grouped.three.columns > .column {
+      width: 33.33%;
+    }
+    @media only screen and (max-width: 767.98px) {
+      .grouped > .column {
+        width: 100%;
+        flex-wrap: wrap;
+        margin-top: .38571429em;
+      }
+      .ui.message .fields {
+        flex-direction: row;
+      }
+      .ui.message .fields>.wide.field {
+        width: 50% !important;
+      }
+    }
+    @media only screen and (min-width: 768px) and (max-width: 991px) {
+      .ui.message .fields {
+        flex-direction: column;
+      }
+      .ui.message .fields>.wide.field {
+        width: 100% !important;
+        flex-wrap: wrap;
+      }
+    }
+    @media only screen and (min-width: 992px) {
+      .ui.message .fields>.wide.field {
+        width: 50%;
+      }
+    }
+    .grouped > .column .ui.message {
+      height: 100%;
+    }
+    .ui.coffe.message {
+      -webkit-box-shadow: 0 0 0 1px #d6aea3 inset, 0 0 0 0 transparent;
+      box-shadow: 0 0 0 1px #d6aea3 inset, 0 0 0 0 transparent;
+      background-color: #f4eae4;
+    }
+    .ui.rose.message {
+      -webkit-box-shadow: 0 0 0 1px #ff8e81 inset, 0 0 0 0 transparent;
+      box-shadow: 0 0 0 1px #ff8e81 inset, 0 0 0 0 transparent;
+      background-color: #ffe4e1;
+    }
+
+    .ui.vertical.segment.mini.form {
+      border-bottom: none;
+      padding-bottom: 0;
+      margin-bottom: 0;
+    }
+
+    .ui.bottom.attached.vertical.segment {
+      border: none;
+      border-radius: 0;
+      margin-bottom: 0;
+    }
+    .ui.grid.phoning .ui.selection.dropdown {
+      min-width: 8em;
+    }
+    .ui.grid.phoning,
+    .ui.grid.mailing:not(.address) {
+      margin-top: 0;
+    }
+    .ui.input.readonly > textarea {
+      background-color: GhostWhite;
+      border: 1px solid rgba(34,36,38,0.15);
+      color: DarkSlateGray;
+    }
+    label > i {
+      color: #5C738B;
+    }
+    div.subsidiary.entry {
+      display: inline-grid;
+      border-top: 1px solid rgba(34,36,38,.15) !important;
+    }
+    div.subsidiary.entry .wide.column .header {
+      margin-top: 1rem !important;
+      margin-bottom: 1rem !important;
+    }
+    .italic {
+      font-style: italic;
+    }
+    .ui.list .list > .item .description,
+    .ui.list > .item .description {
+      margin-top: .2em;
+      line-height: 1.5em !important;
+    }
+    .bold {
+      font-weight: bold;
+    }
+
+    /**
+     * Personaliza os dropdowns para permitir melhor seleção dos valores
+     */
+    .ui.dropdown .menu>.item.vertical {
+      display: -webkit-box;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: reverse;
+      -ms-flex-direction: column-reverse;
+      flex-direction: column-reverse;
+    }
+    .ui.dropdown .menu>.item.vertical>.description {
+      margin: 0;
+      color: CornflowerBlue;
+      font-style: italic;
+      border-top: 1px solid rgba(34,36,38,0.15);
+      line-height: 1.3em;
+    }
+    .ui.dropdown .menu>.item.vertical>.text {
+      margin-bottom: .25em;
+    }
+    .ui.dropdown>.text>.description>.hidden {
+      display: none;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Cadastre\\ServiceProviders\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Cadastre\\ServiceProviders\\Edit' %}
+  {% endif %}
+  {% set toggleBlocked = { 'URL': 'ERP\\Cadastre\\ServiceProviders\\ToggleBlocked', 'method': 'PUT' } %}
+  {% set previous = 'ERP\\Cadastre\\ServiceProviders' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  {% set enableToggleBlocked = authorization.getAuthorizationFor(toggleBlocked.URL, toggleBlocked.method) %}
+  {% set juridicalperson = getValue('juridicalperson')|toBoolean %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/serviceproviders.svg', 'Prestador de Serviços') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} prestador de serviços
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  prestador de serviços.
+                </div>
+              {% else %}
+                Visualizar prestador de serviços
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um prestador de serviços.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL, {'serviceProviderID': getValue('entityid') }) }}">
+        <h3 class="ui header">Dados básicos do prestador de serviços</h3>
+        <div class="fields">
+          <div class="eight wide field{{ cssError('name') }}">
+            <label>Prestador de serviços</label>
+            <div class="ui input{{ readonly }}">
+              <input name="name" type="text" maxlength="100"
+                     placeholder="Informe o nome do prestador de serviços..."
+                     {{ readonly }}
+                     value="{{ getValue('name') }}">
+            </div>
+            {% if hasError('name') %}
+            <small class="helper">{{ getError('name') }}</small>
+            {% endif %}
+          </div>
+          <div class="eight wide field{{ cssError('tradingname') }}">
+            <label>
+              Nome fantasia <i>(opcional)</i>
+              <span data-tooltip="Também chamado de nome comercial, nome de marca ou nome de fachada"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui input{{ readonly }}">
+              <input name="tradingname" type="text" maxlength="100"
+                     placeholder="Informe o nome fantasia..."
+                     {{ readonly }}
+                     value="{{ getValue('tradingname') }}">
+            </div>
+            {% if hasError('tradingname') %}
+            <small class="helper">{{ getError('tradingname') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="eight wide field{{ cssError('entitytypeid') }}">
+            <label>Tipo de prestador de serviços</label>
+            {% if formMethod == 'POST' %}
+            <div class="ui search selection dropdown">
+              <input name="entitytypeid" type="hidden"
+                     value="{{ getValue('entitytypeid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text"></div>
+              <div class="menu">
+                {% for entityType in entityTypes %}
+                  {% if entityType.juridicalperson|toBoolean %}
+                    {% set attribute='juridicalperson=true' %}
+                  {% else %}
+                    {% set attribute='juridicalperson=false' %}
+                  {% endif %}
+                  <div class="item"
+                       {{ attribute }}
+                       data-value="{{ entityType.id }}"
+                       data-text="{{ entityType.name }}">
+                    {{ entityType.name }}
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('entitytypename') }}</span>
+              <input name="entitytypename" type="hidden"
+                     value="{{ getValue('entitytypename') }}">
+              <input name="entitytypeid" type="hidden"
+                     value="{{ getValue('entitytypeid') }}">
+            </div>
+            {% endif %}
+            <input name="juridicalperson" type="hidden"
+                   value="{% if getValue('juridicalperson')|toBoolean %}true{% else %}false{% endif %}">
+            {% set juridicalperson=getValue('juridicalperson')|toBoolean %}
+            {% if hasError('entitytypeid') %}
+            <small class="helper">{{ getError('entitytypeid') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field{{ cssError('occupationarea') }}">
+            <label>Área de atuação</label>
+            <div class="ui input{{ readonly }}">
+              <textarea name="occupationarea" rows="4" {{ readonly }}
+                        placeholder="Área de atuação...">{{ getValue('occupationarea') }}</textarea>
+            </div>
+            {% if hasError('occupationarea') %}
+            <small class="helper">{{ getError('occupationarea') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if enableToggleBlocked %}
+          {% if formMethod == 'PUT' %}
+          <div class="fields">
+            <div class="eight wide field">
+              <div class="ui checkbox">
+                <input type="hidden" name="blocked"
+                       value="{% if getValue('blocked')|toBoolean %}true{% else %}false{% endif %}">
+                <input class="hidden" type="checkbox"
+                       name="_blocked"
+                       {% if getValue('blocked')|toBoolean %}checked="checked"{% endif %}>
+                <label>
+                  {% if getValue('subsidiaries')|length > 1 %}
+                  Bloquear este prestador de serviços e todas suas unidades/filiais</label>
+                  {% else %}
+                  Bloquear este prestador de serviços</label>
+                  {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        {% else %}
+          {% if getValue('blocked')|toBoolean %}
+          <div class="fields">
+            <div class="eight wide darkred field">
+              <i class="lock icon"
+                 style="font-size: 1.8em; line-height: 1em; vertical-align: middle;"></i>
+              Este prestador de serviços está bloqueado e, por consequência, todas suas unidades/filiais.
+            </div>
+          </div>
+          {% endif %}
+        {% endif %}
+
+        {% set subsidiaries = getValue('subsidiaries') %}
+        {% for subsidiaryNumber, subsidiary in subsidiaries %}
+          {% set subsidiaryIndicator = "%02d"|format(subsidiaryNumber) %}
+          {% include 'erp/cadastre/serviceproviders/subsidiary.twig' with { documentTypes: documentTypes, mailingProfiles:mailingProfiles, phoneTypes: phoneTypes, subsidiaryIndicator: subsidiaryIndicator, subsidiaryNumber: subsidiaryNumber, subsidiary: subsidiary, editMode: editMode, enableToggleBlocked: enableToggleBlocked, juridicalperson: juridicalperson, formMethod: formMethod }  %}
+          {% if loop.first %}
+          <div id="subsidiaryList" class="form-list">
+          {% endif %}
+          {% if loop.last %}
+          </div>
+          {% endif %}
+        {% endfor %}
+        {% if editMode %}
+        <div class="ui bottom attached vertical segment" style="border-top: 1px solid rgba(34,36,38,.15); border-left: none; border-right: none;">
+          <button type="button" name="addSubsidiaryButton"
+                  class="ui mini green right labeled icon button"
+                  onclick="addSubsidiary();">
+            <i class="plus icon"></i>
+            {% if juridicalperson %}
+            Nova unidade/filial
+            {% else %}
+            Novo dependente
+            {% endif %}
+          </button>
+        </div>
+        {% endif %}
+
+        <div class="fields">
+          <div class="sixteen wide field{{ cssError('note') }}">
+            <label>Observação</label>
+            <div class="ui input{{ readonly }}">
+              <textarea name="note" rows="4" {{ readonly }}
+                        placeholder="Faça um breve comentário...">{{ getValue('note') }}</textarea>
+            </div>
+            {% if hasError('note') %}
+            <small class="helper">{{ getError('note') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="vehicle data"{% if juridicalperson %} style="display: none;"{% endif %}>
+          <h3 class="ui header">Dados básicos do veículo</h3>
+          <div class="fields">
+            <div class="three wide field{{ cssError('plate') }}">
+              <label>Placa</label>
+              <div class="ui input{{ readonly }}">
+                <input name="plate" type="text" maxlength="7"
+                       placeholder="AAA0000"
+                       {{ readonly }}
+                       value="{{ getValue('plate') }}">
+              </div>
+              {% if hasError('plate') %}
+              <small class="helper">{{ getError('plate') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="thirteen wide field{{ cssError('vehiclemodelname') }}">
+              <label>Modelo do ve&iacute;culo</label>
+              <input name="vehiclemodelname" type="text" class="search"
+                     maxlength="50"
+                     placeholder="Informe o modelo do veículo..."
+                     {{ readonly }}
+                     value="{{ getValue('vehiclemodelname') }}">
+              <input name="vehiclemodelid" type="hidden"
+                     value="{{ getValue('vehiclemodelid') }}">
+              {% if hasError('vehiclemodelname') %}
+              <small class="helper">{{ getError('vehiclemodelname') }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="four wide field{{ cssError('vehicletypeid') }}">
+              <label>Tipo de veículo</label>
+              {% if editMode %}
+              <div class="ui search selection dropdown">
+                <input name="vehicletypeid" type="hidden"
+                       value="{{ getValue('vehicletypeid') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text">Informe o tipo...</div>
+                <div class="menu">
+                {% set vehicleTypeID = getValue('vehicletypeid') %}
+                {% for vehicleType in vehicleTypes %}
+                  <div class="item"
+                       {% if vehicleType.id == vehicleTypeID %}
+                         selected
+                       {% endif %}
+                       data-value="{{ vehicleType.id }}"
+                       data-text="{{ vehicleType.name }}">
+                    {{ vehicleType.name }}
+                  </div>
+                {% endfor %}
+                </div>
+              </div>
+              {% else %}
+              <div class="field static">
+                <span class="darking">{{ getValue('vehicletypename') }}&nbsp;</span>
+              </div>
+              {% endif %}
+              {% if hasError('vehicletypeid') %}
+              <small class="helper">{{ getError('vehicletypeid') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="eight wide field{{ cssError('vehiclebrandname') }}">
+              <label>Marca</label>
+              <input name="vehiclebrandname" type="text" class="search"
+                     maxlength="30"
+                     placeholder="Informe a marca do veículo..."
+                     {{ readonly }}
+                     value="{{ getValue('vehiclebrandname') }}">
+              <input name="vehiclebrandid" type="hidden"
+                     value="{{ getValue('vehiclebrandid') }}">
+              {% if hasError('vehiclebrandname') %}
+              <small class="helper">{{ getError('vehiclebrandname') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="four wide field{{ cssError('vehiclecolorid') }}">
+              <label>Cor predominante</label>
+              {% if editMode %}
+              <div class="ui search selection dropdown">
+                <input name="vehiclecolorid" type="hidden"
+                       value="{{ getValue('vehiclecolorid') }}">
+                <i class="dropdown icon"></i>
+                <div class="default text">Informe a cor predominante</div>
+                <div class="menu">
+                {% set vehicleColorID = getValue('vehiclecolorid') %}
+                {% for vehicleColor in vehicleColors %}
+                  <div class="item" {% if vehicleColor.id == vehicleColorID %}selected{% endif %}
+                       data-value="{{ vehicleColor.id }}"
+                       data-text="{{ vehicleColor.name }}">
+                    <div class="ui {{ vehicleColor.color }} empty square label"></div>
+                    {{ vehicleColor.name }}
+                  </div>
+                {% endfor %}
+                </div>
+              </div>
+              {% else %}
+              <div class="field static">
+                <span class="darking">{{ getValue('vehiclecolorname') }}&nbsp;</span>
+              </div>
+              {% endif %}
+              {% if hasError('vehiclecolorid') %}
+              <small class="helper">{{ getError('vehiclecolorid') }}</small>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="ui vertical segment form">
+          {% set accounts = getValue('accounts') %}
+          <h3 class="ui header">
+            Dados bancários
+            <div class="sub header">
+              As informações para pagamento deste fornecedor
+            </div>
+          </h3>
+          <div id="accountList" class="accountList column row">
+            {% for number, account in accounts %}
+              {% include 'erp/cadastre/serviceproviders/account.twig' with { account: account, number: number, banks: banks, pixKeyTypes: pixKeyTypes }  %}
+            {% endfor %}
+          </div>
+        </div>
+
+        <h3 class="ui header">
+          Valores pagos
+          <div class="sub header">
+            Os serviços habilitados e os respectivos valores pagos a
+            este prestador de serviços.
+          </div>
+        </h3>
+        <table class="ui definition celled selectable compact services table tiny form">
+          <thead>
+            <tr>
+              <th></th>
+              <th class="center aligned">Nome do serviço</th>
+              <th class="center aligned three wide">Valor pago</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set services = getValue('services') %}
+            {% set lastGroup = 0 %}
+            {% for billingType in billingTypes %}
+              {% if services[billingType.id] is defined %}
+                {% if services[billingType.id].added == 'true' %}
+                  {% set class="selected" %}
+                  {% set readonlyfield = '' %}
+                  {%
+                    set service = {
+                      'icon': 'green checkmark'
+                    }
+                  %}
+                {% else %}
+                  {% set class="unselected" %}
+                  {% set readonlyfield = ' readonly' %}
+                  {%
+                    set service = {
+                      'servicepriceid': 0,
+                      'icon': 'red times'
+                    }
+                  %}
+                {% endif %}
+                {% set service = service|merge(services[billingType.id]) %}
+              {% else %}
+                {% set class="unselected" %}
+                {% set readonlyfield = ' readonly' %}
+                {%
+                  set service = {
+                    'added': 'false',
+                    'servicepriceid': 0,
+                    'icon': 'red times',
+                    'pricevalue': '0,00'
+                  }
+                %}
+              {% endif %}
+            <tr class="{{ class }}">
+              <td class="center aligned toggle"
+                  style="max-width: 20px; padding: .5em 0;" 
+                  added="{{ service.added }}"
+                  elementID="{{ billingType.id }}">
+                <i class="large {{ service.icon }} icon"></i>
+                <input type="hidden"
+                       name="services[{{ billingType.id }}][added]"
+                       value="{{ service.added }}">
+              </td>
+              <td>{{ billingType.name }}</td>
+              <td>
+                <div class="ui left labeled input{{ readonlyfield }}">
+                  <div class="ui basic label"
+                       name="services[{{ billingType.id }}][label]">R$</div>
+                  <input type="hidden"
+                         name="services[{{ billingType.id }}][servicepriceid]"
+                         value="{{ service.servicepriceid }}">
+                  <input type="hidden"
+                         name="services[{{ billingType.id }}][billingtypeid]"
+                         value="{{ billingType.id }}">
+                  <input name="services[{{ billingType.id }}][pricevalue]"
+                         class="right aligned"
+                         {{ readonlyfield }}
+                         style="width: calc(100% - 3.2em); -webkit-box-flex: 1; -ms-flex: 1 0 auto; flex: 1 0 auto; border-top-left-radius: 0; border-bottom-left-radius: 0; border-left-color: transparent;"
+                         placeholder="Valor cobrado" type="text"
+                         value="{{ service.pricevalue }}">
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <h3 class="ui header">
+          Outros valores nos casos de serviços não executados
+          <div class="sub header">
+            Os valores a serem pagos e/ou cobrados nos casos em que a
+            execução do serviço em uma visita técnica agendada não sejam
+            possíveis de serem executados, seja por problemas ocorridos
+            em função de falhas do cliente ou do técnico. Os valores
+            podem ser uma porcentagem do valor do serviço que iria ser
+            executado ou um valor fixo em Reais.
+          </div>
+        </h3>
+        <div class="grouped three columns">
+          <div class="column">
+            <div class="ui coffe message">
+              <div class="header">
+                Visita improdutiva
+              </div>
+              <p>
+                Quando o técnico comparece ao local agendado para o
+                atendimento e não consegue executar o serviço por algum
+                problema por parte do cliente.
+              </p>
+              <div class="ui compact grid">
+                <div class="sixteen wide column{{ cssError('unproductivevisit') }}">
+                  <label>
+                    Valor pago
+                    <span data-tooltip="Valor pago em caso da impossibilidade de execução do serviço"
+                          data-content="Top Left" data-position="top left"
+                          data-inverted="">
+                      <i class="question circle olive outline icon"></i>
+                    </span>
+                  </label>
+                  <div class="ui left labeled{% if editMode %} action{% endif %} input{{ readonly }}">
+                    <div class="ui basic label"
+                         name="unproductiveVisitTypeLabel">%</div>
+                    <input name="unproductivevisit" type="text"
+                           placeholder="0.0000" {{ readonly }}
+                           value="{{ getValue('unproductivevisit') }}">
+                    {% if editMode %}
+                    <select class="ui dropDownLabel medium selection dropdown"
+                            name="unproductivevisittype"
+                            label="unproductiveVisitTypeLabel">
+                      {% set unproductiveVisitType = getValue('unproductivevisittype') %}
+                      {% for measureType in measureTypes %}
+                        <option value="{{ measureType.id }}"
+                                {% if unproductiveVisitType == measureType.id %}
+                                  selected
+                                {% endif %}
+                                label="{{ measureType.symbol }}">
+                          {{ measureType.name }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                    {% endif %} 
+                  </div>
+                  {% if hasError('unproductivevisit') %}
+                  <small class="helper">{{ getError('unproductivevisit') }}</small>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="column">
+            <div class="ui coffe message">
+              <div class="header">
+                Visita frustrada
+              </div>
+              <p>
+                Quando o cliente solicita o cancelamento ou reagendamento
+                de uma visita muito perto do momento em que ela estava
+                programada para ocorrer.
+              </p>
+
+              <div class="ui compact grid">
+                <div class="sixteen wide column{{ cssError('frustratedvisit') }}">
+                  <label>
+                    Valor pago
+                    <span data-tooltip="Em caso do cliente cancelar ou reagendar sem respeitar o prazo mínimo"
+                          data-content="Top Left" data-position="top left"
+                          data-inverted="">
+                      <i class="question circle olive outline icon"></i>
+                    </span>
+                  </label>
+                  <div class="ui left labeled{% if editMode %} action{% endif %} input{{ readonly }}">
+                    <div class="ui basic label"
+                         name="frustratedVisitTypeLabel">%</div>
+                    <input name="frustratedvisit" type="text"
+                           placeholder="0.0000" {{ readonly }}
+                           value="{{ getValue('frustratedvisit') }}">
+                    {% if editMode %}
+                    <select class="ui dropDownLabel medium selection dropdown"
+                            name="frustratedvisittype"
+                            label="frustratedVisitTypeLabel">
+                      {% set frustratedVisitType = getValue('frustratedvisittype') %}
+                      {% for measureType in measureTypes %}
+                        <option value="{{ measureType.id }}"
+                                {% if frustratedVisitType == measureType.id %}
+                                  selected
+                                {% endif %}
+                                label="{{ measureType.symbol }}">
+                          {{ measureType.name }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                    {% endif %} 
+                  </div>
+                  {% if hasError('frustratedvisit') %}
+                  <small class="helper">{{ getError('frustratedvisit') }}</small>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="column">
+            <div class="ui rose message">
+              <div class="header">
+                Visita não realizada
+              </div>
+              <p>
+                Quando o técnico não comparece ao local agendado para o
+                atendimento e o serviço deixa de ser executado.
+              </p>
+
+              <div class="ui compact grid">
+                <div class="sixteen wide column{{ cssError('unrealizedvisit') }}">
+                  <label>
+                    Valor cobrado
+                    <span data-tooltip="Em caso do técnico não executar o serviço"
+                          data-content="Top Left" data-position="top left"
+                          data-inverted="">
+                      <i class="question circle olive outline icon"></i>
+                    </span>
+                  </label>
+                  <div class="ui left labeled{% if editMode %} action{% endif %} input{{ readonly }}">
+                    <div class="ui basic label"
+                         name="unrealizedVisitTypeLabel">%</div>
+                    <input name="unrealizedvisit" type="text"
+                           placeholder="0.0000" {{ readonly }}
+                           value="{{ getValue('unrealizedvisit') }}">
+                    {% if editMode %}
+                    <select class="ui dropDownLabel medium selection dropdown"
+                            name="unrealizedvisittype"
+                            label="unrealizedVisitTypeLabel">
+                      {% set unrealizedVisitType = getValue('unrealizedvisittype') %}
+                      {% for measureType in measureTypes %}
+                        <option value="{{ measureType.id }}"
+                                {% if unrealizedVisitType == measureType.id %}
+                                  selected
+                                {% endif %}
+                                label="{{ measureType.symbol }}">
+                          {{ measureType.name }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                    {% endif %} 
+                  </div>
+                  {% if hasError('unrealizedvisit') %}
+                  <small class="helper">{{ getError('unrealizedvisit') }}</small>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="ui header">
+          Taxas pagas pelo deslocamento do técnico
+          <div class="sub header">
+            Os valores pagos pelo deslocamento do técnico para execução
+            de serviços em visitas técnicas agendadas.
+          </div>
+        </h3>
+        <div class="grouped two columns withMargin">
+          <div class="column">
+            <div class="ui message">
+              {% set displacements = getValue('displacements') %}
+              <div class="header">
+                Faixas de pagamento
+              </div>
+              <p>
+                Os valores pagos por faixa por km para as distâncias
+                de deslocamento do técnico
+              </p>
+
+              <table class="ui compact collapsing single line unstackable table tiny form"
+                 id="displacementList">
+                <tbody>
+                  {% for number, displacement in displacements %}
+                    {% if (number > 0) %}
+                      {% include 'erp/cadastre/serviceproviders/displacement.twig' with { displacement: displacement, number: number }  %}
+                    {% endif %}
+                  {% endfor %}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="3" class="right aligned">
+                      {% if displacements|length > 1 %}
+                      Acima disto, pagar:
+                      {% else %}
+                      Para qualquer distância, pagar:
+                      {% endif %}
+                    </td>
+                    <td class="right aligned" style="max-width: 16em; padding-right: 6.4em;">
+                      <div class="ui left labeled action input{{ readonly }}">
+                        <div class="ui basic label" name="displacements[0][label]">R$</div>
+                        <input name="displacements[0][distance]"
+                               type="hidden"
+                               value="{{ displacements[0].distance }}">
+                        <input name="displacements[0][displacementpaidid]"
+                               type="hidden"
+                               value="{{ displacements[0].displacementpaidid }}" />
+                        <input name="displacements[0][value]"
+                               class="right aligned"
+                               placeholder="Valor cobrado..." type="text"
+                               style="-webkit-box-flex: 1; -ms-flex: 1 0 auto; flex: 1 0 auto; border-top-left-radius: 0; border-bottom-left-radius: 0; border-left-color: transparent;"
+                               value="{{ displacements[0].value }}"
+                               {{ readonly }}>
+                        <button class="ui tiny gray icon button readonly"
+                                style="background-color: #c8c8c8 !important; color: white;"
+                                type="button"
+                                readonly>
+                          <i class="minus icon"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  {% if editMode %}
+                  <tr>
+                    <td colspan="4">
+                      <button type="button" class="ui mini green right labeled icon button"
+                              onclick="addDisplacement();">
+                        <i class="plus icon"></i> Nova faixa de pagamento
+                      </button>
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <div class="column">
+            <div class="ui message">
+              <div class="header">
+                Ponto de referência inicial
+              </div>
+              <p>
+                O local utilizado como referência inicial para cálculo
+                da distância percorrida pelo técnico até o local do
+                atendimento.
+              </p>
+
+              <div class="ui compact grid">
+                <div class="sixteen wide mobile sixteen wide tablet sixteen wide computer sixteen wide large screen column{{ cssError('geographiccoordinateid') }}">
+                  <label>Local de referência</label>
+                  {% if editMode %}
+                  <div class="ui search selection dropdown">
+                    <input name="geographiccoordinateid" type="hidden"
+                           value="{{ getValue('geographiccoordinateid') }}">
+                    <i class="dropdown icon"></i>
+                    <div class="default text">Local de referência...</div>
+                    <div class="menu">
+                    {% set geographicCoordinateID = getValue('geographiccoordinateid') %}
+                      <div class="item"
+                           {% if 0 == geographicCoordinateID %}
+                             selected
+                           {% endif %}
+                           data-value="0"
+                           data-text="Outro local">
+                        Outro local
+                      </div>
+                    {% for geographicCoordinate in geographicCoordinates %}
+                      <div class="item"
+                           {% if geographicCoordinate.id == geographicCoordinateID %}
+                             selected
+                           {% endif %}
+                           data-value="{{ geographicCoordinate.id }}"
+                           data-text="{{ geographicCoordinate.name }}">
+                        {{ geographicCoordinate.name }}
+                      </div>
+                    {% endfor %}
+                    </div>
+                  </div>
+                  {% else %}
+                  <div class="field static">
+                    <span class="darking">{{ getValue('geographiccoordinatename') }}&nbsp;</span>
+                    <input name="geographiccoordinatename" type="hidden"
+                           value="{{ getValue('geographiccoordinatename') }}">
+                    <input name="geographiccoordinateid" type="hidden"
+                           value="{{ getValue('geographiccoordinateid') }}">
+                  </div>
+                  {% endif %}
+                  {% if hasError('geographiccoordinateid') %}
+                  <small class="helper">{{ getError('geographiccoordinateid') }}</small>
+                  {% endif %}
+                </div>
+
+                <div class="another sixteen wide mobile sixteen wide tablet eight wide computer eight wide large screen column{{ cssError('referencename') }}">
+                  <label>Nome da referência</label>
+                  <div class="ui input{{ readonly }}">
+                    <input name="referencename" type="text" maxlength="100"
+                           placeholder="Informe o nome do local..."
+                           {{ readonly }}
+                           value="{{ getValue('referencename') }}">
+                  </div>
+                  {% if hasError('referencename') %}
+                  <small class="helper">{{ getError('referencename') }}</small>
+                  {% endif %}
+                </div>
+
+                <div class="another eight wide mobile eight wide tablet four wide computer four wide large screen column{{ cssError('latitude') }}">
+                  <label>Latitude</label>
+                  <div class="ui input{{ readonly }}">
+                    <input name="latitude" type="text" maxlength="30"
+                           placeholder="Latitude..."
+                           {{ readonly }}
+                           value="{{ getValue('latitude') }}">
+                  </div>
+                  {% if hasError('latitude') %}
+                  <small class="helper">{{ getError('latitude') }}</small>
+                  {% endif %}
+                </div>
+
+                <div class="another eight wide mobile eight wide tablet four wide computer four wide large screen column{{ cssError('longitude') }}">
+                  <label>Longitude</label>
+                  <div class="ui input{{ readonly }}">
+                    <input name="longitude" type="text" maxlength="30"
+                           placeholder="longitude..."
+                           {{ readonly }}
+                           value="{{ getValue('longitude') }}">
+                  </div>
+                  {% if hasError('longitude') %}
+                  <small class="helper">{{ getError('longitude') }}</small>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ csrf() }}
+
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="entityid" value="{{ getValue('entityid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+
+      {% if formMethod == 'PUT' %}
+      <!-- Início painel informativo de modificações -->
+      <div class="ui segments">
+        <div class="ui grey inverted segment">
+          <h5>
+            Histórico de modificações:
+          </h5>
+          Cadastrado {{ getValue('createdat')|localizedDate('long') }} por {{ getValue('createdbyusername') }}
+          <div class="ui divider"></div>
+          Modificado {{ getValue('updatedat')|localizedDate('long') }} por {{ getValue('updatedbyusername') }}
+        </div>
+      </div>
+      <!-- Fim painel informativo de modificações -->
+      {% endif %}
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block dialogs %}
+  {% include 'templates/erp/partials/dialogs/error.twig' %}
+  {% include 'templates/erp/partials/dialogs/info.twig' %}
+  {% include 'templates/erp/partials/dialogs/question.twig' %}
+  {% include 'templates/erp/partials/dialogs/warning.twig' %}
+    
+  <!-- Start audio error -->
+  <audio id="errorSound">
+    <source src="/sounds/error.ogg" type="audio/ogg">
+    <source src="/sounds/error.mp3" type="audio/mpeg">
+    <source src="/sounds/error.wav" type="audio/wav">
+  </audio>
+  <!-- End audio error -->
+{% endblock dialogs %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('semantic-ui/components/requisitions.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('template-engine/template.engine.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+  
+  {% set getCityNameCompletion     = { 'URL': 'ERP\\Parameterization\\Cities\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  {% set getPostalCodeData         = { 'URL': 'ERP\\Parameterization\\Cities\\PostalCode\\Get', 'method': 'PATCH' } %}
+  {% set getVehicleBrandCompletion = { 'URL': 'ERP\\Parameterization\\Vehicles\\Brands\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  {% set getVehicleModelCompletion = { 'URL': 'ERP\\Parameterization\\Vehicles\\Models\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  {% set toggleBlocked             = { 'URL': 'ERP\\Cadastre\\ServiceProviders\\ToggleBlocked', 'method': 'PUT' } %}
+  {% set enableToggleBlocked       = authorization.getAuthorizationFor(toggleBlocked.URL, toggleBlocked.method) %}
+  {% set juridicalperson           = getValue('juridicalperson')|toBoolean %}
+  
+  {% apply minify %}
+  <script>
+    {% include 'erp/cadastre/serviceproviders/serviceprovider.js' with {
+      getCityNameCompletion: getCityNameCompletion,
+      getPostalCodeData: getPostalCodeData,
+      getVehicleBrandCompletion: getVehicleBrandCompletion,
+      getVehicleModelCompletion: getVehicleModelCompletion,
+      documentTypes: documentTypes,
+      mailingProfiles: mailingProfiles,
+      phoneTypes: phoneTypes,
+      toggleBlocked: toggleBlocked,
+      enableToggleBlocked: enableToggleBlocked,
+      juridicalperson: juridicalperson,
+      formMethod: formMethod
+    } %}
+  </script>
+  {% endapply %}
+{% endblock scripts %}

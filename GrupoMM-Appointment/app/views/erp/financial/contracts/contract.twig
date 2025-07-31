@@ -1,0 +1,2279 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} contrato{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('libs/semantic-ui/components/calendar.min.css') }}
+  {{ css('form.min.css') }}
+  <style>
+    .ui.blue.toast {
+      background-color: #0261ed;
+      color: rgba(255,255,255,1);
+    }
+
+    .medium {
+      min-width: 9em !important;
+      max-width: 9em;
+    }
+    .minimum {
+      min-width: 7em !important;
+      max-width: 7em;
+    }
+    .grouped.withMargin {
+      margin-bottom: 1em;
+    }
+
+    /* Realiza ajustes no miniform */
+    .ui.form .fields:not(.grouped):not(.inline) .field:not(:only-child) .ui.checkbox {
+      margin-top: 0.3em;
+    }
+
+    /* Realiza ajustes nos detalhes */
+    .ui.mini.form {
+      margin-bottom: 0.7em;
+    }
+    .ui.basic.label {
+      text-align: center;
+      min-width: 3.2em;
+    }
+    .subscriptionEntry:first-child button {
+      background-color: #c8c8c8 !important;
+    }
+    .ui.vertical.segment:first-child {
+      padding-top: 0;
+    }
+
+    /**
+     * Criamos um grid especial para exibir campos agrupados no
+     * formulário e que precisam estar realçados de forma a se entender
+     * que ambos se relacionam entre si, e que de outra forma ficariam
+     * em algumas resoluções com tamanho muito reduzido e em outras
+     * exagerado.
+     */
+    .grouped {
+      display: -webkit-box;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-orient: horizontal;
+      -webkit-box-direction: normal;
+      -ms-flex-direction: row;
+      flex-direction: row;
+      -ms-flex-wrap: wrap;
+      flex-wrap: wrap;
+      -webkit-box-align: stretch;
+      -ms-flex-align: stretch;
+      align-items: stretch;
+      width: calc(100% + .5em);
+      margin-left: -.5em;
+      margin-right: -.5em;
+      padding: 0;
+    }
+    .grouped > .column {
+      position: relative;
+      display: inline-block;
+      width: 50%;
+      vertical-align: top;
+      padding-left: .5em;
+    }
+    @media only screen and (max-width: 767.98px) {
+      .grouped > .column {
+        width: 100%;
+        flex-wrap: wrap;
+        margin-top: .38571429em;
+      }
+      .ui.message .fields {
+        flex-direction: row;
+      }
+      .ui.message .fields>.wide.field {
+        width: 50% !important;
+      }
+    }
+    @media only screen and (min-width: 768px) and (max-width: 991px) {
+      .ui.message .fields {
+        flex-direction: column;
+      }
+      .ui.message .fields>.wide.field {
+        width: 100% !important;
+        flex-wrap: wrap;
+      }
+    }
+    @media only screen and (min-width: 992px) {
+      .ui.message .fields>.wide.field {
+        width: 50%;
+      }
+    }
+    .grouped > .column .ui.message {
+      height: 100%;
+    }
+    .ui.coffe.message {
+      -webkit-box-shadow: 0 0 0 1px #d6aea3 inset, 0 0 0 0 transparent;
+      box-shadow: 0 0 0 1px #d6aea3 inset, 0 0 0 0 transparent;
+      background-color: #f4eae4;
+    }
+
+    /**
+     * Criamos um grid especial para exibir campos no formulário que de
+     * outra forma ficariam em algumas resoluções com tamanho muito
+     * reduzido e em outras exagerado.
+     */
+    .ui.special.grid {
+      margin-top: .38571429em;
+      margin-bottom: .38571429em;
+      margin-left: -.5rem;
+      margin-right: -.5rem;
+    }
+    .ui.special.grid>.column:not(.row),
+    .ui.special.grid>.row>.column {
+      padding-left: .5rem;
+      padding-right: .5rem;
+    }
+    @media only screen and (max-width: 767.98px) {
+      .ui.special.grid {
+        margin-top: .38571429em;
+      }
+    }
+
+    /**
+     * As formatações para os campos de formulário dinâmicos
+     */
+    .ui.vertical.segment.noBottomBorder,
+    .ui.vertical.segment.form {
+      margin-top: .38571429em;
+    }
+    .tiny.form .header {
+      margin-bottom: .5em;
+    }
+    h3.ui.header .sub.header {
+      padding-top: .5em;
+    }
+    .ui.tiny.segment {
+      margin-bottom: .5em;
+    }
+    .ui.tiny.segment .ui.search.dropdown>.text {
+      line-height: 1.2em;
+    }
+    @media only screen and (max-width: 767px) {
+      .tiny.form .fields {
+        margin-left: -1em;
+        margin-right: -1em;
+        margin-bottom: .5em;
+        border-bottom: 1px dotted rgba(34,36,38,.15);
+        padding: 5px;
+      }
+      .ui.tiny.segment {
+        margin-bottom: 0.2em;
+      }
+      .ui.form .fields>.buttons {
+        margin: 0.3em 0;
+      }
+      .ui.form .fields {
+        margin-bottom: 0.3em;
+      }
+    }
+    .ui.tiny.form .fields.hidden {
+      visibility: hidden;
+      display: none;
+    }
+    .ui.tiny.form .fields .field {
+      flex-basis: 25%;
+    }
+    @media only screen and (max-width: 479px) {
+      .ui.tiny.form .fields .field {
+        flex-basis: 50%;
+      }
+      .ui.tiny.form .fields .field .ui.input {
+        flex-basis: 50%;
+      }
+      .ui.tiny.form .fields .field.amount .ui.input input{
+        width: calc(42vw - 42px);
+      }
+      .ui.tiny.form .fields .field.percentage .ui.input input{
+        width: calc(42vw - 24px);
+      }
+      .ui.tiny.form .fields .field.monetary .ui.input input{
+        width: calc(42vw - 24px);
+      }
+      .ui.tiny.form .fields .field.monetarytotal .ui.input input{
+        width: calc(42vw - 58px);
+      }
+    }
+    @media only screen and (min-width: 480px) and (max-width: 767px) {
+      .ui.tiny.form .fields .field {
+        flex-basis: 50%;
+      }
+    }
+    @media only screen and (min-width: 768px) and (max-width: 1200px) {
+      .ui.tiny.form .fields {
+        -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
+      }
+      .tiny.form .fields {
+        margin-left: -1em;
+        margin-right: -1em;
+        margin-bottom: .5em;
+        border-bottom: 1px dotted rgba(34,36,38,.15);
+        padding: 5px;
+      }
+      .ui.tiny.form .fields .field {
+        flex-basis: 50%;
+      }
+    }
+    @media only screen and (min-width: 1201px) {
+      /* Large monitor or widescreen */
+      [class*="large monitor or widescreen hidden"] {
+        display: none !important;
+      }
+    }
+    .tiny.form .ui.selection.dropdown {
+      padding: .60857143em 1.8em .60857143em 1em;
+    }
+    .tiny.form .fields:not(:first-child) .ui.tiny.button {
+      pointer-events: all !important;
+    }
+
+    .ui.list .list>.item .description,
+    .ui.list>.item .description {
+      position: relative;
+      padding-left: 1.85714em;
+      margin-top: .2em;
+      color: rgba(0,0,0,.5);
+    }
+
+    @media only screen and (max-width:767px) {    
+      .ui.list .list>.item,
+      .ui.list>.item {
+        margin-bottom: .5em;
+      }
+    }
+
+    .ui.input.success>input {
+      background-color: #fcfff5;
+      border-color: #a3c293;
+      color: #2c662d;
+      -webkit-box-shadow: none;
+      box-shadow: none;
+    }
+    .ui.input.disabled>.ui.basic.label:not(.tag):not(.image):not(.ribbon), 
+    .ui.input.disabled>input {
+      background-color: #dbd7d2;
+      font-style: italic;
+      text-decoration: line-through;
+    }
+    .ui.form>.field.success>.ui.labeled.input:not(.right):not([class*="corner labeled"])>.ui.label,
+    .ui.form>.field.success>.ui.left.action.input>.ui.button,
+    .ui.labeled.input.success:not(.right):not([class*="corner labeled"])>.ui.label,
+    .ui.left.action.input.success>.ui.button,
+    .ui.action.input.info:not(.left)>input+.ui.button,
+    .ui.form>.field.info>.ui.action.input:not(.left)>input+.ui.button,
+    .ui.form>.field.info>.ui.right.labeled.input:not([class*="corner labeled"])>input+.ui.label,
+    .ui.right.labeled.input.info:not([class*="corner labeled"])>input+.ui.label {
+      color: #2c662d;
+      background-color: #e5f9e7;
+    }
+    .ui.input.info>input {
+      color: #276f86;
+      background: #f8ffff;
+      border-color: #a9d5de;
+      -webkit-box-shadow: none;
+      box-shadow: none;
+    }
+    .ui.form>.field.info>.ui.labeled.input:not(.right):not([class*="corner labeled"])>.ui.label,
+    .ui.form>.field.info>.ui.left.action.input>.ui.button,
+    .ui.labeled.input.info:not(.right):not([class*="corner labeled"])>.ui.label,
+    .ui.left.action.input.info>.ui.button,
+    .ui.action.input.info:not(.left)>input+.ui.button,
+    .ui.form>.field.info>.ui.action.input:not(.left)>input+.ui.button,
+    .ui.form>.field.info>.ui.right.labeled.input:not([class*="corner labeled"])>input+.ui.label,
+    .ui.right.labeled.input.info:not([class*="corner labeled"])>input+.ui.label {
+      color: #276f86;
+      background-color: #e1f7f7;
+    }
+
+    .ui.ui.ui.ui.input.darking>input {
+      background-color: GhostWhite;
+      color: #5C738B;
+    }
+    .ui.icon.input.readonly>i.icon:not(.link) {
+      color: #5C738B;
+    }
+    .ui.ui.ui.ui.input.lighting>input {
+      background-color: #fafad2;
+      color: #a0522d;
+    }
+    .ui.icon.input.success>i.icon:not(.link) {
+      color: #2c662d;
+    }
+    .ui.icon.input.info>i.icon:not(.link) {
+      color: #276f86;
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Financial\\Contracts\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Financial\\Contracts\\Edit' %}
+  {% endif %}
+  {% set previous = 'ERP\\Financial\\Contracts' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/contracts.svg', 'Contracto') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} contrato
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  contrato.
+                </div>
+              {% else %}
+                Visualizar contrato
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um contrato.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL, { 'contractID': getValue('contractid') }) }}">
+        <h3 class="ui header">Dados do cliente ao qual está vinculado</h3>
+        <div class="fields">
+          <div class="eight wide field">
+            <label>Nome do cliente</label>
+            <div class="field static">
+              <span class="darking">
+                {{ getValue('customername') }}
+              </span>
+              <input type="hidden" name="customername"
+                     value="{{ getValue('customername') }}">
+            </div>
+            <input type="hidden" name="customerid"
+                   value="{{ getValue('customerid') }}">
+          </div>
+
+          <div class="eight wide field">
+            {% if getValue('entitytypeid') == 2 %}
+            <label for="subsidiarytitle">Titular ou dependente</label>
+            {% else %}
+            <label for="subsidiarytitle">Unidade/filial</label>
+            {% endif %}
+            <div class="field static">
+              <span class="darking">
+                {{ getValue('subsidiaryname') }}
+              </span>
+              <input type="hidden" name="subsidiaryname"
+                     value="{{ getValue('subsidiaryname') }}">
+            </div>
+            <input type="hidden" name="subsidiaryid"
+                   value="{{ getValue('subsidiaryid') }}">
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="five wide field">
+            <label>{{ getValue('regionaldocumenttypename') }}</label>
+            <div class="field static">
+              <span class="darking">
+                {{ getValue('regionaldocumentnumber') }} / {{ getValue('regionaldocumentstate') }}
+              </span>
+              <input type="hidden" name="regionaldocumenttypename"
+                     value="{{ getValue('regionaldocumenttypename') }}">
+              <input type="hidden" name="regionaldocumentnumber"
+                     value="{{ getValue('regionaldocumentnumber') }}">
+              <input type="hidden" name="regionaldocumentstate"
+                     value="{{ getValue('regionaldocumentstate') }}">
+            </div>
+          </div>
+
+          <div class="five wide field">
+            <label>
+            {% if getValue('juridicalperson') %}
+              CNPJ
+            {% else %}
+              CPF
+            {% endif %}
+            </label>
+            <div class="field static">
+              <span class="darking">
+                {{ getValue('nationalregister') }}
+              </span>
+              <input type="hidden" name="nationalregister"
+                     value="{{ getValue('nationalregister') }}">
+            </div>
+          </div>
+
+          <div class="six wide field">
+            <label>Número do contrato</label>
+            <div class="ui action input">
+              <div class="field static">
+                <span class="lighting">
+                  {{ getValue('contractnumber') }}
+                </span>
+                <input type="hidden" name="contractnumber"
+                       value="{{ getValue('contractnumber') }}">
+              </div>
+              <button class="ui primary icon button"
+                      data-tooltip="Copia o número deste contrato para a área de transferência"
+                      data-position="top right" type="button"
+                      onclick="copyContractNumberToClipboard(this);">
+                <i class="copy outline icon"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="eight wide field">
+            <div class="ui checkbox{{ readonly }}" style="margin-top: 0;">
+              <input name="informPayingCustomer" type="hidden"
+                     value="{% if getValue('informPayingCustomer')|toBoolean %}true{% else %}false{% endif %}">
+              <input name="_informPayingCustomer" type="checkbox"
+                     class="hidden" {{ readonly }}
+                     {% if getValue('informPayingCustomer')|toBoolean %}checked="checked"{% endif %}>
+              <label>Informar dados do pagante</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="payerdata"{% if getValue('informPayingCustomer')|toBoolean %}{%else%} style="display: none;"{% endif %}>
+          <div class="fields">
+            <div class="eight wide field{{ cssError('customerpayername') }}">
+              <label>Cliente responsável pelo pagamento</label>
+              <input name="customerpayername" type="text" class="search"
+                     maxlength="100"
+                     placeholder="Informe o nome do pagante..."
+                     {{ readonly }}
+                     value="{{ getValue('customerpayername') }}">
+              <input type="hidden" name="customerpayerid"
+                     value="{{ getValue('customerpayerid') }}">
+              {% if hasError('customerpayername') %}
+              <small class="helper">{{ getError('customerpayername') }}</small>
+              {% endif %}
+            </div>
+
+            <div class="eight wide field{{ cssError('subsidiarypayername') }}">
+              {% if getValue('entitytypeid') == 2 %}
+              <label for="subsidiarypayertitle">Titular ou dependente responsável pelo pagamento</label>
+              {% else %}
+              <label for="subsidiarypayertitle">Unidade/filial responsável pelo pagamento</label>
+              {% endif %}
+              <input name="subsidiarypayername" type="text" class="search"
+                     maxlength="50"
+                     placeholder="Informe a unidade/filial..."
+                     {{ readonly }}
+                     value="{{ getValue('subsidiarypayername') }}">
+              <input name="subsidiarypayerid" type="hidden"
+                     value="{{ getValue('subsidiarypayerid') }}">
+              {% if hasError('subsidiarypayername') %}
+              <small class="helper">{{ getError('subsidiarypayername') }}</small>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <h3 class="ui header">Condições de contratação</h3>
+        <div class="fields">
+          <div class="six wide field">
+            <label>Plano de serviços</label>
+            <div class="field static">
+              <span class="darking">{{ getValue('planname') }}&nbsp;</span>
+              <input name="planname" type="hidden"
+                     value="{{ getValue('planname') }}">
+              <input name="planid" type="hidden"
+                     value="{{ getValue('planid') }}">
+            </div>
+          </div>
+
+          <div class="six wide field">
+            <label>Forma de assinatura do plano</label>
+            <div class="field static">
+              <span class="darking">{{ getValue('subscriptionplanname') }}&nbsp;</span>
+              <input name="subscriptionplanname" type="hidden"
+                     value="{{ getValue('subscriptionplanname') }}">
+              <input name="subscriptionplanid" type="hidden"
+                     value="{{ getValue('subscriptionplanid') }}">
+            </div>
+          </div>
+
+          <div class="four wide field{{ cssError('duedayid') }}">
+            <label>Dia de vencimento</label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="duedayid" type="hidden"
+                     value="{{ getValue('duedayid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Dia do vencimento...</div>
+              <div class="menu">
+              {% set dueDayID = getValue('duedayid') %}
+              {% for dueDay in dueDays %}
+                <div class="item"
+                     {% if dueDay.id == dueDayID %}
+                       selected
+                     {% endif %}
+                     data-value="{{ dueDay.id }}"
+                     data-text="{{ dueDay.day }}">
+                  {{ dueDay.day }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('dueday') }}&nbsp;</span>
+              <input name="dueday" type="hidden"
+                     value="{{ getValue('dueday') }}">
+              <input name="duedayid" type="hidden"
+                     value="{{ getValue('duedayid') }}">
+            </div>
+            {% endif %}
+            {% if hasError('duedayid') %}
+            <small class="helper">{{ getError('duedayid') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="four wide field">
+            <label>
+              Valor do plano
+              <span data-tooltip="Valor da mensalidade no plano contratado"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui left labeled input success">
+              <div class="ui basic label">R$</div>
+              <input name="planmonthprice" type="text"
+                     class="right" readonly
+                     value="{{ getValue('planmonthprice')|replace({'.': ','}) }}">
+             </div>
+          </div>
+
+          <div class="four wide field{{ cssError('monthprice') }}">
+            <label>
+              Mensalidade
+              <span data-tooltip="Valor da mensalidade estabelecida no contrato"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui left labeled input{{ readonly }}">
+              <div class="ui basic label">R$</div>
+              <input name="monthprice" type="text"
+                     placeholder="0,00"
+                     class="right" {{ readonly }}
+                     value="{{ getValue('monthprice') }}">
+            </div>
+            {% if hasError('monthprice') %}
+            <small class="helper">{{ getError('monthprice') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field">
+            <label>
+              Desconto oferecido
+              <span data-tooltip="Desconto aplicado em função do plano de assinatura escolhido"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui right labeled input info">
+              <input name="discountrate" type="text"
+                     class="right" readonly
+                     value="{{ getValue('discountrate')|replace({'.': ','}) }}">
+              <div class="ui basic label">%</div>
+             </div>
+          </div>
+
+          <div class="four wide field ">
+            <label>
+              Valor pago
+              <span data-tooltip="O valor real da mensalidade pago já incluso o desconto oferecido"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui left labeled input success">
+              <div class="ui basic label">R$</div>
+              <input name="realmonthprice" type="text"
+                     placeholder="0,00"
+                     class="right" readonly
+                     value="{{ getValue('realmonthprice')|replace({'.': ','}) }}">
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="four wide field">
+            <label>
+              Reajuste a cada
+              <span data-tooltip="Contados à partir da instalação do equipamento"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui right labeled input info">
+              <input name="readjustmentperiod" type="text"
+                     class="right" readonly
+                     value="{{ getValue('readjustmentperiod') }}">
+              <div class="ui basic label">meses</div>
+              <div class="ui basic label">{{ getValue('indicatorname') }}</div>
+              <input name="indicatorname" type="hidden"
+                     value="{{ getValue('indicatorname') }}">
+             </div>
+          </div>
+
+          <div class="four wide field">
+            <label>
+              Próximo reajuste
+              <span data-tooltip="Data do próximo reajuste calculado em função da data de assinatura do contrato"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui input left icon readonly">
+              <i class="calendar icon"></i>
+              <input name="dateofnextreadjustment" type="text"
+                     placeholder="Reajusta valores em..."
+                     readonly
+                     value="{{ getValue('dateofnextreadjustment') }}">
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="four wide field{{ cssError('signaturedate') }}">
+            <label>
+              Data da assinatura
+              <span data-tooltip="A data em que o contrato foi assinado indicando que o mesmo está ativo"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui calendar" id="signaturedate">
+              <div class="ui input left icon{{ readonly }}">
+                <i class="calendar icon"></i>
+                <input name="signaturedate" type="text"
+                       placeholder="Assinado em..."
+                       {{ readonly }}
+                       value="{{ getValue('signaturedate') }}">
+              </div>
+            </div>
+            {% if hasError('signaturedate') %}
+            <small class="helper">{{ getError('signaturedate') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="four wide field">
+            <label>
+              Duração do contrato
+              <span data-tooltip="Duração do contrato determinada pelo plano"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui right labeled input info">
+              <input name="duration" type="text"
+                     class="right" readonly
+                     value="{{ getValue('duration') }}">
+              <div class="ui basic label">meses</div>
+             </div>
+          </div>
+
+          <div class="four wide field">
+            <label>
+              Período de fidelidade
+              <span data-tooltip="Contados à partir da instalação do equipamento"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui right labeled input info">
+              <input name="loyaltyperiod" type="text"
+                     class="right" readonly
+                     value="{{ getValue('loyaltyperiod') }}">
+              <div class="ui basic label">meses</div>
+            </div>
+          </div>
+
+          <div class="four wide field{{ cssError('enddate') }}">
+            <label>
+              Data do encerramento
+              <span data-tooltip="A data em que o contrato foi encerrado"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui calendar" id="enddate">
+              <div class="ui input left icon{{ readonly }}">
+                <i class="calendar icon"></i>
+                <input name="enddate" type="text"
+                       placeholder="Encerrado em..."
+                       {{ readonly }}
+                       value="{{ getValue('enddate') }}">
+              </div>
+            </div>
+            {% if hasError('enddate') %}
+            <small class="helper">{{ getError('enddate') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="eight wide field{{ cssError('paymentconditionid') }}">
+            <label>
+              Forma de pagamento do contrato
+              <span data-tooltip="Qual a forma de pagamento utilizada neste contrato"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="paymentconditionid" type="hidden"
+                     value="{{ getValue('paymentconditionid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Como o contrato será pago</div>
+              <div class="menu">
+              {% set paymentConditionID = getValue('paymentconditionid') %}
+              {% for paymentCondition in paymentConditions %}
+                <div class="item" {% if paymentCondition.id == paymentConditionID %}selected{% endif %}
+                     data-value="{{ paymentCondition.id }}"
+                     data-enableforwardsale="{{ paymentCondition.enableforwardsale }}"
+                     data-text="{{ paymentCondition.name }}">
+                  {{ paymentCondition.name }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('paymentconditionname') }}</span>
+              <input name="paymentconditionid" type="hidden"
+                     value="{{ getValue('paymentconditionid') }}">
+            </div>
+            {% endif %}
+            {% if hasError('paymentconditionid') %}
+            <small class="helper">{{ getError('paymentconditionid') }}</small>
+            {% endif %}
+          </div>
+
+          <div class="eight wide field{{ cssError('additionalpaymentconditionid') }}">
+            <label>
+              Forma de pagamento adicional
+              <span data-tooltip="Para contratos pagos antecipadamente e/ou por carnê e que serviços adicionais precisem ser cobrados"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            {% if editMode %}
+            <div class="ui search selection dropdown">
+              <input name="additionalpaymentconditionid" type="hidden"
+                     value="{{ getValue('additionalpaymentconditionid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text">Como serviços adicionais serão cobrados</div>
+              <div class="menu">
+              {% set additionalPaymentConditionID = getValue('additionalpaymentconditionid') %}
+              {% for paymentCondition in paymentConditions %}
+                <div class="item" {% if paymentCondition.id == additionalPaymentConditionID %}selected{% endif %}
+                     data-value="{{ paymentCondition.id }}"
+                     data-text="{{ paymentCondition.name }}">
+                  {{ paymentCondition.name }}
+                </div>
+              {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('paymentconditionname') }}</span>
+              <input name="additionalpaymentconditionid" type="hidden"
+                     value="{{ getValue('additionalpaymentconditionid') }}">
+            </div>
+            {% endif %}
+            {% if hasError('additionalpaymentconditionid') %}
+            <small class="helper">{{ getError('additionalpaymentconditionid') }}</small>
+            {% endif %}
+          </div>
+        </div>
+          
+        <div class="fields">
+          <div class="sixteen wide mobile sixteen wide tablet sixteen wide computer sixteen wide large screen column }}">
+            <h3 class="ui header" style="margin-top: .5em; margin-left: .3em;">
+              Configurações específicas
+            </h3>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field">
+            <div class="ui list">
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="prepaid"
+                         value="{% if getValue('prepaid')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_prepaid"
+                         {% if getValue('prepaid')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Contrato pré-pago</label>
+                </div>
+                <div class="description">
+                  Os valores das mensalidades são cobrados préviamente.
+                  Valores adicionais, tais como serviços de manutenção
+                  prestados e/ou cobranças adicionais são realizadas
+                  posteriormente utilizando-se a forma de pagamento
+                  definida no campo "Forma de pagamento para valores
+                  adicionais".
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="chargeanytariffs"
+                         value="{% if getValue('chargeanytariffs')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_chargeanytariffs"
+                         {% if getValue('chargeanytariffs')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Cobrar tarifas definidas no meio de pagamento</label>
+                </div>
+                <div class="description">
+                  Tarifas definidas no meio de pagamento são aplicadas,
+                  tais como tarifa para emissão de boletos, a cada
+                  emissão de cobrança realizada pelo meio de pagamento
+                  defindo (se existir uma tarifa definida).
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="unifybilling"
+                         value="{% if getValue('unifybilling')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_unifybilling"
+                         {% if getValue('unifybilling')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Unificar cobranças de instalações</label>
+                </div>
+                <div class="description">
+                  Os valores de cada instalação são agrupados em uma
+                  única cobrança, onde serão discriminados os valores
+                  individuais e o respectivo valor total deste contrato.
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="starttermafterinstallation"
+                         value="{% if getValue('starttermafterinstallation')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_starttermafterinstallation"
+                         {% if getValue('starttermafterinstallation')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Início de vigência se dá após a instalação do equipamento</label>
+                </div>
+                <div class="description">
+                  Os valores de cada instalação são considerados
+                  habilitados para cobrança do serviço após a ocorrência
+                  da instalação do equipamento. Caso contrário, os
+                  valores serão cobrados imediatamente após a assinatura
+                  do contrato.
+                </div>
+              </div>
+
+              {% if getValue('loyaltyperiod') > 0 %}
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="notchargeloyaltybreak"
+                         value="{% if getValue('notchargeloyaltybreak')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_notchargeloyaltybreak"
+                         {% if getValue('notchargeloyaltybreak')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Não cobrar multa por quebra de fidelidade</label>
+                </div>
+                <div class="description">
+                  Não será cobrada a multa pela quebra do período de
+                  fidelidade em nenhum dos itens deste contrato, apesar
+                  de estar previsto no plano contratado.
+                </div>
+              </div>
+              {% else %}
+              <input type="hidden" name="notchargeloyaltybreak"
+                     value="false">
+              {% endif %}
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="manualreadjustment"
+                         value="{% if getValue('manualreadjustment')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_manualreadjustment"
+                         {% if getValue('manualreadjustment')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Reajuste manual</label>
+                </div>
+                <div class="description">
+                  Os reajustes previstos no plano contratato não serão
+                  aplicados automaticamente após o vencimento do prazo.
+                  Neste caso, para reajustar o valor, será necessário
+                  ajustar manualmente quando necessário.
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="active"
+                         value="{% if getValue('active')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_active"
+                         {% if getValue('active')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Ativo</label>
+                </div>
+                <div class="description">
+                  O contrato encontra-se ativo (em operação). Ao suspender
+                  um contrato, o processamento deixa de ser realizado e
+                  as cobranças param de ser geradas automaticamente.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="ui header">
+          Valores cobrados
+          <div class="sub header">
+            Os valores de serviços, taxas e outras cobranças
+            realizadas ao longo do período contratado.
+          </div>
+        </h3>
+        <table class="ui definition celled selectable compact charges table tiny form">
+          <thead>
+            <tr>
+              <th></th>
+              <th class="center aligned">Nome da cobrança</th>
+              <th class="center aligned three wide">Valor cobrado<br>no plano</th>
+              <th class="center aligned three wide">Valor cobrado<br>neste contrato</th>
+              <th class="center aligned">Parcelamento do valor cobrado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set charges = getValue('charges') %}
+            {% set lastGroup = 0 %}
+            {% for billingType in billingTypes %}
+              {% if charges[billingType.id] is defined %}
+                {% if charges[billingType.id].added == 'true' %}
+                  {% set class="selected" %}
+                  {% set readonlyfield = '' %}
+                  {%
+                    set charge = {
+                      'icon': 'green checkmark',
+                      'planchargeid': billingType.planchargeid,
+                      'planchargevalue': billingType.planchargevalue
+                    }
+                  %}
+                {% else %}
+                  {% set class="unselected" %}
+                  {% set readonlyfield = ' readonly' %}
+                  {%
+                    set charge = {
+                      'icon': 'red times'
+                    }
+                  %}
+                {% endif %}
+                {% set charge = charge|merge(charges[billingType.id]) %}
+              {% else %}
+                {% set class="unselected" %}
+                {% set readonlyfield = ' readonly' %}
+                {%
+                  set charge = {
+                    'added': 'false',
+                    'icon': 'red times',
+                    'contractchargeid': 0,
+                    'chargevalue': '0,00'
+                  }
+                %}
+              {% endif %}
+            {% if lastGroup != billingType.group %}
+            <tr>
+              <td class="left aligned" colspan="5">
+                <i class="check circle orange icon"></i>
+                {% if billingType.group == 2 %}
+                Serviços realizados por técnico e lançado em ordem de serviço
+                {% else %}
+                Produtos, serviços ou acessórios cobrados do cliente
+                {% endif %}
+              </td>
+            </tr>
+            {% set lastGroup = billingType.group %}
+            {% endif %}
+            <tr class="{{ class }}">
+              <td class="center aligned toggle"
+                  style="max-width: 20px; padding: .5em 0;" 
+                  added="{{ charge.added }}"
+                  elementID="{{ billingType.id }}">
+                <i class="large {{ charge.icon }} icon"></i>
+                <input type="hidden"
+                       name="charges[{{ billingType.id }}][added]"
+                       value="{{ charge.added }}">
+              </td>
+              <td>{{ billingType.name }}</td>
+              <td>
+                {% if billingType.planchargeid > 0 %}
+                  {% set planColor = 'info' %}
+                {% else %}
+                  {% set planColor = 'disabled' %}
+                {% endif %}
+                <div class="ui left labeled input {{ planColor }}">
+                  <div class="ui basic label">R$</div>
+                  <input type="hidden"
+                         name="charges[{{ billingType.id }}][planchargeid]"
+                         value="{{ billingType.planchargeid }}">
+                  <input name="charges[{{ billingType.id }}][planchargevalue]"
+                         class="right aligned"
+                         readonly
+                         style="width: calc(100% - 3.2em); -webkit-box-flex: 1; -ms-flex: 1 0 auto; flex: 1 0 auto; border-top-left-radius: 0; border-bottom-left-radius: 0; border-left-color: transparent;"
+                         type="text"
+                         value="{{ billingType.planchargevalue|replace({'.': ','}) }}">
+                </div>
+              </td>
+              <td>
+                <div class="ui left labeled input{{ readonlyfield }}">
+                  <div class="ui basic label"
+                       name="charges[{{ billingType.id }}][label]">R$</div>
+                  <input type="hidden"
+                         name="charges[{{ billingType.id }}][contractchargeid]"
+                         value="{{ charge.contractchargeid }}">
+                  <input type="hidden"
+                         name="charges[{{ billingType.id }}][billingtypeid]"
+                         value="{{ billingType.id }}">
+                  <input name="charges[{{ billingType.id }}][chargevalue]"
+                         class="right aligned"
+                         {{ readonlyfield }}
+                         style="width: calc(100% - 3.2em); -webkit-box-flex: 1; -ms-flex: 1 0 auto; flex: 1 0 auto; border-top-left-radius: 0; border-bottom-left-radius: 0; border-left-color: transparent;"
+                         placeholder="Valor cobrado" type="text"
+                         value="{{ charge.chargevalue }}">
+                </div>
+              </td>
+              <td>
+                {{ billingType.installment }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <h3 class="ui header">
+          Taxas por descumprimento por parte do cliente
+          <div class="sub header">
+            Os valores de taxas cobradas em caso de problemas ocorridos
+            em função de falhas do próprio cliente que impeçam a
+            execução do serviço em uma visita técnica agendada. Os
+            valores cobrados podem ser uma porcentagem do valor do
+            serviço que iria ser executado ou um valor fixo em Reais.
+          </div>
+        </h3>
+        <div class="grouped">
+          <div class="column">
+            <div class="ui coffe message">
+              <div class="header">
+                Visita improdutiva
+              </div>
+              <p>
+                Quando o técnico comparece ao local agendado para o
+                atendimento e não consegue executar o serviço por algum
+                problema como, por exemplo, ausência do veículo ou do
+                próprio cliente para recebê-lo.
+              </p>
+              <div class="ui compact grid">
+                <div class="sixteen wide mobile sixteen wide tablet six wide computer column{{ cssError('maxwaitingtime') }}">
+                  <label>
+                    Tempo máximo
+                    <span data-tooltip="Tempo máximo que o técnico irá aguardar, contados à partir do início do horário agendado"
+                          data-content="Top Left" data-position="top left"
+                          data-inverted="">
+                      <i class="question circle olive outline icon"></i>
+                    </span>
+                  </label>
+                  <div class="ui right labeled input{{ readonly }}">
+                    <input name="maxwaitingtime" type="text" maxlength="2"
+                           placeholder="0"
+                           {{ readonly }}
+                           value="{{ getValue('maxwaitingtime') }}">
+                    <div class="ui basic label">min</div>
+                  </div>
+                  {% if hasError('maxwaitingtime') %}
+                  <small class="helper">{{ getError('maxwaitingtime') }}</small>
+                  {% endif %}
+                </div>
+
+                <div class="sixteen wide mobile sixteen wide tablet ten wide computer column{{ cssError('unproductivevisit') }}">
+                  <label>
+                    Valor cobrado
+                    <span data-tooltip="Valor cobrado em caso da impossibilidade de execução do serviço"
+                          data-content="Top Left" data-position="top left"
+                          data-inverted="">
+                      <i class="question circle olive outline icon"></i>
+                    </span>
+                  </label>
+                  <div class="ui left labeled{% if editMode %} action{% endif %} input{{ readonly }}">
+                    <div class="ui basic label"
+                         name="unproductiveVisitTypeLabel">%</div>
+                    <input name="unproductivevisit" type="text"
+                           placeholder="0.0000" {{ readonly }}
+                           value="{{ getValue('unproductivevisit') }}">
+                    {% if editMode %}
+                    <select class="ui dropDownLabel medium selection dropdown"
+                            name="unproductivevisittype"
+                            label="unproductiveVisitTypeLabel">
+                      {% set unproductiveVisitType = getValue('unproductivevisittype') %}
+                      {% for measureType in measureTypes %}
+                        <option value="{{ measureType.id }}"
+                                {% if unproductiveVisitType == measureType.id %}
+                                  selected
+                                {% endif %}
+                                label="{{ measureType.symbol }}">
+                          {{ measureType.name }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                    {% endif %} 
+                  </div>
+                  {% if hasError('unproductivevisit') %}
+                  <small class="helper">{{ getError('unproductivevisit') }}</small>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="column">
+            <div class="ui coffe message">
+              <div class="header">
+                Visita frustrada
+              </div>
+              <p>
+                Quando o cliente solicita o cancelamento ou reagendamento
+                de uma visita muito perto do momento em que ela estava
+                programada para ocorrer, não tendo tempo hábil de avisar
+                o técnico.
+              </p>
+
+              <div class="ui compact grid">
+                <div class="sixteen wide mobile sixteen wide tablet six wide computer column{{ cssError('minimumtime') }}">
+                  <label>
+                    Tempo mínimo
+                    <span data-tooltip="Tempo mínimo antes do horário do evento para que o cliente solicite a remarcação ou cancelamento"
+                          data-content="Top Left" data-position="top left"
+                          data-inverted="">
+                      <i class="question circle olive outline icon"></i>
+                    </span>
+                  </label>
+                  <div class="ui left labeled{% if editMode %} action{% endif %} input{{ readonly }}">
+                    <input name="minimumtime" type="text"
+                           placeholder="0" {{ readonly }}
+                           value="{{ getValue('minimumtime') }}">
+                    {% if editMode %}
+                    <select class="ui dropDownLabel minimum selection dropdown"
+                            name="minimumtimetype"
+                            label="minimumTimeTypeLabel">
+                      {% set minimumTimeType = getValue('minimumtimetype') %}
+                      {% for timeType in timeTypes %}
+                        <option value="{{ timeType.id }}"
+                                {% if minimumTimeType == timeType.id %}
+                                  selected
+                                {% endif %}
+                                label="{{ timeType.symbol }}">
+                          {{ timeType.name }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                    {% endif %} 
+                  </div>
+                  {% if hasError('minimumtime') %}
+                  <small class="helper">{{ getError('minimumtime') }}</small>
+                  {% endif %}
+                </div>
+                
+                <div class="sixteen wide mobile sixteen wide tablet ten wide computer column{{ cssError('frustratedvisit') }}">
+                  <label>
+                    Valor cobrado
+                    <span data-tooltip="Em caso do cliente cancelar ou reagendar sem respeitar o prazo mínimo"
+                          data-content="Top Left" data-position="top left"
+                          data-inverted="">
+                      <i class="question circle olive outline icon"></i>
+                    </span>
+                  </label>
+                  <div class="ui left labeled{% if editMode %} action{% endif %} input{{ readonly }}">
+                    <div class="ui basic label"
+                         name="frustratedVisitTypeLabel">%</div>
+                    <input name="frustratedvisit" type="text"
+                           placeholder="0.0000" {{ readonly }}
+                           value="{{ getValue('frustratedvisit') }}">
+                    {% if editMode %}
+                    <select class="ui dropDownLabel medium selection dropdown"
+                            name="frustratedvisittype"
+                            label="frustratedVisitTypeLabel">
+                      {% set frustratedVisitType = getValue('frustratedvisittype') %}
+                      {% for measureType in measureTypes %}
+                        <option value="{{ measureType.id }}"
+                                {% if frustratedVisitType == measureType.id %}
+                                  selected
+                                {% endif %}
+                                label="{{ measureType.symbol }}">
+                          {{ measureType.name }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                    {% endif %} 
+                  </div>
+                  {% if hasError('frustratedvisit') %}
+                  <small class="helper">{{ getError('frustratedvisit') }}</small>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="ui header">
+          Taxas cobradas pelo deslocamento do técnico
+          <div class="sub header">
+            Os valores cobrados do cliente pelo deslocamento do técnico
+            para execução de serviços em visitas técnicas agendadas.
+          </div>
+        </h3>
+        <div class="grouped withMargin">
+          <div class="column">
+            <div class="ui message">
+              {% set displacements = getValue('displacements') %}
+              <div class="header">
+                Faixas de cobrança
+              </div>
+              <p>
+                Os valores cobrados por faixa por km para as distâncias
+                de deslocamento do técnico
+              </p>
+
+              <table class="ui compact collapsing single line unstackable table tiny form"
+                 id="displacementList">
+                <tbody>
+                  {% for number, displacement in displacements %}
+                    {% if (number > 0) %}
+                      {% include 'erp/financial/contracts/displacement.twig' with { displacement: displacement, number: number }  %}
+                    {% endif %}
+                  {% endfor %}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="3" class="right aligned">
+                      {% if displacements|length > 1 %}
+                      Acima disto, cobrar:
+                      {% else %}
+                      Para qualquer distância, cobrar:
+                      {% endif %}
+                    </td>
+                    <td class="right aligned" style="max-width: 16em; padding-right: 6.4em;">
+                      <div class="ui left labeled action input{{ readonly }}">
+                        <div class="ui basic label" name="displacements[0][label]">R$</div>
+                        <input name="displacements[0][distance]"
+                               type="hidden"
+                               value="{{ displacements[0].distance }}">
+                        <input name="displacements[0][displacementfeeid]"
+                               type="hidden"
+                               value="{{ displacements[0].displacementfeeid }}" />
+                        <input name="displacements[0][value]"
+                               class="right aligned"
+                               placeholder="Valor cobrado..." type="text"
+                               style="-webkit-box-flex: 1; -ms-flex: 1 0 auto; flex: 1 0 auto; border-top-left-radius: 0; border-bottom-left-radius: 0; border-left-color: transparent;"
+                               value="{{ displacements[0].value }}"
+                               {{ readonly }}>
+                        <button class="ui tiny gray icon button readonly"
+                                style="background-color: #c8c8c8 !important; color: white;"
+                                type="button"
+                                readonly>
+                          <i class="minus icon"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  {% if editMode %}
+                  <tr>
+                    <td colspan="4">
+                      <button type="button" class="ui mini green right labeled icon button"
+                              onclick="addDisplacement();">
+                        <i class="plus icon"></i> Nova faixa de cobrança
+                      </button>
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <div class="column">
+            <div class="ui message">
+              <div class="header">
+                Ponto de referência inicial
+              </div>
+              <p>
+                O local utilizado como referência inicial para cálculo
+                da distância percorrida pelo técnico até o local do
+                atendimento.
+              </p>
+
+              <div class="ui compact grid">
+                <div class="sixteen wide mobile sixteen wide tablet sixteen wide computer sixteen wide large screen column{{ cssError('geographiccoordinateid') }}">
+                  <label>Local de referência</label>
+                  {% if editMode %}
+                  <div class="ui search selection dropdown">
+                    <input name="geographiccoordinateid" type="hidden"
+                           value="{{ getValue('geographiccoordinateid') }}">
+                    <i class="dropdown icon"></i>
+                    <div class="default text">Local de referência...</div>
+                    <div class="menu">
+                    {% set geographicCoordinateID = getValue('geographiccoordinateid') %}
+                      <div class="item"
+                           {% if 0 == geographicCoordinateID %}
+                             selected
+                           {% endif %}
+                           data-value="0"
+                           data-text="Outro local">
+                        Outro local
+                      </div>
+                    {% for geographicCoordinate in geographicCoordinates %}
+                      <div class="item"
+                           {% if geographicCoordinate.id == geographicCoordinateID %}
+                             selected
+                           {% endif %}
+                           data-value="{{ geographicCoordinate.id }}"
+                           data-text="{{ geographicCoordinate.name }}">
+                        {{ geographicCoordinate.name }}
+                      </div>
+                    {% endfor %}
+                    </div>
+                  </div>
+                  {% else %}
+                  <div class="field static">
+                    <span class="darking">{{ getValue('geographiccoordinatename') }}&nbsp;</span>
+                    <input name="geographiccoordinatename" type="hidden"
+                           value="{{ getValue('geographiccoordinatename') }}">
+                    <input name="geographiccoordinateid" type="hidden"
+                           value="{{ getValue('geographiccoordinateid') }}">
+                  </div>
+                  {% endif %}
+                  {% if hasError('geographiccoordinateid') %}
+                  <small class="helper">{{ getError('geographiccoordinateid') }}</small>
+                  {% endif %}
+                </div>
+
+                <div class="another sixteen wide mobile sixteen wide tablet eight wide computer eight wide large screen column{{ cssError('referencename') }}">
+                  <label>Nome da referência</label>
+                  <div class="ui input{{ readonly }}">
+                    <input name="referencename" type="text" maxlength="100"
+                           placeholder="Informe o nome do local..."
+                           {{ readonly }}
+                           value="{{ getValue('referencename') }}">
+                  </div>
+                  {% if hasError('referencename') %}
+                  <small class="helper">{{ getError('referencename') }}</small>
+                  {% endif %}
+                </div>
+
+                <div class="another eight wide mobile eight wide tablet four wide computer four wide large screen column{{ cssError('latitude') }}">
+                  <label>Latitude</label>
+                  <div class="ui input{{ readonly }}">
+                    <input name="latitude" type="text" maxlength="30"
+                           placeholder="Latitude..."
+                           {{ readonly }}
+                           value="{{ getValue('latitude') }}">
+                  </div>
+                  {% if hasError('latitude') %}
+                  <small class="helper">{{ getError('latitude') }}</small>
+                  {% endif %}
+                </div>
+
+                <div class="another eight wide mobile eight wide tablet four wide computer four wide large screen column{{ cssError('longitude') }}">
+                  <label>Longitude</label>
+                  <div class="ui input{{ readonly }}">
+                    <input name="longitude" type="text" maxlength="30"
+                           placeholder="longitude..."
+                           {{ readonly }}
+                           value="{{ getValue('longitude') }}">
+                  </div>
+                  {% if hasError('longitude') %}
+                  <small class="helper">{{ getError('longitude') }}</small>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method"
+               value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="contractid"
+               value="{{ getValue('contractid') }}">
+        {% endif %}
+      </form>
+      <!-- Fim formulário -->
+      {% if formMethod == 'PUT' %}
+      <!-- Start status panel -->
+      <div class="ui segments">
+        <div class="ui grey inverted segment">
+          <h5>
+            Histórico de modificações:
+          </h5>
+          Cadastrado {{ getValue('createdat')|localizedDate('long') }} por {{ getValue('createdbyusername') }}
+          <div class="ui divider"></div>
+          Modificado {{ getValue('updatedat')|localizedDate('long') }} por {{ getValue('updatedbyusername') }}
+        </div>
+      </div>
+      <!-- End status panel -->
+      {% endif %}
+    </div>
+    <!-- Fim conteúdo do módulo -->
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('semantic-ui/components/calendar.min.js') }}
+  {{ lib('template-engine/template.engine.min.js') }}
+  {{ lib('extension/extension.min.js') }}
+
+  {% set getEntityDataCompletion = { 'URL': 'ERP\\Cadastre\\Entities\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  
+  {% apply minify %}
+  <script>
+    /* ---------------------------------[ Planos de assinatura ]----- */
+    var
+      subscriptionPlans = {
+      {% for planID, offeredPlans in subscriptionPlans %}
+        {{ planID }}: [
+        {% for offeredPlan in offeredPlans %}
+          {
+            'name': '{{ offeredPlan.name }}',
+            'value': {{ offeredPlan.value }},
+            'months': {{ offeredPlan.months }},
+            'discount': '{{ offeredPlan.discount }}'
+          },
+        {% endfor %}
+        ],
+      {% endfor %}
+      }
+    ;
+
+    /* --------------------------------[ Taxas de deslocamento ]----- */
+
+    {% set displacements = getValue('displacements') %}
+    // O índice de contagem das taxas de deslocamento
+    var displacementsCount = {{ displacements|length }};
+    
+    // O template de uma nova taxa de deslocamento
+    {% set displacementTemplate %}
+      {% include 'erp/financial/contracts/displacement.twig' with { number: '<%=number%>', displacement: { displacementfeeid: 0, distance: 0, value: '0,00' }, editMode: true, readonly: '' }  %}
+    {% endset %}
+    var displacementTemplate = '{{ displacementTemplate|escape('js') }}'.replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+
+    /* -------------------------------------------------------------- */
+
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      $('.ui.checkbox')
+        .checkbox(checkboxOptions)
+      ;
+      $("input[name='_informPayingCustomer']")
+        .change(payingCustomerHandler)
+      ;
+      $("input[name='customerpayername']")
+        .autocomplete(customerPayerNameCompletionOptions)
+      ;
+      $("input[name='subsidiarypayername']")
+        .autocomplete(subsidiaryPayerNameCompletionOptions)
+      ;
+
+      {% if formMethod == 'POST' %}
+      // Faz o tratamento da seleção do plano de serviços
+      $("input[name='planid']")
+        .change(planHandler)
+      ;
+      $("input[name='subscriptionplanid']")
+        .change(subscriptionPlanHandler)
+      ;
+      {% endif %}
+      $("input[name='monthprice']")
+        .mask({
+          type: 'monetary',
+          trim: true,
+          allowNegativeValues: false,
+          decimalsPlaces: 2,
+          maxLength: 15
+        })
+        .blur(monetaryHandler)
+        .blur(monthPriceHandler)
+      ;
+      monthPriceHandler();
+      $("input[name='signaturedate']")
+        .mask({
+          type: 'date',
+          validate: true
+        })
+      ;
+      $("#signaturedate")
+        .calendar(calendarOptions)
+      ;
+      $("input[name='enddate']")
+        .mask({
+          type: 'date',
+          validate: true
+        })
+      ;
+      $("#enddate")
+        .calendar(calendarOptions)
+      ;
+
+      // Realiza o tratamento do clique na tabela de tipos de cobranças
+      // para permitir marcar/desmarcar quais cobranças serão permitidas
+      $("table.charges tbody tr td.toggle").click(toggleCell);
+
+      // Força o mascaramento dos campos dos valores cobrados para cada
+      // tipo de cobrança
+      $("input[name*='chargevalue']")
+        .mask({
+          type: 'monetary',
+          trim: true,
+          allowNegativeValues: false,
+          decimalsPlaces: 2,
+          maxLength: 15
+        })
+        .blur(monetaryHandler)
+      ;
+
+      $("input[name='maxwaitingtime']")
+        .mask({
+          type: 'number'
+        })
+      ;
+      $("input[name='unproductivevisit']")
+        .mask({
+          type: 'monetary',
+          trim: true,
+          allowNegativeValues: false,
+          decimalsPlaces: 2,
+          maxLength: 15
+        })
+        .blur(monetaryHandler)
+      ;
+      $("select[name='unproductivevisittype']")
+        .change(updateMeasureLabel)
+        .trigger("change")
+      ;
+      $("input[name='minimumyime']")
+        .mask({
+          type: 'number'
+        })
+      ;
+      $("input[name='frustratedvisit']")
+        .mask({
+          type: 'monetary',
+          trim: true,
+          allowNegativeValues: false,
+          decimalsPlaces: 2,
+          maxLength: 15
+        })
+        .blur(monetaryHandler)
+      ;
+      $("select[name='frustratedvisittype']")
+        .change(updateMeasureLabel)
+        .trigger("change")
+      ;
+
+      // Força o mascaramento dos campos das taxas de deslocamento
+      for (var displacementNumber = 0; displacementNumber < displacementsCount; displacementNumber++) {
+        if (displacementNumber > 0) {
+          $("input[name='displacements[" + displacementNumber + "][distance]']")
+            .mask({
+              type: 'number',
+              maxLength: 4
+            })
+          ;
+        }
+
+        $("input[name='displacements[" + displacementNumber + "][value]']")
+          .mask({
+            type: 'monetary',
+            trim: true,
+            allowNegativeValues: false,
+            decimalsPlaces: 2,
+            maxLength: 12
+          })
+          .blur(monetaryHandler)
+        ;
+      }
+
+      $("input[name='geographiccoordinateid']")
+        .change(toggleNewReference)
+        .trigger("change")
+      ;
+      $("input[name='latitude']")
+        .mask({
+          type: 'numeric',
+          trim: true,
+          allowNegativeValues: true,
+          decimalsPlaces: 7,
+          maxLength: 15
+        })
+        .blur(geographicCoordinateHandler)
+      ;
+      $("input[name='longitude']")
+        .mask({
+          type: 'numeric',
+          trim: true,
+          allowNegativeValues: true,
+          decimalsPlaces: 7,
+          maxLength: 15
+        })
+        .blur(geographicCoordinateHandler)
+      ;
+
+      // Coloca o foco no primeiro campo
+      $("input[name='customername']")
+        .focus()
+      ;
+    });
+    
+
+    // =================================================[ Options ]=====
+
+    // As opções para o componente de autocompletar o nome do pagante
+    var customerPayerNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      ajax: {
+        url: "{{ path_for(getEntityDataCompletion.URL) }}",
+        type: "{{ getEntityDataCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'payer';
+          params.detailed = true;
+          params.notIncludeAnyRegister = true;
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        if (suggestion.juridicalperson) {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     (
+                    (suggestion.tradingname)
+                      ? '[<span style="color: #0256C4; font-style: italic;">' + suggestion.tradingname + '</span>]<br>'
+                      : ''
+                  )
+            +     (
+                    (suggestion.items > 1)
+                      ? (' (<span style="color: CornflowerBlue; font-style: italic;">' + suggestion.subsidiaryname + '</span>)')
+                      : ''
+                  )
+            +   '</div>'
+            + '</div>'
+          ;
+        } else {
+          return ''
+            + '<div class="content">'
+            +   '<div class="title">' + suggestion.name + '<br>'
+            +     (
+                    (suggestion.tradingname)
+                      ? '[<span style="color: #0256C4; font-style: italic;">' + suggestion.tradingname + '</span>]<br>'
+                      : ''
+                  )
+            +     (
+                    (suggestion.items > 1)
+                      ? ( ''
+                          + '<span style="color: CornflowerBlue; font-style: italic;">'
+                          +     (
+                                  (suggestion.headoffice == true)
+                                    ? 'Titular'
+                                    : ('Dependente: ' + suggestion.subsidiaryname)
+                                )
+                          +     '</span>'
+                        )
+                      : ''
+                  )
+            +   '</div>'
+            + '</div>'
+          ;
+        }
+      },
+      onSelect: function (element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='customerpayerid']")
+          .val(suggestion.id)
+        ;
+        $("input[name='subsidiarypayerid']")
+          .val(suggestion.subsidiaryid)
+        ;
+        $("input[name='subsidiarypayername']")
+          .val(suggestion.subsidiaryname)
+        ;
+        // Modifica o rótulo do campo unidade/filial/titular
+        if (suggestion.juridicalperson) {
+          $("label[for='subsidiarypayertitle']")
+            .text("Unidade/filial responsável pelo pagamento")
+          ;
+        } else {
+          $("label[for='subsidiarypayertitle']")
+            .text("Titular ou dependente responsável pelo pagamento")
+          ;
+        }
+      },
+      onInvalidateSelection: function () {
+        // Não conseguiu localizar um cliente com base nos valores
+        // informados, então limpa os dados atuais
+        $("input[name='customerpayerid']")
+          .val(0)
+        ;
+        $("input[name='subsidiarypayerid']")
+          .val(0)
+        ;
+        $("input[name='subsidiarypayername']")
+          .val("")
+        ;
+      }
+    };
+
+    // As opções para o componente de autocompletar a unidade/filial do
+    // cliente
+    var subsidiaryPayerNameCompletionOptions = {
+      autoSelectFirst: true,
+      searchOnFocus: false,
+      ajax: {
+        url: "{{ path_for(getEntityDataCompletion.URL) }}",
+        type: "{{ getEntityDataCompletion.method }}",
+        data: function(params, options) {
+          params.type = 'subsidiary';
+          params.onlyCustomers = true;
+          params.entityID = $("input[name='customerpayerid']").val();
+        }
+      },
+      onFormatResult: function(searchTerm, suggestion, index) {
+        return ''
+          + '<div class="content">'
+          +   '<div class="title">'
+          +     suggestion.name + '<br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       (suggestion.nationalregister.length > 14?'CNPJ: ':'CPF: ') + suggestion.nationalregister
+          +     '</span><br>'
+          +     '<span style="color: CornflowerBlue; font-style: italic;">'
+          +       suggestion.city + '/' + suggestion.state
+          +     '</span>'
+          +   '</div>'
+          + '</div>'
+        ;
+      },
+      onSelect: function (element, suggestion) {
+        // Armazena o ID do item selecionado
+        $("input[name='subsidiarypayerid']")
+          .val(suggestion.id)
+        ;
+      },
+      onInvalidateSelection: function () {
+        // Não conseguiu localizar uma unidade/filial com base nos
+        // valores informados, então limpa os dados atuais
+        $("input[name='subsidiarypayerid']")
+          .val(0)
+        ;
+      }
+    };
+
+    // As opções para os checkbox
+    var checkboxOptions = {
+      // Dispara ao iniciar para definir o valor, se necessário
+      onChange   : function() {
+        var
+          checkbox = $(this).prop('name'),
+          //subsidyNumber = parseInt($(this).attr("subsidy")),
+          // Invertemos o valor atual
+          checked = !($(this).attr('checked') !== undefined && $(this).attr('checked')),
+          boolValue = (checked
+            ? 'true'
+            : 'false'),
+          toggleField = checkbox.replace('_','')
+        ;
+
+        // Invertemos o checkbox fake
+        $(this)
+          .attr('checked', checked)
+        ;
+
+        // Alteramos o valor do verdadeiro input
+        $("input[name='" + toggleField + "']")
+          .val(boolValue)
+        ;
+      }
+    };
+
+    // As opções para o componente de exibição de calendário
+    var calendarOptions = {
+      type: 'date',
+      formatInput: true,
+      monthFirst: false,
+      today: true,
+      text: {
+        days: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'],
+        months: [
+          'Janeiro', 'Fevereiro', 'Março', 'Abril',
+          'Maio', 'Junho', 'Julho', 'Agosto',
+          'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ],
+        monthsShort: [
+          'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+          'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+        ],
+        today: 'Hoje',
+        now: 'Agora',
+        am: 'AM',
+        pm: 'PM'
+      },
+      formatter: {
+        date: function (date, settings) {
+          if (!date) {
+            return '';
+          }
+
+          var
+            day   = date.getDate().toString().padLeftWithZeros(2),
+            month = (date.getMonth()+1).toString().padLeftWithZeros(2),
+            year  = date.getFullYear()
+          ;
+
+          return (settings.type === 'year')
+            ? year
+            : (settings.type === 'month')
+              ? month + '/' + year
+              : ( settings.monthFirst
+                  ? month + '/' + day
+                  : day + '/' + month
+                ) + '/' + year
+          ;
+        }
+      }
+    };
+
+
+    // ================================================[ Handlers ]=====
+
+    // Faz a cópia do número do contrato para o Clipboard
+    var copyContractNumberToClipboard = function(element)
+    {
+      var
+        // Recupera o elemento que contém o número do contrato
+        contractNumber = $("input[name='contractnumber']").val()
+      ;
+      
+      copyTextToClipboard(contractNumber);
+    };
+
+    /**
+     * Copia o conteúdo informado para a área de transferência.
+     *
+     * @param string content
+     *   O conteúdo a ser copiado
+     * @param string message (opcional)
+     *   Uma mensagem para alertar o usuário
+     *
+     * @return void
+     */
+    async function copyTextToClipboard(content, message = '') {
+      if (message == '') {
+        message = 'Conteúdo copiado com sucesso';
+      }
+
+      // Sempre acrescenta o ícone de cópia
+      message = '<i class="copy outline large icon"></i> ' + message;
+
+      try {
+        await navigator.clipboard.writeText(content);
+
+        $('body')
+          .toast({
+            message: message,
+            class : 'blue',
+            showProgress: 'bottom'
+          })
+        ;
+      } catch (error) {
+        message = '<i class="copy outline large icon"></i> Não foi '
+         + 'possível copiar o conteúdo'
+        ;
+
+        $('body')
+          .toast({
+            message: message,
+            class : 'red',
+            showProgress: 'bottom'
+          })
+        ;
+      }
+    }
+
+    // Trata o clique na tabela para seleção ou não do item
+    function toggleCell(element) {
+      var
+        id = $(this).attr('id')
+      ;
+
+      // Altera o símbolo no campo
+      if ($(this).attr('added') == "true") {
+        $(this)
+          .attr('added', "false")
+        ;
+        $(this)
+          .children('i')
+          .removeClass('green')
+          .removeClass('checkmark')
+          .addClass('red')
+          .addClass('times')
+        ;
+        $(this)
+          .closest('tr')
+          .removeClass('selected')
+          .addClass('unselected')
+        ;
+        // Desabilita a entrada do valor a ser cobrado
+        $(this)
+          .closest('tr')
+          .find("input[type='text']")
+          .prop('readonly', true)
+          .closest('div')
+          .addClass("readonly")
+        ;
+        $(this)
+          .children("input")
+          .val("false")
+        ;
+      } else {
+        $(this)
+          .attr('added', "true")
+        ;
+        $(this)
+          .children('i')
+          .removeClass('red')
+          .removeClass('times')
+          .addClass('green')
+          .addClass('checkmark')
+        ;
+        $(this)
+          .closest('tr')
+          .removeClass('unselected')
+          .addClass('selected')
+        ;
+        // Habilita a entrada do valor a ser cobrado
+        $(this)
+          .closest('tr')
+          .find("input[type='text']")
+          .prop('readonly', false)
+          .closest('div')
+          .removeClass("readonly")
+        ;
+        $(this)
+          .children("input")
+          .val("true")
+        ;
+      }
+    }
+
+    // Faz o tratamento do campo que indica se está sendo informado um
+    // outro cliente responsável pelo pagamento deste contrato
+    function payingCustomerHandler() {
+      if ($(this).is(":checked")) {
+        // Exibe os campos com os dados do pagante
+        $("div.payerdata")
+          .show()
+        ;
+        // Habilita as entradas
+        $("div.payerdata")
+          .find('div.field')
+          .removeClass("disabled")
+          .removeClass("blocked")
+        ;
+        // Habilita o ícone de pesquisa do cliente pagante
+        $("input[name='customerpayername']")
+          .closest('div')
+          .find('i.search.icon')
+          .removeClass("hidden")
+        ;
+        // Habilita o ícone de pesquisa da unidade/filial/titular
+        $("input[name='subsidiarypayername']")
+          .closest('div')
+          .find('i.search.icon')
+          .removeClass("hidden")
+        ;
+      } else {
+        // Esconde os campos com os dados do cliente pagante
+        $("div.payerdata")
+          .hide()
+        ;
+        // Desabilita as entradas
+        $("div.payerdata")
+          .find('div.field')
+          .addClass("disabled")
+          .addClass("blocked")
+        ;
+        // Desabilita o ícone de pesquisa do cliente pagante
+        $("input[name='customerpayername']")
+          .closest('div')
+          .find('i.search.icon')
+          .addClass("hidden")
+        ;
+        // Desabilita o ícone de pesquisa da unidade/filial/titular
+        $("input[name='subsidiarypayername']")
+          .closest('div')
+          .find('i.search.icon')
+          .addClass("hidden")
+        ;
+
+        // Copia as informações do cliente no pagante
+        $("input[name='customerpayername']")
+          .val($("input[name='customername']").val())
+        ;
+        $("input[name='customerpayerid']")
+          .val($("input[name='customerid']").val())
+        ;
+        $("input[name='subsidiarypayername']")
+          .val($("input[name='subsidiaryname']").val())
+        ;
+        $("input[name='subsidiarypayerid']")
+          .val($("input[name='subsidiaryid']").val())
+        ;
+      }
+    }
+
+    // Faz o tratamento de campos que informam um valor monetário para
+    // permitir corrigir valores inválidos
+    function monetaryHandler()
+    {
+      var
+        monetary = $(this).val()
+      ;
+
+      if (monetary.trim().isEmpty()) {
+        $(this)
+          .val('0,00')
+        ;
+      }
+    }
+
+    // Alterna os campos de nova referência para quando for selecionado
+    // outra referência na lista de locais de referência
+    function toggleNewReference(event)
+    {
+      var
+        actualID  = $(this).val()
+      ;
+      
+      if (actualID > 0) {
+        $('div.another')
+          .hide()
+        ;
+      } else {
+        $('div.another')
+          .show()
+        ;
+      }
+    }
+
+    // Faz o tratamento de campos que informam um valor de coordenada
+    // geográfica para permitir corrigir valores inválidos
+    function geographicCoordinateHandler()
+    {
+      var
+        monetary = $(this).val()
+      ;
+
+      if (monetary.trim().isEmpty()) {
+        $(this)
+          .val('0,0000000')
+        ;
+      }
+    }
+
+    // Faz o tratamento do campo que informa o valor final
+    function monthPriceHandler()
+    {
+      var
+        monthPrice = $("input[name='monthprice']")
+          .val(),
+        discount = $("input[name='discountrate']")
+          .val()
+      ;
+
+      // Recalcula o valor real
+      discount = discount
+        .replace('.', '')
+        .replace(',', '.')
+      ;
+      discount = parseFloat(discount);
+      monthPrice = monthPrice
+        .replace('.', '')
+        .replace(',', '.')
+      ;
+      monthPrice = parseFloat(monthPrice);
+
+      if (discount > 0.00) {
+        // Calcula a mensalidade com desconto
+        monthPrice =  monthPrice - monthPrice * discount/100;
+      }
+
+      $("input[name='realmonthprice']")
+        .val(monthPrice.toFixed(2).replace('.', ','))
+      ;
+    }
+
+    // Atualiza o rótulo da unidade de medida
+    function updateMeasureLabel(event)
+    {
+      var
+        labelText  = $('option:selected', this).attr('label'),
+        labelField = $(this).attr('label')
+      ;
+      
+      $("div[name='" + labelField + "']")
+        .text(labelText)
+      ;
+    }
+
+    /* --------------------------------[ Taxas de deslocamento ]----- */
+    
+    // Faz a adição de uma nova faixa de cobrança para taxas de
+    // deslocamento
+    var addDisplacement = function()
+    {
+      // Incrementa o contador das faixas de taxas de deslocamento
+      var
+        displacementNumber = displacementsCount,
+        count = $("#displacementList tbody")
+          .children('tr').length
+      ;
+
+      if (count == 0) {
+        // Se não tivermos nenhuma faixa de deslocamento, precisamos
+        // alterar o rótulo do último valor
+        $("#displacementList tfoot tr:first td:first")
+          .text('Acima disto, cobrar:')
+        ;
+      }
+
+      // Incrementa a quantidade de faixas
+      displacementsCount++;
+      
+      // Adiciona um conjunto de campos para a nova faixa
+      $("#displacementList tbody")
+        .append(TemplateEngine(displacementTemplate,
+          { number: displacementNumber }))
+      ;
+
+      // Mascara os campos
+      $("input[name='displacements[" + displacementNumber + "][distance]']")
+        .mask({
+          type: 'number',
+          trim: true,
+          maxLength: 4
+        })
+      ;
+      $("input[name='displacements[" + displacementNumber + "][value]']")
+        .mask({
+          type: 'monetary',
+          trim: true,
+          allowNegativeValues: false,
+          decimalsPlaces: 2,
+          maxLength: 12
+        })
+      ;
+
+      // Coloca em foco o campo inicial da nova distância
+      $("input[name='displacements[" + displacementNumber + "][distance]']")
+        .focus()
+      ;
+    };
+    
+    // Faz a remoção de uma faixa de cobrança de taxa de deslocamento
+    var delDisplacement = function(element) {
+      $(element)
+        .closest('tr')
+        .remove()
+      ;
+
+      var
+        count = $("#displacementList tbody")
+          .children('tr').length
+      ;
+
+      if (count == 0) {
+        // Se não tivermos nenhuma faixa de deslocamento, precisamos
+        // alterar o rótulo do último valor
+        $("#displacementList tfoot tr:first td:first")
+          .text('Para qualquer distância, cobrar:')
+        ;
+      }
+    };
+  </script>
+  {% endapply %}
+{% endblock scripts %}

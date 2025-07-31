@@ -1,0 +1,154 @@
+/*!
+ * Improved Search Bar Code
+ * 
+ * Code licensed under the Apache License v2.0.
+ * For details, see http://www.apache.org/licenses/LICENSE-2.0.
+ */
+
+@import '../themes/default.scss';
+
+/* -----------------------------------------------[ Search Bar ]-----
+   As definições da barra de pesquisa de um módulo ou página.
+   ------------------------------------------------------------------ */
+
+.ui.vertical.segment {
+  &.noborder {
+    border-bottom: none;
+  }
+}
+
+.ui.main.basic.segment {
+  .flex {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-grow: 1;
+    flex-shrink: 1;
+  }
+  .searchbar.fields {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding-left: .5em;
+    margin: 0 -.5em 0 -.5em;
+
+    .field {
+      flex-basis: auto;
+      flex-shrink: 1;
+      flex-grow: 1;
+      padding-left: 0;
+      padding-right: .5em;
+      padding-bottom: .3em;
+      
+      &.button {
+        flex-grow: 0;
+        flex-basis: 42px;
+
+        > .button {
+          margin: 0 0;
+
+          .icon {
+            line-height: 16px;
+          }
+        }
+      }
+  
+      &.year {
+        flex-grow: 1;
+        flex-basis: 100px;
+
+        .ui.input {
+          width: 100%;
+          min-width: 100px;
+
+          > input {
+            width: 100%;
+          }
+        }
+
+        @media screen and (max-width: 767px) {
+          flex-shrink: 1;
+
+          .ui.input {
+            width: 100%;
+            min-width: 100px;
+          }
+        }
+      }
+
+      &.date {
+        flex-grow: 1;
+        flex-shrink: 1;
+        flex-basis: 135px;
+
+        .ui.input {
+          width: 100%;
+          min-width: 135px;
+
+          > input {
+            width: 100%;
+          }
+        }
+      }
+
+      &.cityandstate {
+        flex-grow: 1;
+        flex-shrink: 1;
+        flex-basis: 250px;
+
+        .ui[class*="right labeled"].input {
+          > .ui.search.autocomplete {
+            width: 100%;
+            border-top-right-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+            border-right-color: transparent;
+
+            + .label {
+              margin-left: 0px;
+              font-size: 1em;
+              font-weight: normal;
+              text-transform: uppercase;
+              min-width: 2.85em;
+              border-top-left-radius: 0 !important;
+              border-bottom-left-radius: 0 !important;
+            }
+          }
+        }
+      }
+
+      &.reduced {
+        min-width: 110px !important;
+
+        @media screen and (max-width: 768px) {
+          input {
+            width: 117px;
+          }
+        }
+      }
+      
+      .ui.action.input {
+        .ui.basic.dropdown {
+          color: $mutedTextColor;
+          background-color: $dropdownButtonBackground !important;
+
+          &.smallsize {
+
+          }
+        }
+      }
+    }
+  }
+}
+
+.ui.input {
+  &.action:not([class*="left action"]) > input:focus {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right-color: #85b7d9;
+  }
+}
+
+@import 'adaptable-dropdown.scss';
+@import 'toggle-segment.scss';

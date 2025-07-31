@@ -1,0 +1,456 @@
+{% extends 'templates/erp/layout.twig' %}
+{% block title %}{{ parent() }} - {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} tipo de cobrança{% endblock %}
+{% block stylesheets %}
+  {{ parent() }}
+
+  {{ css('libs/jquery/plugins/spinner.input/spinner.input.min.css') }}
+  {{ css('form.min.css') }}
+  <style>
+    @media only screen and (min-width: 768px) and (max-width: 991.98px) {
+      .ui.spinner.input input {
+        padding: .67857143em .67857143em;
+        padding-right: 0.67142857em !important;
+      }
+    }
+
+    .ui.grid {
+      margin-right: -.5rem;
+      margin-bottom: .5rem;
+    }
+    .ui.list .list>.item .description,
+    .ui.list>.item .description {
+      position: relative;
+      padding-left: 1.85714em;
+      margin-top: .2em;
+      color: rgba(0,0,0,.5);
+    }
+
+    @media only screen and (max-width:767px) {    
+      .ui.list .list>.item,
+      .ui.list>.item {
+        margin-bottom: .5em;
+      }
+    }
+    .ui.grid>.plata.column,
+    .ui.grid>.plata.row,
+    .ui.grid>.row>.plata.column {
+      background-color: rgba(86, 61, 124, .1);
+    }
+  </style>
+{% endblock stylesheets %}
+{% block content %}
+  {% if formMethod == 'POST' %}
+    {% set URL = 'ERP\\Parameterization\\Financial\\BillingTypes\\Add' %}
+  {% else %}
+    {% set URL = 'ERP\\Parameterization\\Financial\\BillingTypes\\Edit' %}
+  {% endif %}
+  {% set previous = 'ERP\\Parameterization\\Financial\\BillingTypes' %}
+  {% if authorization.getAuthorizationFor(URL, formMethod) %}
+    {% set editMode = true %}
+    {% set readonly = '' %}
+  {% else %}
+    {% set editMode = false %}
+    {% set readonly = ' readonly' %}
+  {% endif %}
+  <div class="ui main basic segment">
+    <!-- Início cabeçalho módulo -->
+    <h2 class="ui blue header">
+      <table cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr>
+            <td class="mobile hidden">
+              {{ icon('erp/billingtypes.svg', 'Tipo de cobrança') }}
+            </td>
+            <td>
+              <div class="content">
+              {% if authorization.getAuthorizationFor(URL, formMethod) %}
+                {% if formMethod == 'POST' %}Adicionar{% else %}Editar{% endif %} tipo de cobrança
+                <div class="sub header">
+                  Permite {% if formMethod == 'POST' %}adicionar um novo {% else %}modificar as informações cadastrais de um {% endif %}
+                  tipo de cobrança. Os tipos de cobranças podem ser:
+                  produtos (tais como chaveiro 24h, guincho), acessórios
+                  (teclados, leitores de i-button, etc) e serviços
+                  técnicos (instalação, manutenção, etc). Os serviços
+                  técnicos também ficam disponíveis no cadastro dos
+                  prestadores de serviços para determinação dos
+                  valores a eles pago.
+                </div>
+              {% else %}
+                Visualizar tipo de cobrança
+                <div class="sub header">
+                  Permite visualizar as informações cadastrais de um
+                  tipo de cobrança. Os tipos de cobranças podem ser:
+                  produtos (tais como chaveiro 24h, guincho), acessórios
+                  (teclados, leitores de i-button, etc) e serviços
+                  técnicos (instalação, manutenção, etc). Os serviços
+                  técnicos também ficam disponíveis no cadastro dos
+                  prestadores de serviços para determinação dos
+                  valores a eles pago.
+                </div>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </h2>
+    <!-- Fim cabeçalho módulo -->
+    
+    <!-- Início conteúdo do módulo -->
+    <div class="ui vertical module segment">
+      <!-- Início formulário -->
+      <form class="ui form" method="POST" autocomplete="off"
+            action="{{ path_for(URL, { 'billingTypeID': getValue('billingtypeid') }) }}">
+        <div class="fields">
+          <div class="sixteen wide field{{ cssError('name') }}">
+            <label>Nome da cobrança</label>
+            <div class="ui input{{ readonly }}">
+              <input name="name" type="text" maxlength="60"
+                     placeholder="Informe o nome do tipo de cobrança..."
+                     {{ readonly }}
+                     value="{{ getValue('name') }}">
+            </div>
+            {% if hasError('name') %}
+            <small class="helper">{{ getError('name') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="fields">
+          <div class="sixteen wide field{{ cssError('description') }}">
+            <label>Descrição</label>
+            <div class="ui input{{ readonly }}">
+              <textarea name="description" rows="4" {{ readonly }}
+                        placeholder="Faça uma breve descrição...">{{ getValue('description') }}</textarea>
+            </div>
+            {% if hasError('description') %}
+            <small class="helper">{{ getError('description') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field">
+            <label>
+              Características desta cobrança
+            </label>
+            <div class="ui features list">
+              <div class="item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="inattendance"
+                         value="{% if getValue('inattendance')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_inattendance"
+                         {% if getValue('inattendance')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Serviço executado por um técnico</label>
+                </div>
+                <div class="description">
+                  Este tipo de cobrança é realizado em função de um
+                  serviço executado por técnico especializado no veículo
+                  do cliente e especificado em ordem de serviço.
+                </div>
+              </div>
+
+              <div class="service item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="preapproved"
+                         value="{% if getValue('preapproved')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_preapproved"
+                         {% if getValue('preapproved')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Pré-aprovado</label>
+                </div>
+                <div class="description">
+                  A execução do serviço não depende de aprovação do
+                  cliente para que possa ser realizado.
+                </div>
+              </div>
+
+              <div class="product item">
+                <div class="ui checkbox">
+                  <input type="hidden" name="rateperequipment"
+                         value="{% if getValue('rateperequipment')|toBoolean %}true{% else %}false{% endif %}">
+                  <input class="hidden" type="checkbox"
+                         name="_rateperequipment"
+                         {% if getValue('rateperequipment')|toBoolean %}checked="checked"{% endif %}>
+                  <label>Cobrança individual</label>
+                </div>
+                <div class="description">
+                  Este tipo de cobrança é realizado por item de contrato,
+                  quando ocorrer.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="fields executionTime">
+          <div class="four wide field{{ cssError('executiontime') }}">
+            <label>
+              Tempo de execução do serviço
+              <span data-tooltip="Tempo necessário para executar o serviço técnico"
+                    data-content="Top Left" data-position="top left"
+                    data-inverted="">
+                <i class="question circle olive outline icon"></i>
+              </span>
+            </label>
+            <div class="ui left icon input">
+              <i class="clock outline icon"></i>
+              <input name="executiontime" type="text"
+                     placeholder="00:00"
+                     {{ readonly }}
+                     value="{{ getValue('executiontime') }}">
+            </div>
+            {% if hasError('executiontime') %}
+            <small class="helper">{{ getError('executiontime') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="sixteen wide field{{ cssError('billingmoments') }}">
+            <label>
+              Momento em que a cobran&ccedil;a pode ser realizada
+            </label>
+
+            <div class="ui list">
+              {% set moments = getValue('billingmoments') %}
+              {% for billingMoment in billingMoments %}
+              <div class="item">
+                <div class="ui checkbox moment">
+                  <input class="hidden" type="checkbox"
+                         name="billingmoments[]"
+                         value="{{ billingMoment.id }}"
+                         {% if billingMoment.id in moments %}checked="checked"{% endif %}>
+                  <label>{{ billingMoment.name }}</label>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% if hasError('billingmoments') %}
+            <small class="helper">{{ getError('billingmoments') }}</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fields">
+          <div class="eight wide field{{ cssError('installmenttypeid') }}">
+            <label>Condições de parcelamento</label>
+            {% if editMode %}
+            <div id="installmenttypeid" class="ui search selection dropdown">
+              <input name="installmenttypeid" type="hidden"
+                     value="{{ getValue('installmenttypeid') }}">
+              <i class="dropdown icon"></i>
+              <div class="default text"></div>
+              <div class="menu">
+                <div class="item" data-value="0" data-text="Não permitir parcelamento">
+                  Não permitir parcelamento
+                </div>
+                {% for installmentType in installmentTypes %}
+                <div class="item" data-value="{{ installmentType.id }}" data-text="{{ installmentType.name }}">
+                  {{ installmentType.name }}
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div class="field static">
+              <span class="darking">{{ getValue('installmenttypename') }}&nbsp;</span>
+            </div>
+            {% endif %}
+            {% if hasError('installmenttypeid') %}
+            <small class="helper">{{ getError('installmenttypeid') }}</small>
+            {% endif %}
+          </div>
+        </div>
+          
+        <div class="fields">
+          <div class="sixteen wide field buttons">
+            {% if editMode %}
+            <button type="button" class="ui youtube right labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="remove icon"></i> Cancelar
+            </button>
+            <button type="submit" class="ui submit primary right labeled icon button">
+              <i class="checkmark icon"></i> {% if formMethod == 'POST' %}Adicionar{% else %}Modificar{% endif %}
+            </button>
+            {% else %}
+            <button type="button" class="ui blue labeled icon button"
+                    onclick="location.href='{{ path_for(previous) }}';">
+              <i class="chevron left icon"></i> Retornar
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        
+        {{ csrf() }}
+        
+        <input type="hidden" name="_method" value="{{ formMethod }}">
+        {% if formMethod == 'PUT' %}
+        <input type="hidden" name="billingtypeid" value="{{ getValue('billingtypeid') }}">
+        {% endif %}
+      </form>
+      <!-- End Form -->
+
+      {% if formMethod == 'PUT' %}
+      <!-- Start status panel -->
+      <div class="ui segments">
+        <div class="ui grey inverted segment">
+          <h5>
+            Histórico de modificações:
+          </h5>
+          Cadastrado {{ getValue('createdat')|localizedDate('long') }} por {{ getValue('createdbyusername') }}
+          <div class="ui divider"></div>
+          Modificado {{ getValue('updatedat')|localizedDate('long') }} por {{ getValue('updatedbyusername') }}
+        </div>
+      </div>
+      <!-- End status panel -->
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+{% block scripts %}
+  {{ parent() }}
+
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  {{ lib('jquery/plugins/spinner.input/spinner.input.min.js') }}
+  
+  {% apply minify %}
+  <script>
+    $(document).ready(function()
+    {
+      // -------------------------------[ Componentes do formulário ]---
+      $('.form .ui.dropdown')
+        .dropdown()
+      ;
+      $("input[name='executiontime")
+        .mask({
+          type: 'shorttime',
+          validate: true
+        })
+      ;
+      $('.ui.checkbox:not(.moment)')
+        .checkbox(checkboxOptions)
+      ;
+      $('.ui.checkbox.moment')
+        .checkbox()
+      ;
+      $("input[name='_inattendance']")
+        .change(inAttendanceHandler)
+      ;
+      toggleServiceFieldsData(
+        $("input[name='_inattendance']").is(":checked")
+      );
+
+      // Coloca o foco no primeiro campo
+      $("input[name='name']")
+        .focus()
+      ;
+    });
+    
+
+    // =================================================[ Options ]=====
+
+    // As opções para os checkbox
+    var checkboxOptions = {
+      // Dispara ao iniciar para definir o valor, se necessário
+      onChange   : function() {
+        var
+          checkbox = $(this).prop('name'),
+          // Invertemos o valor atual
+          checked = !($(this).attr('checked') !== undefined && $(this).attr('checked')),
+          boolValue = (checked
+            ? 'true'
+            : 'false'),
+          toggleField = checkbox.replace('_','')
+        ;
+
+        // Invertemos o checkbox fake
+        $(this)
+          .attr('checked', checked)
+        ;
+
+        // Alteramos o valor do verdadeiro input
+        $("input[name='" + toggleField + "']")
+          .val(boolValue)
+        ;
+      }
+    };
+
+    // ================================================[ Handlers ]=====
+
+    /**
+     * Faz o tratamento do campo que indica se é um serviço técnico ou
+     * um outro tipo de cobrança.
+     *
+     * @return void
+     */
+    function inAttendanceHandler() {
+      toggleServiceFieldsData($(this).is(":checked"));
+    }
+
+    /**
+     * Lida com a exibição dos campos relacionados com serviços.
+     *
+     * @param bool inAttendance
+     *   O indicativo se a cobrança é realizada em atendimento, que é um
+     *   indicativo que a cobrança é de um serviço técnico
+     *
+     * @return void
+     */
+    function toggleServiceFieldsData(inAttendance) {
+      var
+        $dropdown = $("input[name='billingmoments[]'][value='5']")
+          .closest('div.ui.checkbox')
+      ;
+
+      if (inAttendance) {
+        // Habilita os campos específicos para serviços
+        $("div.features.list")
+          .find('div.service.item')
+          .show()
+        ;
+        // Desabilita os campos específicos para outros produtos
+        $("div.features.list")
+          .find('div.product.item')
+          .hide()
+        ;
+
+        // Exibe o campo para tempo de execução
+        $("div.fields.executionTime")
+          .show()
+        ;
+
+        // Desmarca e desabilita a possibilidade de cobrança mensal
+        $dropdown
+          .checkbox('set unchecked')
+        ;
+        $dropdown
+          .checkbox('set disabled')
+        ;
+      } else {
+        // Desabilita os campos específicos para serviços
+        $("div.features.list")
+          .find('div.service.item')
+          .hide()
+        ;
+        // Habilita os campos específicos para outros produtos
+        $("div.features.list")
+          .find('div.product.item')
+          .show()
+        ;
+
+        // Esconde o campo para tempo de execução
+        $("div.fields.executionTime")
+          .hide()
+        ;
+
+        // Habilita a possibilidade de cobrança mensal
+        $dropdown
+          .checkbox('set enabled')
+        ;
+      }
+    }
+  </script>
+  {% endapply %}
+{% endblock scripts %}
