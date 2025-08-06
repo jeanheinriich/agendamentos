@@ -32,10 +32,10 @@ return [
       //   Aqui são especificados as configurações quando o servidor do
       // banco de dados está hospedado na mesma máquina que o aplicativo
       // 
-      'host' => 'localhost',
+      'host' => '172.17.224.1',
       'database' => 'erp',
-      'username' => 'admin',
-      'password' => '#d3vj34n#',
+      'username' => 'postgres',
+      'password' => '1234',
       // ------------------[ Configuração em ambiente de produção ]-----
       //   Aqui são especificados as configurações quando o servidor do
       // banco de dados está hospedado em outro servidor

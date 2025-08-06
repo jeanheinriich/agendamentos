@@ -48,7 +48,10 @@ class AppointmentsController extends Controller
     /**
      * Exibe o calendário de agendamentos
      */
-    public function calendar(Request $request, Response $response)
+    public function show(
+        Request $request,
+        Response $response
+    )
     {
         $this->buildBreadcrumb('Calendário', 'ERP\\Appointments\\Calendar');
 
@@ -71,7 +74,10 @@ class AppointmentsController extends Controller
     /**
      * Endpoint AJAX para carregar dados do calendário
      */
-    public function getCalendarData(Request $request, Response $response)
+    public function get(
+        Request $request,
+        Response $response
+    )
     {
         try {
             $contractorID = $this->authorization->getContractor()->id;

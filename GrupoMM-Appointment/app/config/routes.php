@@ -695,21 +695,19 @@ $app->group('/erp', function () use ($container) {
   // ------------------------------------------------[ Agendamentos ]-----
 
   $this->group('/appointments', function () use ($container) {
-     $this->get('/appointments', 'erp.appointments.controller:index')
-       ->setName('ERP\\Appointments');
-     $this->get('/calendar', 'erp.appointments.controller:calendar')
-       ->setName('ERP\\Appointments\\Calendar');
-     $this->map(['GET', 'PUT'], '/transfer','erp.appointments.controller:newAppointment')
+     $this->get('', 'erp.appointments.controller:show')
+       ->setName('ERP\Appointments');
+     $this->patch('/get', 'erp.appointments.controller:get')
+       ->setName('ERP\Appointments\Get');
+     $this->map(['GET', 'POST'], '/add','erp.appointments.controller:add')
            ->add($container['csrf'])
            ->add($container['trimmer'])
-           ->setName('ERP\\Appointments\\newAppointment');
-     $this->post('', 'erp.appointments.controller:store')
-          ->setName('ERP\\Appointments\\Create');
-     $this->get('/{id:[0-9]+}', 'erp.appointments.controller:show');
-     $this->put('/{id:[0-9]+}', 'erp.appointments.controller:update');
-     $this->delete('/{id:[0-9]+}', 'erp.appointments.controller:delete');
-     $this->patch('/autocompletion/get', 'erp.appointments.controller:getAutocompletionData')
-           ->setName('ERP\Appointments\Autocompletion\Get');
+           ->setName('ERP\Appointments\Add');
+     $this->map(['GET', 'PUT'], '/edit/{ appointmentID }','erp.appointments.controller:edit')
+           ->add($container['csrf'])
+           ->add($container['trimmer'])
+           ->setName('ERP\Appointments\Add');
+     $this->delete('/{ appointmentID }', 'erp.appointments.controller:delete');
   });
 
   // --------------------------------------------[ Parametrização ]-----
