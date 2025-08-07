@@ -46,12 +46,9 @@ class AppointmentsController extends Controller
     ];
 
     /**
-     * Exibe o calendário de agendamentos
+     * Exibe o calendário de agendamentos (rota principal)
      */
-    public function show(
-        Request $request,
-        Response $response
-    )
+    public function show(Request $request, Response $response)
     {
         $this->buildBreadcrumb('Calendário', 'ERP\\Appointments\\Calendar');
 
@@ -74,10 +71,7 @@ class AppointmentsController extends Controller
     /**
      * Endpoint AJAX para carregar dados do calendário
      */
-    public function get(
-        Request $request,
-        Response $response
-    )
+    public function get(Request $request, Response $response)
     {
         try {
             $contractorID = $this->authorization->getContractor()->id;
@@ -101,23 +95,23 @@ class AppointmentsController extends Controller
     }
 
     /**
-     * Exibe o formulário de novo agendamento ou processa o POST
+     * Adicionar novo agendamento (GET exibe formulário, POST processa)
      */
-    public function newAppointment(Request $request, Response $response)
+    public function add(Request $request, Response $response)
     {
-        $this->buildBreadcrumb('Novo Agendamento', 'ERP\\Appointments\\newAppointment');
+        $this->buildBreadcrumb('Novo Agendamento', 'ERP\\Appointments\\Add');
 
         if ($request->isPost()) {
-            return $this->processNewAppointment($request, $response);
+            return $this->processAdd($request, $response);
         }
 
         // Carrega dados do formulário
-        $formData = $this->getNewAppointmentFormData();
+        $formData = $this->getFormData();
         
         // Recupera as informações de técnicos
         $technicians = $this->getTechnicians();
 
-        return $this->render($request, $response, 'erp/appointments/newAppointment/newAppointment.twig', 
+        return $this->render($request, $response, 'erp/appointments/add/add.twig', 
             array_merge($formData, [
                 'technicians' => $technicians
             ])
@@ -125,9 +119,159 @@ class AppointmentsController extends Controller
     }
 
     /**
+     * Editar agendamento existente (GET exibe formulário, PUT processa)
+     */
+    public function edit(Request $request, Response $response)
+    {
+        $appointmentID = $request->getAttribute('appointmentID');
+        $this->buildBreadcrumb('Editar Agendamento', 'ERP\\Appointments\\Edit');
+
+        if ($request->isPut()) {
+            return $this->processEdit($request, $response, $appointmentID);
+        }
+
+        try {
+            // Carrega o agendamento
+            $appointment = $this->getAppointmentForEdit($appointmentID);
+            
+            // Carrega dados do formulário
+            $formData = $this->getFormData();
+            
+            // Recupera as informações de técnicos
+            $technicians = $this->getTechnicians();
+
+            return $this->render($request, $response, 'erp/appointments/edit/edit.twig', 
+                array_merge($formData, [
+                    'appointment' => $appointment,
+                    'technicians' => $technicians
+                ])
+            );
+
+        } catch (ModelNotFoundException $e) {
+            $this->flash->addMessage('error', 'Agendamento não encontrado.');
+            return $response->withRedirect($this->router->pathFor('ERP\\Appointments\\Calendar'));
+        } catch (Exception $e) {
+            return $this->handleGeneralError($e, [], 'ERP\\Appointments\\Calendar');
+        }
+    }
+
+    /**
+     * Deletar agendamento
+     */
+    public function delete(Request $request, Response $response)
+    {
+        $appointmentID = $request->getAttribute('appointmentID');
+
+        try {
+            $appointment = $this->getAppointmentForDelete($appointmentID);
+            
+            if ($appointment) {
+                // Log antes de deletar
+                $this->logAppointmentChange($appointment->appointmentid, 'deleted', $appointment->toArray(), null);
+                
+                // Soft delete ou hard delete conforme sua regra de negócio
+                $appointment->delete();
+                
+                return $response->withJson([
+                    'success' => true,
+                    'message' => "Agendamento nº {$appointment->appointmentid} excluído com sucesso!"
+                ]);
+            }
+            
+            return $response->withJson(['error' => 'Agendamento não encontrado'], 404);
+            
+        } catch (Exception $e) {
+            $this->error("Erro ao deletar agendamento: {error}", ['error' => $e->getMessage()]);
+            return $response->withJson(['error' => 'Erro interno ao deletar'], 500);
+        }
+    }
+
+    /**
+     * Lista agendamentos (endpoint AJAX ou renderização)
+     */
+    public function index(Request $request, Response $response)
+    {
+        $contractorID = $this->authorization->getContractor()->id;
+        
+        try {
+            $appointments = Appointment::with(['customer', 'vehicle', 'technician', 'city'])
+                ->where('contractorid', $contractorID)
+                ->orderBy('scheduledat')
+                ->get();
+
+            $mapped = $this->formatAppointmentsForJson($appointments);
+            
+            return $response->withJson($mapped);
+            
+        } catch (Exception $e) {
+            $this->error("Erro ao listar agendamentos: {error}", ['error' => $e->getMessage()]);
+            return $response->withJson(['error' => 'Erro interno'], 500);
+        }
+    }
+
+    /**
+     * Toggle de status do agendamento
+     */
+    public function toggleStatus(Request $request, Response $response)
+    {
+        $appointmentID = $request->getAttribute('appointmentID');
+
+        try {
+            $appointment = $this->getAppointmentForEdit($appointmentID);
+            $oldStatus = $appointment->status;
+            
+            // Lógica de toggle (pode ser customizada conforme necessário)
+            $newStatus = $appointment->status === 'Confirmado' ? 'Pendente' : 'Confirmado';
+            
+            $oldData = $appointment->toArray();
+            $appointment->status = $newStatus;
+            $appointment->save();
+            
+            // Log da alteração
+            $this->logAppointmentChange($appointment->appointmentid, 'status_changed', $oldData, $appointment->toArray());
+            
+            return $response->withJson([
+                'success' => true,
+                'message' => "Status alterado de '{$oldStatus}' para '{$newStatus}'",
+                'new_status' => $newStatus
+            ]);
+            
+        } catch (Exception $e) {
+            $this->error("Erro ao alterar status: {error}", ['error' => $e->getMessage()]);
+            return $response->withJson(['error' => 'Erro interno'], 500);
+        }
+    }
+
+    /**
+     * Gerar PDF do agendamento
+     */
+    public function getPDF(Request $request, Response $response)
+    {
+        $appointmentID = $request->getAttribute('appointmentID');
+
+        try {
+            $appointment = $this->getAppointmentForEdit($appointmentID);
+            
+            // Aqui você implementaria a geração do PDF
+            // Por enquanto, retorna um placeholder
+            
+            return $response->withJson([
+                'message' => 'PDF será implementado',
+                'appointment_id' => $appointmentID
+            ]);
+            
+        } catch (Exception $e) {
+            $this->error("Erro ao gerar PDF: {error}", ['error' => $e->getMessage()]);
+            return $response->withJson(['error' => 'Erro interno'], 500);
+        }
+    }
+
+    // ================ MÉTODOS AUXILIARES ================
+
+    /**
      * Processa o formulário de novo agendamento
      */
-    protected function processNewAppointment(Request $request, Response $response): Response
+    protected function processAdd(Request $request, Response $response): Response
     {
         $rawData = $request->getParsedBody();
         $this->debug("Dados recebidos para novo agendamento", $rawData);
@@ -160,12 +304,12 @@ class AppointmentsController extends Controller
                 }
                 
                 // Recarrega formulário com erros visuais
-                $formData = $this->getNewAppointmentFormData();
+                $formData = $this->getFormData();
                 
                 // Recupera as informações de técnicos
                 $technicians = $this->getTechnicians();
                 
-                return $this->render($request, $response, 'erp/appointments/newAppointment/newAppointment.twig', 
+                return $this->render($request, $response, 'erp/appointments/add/add.twig', 
                     array_merge($formData, [
                         'technicians' => $technicians
                     ])
@@ -173,34 +317,96 @@ class AppointmentsController extends Controller
             }
             
         } catch (Exception $e) {
-            return $this->handleGeneralError($e, $rawData, 'ERP\\Appointments\\newAppointment');
+            return $this->handleGeneralError($e, $rawData, 'ERP\\Appointments\\Add');
         }
     }
 
     /**
-     * Lista agendamentos (endpoint AJAX ou renderização)
+     * Processa o formulário de edição do agendamento
      */
-    public function index(Request $request, Response $response)
+    protected function processEdit(Request $request, Response $response, int $appointmentID): Response
     {
-        $contractorID = $this->authorization->getContractor()->id;
-        
-        try {
-            $appointments = Appointment::with(['customer', 'vehicle', 'technician', 'city'])
-                ->where('contractorid', $contractorID)
-                ->orderBy('scheduledat')
-                ->get();
+        $rawData = $request->getParsedBody();
+        $this->debug("Dados recebidos para editar agendamento {$appointmentID}", $rawData);
 
-            $mapped = $this->formatAppointmentsForJson($appointments);
+        try {
+            // Carrega o agendamento existente
+            $appointment = $this->getAppointmentForEdit($appointmentID);
+            $oldData = $appointment->toArray();
             
-            return $response->withJson($mapped);
+            // Processa dados internos antes da validação
+            $processedData = $this->processAppointmentData($rawData, false);
             
+            // Valida usando o sistema padrão da aplicação
+            $this->validator->validate($request, $this->getValidationRules(false));
+            
+            if ($this->validator->isValid()) {
+                // Dados válidos - atualiza o agendamento
+                $appointment->fill($processedData);
+                $appointment->save();
+                
+                // Log da alteração
+                $this->logAppointmentChange($appointment->appointmentid, 'updated', $oldData, $appointment->toArray());
+
+                $this->flash->addMessage('success', 
+                    "Agendamento nº {$appointment->appointmentid} atualizado com sucesso!");
+                
+                return $response->withRedirect($this->router->pathFor('ERP\\Appointments\\Calendar'));
+                
+            } else {
+                // Dados inválidos - exibe erros no formulário
+                $this->debug('Os dados do agendamento são INVÁLIDOS');
+                $messages = $this->validator->getFormatedErrors();
+                foreach ($messages as $message) {
+                    $this->debug($message);
+                }
+                
+                // Recarrega formulário com erros visuais
+                $formData = $this->getFormData();
+                $technicians = $this->getTechnicians();
+                
+                return $this->render($request, $response, 'erp/appointments/edit/edit.twig', 
+                    array_merge($formData, [
+                        'appointment' => $appointment,
+                        'technicians' => $technicians
+                    ])
+                );
+            }
+            
+        } catch (ModelNotFoundException $e) {
+            $this->flash->addMessage('error', 'Agendamento não encontrado.');
+            return $response->withRedirect($this->router->pathFor('ERP\\Appointments\\Calendar'));
         } catch (Exception $e) {
-            $this->error("Erro ao listar agendamentos: {error}", ['error' => $e->getMessage()]);
-            return $response->withJson(['error' => 'Erro interno'], 500);
+            return $this->handleGeneralError($e, $rawData, 'ERP\\Appointments\\Edit');
         }
     }
 
-    // ================ MÉTODOS AUXILIARES ================
+    /**
+     * Recupera agendamento para edição
+     */
+    protected function getAppointmentForEdit(int $appointmentID): Appointment
+    {
+        $contractorID = $this->authorization->getContractor()->id;
+        
+        $appointment = Appointment::with(['customer', 'vehicle', 'technician', 'city'])
+            ->where('appointmentid', $appointmentID)
+            ->where('contractorid', $contractorID)
+            ->firstOrFail();
+            
+        return $appointment;
+    }
+
+    /**
+     * Recupera agendamento para deleção
+     */
+    protected function getAppointmentForDelete(int $appointmentID): ?Appointment
+    {
+        $contractorID = $this->authorization->getContractor()->id;
+        
+        return Appointment::where('appointmentid', $appointmentID)
+            ->where('contractorid', $contractorID)
+            ->first();
+    }
 
     /**
      * Recupera informações dos técnicos do contratante
@@ -425,9 +631,9 @@ class AppointmentsController extends Controller
     }
 
     /**
-     * Carrega dados do formulário de novo agendamento
+     * Carrega dados do formulário (add/edit)
      */
-    protected function getNewAppointmentFormData(): array
+    protected function getFormData(): array
     {
         try {
             return [
@@ -451,15 +657,18 @@ class AppointmentsController extends Controller
     /**
      * Processa dados do agendamento antes da validação
      */
-    protected function processAppointmentData(array $rawData): array
+    protected function processAppointmentData(array $rawData, bool $isNew = true): array
     {
         $processedData = $rawData;
         
         // Dados do sistema
         $processedData['contractorid'] = $this->authorization->getContractor()->id;
-        $processedData['createdbyuserid'] = $this->authorization->getUser()->userid;
         $processedData['updatedbyuserid'] = $this->authorization->getUser()->userid;
-        $processedData['status'] = $rawData['status'] ?? 'Pendente';
+        
+        if ($isNew) {
+            $processedData['createdbyuserid'] = $this->authorization->getUser()->userid;
+            $processedData['status'] = $rawData['status'] ?? 'Pendente';
+        }
         
         // Processa cliente
         $customer = $this->processCustomer($rawData['customer_name'], $processedData['contractorid']);
@@ -545,14 +754,14 @@ class AppointmentsController extends Controller
     /**
      * Registra alteração no agendamento
      */
-    protected function logAppointmentChange(int $appointmentId, string $action, ?array $oldData, array $newData): void
+    protected function logAppointmentChange(int $appointmentId, string $action, ?array $oldData, ?array $newData): void
     {
         try {
             AppointmentLog::create([
                 'appointmentid' => $appointmentId,
                 'action' => $action,
                 'old_data' => $oldData ? json_encode($oldData) : null,
-                'new_data' => json_encode($newData),
+                'new_data' => $newData ? json_encode($newData) : null,
                 'userid' => $this->authorization->getUser()->userid,
                 'created_at' => Carbon::now()
             ]);

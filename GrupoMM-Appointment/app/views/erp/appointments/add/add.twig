@@ -1,6 +1,6 @@
 {% extends 'templates/erp/layout.twig' %}
-
-{% block title %}{{ parent() }} - Novo Agendamento Técnico{% endblock %}
+{% set getVehicleCompletion      = { 'URL': 'ERP\\Cadastre\\Vehicles\\Autocompletion\\Get', 'method': 'PATCH' } %}
+{% block title %}{{ parent() }} - Novo Agendamento{% endblock %}
 
 {% block stylesheets %}
   {{ parent() }}
@@ -189,7 +189,7 @@
   {% if hasError('general') %}<div class="ui error message transition visible"><i class="close icon"></i><div class="header">Erro</div><p>{{ getError('general') }}</p></div>{% endif %}
   {% if hasError('database') %}<div class="ui error message transition visible"><i class="close icon"></i><div class="header">Erro de Banco de Dados</div><p>{{ getError('database') }}</p></div>{% endif %}
 
-  <form class="ui form" id="newAppointmentForm" method="POST" action="{{ path_for(action_route | default('ERP\\Appointments\\Create')) }}" enctype="multipart/form-data">
+  <form class="ui form" id="newAppointmentForm" method="POST" action="{{ path_for(action_route | default('ERP\\Appointments\\Add')) }}" enctype="multipart/form-data">
     {{ csrf.field | raw }}
     <input type="hidden" name="_method" value="POST">
     <input type="hidden" name="customerid" id="customerid" value="{{ getValue('customerid') }}">
