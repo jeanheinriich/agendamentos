@@ -840,4 +840,102 @@ class AppointmentsController extends Controller
 
         return $rules;
     }
+    /**
+ * Recupera a relação de clientes em formato JSON para autocomplete.
+ * 
+ * @param Request $request
+ * @param Response $response
+ * @return Response
+ */
+public function getCustomerAutocompletion(Request $request, Response $response): Response
+{
+    $this->debug("Autocomplete de clientes para agendamentos despachado.");
+
+    // Recupera os dados da requisição
+    $postParams = $request->getParsedBody();
+    
+    // Recupera os dados do contratante
+    $contractor = $this->authorization->getContractor();
+    $contractorID = $contractor->id;
+    
+    // O termo de pesquisa
+    $searchTerm = $postParams['searchTerm'] ?? '';
+    $limit = $postParams['limit'] ?? 10;
+
+    $this->debug("Busca por clientes que contenham '{name}'", ['name' => $searchTerm]);
+    
+    try {
+        // SQL para buscar clientes
+        $sql = "SELECT E.entityID AS id,
+                       E.name,
+                       E.nationalRegister AS document,
+                       E.email,
+                       S.subsidiaryID,
+                       S.name AS subsidiaryname,
+                       S.address,
+                       S.streetnumber,
+                       S.complement,
+                       S.district,
+                       S.postalcode,
+                       S.cityID,
+                       C.name AS cityname,
+                       C.state
+                  FROM erp.entities AS E
+                 INNER JOIN erp.subsidiaries AS S ON (E.entityID = S.entityID)
+                 LEFT JOIN erp.cities AS C ON (S.cityID = C.cityID)
+                 WHERE E.contractorID = :contractorID
+                   AND E.customer = TRUE
+                   AND E.active = TRUE
+                   AND (E.name ILIKE :searchTerm OR E.nationalRegister ILIKE :searchTerm)
+                 ORDER BY E.name ASC
+                 LIMIT :limit";
+
+        $results = $this->DB->select($sql, [
+            'contractorID' => $contractorID,
+            'searchTerm' => "%{$searchTerm}%",
+            'limit' => $limit
+        ]);
+
+        $customers = [];
+        foreach ($results as $customer) {
+            $customers[] = [
+                'id' => $customer->id,
+                'name' => $customer->name,
+                'document' => $customer->document ?: 'Não informado',
+                'email' => $customer->email ?: '',
+                'subsidiary_id' => $customer->subsidiaryid,
+                'subsidiary_name' => $customer->subsidiaryname,
+                'address' => $customer->address,
+                'streetnumber' => $customer->streetnumber,
+                'complement' => $customer->complement,
+                'district' => $customer->district,
+                'postalcode' => $customer->postalcode,
+                'city_id' => $customer->cityid,
+                'city_name' => $customer->cityname,
+                'state' => $customer->state
+            ];
+        }
+
+        return $response->withHeader('Content-type', 'application/json')
+            ->withJson([
+                'result' => 'OK',
+                'params' => $request->getQueryParams(),
+                'message' => "Clientes que contém '{$searchTerm}'",
+                'data' => $customers
+            ]);
+
+    } catch (QueryException | Exception $exception) {
+        $this->error("Erro ao buscar clientes para autocomplete: {error}", [
+            'error' => $exception->getMessage()
+        ]);
+
+        return $response->withHeader('Content-type', 'application/json')
+            ->withJson([
+                'result' => 'NOK',
+                'params' => $request->getQueryParams(),
+                'message' => 'Erro ao buscar clientes',
+                'data' => []
+            ]);
+    }
+}
 }

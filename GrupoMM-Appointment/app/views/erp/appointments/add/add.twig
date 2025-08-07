@@ -1,176 +1,127 @@
 {% extends 'templates/erp/layout.twig' %}
-{% set getVehicleCompletion      = { 'URL': 'ERP\\Cadastre\\Vehicles\\Autocompletion\\Get', 'method': 'PATCH' } %}
+
 {% block title %}{{ parent() }} - Novo Agendamento{% endblock %}
 
 {% block stylesheets %}
   {{ parent() }}
+  {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
+  {{ css('libs/semantic-ui/components/calendar.min.css') }}
+  
   <style>
-    /* Estilos do wizard anterior foram removidos ou adaptados */
+    /* Estilos para o formulário de agendamentos */
     .ui.form .fields .field .ui.calendar {
       width: 100%;
     }
-    .ui.form .field.error .ui.pointing.prompt.label {
-        margin-top: 5px; /* Adjust spacing for error messages */
-    }
-    /* Novos estilos para seções */
+    
+    /* Seções do formulário */
     .section-block {
-      margin-bottom: 2em; /* Aumentar um pouco o espaçamento entre blocos */
-      padding: 1.5em; /* Adicionar mais padding interno aos segmentos */
-    }
-    .section-block:last-of-type { /* Usar last-of-type para o último bloco de formulário antes dos botões */
-      margin-bottom: 1em; /* Menor margem antes dos botões */
-    }
-    .customer-details-block, .vehicle-details-block, #otherAddressDetails {
-        margin-top: 1em; /* Aumentado para dar mais respiro */
-        padding: 1em;
-        background-color: #f7f7f7; /* Um cinza um pouco mais suave */
-        border: 1px solid #e0e0e0;
-        border-radius: .28571429rem; /* Padrão Fomantic */
-    }
-    .customer-details-block p, .vehicle-details-block p, #otherAddressDetails p {
-        margin-bottom: 0.5em;
-        font-size: 0.95em; /* Levemente menor para detalhes */
-    }
-    .customer-details-block h4, .vehicle-details-block h4 { /* Cabeçalho para os blocos de detalhes */
-        margin-top:0;
-        font-size: 1em;
-        color: rgba(0,0,0,.6);
-    }
-    .hidden-section {
-        display: none !important; /* Garantir que fique escondido */
-    }
-    #imagePreviewContainer img {
-        width: 100px; /* Largura fixa */
-        height: 100px; /* Altura fixa */
-        object-fit: cover; /* Para manter a proporção e preencher */
-        margin: 5px;
-        border: 1px solid #ddd;
-        border-radius: .28571429rem;
-    }
-    .ui.form .grouped.fields .field {
-        margin-bottom: 0.8em; /* Espaçamento entre checkboxes e inputs de localização */
-    }
-    .ui.form .grouped.fields .field > input[type="text"] {
-        margin-left: 1em; /* Alinhar input de texto com label do checkbox */
-        max-width: 250px; /* Limitar largura */
+      margin-bottom: 2em;
+      padding: 1.5em;
     }
     
-    /* Customização para os resultados do autocompletar de veículos */
+    .section-block:last-of-type {
+      margin-bottom: 1em;
+    }
+    
+    /* Blocos de detalhes */
+    .details-block {
+      margin-top: 1em;
+      padding: 1em;
+      background-color: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: .28571429rem;
+      display: none;
+    }
+    
+    .details-block.active {
+      display: block;
+    }
+    
+    .details-block h4 {
+      margin-top: 0;
+      color: #2185d0;
+      font-size: 1em;
+    }
+    
+    .details-block p {
+      margin-bottom: 0.5em;
+      font-size: 0.95em;
+    }
+    
+    /* Autocomplete customizations */
     .ui.search .results .result {
-        padding: 0.85714286em 1.14285714em;
+      padding: 0.85714286em 1.14285714em;
     }
     
     .ui.search .results .result .content .title {
-        font-weight: bold;
-        color: #1e70bf;
-        font-size: 1.1em;
+      font-weight: bold;
+      color: #1e70bf;
+      font-size: 1.1em;
     }
     
     .ui.search .results .result .content .description {
-        margin-top: 0.3em;
-        color: #767676;
+      margin-top: 0.3em;
+      color: #767676;
+      font-size: 0.9em;
     }
     
-    .vehicle-status {
-        font-style: italic;
-        font-weight: normal;
-    }
-    
-    .vehicle-status.tracked {
-        color: darkred;
-    }
-    
-    .vehicle-status.untracked {
-        color: #9cadcd;
-    }
-    
-    .vehicle-brand-model {
-        color: #0256C4;
-        font-style: italic;
-    }
-    
-    .vehicle-color {
-        color: CornflowerBlue;
-        font-style: italic;
-    }
-    
-    .vehicle-blocked {
-        color: #8b0000;
-        font-style: italic;
-    }
-
-    /* Estilos para o seletor de endereços */
-    .address-card {
-        cursor: pointer;
-        transition: all 0.3s ease;
-        margin-bottom: 1em;
-    }
-    
-    .address-card:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-    }
-    
-    .address-card.selected {
-        border: 2px solid #2185d0 !important;
-        box-shadow: 0 0 0 2px rgba(33, 133, 208, 0.2) !important;
-    }
-    
-    .main-address .header {
-        color: #f2711c !important;
-    }
-    
-    .custom-address-form {
-        display: none;
-    }
-    
-    .custom-address-form.active {
-        display: block;
-    }
-    
-    .phone-list {
-        margin-top: 5px;
-    }
-    
-    .address-meta {
-        margin-top: 8px;
-    }
-
-    #addresses-loading {
-        text-align: center;
-        padding: 2em;
-    }
-
-    /* Estilos para o dropdown de técnicos */
-    .technician-item .description {
-        color: #767676;
-        font-size: 0.9em;
-    }
-    
-    .technician-item .text {
-        font-weight: 500;
-    }
-    
-    .technician-location {
-        font-style: italic;
-        color: #2185d0;
-    }
-
-    /* Estilos para campos com erro usando as funções cssError */
+    /* Estados do formulário */
     .field.error .ui.dropdown,
     .field.error .ui.input input,
     .field.error input,
     .field.error textarea,
     .field.error select {
-        background: #fff6f6;
-        border-color: #e0b4b4;
-        color: #9f3a38;
+      background: #fff6f6;
+      border-color: #e0b4b4;
+      color: #9f3a38;
     }
     
     .helper {
-        color: #9f3a38;
-        font-size: 0.92857143em;
-        margin-top: 0.25em;
-        display: block;
+      color: #9f3a38;
+      font-size: 0.92857143em;
+      margin-top: 0.25em;
+      display: block;
+    }
+    
+    /* Mensagens informativas */
+    .ui.info.message {
+      background-color: #f8ffff;
+    }
+    
+    /* Dropdown de técnicos */
+    .technician-item .description {
+      color: #767676;
+      font-size: 0.9em;
+    }
+    
+    .technician-item .text {
+      font-weight: 500;
+    }
+    
+    .technician-location {
+      font-style: italic;
+      color: #2185d0;
+    }
+    
+    /* Seção oculta */
+    .hidden-section {
+      display: none !important;
+    }
+    
+    /* Loading */
+    .loading-overlay {
+      position: relative;
+    }
+    
+    .loading-overlay.loading::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      z-index: 1000;
     }
   </style>
 {% endblock %}
@@ -180,448 +131,339 @@
   <h2 class="ui blue header">
     <i class="calendar plus outline icon"></i>
     <div class="content">
-      Novo Agendamento Técnico
-      <div class="sub header">Preencha todos os dados para o agendamento</div>
+      Novo Agendamento
+      <div class="sub header">Preencha os dados para criar um novo agendamento técnico</div>
     </div>
   </h2>
 
-  {# Display general error messages (se houver redirect com erro do backend) #}
-  {% if hasError('general') %}<div class="ui error message transition visible"><i class="close icon"></i><div class="header">Erro</div><p>{{ getError('general') }}</p></div>{% endif %}
-  {% if hasError('database') %}<div class="ui error message transition visible"><i class="close icon"></i><div class="header">Erro de Banco de Dados</div><p>{{ getError('database') }}</p></div>{% endif %}
+  {# Mensagens de erro gerais #}
+  {% if hasError('general') %}
+    <div class="ui error message transition visible">
+      <i class="close icon"></i>
+      <div class="header">Erro</div>
+      <p>{{ getError('general') }}</p>
+    </div>
+  {% endif %}
 
-  <form class="ui form" id="newAppointmentForm" method="POST" action="{{ path_for(action_route | default('ERP\\Appointments\\Add')) }}" enctype="multipart/form-data">
+  <form class="ui form" id="appointmentForm" method="POST" action="{{ path_for('ERP\\Appointments\\Add') }}" autocomplete="off">
     {{ csrf.field | raw }}
     <input type="hidden" name="_method" value="POST">
-    <input type="hidden" name="customerid" id="customerid" value="{{ getValue('customerid') }}">
-    <input type="hidden" name="vehicleid" id="vehicleid" value="{{ getValue('vehicleid') }}">
-    {# Campos para armazenar o nome e placa selecionados, para caso de erro de validação no backend #}
-    <input type="hidden" name="customer_name_selected" id="customer_name_selected" value="{{ getValue('customer_name_selected') }}">
-    <input type="hidden" name="vehicle_plate_selected_text" id="vehicle_plate_selected_text" value="{{ getValue('vehicle_plate_selected_text') }}">
+    
+    {# Campos ocultos para dados selecionados #}
+    <input type="hidden" name="customer_id" id="customer_id" value="{{ getValue('customer_id') }}">
+    <input type="hidden" name="subsidiary_id" id="subsidiary_id" value="{{ getValue('subsidiary_id') }}">
 
-    {# SEÇÃO: Identificação do Cliente #}
+    {# SEÇÃO 1: Identificação do Cliente #}
     <div class="ui segment section-block">
-      <h3 class="ui dividing header">1. Identificação do Cliente</h3>
-       <div class="eight wide field{{ cssError('customername') }}">
-            <label>Nome do cliente</label>
-            {% if authorization.user.groupid < 6 %}
-            <input name="customername" type="text" class="search"
-                   maxlength="100"
-                   placeholder="Informe o nome do cliente..."
-                   {{ readonly }}
-                   value="{{ getValue('customername') }}">
-            {% else %}
-            <div class="field static">
-              <span class="darking">
-                {{ getValue('customername') }}
-              </span>
-              <input type="hidden" name="customername"
-                     value="{{ getValue('customername') }}">
-            </div>
-            {% endif %}
-            <input type="hidden" name="entitytypeid"
-                   value="{{ getValue('entitytypeid') }}">
-            <input type="hidden" name="customerid"
-                   value="{{ getValue('customerid') }}">
-            {% if formMethod == 'PUT' %}
-            <input type="hidden" name="originalcustomerid"
-                   value="{{ getValue('originalcustomerid') }}">
-            {% endif %}
-            {% if hasError('customername') %}
-            <small class="helper">{{ getError('customername') }}</small>
-            {% endif %}
-          </div>
-
-
-    {# SEÇÃO: Identificação do Veículo #}
-    <div class="ui segment section-block">
-      <h3 class="ui dividing header">2. Identificação do Veículo</h3>
-      <div class="field required{{ cssError('plate') }}{{ cssError('plateid') }}">
-        <label>Placa do veículo</label>
-        <div class="ui search" id="vehicle_search_component">
+      <h3 class="ui dividing header">
+        <i class="user icon"></i>
+        Identificação do Cliente
+      </h3>
+      
+      <div class="field required{{ cssError('customer_name') }}">
+        <label>Nome do Cliente</label>
+        <div class="ui search" id="customer_search">
           <div class="ui icon input">
-            <input name="plate" type="text" id="plate_input" class="prompt" maxlength="100" placeholder="Primeiro selecione um cliente..." value="{{ getValue('plate') }}" autocomplete="off">
+            <input class="prompt" type="text" name="customer_name" id="customer_name" 
+                   placeholder="Digite o nome do cliente..." 
+                   value="{{ getValue('customer_name') }}" 
+                   autocomplete="off">
             <i class="search icon"></i>
           </div>
           <div class="results"></div>
         </div>
-        <input type="hidden" name="plateid" id="plateid" value="{{ getValue('plateid') }}">
-        {% if hasError('plate') %}
-          <small class="helper">{{ getError('plate') }}</small>
-        {% elseif hasError('plateid') %}
-          <small class="helper">Por favor, selecione um veículo válido.</small>
+        {% if hasError('customer_name') %}
+          <small class="helper">{{ getError('customer_name') }}</small>
         {% endif %}
       </div>
       
-      <div id="vehicleDetailsBlock" class="vehicle-details-block {% if not getValue('vehicleid') %}hidden-section{% endif %}">
-        <h4>Detalhes do Veículo Selecionado</h4>
-        <p><strong>Tipo:</strong> <span id="vehicle_type_display">{{ getValue('vehicle_type_display') }}</span></p>
-        <p><strong>Marca:</strong> <span id="vehicle_brand_display">{{ getValue('vehicle_brand_display') }}</span></p>
-        <p><strong>Modelo:</strong> <span id="vehicle_model_display">{{ getValue('vehicle_model_display') }}</span></p>
-        <p><strong>Ano:</strong> <span id="vehicle_year_display">{{ getValue('vehicle_year_display') }}</span></p>
-        <p><strong>Cor:</strong> <span id="vehicle_color_display">{{ getValue('vehicle_color_display') }}</span></p>
+      {# Bloco de detalhes do cliente selecionado #}
+      <div class="details-block" id="customer_details">
+        <h4><i class="info circle icon"></i>Cliente Selecionado</h4>
+        <div class="ui relaxed list">
+          <div class="item">
+            <i class="user icon"></i>
+            <div class="content">
+              <strong id="customer_name_display">Nome do Cliente</strong>
+              <div class="description">
+                <span id="customer_document_display">Documento</span>
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <i class="building icon"></i>
+            <div class="content">
+              <strong id="customer_subsidiary_display">Unidade/Filial</strong>
+              <div class="description">
+                <span id="customer_address_display">Endereço</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    {# SEÇÃO: Serviço a Ser Realizado #}
+    {# SEÇÃO 2: Identificação do Veículo #}
     <div class="ui segment section-block">
-      <h3 class="ui dividing header">3. Serviço a Ser Realizado</h3>
-      <div class="field required{{ cssError('servicetype') }}">
-        <label for="servicetype">Tipo de Serviço</label>
-        <select name="servicetype" id="servicetype" class="ui dropdown" required>
-          <option value="">Selecione o Tipo de Serviço</option>
-          <option value="Instalacao_Rastreador_Principal" {% if getValue('servicetype') == 'Instalacao_Rastreador_Principal' %}selected{% endif %}>Instalação de Rastreador (Principal)</option>
-          <option value="Instalacao_Rastreador_Contingencia" {% if getValue('servicetype') == 'Instalacao_Rastreador_Contingencia' %}selected{% endif %}>Instalação de Rastreador (Contingência)</option>
-          <option value="Manutencao_Rastreador_Principal" {% if getValue('servicetype') == 'Manutencao_Rastreador_Principal' %}selected{% endif %}>Manutenção de Rastreador (Principal)</option>
-          <option value="Manutencao_Rastreador_Contingencia" {% if getValue('servicetype') == 'Manutencao_Rastreador_Contingencia' %}selected{% endif %}>Manutenção de Rastreador (Contingência)</option>
-          <option value="Retirada_Rastreador_Principal" {% if getValue('servicetype') == 'Retirada_Rastreador_Principal' %}selected{% endif %}>Retirada de Rastreador (Principal)</option>
-          <option value="Retirada_Rastreador_Contingencia" {% if getValue('servicetype') == 'Retirada_Rastreador_Contingencia' %}selected{% endif %}>Retirada de Rastreador (Contingência)</option>
-          <option value="Instalacao_VideoTelemetria" {% if getValue('servicetype') == 'Instalacao_VideoTelemetria' %}selected{% endif %}>Instalação de VideoTelemetria</option>
-          <option value="Manutencao_VideoTelemetria" {% if getValue('servicetype') == 'Manutencao_VideoTelemetria' %}selected{% endif %}>Manutenção de VideoTelemetria</option>
-          <option value="Retirada_VideoTelemetria" {% if getValue('servicetype') == 'Retirada_VideoTelemetria' %}selected{% endif %}>Retirada de VideoTelemetria</option>
-          <option value="Instalacao_Acessorio" {% if getValue('servicetype') == 'Instalacao_Acessorio' %}selected{% endif %}>Instalação de Acessório</option>
-          <option value="Transferencia_Rastreador" {% if getValue('servicetype') == 'Transferencia_Rastreador' %}selected{% endif %}>Transferência de Rastreador</option>
-          <option value="Emergencia" {% if getValue('servicetype') == 'Emergencia' %}selected{% endif %}>Emergência</option>
-          <option value="Vistoria" {% if getValue('servicetype') == 'Vistoria' %}selected{% endif %}>Vistoria</option>
+      <h3 class="ui dividing header">
+        <i class="car icon"></i>
+        Identificação do Veículo
+      </h3>
+      
+      <div class="field required{{ cssError('vehicle_plate') }}">
+        <label>Placa do Veículo</label>
+        <div class="ui icon input">
+          <input type="text" name="vehicle_plate" id="vehicle_plate" 
+                 placeholder="ABC-1234" 
+                 value="{{ getValue('vehicle_plate') }}" 
+                 maxlength="8">
+          <i class="car icon"></i>
+        </div>
+        {% if hasError('vehicle_plate') %}
+          <small class="helper">{{ getError('vehicle_plate') }}</small>
+        {% endif %}
+      </div>
+      
+      <div class="field{{ cssError('vehicle_model') }}">
+        <label>Modelo do Veículo</label>
+        <div class="ui input">
+          <input type="text" name="vehicle_model" id="vehicle_model" 
+                 placeholder="Ex: Civic, Corolla..." 
+                 value="{{ getValue('vehicle_model') }}">
+        </div>
+        {% if hasError('vehicle_model') %}
+          <small class="helper">{{ getError('vehicle_model') }}</small>
+        {% endif %}
+      </div>
+    </div>
+
+    {# SEÇÃO 3: Tipo de Serviço #}
+    <div class="ui segment section-block">
+      <h3 class="ui dividing header">
+        <i class="wrench icon"></i>
+        Tipo de Serviço
+      </h3>
+      
+      <div class="field required{{ cssError('service_type') }}">
+        <label>Serviço a ser Realizado</label>
+        <select name="service_type" id="service_type" class="ui dropdown">
+          <option value="">Selecione o tipo de serviço</option>
+          <option value="installation" {% if getValue('service_type') == 'installation' %}selected{% endif %}>Instalação de Rastreador</option>
+          <option value="maintenance" {% if getValue('service_type') == 'maintenance' %}selected{% endif %}>Manutenção</option>
+          <option value="repair" {% if getValue('service_type') == 'repair' %}selected{% endif %}>Reparo</option>
+          <option value="removal" {% if getValue('service_type') == 'removal' %}selected{% endif %}>Retirada de Equipamento</option>
+          <option value="inspection" {% if getValue('service_type') == 'inspection' %}selected{% endif %}>Inspeção/Vistoria</option>
+          <option value="emergency" {% if getValue('service_type') == 'emergency' %}selected{% endif %}>Emergência</option>
         </select>
-        {% if hasError('servicetype') %}
-          <small class="helper">{{ getError('servicetype') }}</small>
+        {% if hasError('service_type') %}
+          <small class="helper">{{ getError('service_type') }}</small>
         {% endif %}
-      </div>
-
-      <div id="serviceDetailsNonInstallation" class="hidden-section">
-        <h4 class="ui sub header" style="margin-top:1.5em;">Detalhes do Equipamento Existente</h4>
-        <div class="three fields">
-            <div class="field{{ cssError('tracker_brand') }}">
-              <label>Marca do Rastreador</label>
-              <input type="text" name="tracker_brand" placeholder="Marca" value="{{ getValue('tracker_brand') }}">
-              {% if hasError('tracker_brand') %}<small class="helper">{{ getError('tracker_brand') }}</small>{% endif %}
-            </div>
-            <div class="field{{ cssError('tracker_model') }}">
-              <label>Modelo do Rastreador</label>
-              <input type="text" name="tracker_model" placeholder="Modelo" value="{{ getValue('tracker_model') }}">
-              {% if hasError('tracker_model') %}<small class="helper">{{ getError('tracker_model') }}</small>{% endif %}
-            </div>
-            <div class="field{{ cssError('tracker_serial') }}">
-              <label>Nº de Série do Rastreador</label>
-              <input type="text" name="tracker_serial" placeholder="Nº de Série" value="{{ getValue('tracker_serial') }}">
-              {% if hasError('tracker_serial') %}<small class="helper">{{ getError('tracker_serial') }}</small>{% endif %}
-            </div>
-        </div>
-        <div class="field{{ cssError('tracker_location') }}">
-          <label>Local Instalado</label>
-          <input type="text" name="tracker_location" placeholder="Ex: Painel, Sob o banco" value="{{ getValue('tracker_location') }}">
-          {% if hasError('tracker_location') %}<small class="helper">{{ getError('tracker_location') }}</small>{% endif %}
-        </div>
-        <h4 class="ui sub header" style="margin-top:1.5em;">Acessórios Existentes</h4>
-        <div class="grouped fields">
-            <div class="field"><div class="ui checkbox"><input type="checkbox" name="accessory_block" id="accessory_block" {% if getValue('accessory_block') %}checked{% endif %}><label for="accessory_block">Bloqueio</label></div> <input type="text" name="accessory_block_location" placeholder="Local do Bloqueio" value="{{ getValue('accessory_block_location') }}"></div>
-            <div class="field"><div class="ui checkbox"><input type="checkbox" name="accessory_siren" id="accessory_siren" {% if getValue('accessory_siren') %}checked{% endif %}><label for="accessory_siren">Sirene</label></div> <input type="text" name="accessory_siren_location" placeholder="Local da Sirene" value="{{ getValue('accessory_siren_location') }}"></div>
-            <div class="field"><div class="ui checkbox"><input type="checkbox" name="accessory_ibutton" id="accessory_ibutton" {% if getValue('accessory_ibutton') %}checked{% endif %}><label for="accessory_ibutton">iButton</label></div> <input type="text" name="accessory_ibutton_location" placeholder="Local do iButton" value="{{ getValue('accessory_ibutton_location') }}"></div>
-            <div class="field"><div class="ui checkbox"><input type="checkbox" name="accessory_keyboard" id="accessory_keyboard" {% if getValue('accessory_keyboard') %}checked{% endif %}><label for="accessory_keyboard">Teclado</label></div> <input type="text" name="accessory_keyboard_location" placeholder="Local do Teclado" value="{{ getValue('accessory_keyboard_location') }}"></div>
-            <div class="field"><div class="ui checkbox"><input type="checkbox" name="accessory_panic" id="accessory_panic" {% if getValue('accessory_panic') %}checked{% endif %}><label for="accessory_panic">Botão de Pânico</label></div> <input type="text" name="accessory_panic_location" placeholder="Local do Botão Pânico" value="{{ getValue('accessory_panic_location') }}"></div>
-        </div>
-      </div>
-
-      <div id="serviceDetailsTransfer" class="hidden-section">
-        <h4 class="ui sub header" style="margin-top:1.5em;">Veículo de Retirada</h4>
-        <div class="field"><label>Placa (Retirada)</label><input type="text" name="transfer_from_vehicle_plate_display" id="transfer_from_vehicle_plate_display" value="{{ getValue('transfer_from_vehicle_plate_display') }}" readonly></div>
-        <h4 class="ui sub header">Veículo de Instalação</h4>
-         <div class="field required{{ cssError('transfer_to_vehicle_id') }}">
-            <label for="transfer_to_vehicle_id">Placa do Veículo para Instalação</label>
-            <select name="transfer_to_vehicle_id" id="transfer_to_vehicle_id" class="ui search dropdown">
-              <option value="">Selecione a placa para instalação</option>
-            </select>
-            {% if hasError('transfer_to_vehicle_id') %}<small class="helper">{{ getError('transfer_to_vehicle_id') }}</small>{% endif %}
-        </div>
-      </div>
-
-      <div id="servicePhotosSection" class="hidden-section">
-        <h4 class="ui sub header" style="margin-top:1.5em;">Fotos do Serviço (Opcional)</h4>
-        <div class="field{{ cssError('service_photos') }}">
-            <label for="service_photos">Adicionar Fotos</label>
-            <input type="file" name="service_photos[]" id="service_photos" multiple accept="image/*">
-            {% if hasError('service_photos') %}<small class="helper">{{ getError('service_photos') }}</small>{% endif %}
-        </div>
-        <div id="imagePreviewContainer" class="ui tiny images"></div>
       </div>
     </div>
 
-    {# SEÇÃO: Local do Atendimento (Refatorada com seletor de endereços) #}
+    {# SEÇÃO 4: Data e Hora #}
     <div class="ui segment section-block">
-      <h3 class="ui dividing header">4. Local do Atendimento</h3>
+      <h3 class="ui dividing header">
+        <i class="calendar icon"></i>
+        Data e Hora do Atendimento
+      </h3>
       
-      {# Campos ocultos para envio do endereço final #}
-      <input type="hidden" name="selected_address_type" id="selected_address_type" value="{{ getValue('selected_address_type') }}">
-      <input type="hidden" name="selected_address_id" id="selected_address_id" value="{{ getValue('selected_address_id') }}">
-      <input type="hidden" name="address" id="address_main" value="{{ getValue('address') }}">
-      <input type="hidden" name="streetnumber" id="streetnumber_main" value="{{ getValue('streetnumber') }}">
-      <input type="hidden" name="complement" id="complement_main" value="{{ getValue('complement') }}">
-      <input type="hidden" name="district" id="district_main" value="{{ getValue('district') }}">
-      <input type="hidden" name="postalcode" id="postalcode_main" value="{{ getValue('postalcode') }}">
-      <input type="hidden" name="cityid" id="cityid_main" value="{{ getValue('cityid') }}">
-      <input type="hidden" name="city_name" id="city_name_main" value="{{ getValue('city_name') }}">
-      <input type="hidden" name="state" id="state_main" value="{{ getValue('state') }}">
-      
-      {# Container para o seletor de endereços #}
-      <div id="addressSelectorContainer" class="{% if not getValue('customerid') %}hidden-section{% endif %}">
-        <div id="addresses-loading">
-          <div class="ui active centered inline loader"></div>
-          <p>Carregando endereços disponíveis...</p>
-        </div>
-        
-        <div id="addresses-container" class="hidden-section">
-          <div class="grouped fields">
-            {# Os endereços serão carregados dinamicamente aqui #}
-          </div>
-        </div>
-        
-        {# Formulário para endereço customizado #}
-        <div class="ui segment custom-address-form" id="custom-address-form">
-          <h4 class="ui header">
-            <i class="edit icon"></i>
-            Informar Outro Endereço
-          </h4>
-          
-          <div class="ui form">
-            <div class="two fields">
-              <div class="field required">
-                <label>Rua/Logradouro</label>
-                <input type="text" id="custom-street" name="custom-street" placeholder="Ex: Rua das Flores" value="{{ getValue('custom_street') }}">
-              </div>
-              <div class="field required">
-                <label>Número</label>
-                <input type="text" id="custom-number" name="custom-number" placeholder="Ex: 123" value="{{ getValue('custom_number') }}">
-              </div>
-            </div>
-            
-            <div class="field">
-              <label>Complemento</label>
-              <input type="text" id="custom-complement" name="custom-complement" placeholder="Ex: Apto 101, Bloco B" value="{{ getValue('custom_complement') }}">
-            </div>
-            
-            <div class="three fields">
-              <div class="field required">
-                <label>Bairro</label>
-                <input type="text" id="custom-district" name="custom-district" placeholder="Ex: Centro" value="{{ getValue('custom_district') }}">
-              </div>
-              <div class="field">
-                <label>CEP</label>
-                <input type="text" id="custom-postal" name="custom-postal" placeholder="00000-000" value="{{ getValue('custom_postal') }}">
-              </div>
-              <div class="field required">
-                <label>Cidade</label>
-                <input type="text" id="custom-city" name="custom-city" placeholder="Ex: São Paulo" value="{{ getValue('custom_city') }}">
-              </div>
-            </div>
-            
-            <div class="field">
-              <label>Estado</label>
-              <select id="custom-state" name="custom-state" class="ui dropdown">
-                <option value="">Selecione o Estado</option>
-                <option value="AC" {% if getValue('custom_state') == 'AC' %}selected{% endif %}>Acre</option>
-                <option value="AL" {% if getValue('custom_state') == 'AL' %}selected{% endif %}>Alagoas</option>
-                <option value="AP" {% if getValue('custom_state') == 'AP' %}selected{% endif %}>Amapá</option>
-                <option value="AM" {% if getValue('custom_state') == 'AM' %}selected{% endif %}>Amazonas</option>
-                <option value="BA" {% if getValue('custom_state') == 'BA' %}selected{% endif %}>Bahia</option>
-                <option value="CE" {% if getValue('custom_state') == 'CE' %}selected{% endif %}>Ceará</option>
-                <option value="DF" {% if getValue('custom_state') == 'DF' %}selected{% endif %}>Distrito Federal</option>
-                <option value="ES" {% if getValue('custom_state') == 'ES' %}selected{% endif %}>Espírito Santo</option>
-                <option value="GO" {% if getValue('custom_state') == 'GO' %}selected{% endif %}>Goiás</option>
-                <option value="MA" {% if getValue('custom_state') == 'MA' %}selected{% endif %}>Maranhão</option>
-                <option value="MT" {% if getValue('custom_state') == 'MT' %}selected{% endif %}>Mato Grosso</option>
-                <option value="MS" {% if getValue('custom_state') == 'MS' %}selected{% endif %}>Mato Grosso do Sul</option>
-                <option value="MG" {% if getValue('custom_state') == 'MG' %}selected{% endif %}>Minas Gerais</option>
-                <option value="PA" {% if getValue('custom_state') == 'PA' %}selected{% endif %}>Pará</option>
-                <option value="PB" {% if getValue('custom_state') == 'PB' %}selected{% endif %}>Paraíba</option>
-                <option value="PR" {% if getValue('custom_state') == 'PR' %}selected{% endif %}>Paraná</option>
-                <option value="PE" {% if getValue('custom_state') == 'PE' %}selected{% endif %}>Pernambuco</option>
-                <option value="PI" {% if getValue('custom_state') == 'PI' %}selected{% endif %}>Piauí</option>
-                <option value="RJ" {% if getValue('custom_state') == 'RJ' %}selected{% endif %}>Rio de Janeiro</option>
-                <option value="RN" {% if getValue('custom_state') == 'RN' %}selected{% endif %}>Rio Grande do Norte</option>
-                <option value="RS" {% if getValue('custom_state') == 'RS' %}selected{% endif %}>Rio Grande do Sul</option>
-                <option value="RO" {% if getValue('custom_state') == 'RO' %}selected{% endif %}>Rondônia</option>
-                <option value="RR" {% if getValue('custom_state') == 'RR' %}selected{% endif %}>Roraima</option>
-                <option value="SC" {% if getValue('custom_state') == 'SC' %}selected{% endif %}>Santa Catarina</option>
-                <option value="SP" {% if getValue('custom_state') == 'SP' %}selected{% endif %}>São Paulo</option>
-                <option value="SE" {% if getValue('custom_state') == 'SE' %}selected{% endif %}>Sergipe</option>
-                <option value="TO" {% if getValue('custom_state') == 'TO' %}selected{% endif %}>Tocantins</option>
-              </select>
-            </div>
-            
-            <div class="field">
-              <label>Observações do Local (máx. 100 caracteres)</label>
-              <textarea id="custom-notes" name="custom-notes" rows="2" maxlength="100" placeholder="Ponto de referência, instruções especiais...">{{ getValue('custom_notes') }}</textarea>
+      <div class="two fields">
+        <div class="field required{{ cssError('scheduled_date') }}">
+          <label>Data do Agendamento</label>
+          <div class="ui calendar" id="schedule_calendar">
+            <div class="ui input left icon">
+              <i class="calendar icon"></i>
+              <input type="text" name="scheduled_date" id="scheduled_date" 
+                     placeholder="DD/MM/AAAA" 
+                     value="{{ getValue('scheduled_date') }}">
             </div>
           </div>
-        </div>
-      </div>
-      
-      {# Mensagem quando nenhum cliente está selecionado #}
-      <div id="no-customer-message" class="ui info message {% if getValue('customerid') %}hidden-section{% endif %}">
-        <i class="info circle icon"></i>
-        Primeiro selecione um cliente para ver os endereços disponíveis.
-      </div>
-      
-      {# Exibição do endereço selecionado #}
-      <div id="selectedAddressDisplay" class="ui positive message {% if not getValue('address') %}hidden-section{% endif %}">
-        <h4 class="header">
-          <i class="map marker alternate icon"></i>
-          Endereço Selecionado para Atendimento
-        </h4>
-        <div id="selectedAddressContent">
-          {% if getValue('address') %}
-            <p><strong>{{ getValue('address') }}, {{ getValue('streetnumber') }}</strong></p>
-            {% if getValue('complement') %}<p><em>{{ getValue('complement') }}</em></p>{% endif %}
-            <p>{{ getValue('district') }}, {{ getValue('city_name') }}/{{ getValue('state') }}</p>
-            {% if getValue('postalcode') %}<p>CEP: {{ getValue('postalcode') }}</p>{% endif %}
+          {% if hasError('scheduled_date') %}
+            <small class="helper">{{ getError('scheduled_date') }}</small>
           {% endif %}
         </div>
-      </div>
-      
-      {% if hasError('address') %}
-        <small class="helper">{{ getError('address') }}</small>
-      {% endif %}
-    </div>
-
-    {# SEÇÃO: Data e Hora do Atendimento #}
-    <div class="ui segment section-block">
-      <h3 class="ui dividing header">5. Data e Hora do Atendimento</h3>
-      <div class="two fields">
-        <div class="field required{{ cssError('scheduled_at_date') }}{{ cssError('scheduledat_validation') }}">
-          <label for="scheduled_at_date">Data do Agendamento</label>
-          <div class="ui calendar" id="scheduled_at_calendar">
-            <div class="ui input left icon"><i class="calendar icon"></i><input type="text" name="scheduled_at_date" id="scheduled_at_date" placeholder="DD/MM/AAAA" value="{{ getValue('scheduled_at_date') }}" required></div>
-          </div>
-          {% if hasError('scheduled_at_date') %}<small class="helper">{{ getError('scheduled_at_date') }}</small>{% endif %}
-        </div>
-        <div class="field required{{ cssError('scheduled_at_time') }}{{ cssError('scheduledat_validation') }}">
-          <label for="scheduled_at_time">Hora do Agendamento</label>
-          <select name="scheduled_at_time" id="scheduled_at_time" class="ui dropdown" required>
-            <option value="">Selecione</option>
-            {% set current_time = getValue('scheduled_at_time') %}
+        
+        <div class="field required{{ cssError('scheduled_time') }}">
+          <label>Horário</label>
+          <select name="scheduled_time" id="scheduled_time" class="ui dropdown">
+            <option value="">Selecione o horário</option>
+            {% set current_time = getValue('scheduled_time') %}
             {% for hour in 8..18 %}
               {% for minute in ['00', '30'] %}
-                {% if not (hour == 12 and minute == '30') and not (hour == 13 and minute == '00') %}
+                {% if not (hour == 12 and minute == '30') %}
                   {% set time_val = '%02d:%s'|format(hour, minute) %}
                   <option value="{{ time_val }}" {% if current_time == time_val %}selected{% endif %}>{{ time_val }}</option>
                 {% endif %}
               {% endfor %}
             {% endfor %}
           </select>
-          {% if hasError('scheduled_at_time') %}<small class="helper">{{ getError('scheduled_at_time') }}</small>{% endif %}
+          {% if hasError('scheduled_time') %}
+            <small class="helper">{{ getError('scheduled_time') }}</small>
+          {% endif %}
         </div>
       </div>
-      <div id="scheduleWarning" class="ui warning message hidden-section"></div>
-      <div id="scheduleSuggestion" class="ui info message {% if not getValue('servicetype') %}hidden-section{% endif %}">
-        Duração estimada do serviço: <span id="estimatedDuration">Calculando...</span>
-      </div>
-      {% if hasError('scheduledat_validation') %}
-        <div class="ui error message transition visible">{{ getError('scheduledat_validation') }}</div>
-      {% endif %}
-       {# Campo oculto para o backend receber o timestamp combinado #}
-      <input type="hidden" name="scheduledat" id="scheduledat_combined" value="{{ getValue('scheduledat') }}">
+      
+      {# Campo oculto para datetime combinado #}
+      <input type="hidden" name="scheduled_at" id="scheduled_at" value="{{ getValue('scheduled_at') }}">
     </div>
 
-    {# SEÇÃO: Técnico Responsável - REFATORADA #}
+    {# SEÇÃO 5: Técnico Responsável #}
     <div class="ui segment section-block">
-      <h3 class="ui dividing header">6. Técnico Responsável</h3>
-      <div class="eight wide field{{ cssError('technicianid') }}">
+      <h3 class="ui dividing header">
+        <i class="user tie icon"></i>
+        Técnico Responsável
+      </h3>
+      
+      <div class="field required{{ cssError('technician_id') }}">
         <label>Técnico</label>
-        <div class="ui fluid long selection dropdown">
-          <input name="technicianid" type="hidden" value="{{ getValue('technicianid') }}">
+        <div class="ui fluid selection dropdown">
+          <input name="technician_id" type="hidden" value="{{ getValue('technician_id') }}">
           <i class="dropdown icon"></i>
           <div class="default text">Escolha um técnico...</div>
           <div class="menu">
-            {% set technicianID = getValue('technicianid') %}
+            {% set technicianID = getValue('technician_id') %}
             {% for technician in technicians %}
-              <div class="vertical item technician-item"
-                    {% if technician.id == technicianID %}selected{% endif %}
-                    data-value="{{ technician.id }}"
-                    data-specialties="{{ technician.specialties|join(',')|default('') }}">
-                
+              <div class="item technician-item" 
+                   {% if technician.value == technicianID %}selected{% endif %}
+                   data-value="{{ technician.value }}">
                 <span class="description">
-                  <div class="hidden">
-                    {% if technician.description %}
-                      {{ technician.description }}<br>
-                    {% endif %}
-                  </div>
-                  <span class="text technician-location">{{ technician.city }} / {{ technician.state }}</span>
+                  <span class="technician-location">{{ technician.city }}/{{ technician.state }}</span>
+                  {% if technician.description %}
+                    <br>{{ technician.description }}
+                  {% endif %}
                 </span>
                 <span class="text">{{ technician.name }}</span>
               </div>
             {% endfor %}
           </div>
         </div>
-        {% if hasError('technicianid') %}
-          <small class="helper">{{ getError('technicianid') }}</small>
+        {% if hasError('technician_id') %}
+          <small class="helper">{{ getError('technician_id') }}</small>
         {% endif %}
       </div>
     </div>
 
-    {# SEÇÃO: Relato do Cliente #}
+    {# SEÇÃO 6: Local do Atendimento #}
     <div class="ui segment section-block">
-        <h3 class="ui dividing header">7. Relato do Cliente</h3>
-        <div class="field{{ cssError('customer_report') }}">
-            <label for="customer_report">Problema/Solicitação do Cliente (máx. 250 caracteres)</label>
-            <textarea name="customer_report" id="customer_report" rows="3" maxlength="250" placeholder="Descreva o que o cliente relatou...">{{ getValue('customer_report') }}</textarea>
-            {% if hasError('customer_report') %}<small class="helper">{{ getError('customer_report') }}</small>{% endif %}
+      <h3 class="ui dividing header">
+        <i class="map marker icon"></i>
+        Local do Atendimento
+      </h3>
+      
+      <div class="field required{{ cssError('service_address') }}">
+        <label>Endereço</label>
+        <div class="ui input">
+          <input type="text" name="service_address" id="service_address" 
+                 placeholder="Rua, Av..." 
+                 value="{{ getValue('service_address') }}">
         </div>
+        {% if hasError('service_address') %}
+          <small class="helper">{{ getError('service_address') }}</small>
+        {% endif %}
+      </div>
+      
+      <div class="three fields">
+        <div class="field{{ cssError('service_number') }}">
+          <label>Número</label>
+          <div class="ui input">
+            <input type="text" name="service_number" id="service_number" 
+                   placeholder="123" 
+                   value="{{ getValue('service_number') }}">
+          </div>
+          {% if hasError('service_number') %}
+            <small class="helper">{{ getError('service_number') }}</small>
+          {% endif %}
+        </div>
+        
+        <div class="field{{ cssError('service_district') }}">
+          <label>Bairro</label>
+          <div class="ui input">
+            <input type="text" name="service_district" id="service_district" 
+                   placeholder="Centro" 
+                   value="{{ getValue('service_district') }}">
+          </div>
+          {% if hasError('service_district') %}
+            <small class="helper">{{ getError('service_district') }}</small>
+          {% endif %}
+        </div>
+        
+        <div class="field{{ cssError('service_city') }}">
+          <label>Cidade</label>
+          <div class="ui input">
+            <input type="text" name="service_city" id="service_city" 
+                   placeholder="São Paulo" 
+                   value="{{ getValue('service_city') }}">
+          </div>
+          {% if hasError('service_city') %}
+            <small class="helper">{{ getError('service_city') }}</small>
+          {% endif %}
+        </div>
+      </div>
     </div>
 
-    {# SEÇÃO: Instruções ao Técnico #}
+    {# SEÇÃO 7: Observações #}
     <div class="ui segment section-block">
-        <h3 class="ui dividing header">8. Instruções Adicionais ao Técnico</h3>
-        <div class="field{{ cssError('technician_instructions') }}">
-            <label for="technician_instructions">Observações para o Técnico (máx. 250 caracteres)</label>
-            <textarea name="technician_instructions" id="technician_instructions" rows="3" maxlength="250" placeholder="Qualquer orientação extra para a execução do serviço...">{{ getValue('technician_instructions') }}</textarea>
-            {% if hasError('technician_instructions') %}<small class="helper">{{ getError('technician_instructions') }}</small>{% endif %}
+      <h3 class="ui dividing header">
+        <i class="sticky note icon"></i>
+        Observações Adicionais
+      </h3>
+      
+      <div class="field{{ cssError('notes') }}">
+        <label>Observações</label>
+        <textarea name="notes" id="notes" rows="3" 
+                  placeholder="Informações adicionais sobre o agendamento...">{{ getValue('notes') }}</textarea>
+        {% if hasError('notes') %}
+          <small class="helper">{{ getError('notes') }}</small>
+        {% endif %}
+      </div>
+      
+      <div class="field">
+        <div class="ui checkbox">
+          <input type="checkbox" name="is_emergency" id="is_emergency" value="1" {% if getValue('is_emergency') %}checked{% endif %}>
+          <label>Agendamento de emergência (prioridade alta)</label>
         </div>
+      </div>
+    </div>
+
+    {# Botões de ação #}
+    <div class="ui hidden divider"></div>
+    
+    <div class="field">
+      <button type="submit" class="ui large green fluid button" id="save_button">
+        <i class="save icon"></i> Salvar Agendamento
+      </button>
     </div>
     
-    {# SEÇÃO: Emergência #}
-    <div class="ui segment section-block">
-        <h3 class="ui dividing header">9. Outras Configurações</h3>
-        <div class="field">
-            <div class="ui checkbox" id="is_emergency_checkbox">
-            <input type="checkbox" name="is_emergency_frontend" id="is_emergency_frontend" value="1" {% if getValue('is_emergency_hidden') == '1' %}checked{% endif %}>
-            <label for="is_emergency_frontend">Agendamento de emergência (será tratado com prioridade)</label>
-            </div>
-            <input type="hidden" name="is_emergency_hidden" value="{{ getValue('is_emergency_hidden') }}">
-        </div>
+    <div class="field">
+      <a href="{{ path_for('ERP\\Appointments\\Calendar') }}" class="ui large fluid button">
+        <i class="cancel icon"></i> Cancelar
+      </a>
     </div>
-
-    <div class="ui hidden divider"></div>
-
-    <button type="submit" class="ui large green fluid button" id="saveAppointmentBtn">
-      <i class="save icon"></i> Salvar Agendamento
-    </button>
-    <div class="ui hidden divider"></div>
-     <a href="{{ path_for('ERP\\Appointments\\Calendar') }}" class="ui large fluid button">
-      <i class="cancel icon"></i> Cancelar
-    </a>
-    <div class="ui hidden divider"></div>
-
   </form>
 </div>
 {% endblock %}
 
 {% block scripts %}
   {{ parent() }}
-  {# Certifique-se que o jQuery Mask Plugin está carregado CORRETAMENTE. #}
-  {# Se o seu helper 'lib' funciona como o do customer.twig, ótimo. Senão, use <script src> #}
-  {% set getVehicleCompletion = { 'URL': 'ERP\\Cadastre\\Vehicles\\Autocompletion\\Get', 'method': 'PATCH' } %}
-  {% if lib is defined %}{{ lib('jquery.mask.min.js') }}{% else %}<script src="/assets/libs/jquery/plugins/masked.input/masked.input.min.js"></script>{% endif %} {# AJUSTE O CAMINHO se não usar lib() #}
-
+  {{ lib('semantic-ui/components/calendar.min.js') }}
+  {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
+  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
+  
+  {% set getCustomerAutocomplete = { 'URL': 'ERP\\Appointments\\Customers\\Autocomplete', 'method': 'PATCH' } %}
+  
   <script>
     $(document).ready(function() {
-      // --- Inicializações Fomantic UI ---
-      $('.ui.dropdown').not('#customer_search_component, #vehicle_search_component').dropdown();
+      // Inicializar componentes Semantic UI
+      $('.ui.dropdown').dropdown();
       $('.ui.checkbox').checkbox();
-      $('#scheduled_at_calendar').calendar({
+      
+      // Inicializar calendário
+      $('#schedule_calendar').calendar({
         type: 'date',
         monthFirst: false,
         today: true,
-        minDate: new Date(), // Não permitir datas passadas
+        minDate: new Date(),
         formatter: { 
           date: function (date, settings) { 
             if (!date) return ''; 
@@ -630,803 +472,97 @@
             var year = date.getFullYear(); 
             return (day < 10 ? '0' : '') + day + '/' + (month < 10 ? '0' : '') + month + '/' + year; 
           }
-        },
-        parser: { 
-          date: function(text) { 
-            if (!text) return null; 
-            const parts = text.split('/'); 
-            if (parts.length === 3) { 
-              const day = parseInt(parts[0],10); 
-              const month = parseInt(parts[1],10)-1; 
-              const year = parseInt(parts[2],10); 
-              if(!isNaN(day)&&!isNaN(month)&&!isNaN(year)&&year.toString().length===4&&month>=0&&month<=11&&day>=1&&day<=31){
-                return new Date(year,month,day);
-              }
-            } 
-            return null;
-          }
         }
       });
-
-      // Máscaras (verificar se $.fn.mask existe)
+      
+      // Máscaras
       if ($.fn.mask) {
-        $('#custom-postal').mask('00000-000');
+        $('#vehicle_plate').mask('AAA-0000');
       }
-
-      // --- LÓGICA JAVASCRIPT PARA O FORMULÁRIO ---
-      const URLS = {
-        customerSearch: '{{ path_for("ERP\\Cadastre\\Customers\\Get") }}',
-        vehicleSearch: '{{ path_for(getVehicleCompletion.URL) }}',
-        customerVehicles: '/erp/api/customers/CUSTOMER_ID_PLACEHOLDER/vehicles',
-        customerAddresses: '/erp/api/customers/CUSTOMER_ID_PLACEHOLDER/addresses',
-        cepSearch: '/erp/api/cep/CEP_PLACEHOLDER',
-        technicianAvailability: '/erp/api/technicians/availability'
-      };
-
-      // Repopular nome do cliente se houver dados salvos
-      const savedCustomerName = "{{ getValue('customer_name_selected')|escape('js') }}";
-      if(savedCustomerName){
-          $('#customer_search_input').val(savedCustomerName);
-      }
-
-      // 1. Autocomplete Nome do Cliente
-      $('#customer_search_component').search({
+      
+      // Configurar autocomplete de cliente
+      $('#customer_search').search({
         apiSettings: {
-          url: URLS.customerSearch + '?term={query}',
-          onResponse: function(apiResponse) {
-            var response = { results: [] };
-            if(apiResponse && apiResponse.customers) {
-                $.each(apiResponse.customers, function(index, item) {
-                    response.results.push({
-                        title: item.name,
-                        description: (item.document || 'Doc. não informado') + (item.phones && item.phones.length ? ' | Tel: ' + item.phones[0] : ''),
-                        customer_id: item.id,
-                        document: item.document,
-                        phones_array: item.phones_array || (item.phones ? [item.phones] : []),
-                        address_street: item.address_street || '', 
-                        address_number: item.address_number || '',
-                        address_complement: item.address_complement || '', 
-                        address_district: item.address_district || '',
-                        address_cityid: item.address_cityid || '', 
-                        address_postalcode: item.address_postalcode || '',
-                        address_city_name: item.address_city_name || '', 
-                        address_state: item.address_state || ''
-                    });
+          url: '{{ path_for(getCustomerAutocomplete.URL) }}',
+          method: '{{ getCustomerAutocomplete.method }}',
+          beforeSend: function(settings) {
+            settings.data = {
+              searchTerm: settings.urlData.query,
+              limit: 10
+            };
+            return settings;
+          },
+          onResponse: function(response) {
+            var results = { results: [] };
+            
+            if (response && response.result === 'OK' && response.data) {
+              $.each(response.data, function(index, customer) {
+                results.results.push({
+                  title: customer.name,
+                  description: customer.document + ' | ' + customer.subsidiary_name,
+                  customer_data: customer
                 });
+              });
             }
-            return response;
+            
+            return results;
           }
         },
         minCharacters: 3,
         onSelect: function(result, response) {
-          if(result){
-            $('#customerid').val(result.customer_id);
-            $('#customer_name_selected').val(result.title);
-            $('#customerDetailsBlock').removeClass('hidden-section');
-            $('#customer_document_display').text(result.document || 'N/D');
-            $('#customer_phones_display').text(result.phones_array.length ? result.phones_array.join(' / ') : 'N/D');
-
-            // Mostrar seletor de endereços e carregar endereços
-            $('#no-customer-message').addClass('hidden-section');
-            $('#addressSelectorContainer').removeClass('hidden-section');
-            loadCustomerAddresses(result.customer_id);
-
-            // Habilitar busca de veículos
-            $('#plate_input').prop('disabled', false).attr('placeholder', 'Informe a placa do veículo...');
-          }
-          return false;
-        }
-      });
-
-      // 2. Autocomplete de Veículos (usando Fomantic UI Search)
-      $('#vehicle_search_component').search({
-        apiSettings: {
-          url: URLS.vehicleSearch,
-          method: '{{ getVehicleCompletion.method }}',
-          beforeSend: function(settings) {
-            settings.data = settings.data || {};
-            settings.data.customerID = $('#customerid').val();
-            return settings;
-          },
-          onResponse: function(apiResponse) {
-            var response = { results: [] };
-            if(apiResponse && apiResponse.length) {
-              $.each(apiResponse, function(index, vehicle) {
-                let description = '';
-                
-                // Status do rastreador
-                if (vehicle.inuse) {
-                  description += '<span class="vehicle-status tracked">(rastreado)</span>';
-                } else {
-                  description += '<span class="vehicle-status untracked">(sem rastreador)</span>';
-                }
-                
-                description += '<br>';
-                
-                // Marca e modelo
-                description += '[<span class="vehicle-brand-model">' + 
-                             vehicle.brand + ' / ' + vehicle.model + '</span>]<br>';
-                
-                // Cor
-                description += 'Cor: <span class="vehicle-color">' + vehicle.color + '</span>';
-                
-                // Status de bloqueio
-                if (vehicle.blocked) {
-                  description += ' - <span class="vehicle-blocked">Bloqueado</span>';
-                }
-
-                response.results.push({
-                  title: vehicle.plate,
-                  description: description,
-                  vehicle_data: vehicle
-                });
-              });
-            }
-            return response;
-          }
-        },
-        minCharacters: 1,
-        onSelect: function(result, response) {
-          if (result && result.vehicle_data) {
-            const vehicle = result.vehicle_data;
+          if (result && result.customer_data) {
+            var customer = result.customer_data;
             
-            $('#vehicleid').val(vehicle.id);
-            $('#plateid').val(vehicle.id);
-            $('#vehicle_plate_selected_text').val(vehicle.plate);
+            // Preencher campos ocultos
+            $('#customer_id').val(customer.id);
+            $('#subsidiary_id').val(customer.subsidiary_id);
             
-            // Mostrar detalhes do veículo
-            $('#vehicleDetailsBlock').removeClass('hidden-section');
-            $('#vehicle_type_display').text(vehicle.type || 'N/D');
-            $('#vehicle_brand_display').text(vehicle.brand || 'N/D');
-            $('#vehicle_model_display').text(vehicle.model || 'N/D');
-            $('#vehicle_year_display').text((vehicle.year_fab + (vehicle.year_model ? '/' + vehicle.year_model : '')) || 'N/D');
-            $('#vehicle_color_display').text(vehicle.color || 'N/D');
-
-            if ($('#servicetype').val() === 'Transferencia_Rastreador') {
-              $('#transfer_from_vehicle_plate_display').val(vehicle.plate);
-              loadTransferToVehicles($('#customerid').val(), vehicle.id);
+            // Exibir detalhes do cliente
+            $('#customer_name_display').text(customer.name);
+            $('#customer_document_display').text(customer.document);
+            $('#customer_subsidiary_display').text(customer.subsidiary_name);
+            
+            var address = customer.address + (customer.streetnumber ? ', ' + customer.streetnumber : '');
+            if (customer.district) address += ' - ' + customer.district;
+            if (customer.city_name) address += ', ' + customer.city_name;
+            if (customer.state) address += '/' + customer.state;
+            
+            $('#customer_address_display').text(address);
+            $('#customer_details').addClass('active');
+            
+            // Auto-preencher endereço de atendimento (se vazio)
+            if (!$('#service_address').val()) {
+              $('#service_address').val(customer.address);
+              $('#service_number').val(customer.streetnumber);
+              $('#service_district').val(customer.district);
+              $('#service_city').val(customer.city_name);
             }
           }
           return false;
         }
       });
-
-      // Inicialmente desabilitar o campo de placa
-      $('#plate_input').prop('disabled', true);
-
-      // 3. Carregar Endereços do Cliente
-      function loadCustomerAddresses(customerId) {
-        $('#addresses-loading').removeClass('hidden-section');
-        $('#addresses-container').addClass('hidden-section');
-        
-        const addressesUrl = URLS.customerAddresses.replace('CUSTOMER_ID_PLACEHOLDER', customerId);
-        
-        $.ajax({
-          url: addressesUrl,
-          method: 'GET',
-          success: function(data) {
-            renderAddresses(data.addresses || []);
-          },
-          error: function() {
-            showAddressError('Erro ao carregar endereços do cliente');
-          },
-          complete: function() {
-            $('#addresses-loading').addClass('hidden-section');
-          }
-        });
-      }
-
-      // 4. Renderizar Endereços
-      function renderAddresses(addresses) {
-        const container = $('#addresses-container .grouped.fields');
-        container.empty();
-
-        // Ordenar endereços (principais primeiro)
-        addresses.sort((a, b) => {
-          if (a.main && !b.main) return -1;
-          if (!a.main && b.main) return 1;
-          return 0;
-        });
-
-        addresses.forEach(address => {
-          const phones = address.phones ? address.phones.map(p => 
-            `<div class="ui mini label"><i class="phone icon"></i>${p.phoneNumber}</div>`
-          ).join(' ') : '';
-          
-          const mainBadge = address.main ? 
-            '<div class="ui mini orange label"><i class="star icon"></i>Principal</div>' : '';
-          
-          const addressHtml = `
-            <div class="field">
-              <div class="ui card address-card fluid ${address.main ? 'main-address' : ''}" data-address-id="${address.rownumber}">
-                <div class="content">
-                  <div class="ui radio checkbox">
-                    <input type="radio" name="address_selector" value="${address.rownumber}" id="address-${address.rownumber}">
-                    <label for="address-${address.rownumber}"></label>
-                  </div>
-                  <div class="header" style="margin-left: 25px;">
-                    <i class="home icon"></i>
-                    ${address.place || 'Endereço do Cliente'}
-                  </div>
-                  <div class="description" style="margin-left: 25px;">
-                    <div class="address-meta">
-                      <p><strong>${address.address}, ${address.streetnumber}</strong>
-                      ${address.complement ? '<br><em>' + address.complement + '</em>' : ''}
-                      </p>
-                      <p>
-                        <i class="map pin icon"></i>
-                        ${address.district}, ${address.cityname}/${address.state}
-                        ${address.postalcode ? '<span class="ui mini basic label">' + address.postalcode + '</span>' : ''}
-                      </p>
-                      ${phones ? '<div class="phone-list">' + phones + '</div>' : ''}
-                      ${mainBadge}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          `;
-          
-          container.append(addressHtml);
-        });
-
-        // Adicionar opção de endereço customizado
-        const customAddressHtml = `
-          <div class="field">
-            <div class="ui card address-card fluid" data-address-type="custom">
-              <div class="content">
-                <div class="ui radio checkbox">
-                  <input type="radio" name="address_selector" value="custom" id="custom-option">
-                  <label for="custom-option"></label>
-                </div>
-                <div class="header" style="margin-left: 25px;">
-                  <i class="plus circle icon"></i>
-                  Informar outro endereço
-                </div>
-                <div class="description" style="margin-left: 25px;">
-                  Clique aqui para informar um endereço diferente
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-        
-        container.append(customAddressHtml);
-        
-        // Mostrar container de endereços
-        $('#addresses-container').removeClass('hidden-section');
-        
-        // Reinicializar checkboxes
-        $('.ui.checkbox').checkbox();
-        
-        // Restaurar seleção se houver
-        const savedAddressType = "{{ getValue('selected_address_type')|escape('js') }}";
-        const savedAddressId = "{{ getValue('selected_address_id')|escape('js') }}";
-        
-        if (savedAddressType === 'existing' && savedAddressId) {
-          $(`input[name="address_selector"][value="${savedAddressId}"]`).prop('checked', true).trigger('change');
-        } else if (savedAddressType === 'custom') {
-          $('input[name="address_selector"][value="custom"]').prop('checked', true).trigger('change');
-        }
-      }
-
-      // 5. Event handler para seleção de endereço
-      $(document).on('change', 'input[name="address_selector"]', function() {
-        handleAddressSelection();
-      });
-
-      $(document).on('click', '.address-card', function() {
-        const radio = $(this).find('input[type="radio"]');
-        radio.prop('checked', true).trigger('change');
-      });
-
-      function handleAddressSelection() {
-        const selectedValue = $('input[name="address_selector"]:checked').val();
-        
-        // Remove seleção visual de todos
-        $('.address-card').removeClass('selected');
-        
-        // Adiciona seleção visual ao escolhido
-        $('input[name="address_selector"]:checked').closest('.address-card').addClass('selected');
-        
-        // Limpar campos principais
-        clearMainAddressFields();
-        $('#selectedAddressDisplay').addClass('hidden-section');
-        
-        if (selectedValue === 'custom') {
-          // Mostrar form customizado
-          $('#custom-address-form').addClass('active').show();
-          $('#selected_address_type').val('custom');
-          $('#selected_address_id').val('');
-        } else if (selectedValue) {
-          // Endereço existente selecionado
-          $('#custom-address-form').removeClass('active').hide();
-          $('#selected_address_type').val('existing');
-          $('#selected_address_id').val(selectedValue);
-          
-          // Buscar dados do endereço e preencher campos principais
-          const customerId = $('#customerid').val();
-          if (customerId) {
-            loadAddressData(customerId, selectedValue);
-          }
-        } else {
-          // Nenhum endereço selecionado
-          $('#custom-address-form').removeClass('active').hide();
-          $('#selected_address_type').val('');
-          $('#selected_address_id').val('');
-        }
-      }
-
-      // 6. Carregar dados específicos de um endereço
-      function loadAddressData(customerId, addressId) {
-        const addressesUrl = URLS.customerAddresses.replace('CUSTOMER_ID_PLACEHOLDER', customerId);
-        
-        $.ajax({
-          url: addressesUrl + '/' + addressId,
-          method: 'GET',
-          success: function(address) {
-            if (address) {
-              // Preencher campos principais
-              $('#address_main').val(address.address || '');
-              $('#streetnumber_main').val(address.streetnumber || '');
-              $('#complement_main').val(address.complement || '');
-              $('#district_main').val(address.district || '');
-              $('#postalcode_main').val(address.postalcode || '');
-              $('#cityid_main').val(address.cityid || '');
-              $('#city_name_main').val(address.cityname || '');
-              $('#state_main').val(address.state || '');
-              
-              // Mostrar endereço selecionado
-              updateSelectedAddressDisplay(address);
-            }
-          },
-          error: function() {
-            console.error('Erro ao carregar dados do endereço');
-          }
-        });
-      }
-
-      // 7. Atualizar exibição do endereço selecionado
-      function updateSelectedAddressDisplay(address) {
-        let content = `<p><strong>${address.address}, ${address.streetnumber}</strong></p>`;
-        
-        if (address.complement) {
-          content += `<p><em>${address.complement}</em></p>`;
-        }
-        
-        content += `<p>${address.district}, ${address.cityname}/${address.state}</p>`;
-        
-        if (address.postalcode) {
-          content += `<p>CEP: ${address.postalcode}</p>`;
-        }
-        
-        $('#selectedAddressContent').html(content);
-        $('#selectedAddressDisplay').removeClass('hidden-section');
-      }
-
-      // 8. Manipular campos de endereço customizado
-      $('#custom-street, #custom-number, #custom-complement, #custom-district, #custom-postal, #custom-city, #custom-state, #custom-notes').on('blur', function() {
-        if ($('input[name="address_selector"]:checked').val() === 'custom') {
-          updateMainFieldsFromCustom();
-        }
-      });
-
-      function updateMainFieldsFromCustom() {
-        $('#address_main').val($('#custom-street').val());
-        $('#streetnumber_main').val($('#custom-number').val());
-        $('#complement_main').val($('#custom-complement').val());
-        $('#district_main').val($('#custom-district').val());
-        $('#postalcode_main').val($('#custom-postal').val());
-        $('#city_name_main').val($('#custom-city').val());
-        $('#state_main').val($('#custom-state').val());
-        
-        // Atualizar exibição se todos os campos obrigatórios estiverem preenchidos
-        const street = $('#custom-street').val().trim();
-        const number = $('#custom-number').val().trim();
-        const district = $('#custom-district').val().trim();
-        const city = $('#custom-city').val().trim();
-        
-        if (street && number && district && city) {
-          const customAddress = {
-            address: street,
-            streetnumber: number,
-            complement: $('#custom-complement').val(),
-            district: district,
-            cityname: city,
-            state: $('#custom-state').val(),
-            postalcode: $('#custom-postal').val()
-          };
-          updateSelectedAddressDisplay(customAddress);
-        }
-      }
-
-      // 9. Busca de CEP para endereço customizado
-      $('#custom-postal').on('blur', function() {
-        const cep = $(this).val().replace(/\D/g, '');
-        if (cep.length === 8) {
-          $(this).parent().addClass('loading');
-          $.ajax({
-            url: URLS.cepSearch.replace('CEP_PLACEHOLDER', cep),
-            method: 'GET',
-            success: function(data) {
-              if (data && data.address) {
-                $('#custom-street').val(data.address.logradouro || '');
-                $('#custom-district').val(data.address.bairro || '');
-                $('#custom-city').val(data.address.localidade || '');
-                $('#custom-state').dropdown('set selected', data.address.uf || '');
-                updateMainFieldsFromCustom();
-              } else {
-                showMessage('CEP não encontrado', 'O CEP informado não foi encontrado.', 'warning');
-              }
-            },
-            error: function() {
-              showMessage('Erro', 'Erro ao buscar informações do CEP.', 'error');
-            },
-            complete: function() {
-              $('#custom-postal').parent().removeClass('loading');
-            }
-          });
-        }
-      });
-
-      function clearMainAddressFields() {
-        $('#address_main, #streetnumber_main, #complement_main, #district_main, #postalcode_main, #cityid_main, #city_name_main, #state_main').val('');
-      }
-
-      function showAddressError(message) {
-        $('#addresses-container').removeClass('hidden-section').html(`
-          <div class="ui negative message">
-            <i class="times circle icon"></i>
-            ${message}
-          </div>
-        `);
-      }
-
-      // 10. Carregar Veículos para Transferência
-      function loadTransferToVehicles(customerId, excludeVehicleId) {
-        const $transferToDropdown = $('#transfer_to_vehicle_id');
-        $transferToDropdown.empty().append($('<option>',{value:'', text:'Carregando...'})).addClass('loading');
-        let vehiclesUrl = URLS.customerVehicles.replace('CUSTOMER_ID_PLACEHOLDER', customerId);
-        vehiclesUrl += '?serviceType=Instalacao_Rastreador_Principal&excludeVehicleId=' + encodeURIComponent(excludeVehicleId);
-
-        $.ajax({
-            url: vehiclesUrl, method: 'GET',
-            success: function(data){
-                $transferToDropdown.empty().append($('<option>',{value:'', text:'Selecione para instalar'}));
-                if(data && data.vehicles && data.vehicles.length > 0){
-                    $.each(data.vehicles, function(i, vehicle){
-                        $transferToDropdown.append($('<option>',{value: vehicle.id, text: vehicle.plate + (vehicle.model ? ' - ' + vehicle.model : '')}));
-                    });
-                } else {
-                    $transferToDropdown.append($('<option>',{value:'', text:'Nenhum veículo para instalação'}));
-                }
-                $transferToDropdown.dropdown('refresh').removeClass('loading');
-                const savedTransferTo = "{{ getValue('transfer_to_vehicle_id')|escape('js') }}";
-                if(savedTransferTo) $transferToDropdown.dropdown('set selected', savedTransferTo);
-            },
-            error: function(){ 
-              $transferToDropdown.removeClass('loading'); 
-            }
-        });
-      }
-
-      // 11. Lógica de Tipo de Serviço
-      $('#servicetype').on('change', function() {
-        const serviceType = $(this).val();
-        $('#serviceDetailsNonInstallation, #serviceDetailsTransfer, #servicePhotosSection').addClass('hidden-section');
-
-        if (!serviceType) { 
-          return; 
-        }
-
-        const isInstallation = serviceType.toLowerCase().includes('instalacao');
-        const isTransfer = serviceType === 'Transferencia_Rastreador';
-        const showPhotos = ['Manutencao', 'Retirada', 'Vistoria', 'Transferencia_Rastreador'].some(term => serviceType.includes(term));
-
-        if (isTransfer) {
-          $('#serviceDetailsTransfer').removeClass('hidden-section');
-          const currentVehicleId = $('#vehicleid').val();
-          const currentVehiclePlate = $('#plate_input').val();
-          $('#transfer_from_vehicle_plate_display').val(currentVehiclePlate || 'Selecione um veículo primeiro');
-          if($('#customerid').val() && currentVehicleId) loadTransferToVehicles($('#customerid').val(), currentVehicleId);
-
-        } else if (!isInstallation && serviceType !== 'Vistoria' && serviceType !== 'Emergencia') {
-          $('#serviceDetailsNonInstallation').removeClass('hidden-section');
-        }
-        
-        if(showPhotos) $('#servicePhotosSection').removeClass('hidden-section');
-        
-        updateEstimatedDuration(serviceType);
-        validateDateTimeAndTechnician();
-      });
-
-      // 12. Validação de Data/Hora e Disponibilidade
-      $('#scheduled_at_date, #scheduled_at_time, #technicianid').on('change', validateDateTimeAndTechnician);
-
-      function validateDateTimeAndTechnician() {
-        const dateStr = $('#scheduled_at_date').val(); 
-        const timeStr = $('#scheduled_at_time').val();
-        const technicianId = $('#technicianid').val(); 
-        const serviceType = $('#servicetype').val();
-        $('#scheduleWarning').addClass('hidden-section').empty();
-
-        if (!dateStr || !timeStr ) { 
-          filterTechniciansBySpecialtyAndDateTime(); 
-          return; 
-        }
-
-        const [day, month, year] = dateStr.split('/');
-        const selectedDate = new Date(year, month - 1, day);
-        const dayOfWeek = selectedDate.getDay();
-        let warningMsg = "";
-        if (dayOfWeek === 0 || dayOfWeek === 6) warningMsg += 'Atenção: Data em final de semana. ';
-
-        if (warningMsg) $('#scheduleWarning').html(warningMsg).removeClass('hidden-section');
-        
-        filterTechniciansBySpecialtyAndDateTime(dateStr, timeStr, serviceType);
-      }
       
-      function updateEstimatedDuration(serviceType) {
-        let duration = "";
-        if (serviceType && serviceType.toLowerCase().includes('instalacao')) duration = "aprox. 2 horas";
-        else if (serviceType && serviceType.toLowerCase().includes('manutencao')) duration = "aprox. 1h 30min";
-        else if (serviceType && serviceType.toLowerCase().includes('retirada')) duration = "aprox. 1 hora";
-        else if (serviceType === 'Vistoria') duration = "aprox. 45 minutos";
-
-        if(duration){ 
-          $('#estimatedDuration').text(duration); 
-          $('#scheduleSuggestion').removeClass('hidden-section');
-        } else { 
-          $('#scheduleSuggestion').addClass('hidden-section'); 
-        }
-      }
-
-      // 13. Filtrar Técnicos por Especialização e Disponibilidade - ATUALIZADO para dropdown
-      function filterTechniciansBySpecialtyAndDateTime(dateStr, timeStr, serviceType) {
-          const $techDropdown = $('#technicianid').parent('.ui.dropdown');
-          const technicianId = $('input[name="technicianid"]').val();
-          
-          if(!dateStr || !timeStr) {
-             $techDropdown.find('.item').each(function() {
-                const itemValue = $(this).data('value');
-                if(!itemValue) return;
-                $(this).removeClass('disabled');
-                const specialties = ($(this).data('specialties') || "").toString().toLowerCase();
-                if (serviceType && serviceType.toLowerCase().includes('video') && !specialties.includes('video')) {
-                    $(this).addClass('disabled');
-                }
-             });
-             return;
-          }
-
-          const [day, month, year] = dateStr.split('/');
-          const dateTimeForQuery = `${year}-${month}-${day} ${timeStr}`;
-
-          $techDropdown.addClass('loading');
-          $.ajax({
-            url: URLS.technicianAvailability,
-            method: 'POST',
-            data: {
-                datetime: dateTimeForQuery,
-                service_type: serviceType,
-            },
-            success: function(response) {
-                if(response && response.available_technicians) {
-                    const currentSelectedTechId = $('input[name="technicianid"]').val();
-                    const $menu = $techDropdown.find('.menu');
-                    $menu.empty();
-                    
-                    let isCurrentSelectedAvailable = false;
-                    $.each(response.available_technicians, function(i, tech){
-                        const itemHtml = `
-                          <div class="vertical item technician-item" data-value="${tech.id}" data-specialties="${(tech.specialties || []).join(',')}">
-                            <span class="description">
-                              <div class="hidden">
-                                ${tech.description ? tech.description + '<br>' : ''}
-                              </div>
-                              <span class="text technician-location">${tech.city} / ${tech.state}</span>
-                            </span>
-                            <span class="text">${tech.name}</span>
-                          </div>
-                        `;
-                        $menu.append(itemHtml);
-                        
-                        if (tech.id.toString() === currentSelectedTechId) {
-                            isCurrentSelectedAvailable = true;
-                        }
-                    });
-                    
-                    // Reinicializar o dropdown
-                    $techDropdown.dropdown('refresh');
-                    
-                    if (currentSelectedTechId && isCurrentSelectedAvailable) {
-                        $techDropdown.dropdown('set selected', currentSelectedTechId);
-                    } else if (currentSelectedTechId && !isCurrentSelectedAvailable) {
-                        $techDropdown.dropdown('clear');
-                        $('#scheduleWarning').append('<div>Técnico selecionado anteriormente não está disponível para esta data/hora/serviço.</div>').removeClass('hidden-section');
-                    }
-
-                    if(response.warning_message_for_slot){
-                         $('#scheduleWarning').append('<div>' + response.warning_message_for_slot + '</div>').removeClass('hidden-section');
-                    }
-
-                } else {
-                     const $menu = $techDropdown.find('.menu');
-                     $menu.empty().append('<div class="item disabled" data-value="">Nenhum técnico disponível</div>');
-                     $techDropdown.dropdown('refresh');
-                }
-            },
-            error: function() { 
-              // Tratar erro
-            },
-            complete: function() { 
-              $techDropdown.removeClass('loading'); 
-            }
-          });
-      }
-
-      // 14. Preview de Imagens
-      $('#service_photos').on('change', function(event) {
-        const $previewContainer = $('#imagePreviewContainer').empty();
-        if (this.files && this.files.length > 0) {
-          if(this.files.length > 5) {
-            alert("Você pode selecionar no máximo 5 imagens.");
-            $(this).val('');
-            return;
-          }
-          Array.from(this.files).forEach(file => {
-            if (file.type.startsWith('image/') && file.size < 2097152) {
-              const reader = new FileReader();
-              reader.onload = function(e) { 
-                $previewContainer.append($('<img>', { src: e.target.result, title: file.name }));
-              }
-              reader.readAsDataURL(file);
-            } else if (!file.type.startsWith('image/')) {
-                alert("Arquivo '" + file.name + "' não é uma imagem válida.");
-            } else if (file.size >= 2097152) {
-                 alert("A imagem '" + file.name + "' é muito grande (máx 2MB).");
-            }
-          });
-           if ($previewContainer.children().length !== this.files.length) $(this).val('');
-        }
-      });
-
-      // 15. Checkbox de emergência
-      $('#is_emergency_frontend').on('change', function() {
-          $('input[name="is_emergency_hidden"]').val($(this).is(':checked') ? '1' : '0');
-      });
-
-      // 16. Funções utilitárias
-      function showMessage(title, message, type) {
-        // Implementar toast ou modal de mensagem
-        console.log(`${type.toUpperCase()}: ${title} - ${message}`);
-      }
-
-      // 17. Submissão do Formulário
-      $('#newAppointmentForm').submit(function(e) {
-        $('#saveAppointmentBtn').addClass('loading').prop('disabled', true);
-        let isValid = true;
-        let firstErrorField = null;
-
-        // Limpar erros antigos
-        $(this).find('.field.error').removeClass('error');
-        $(this).find('.helper').remove();
-        $('.ui.error.message.summary').remove();
-
-        // Validação específica para endereço
-        const selectedAddressType = $('#selected_address_type').val();
-        const addressMain = $('#address_main').val().trim();
+      // Combinar data e hora antes do submit
+      $('#appointmentForm').on('submit', function(e) {
+        var date = $('#scheduled_date').val();
+        var time = $('#scheduled_time').val();
         
-        if (!selectedAddressType || !addressMain) {
-          // Encontrar o container do seletor de endereços e marcar como erro
-          const $addressSection = $('#addressSelectorContainer').closest('.section-block');
-          $addressSection.addClass('error');
-          $addressSection.append('<small class="helper">Por favor, selecione um endereço para o atendimento.</small>');
-          if (!firstErrorField) firstErrorField = $addressSection;
-          isValid = false;
-        }
-
-        // Validação de endereço customizado se selecionado
-        if (selectedAddressType === 'custom') {
-          const customStreet = $('#custom-street').val().trim();
-          const customNumber = $('#custom-number').val().trim();
-          const customDistrict = $('#custom-district').val().trim();
-          const customCity = $('#custom-city').val().trim();
-          
-          if (!customStreet || !customNumber || !customDistrict || !customCity) {
-            const $customForm = $('#custom-address-form');
-            $customForm.addClass('error');
-            $customForm.append('<small class="helper">Preencha todos os campos obrigatórios do endereço customizado.</small>');
-            if (!firstErrorField) firstErrorField = $customForm;
-            isValid = false;
+        if (date && time) {
+          var dateParts = date.split('/');
+          if (dateParts.length === 3) {
+            var datetime = dateParts[2] + '-' + dateParts[1] + '-' + dateParts[0] + ' ' + time + ':00';
+            $('#scheduled_at').val(datetime);
           }
         }
-
-        // Validação de campos required
-        $(this).find('[required]').each(function() {
-          const $field = $(this);
-          const $fieldContainer = $field.closest('.field');
-          if ( ($field.is('select') && !$field.val()) || (!$field.is('select') && $field.val().trim() === "") ) {
-            if($fieldContainer.is(":visible")){
-                $fieldContainer.addClass('error');
-                if ($fieldContainer.find('.helper').length === 0) {
-                    let labelText = $fieldContainer.find('label').text() || 'Este campo';
-                    $field.after('<small class="helper">' + labelText + ' é obrigatório.</small>');
-                }
-                if (!firstErrorField) firstErrorField = $fieldContainer;
-                isValid = false;
-            }
-          }
-        });
-
-        if (!isValid) {
-          e.preventDefault();
-          $(this).addClass('error');
-          $(this).prepend('<div class="ui error message summary transition visible"><i class="close icon"></i><div class="header">Erro de Validação</div><p>Por favor, preencha todos os campos obrigatórios destacados.</p></div>');
-          $('.ui.error.message.summary .close.icon').on('click', function() {$(this).closest('.message').transition('fade');});
-
-          if (firstErrorField) {
-            $('html, body').animate({ scrollTop: firstErrorField.offset().top - 100 }, 300);
-          }
-          $('#saveAppointmentBtn').removeClass('loading').prop('disabled', false);
-          return false;
-        }
-
-        // Combinar data e hora
-        const dateStr = $('#scheduled_at_date').val();
-        const timeStr = $('#scheduled_at_time').val();
-        if (dateStr && timeStr) {
-          const [day, month, year] = dateStr.split('/');
-          if (day && month && year) {
-            const isoDateTime = `${year}-${month.padStart(2,'0')}-${day.padStart(2,'0')} ${timeStr}:00`;
-            $('#scheduledat_combined').val(isoDateTime);
-          }
-        }
+        
+        // Adicionar loading ao botão
+        $('#save_button').addClass('loading').prop('disabled', true);
       });
-
-      // --- Inicializações Pós-Carregamento ---
-      const savedServiceType = "{{ getValue('servicetype')|escape('js') }}";
-      if(savedServiceType) {
-          $('#servicetype').dropdown('set selected', savedServiceType);
-      } else {
-          $('#servicetype').trigger('change');
-      }
       
-      const savedCustomerId = "{{ getValue('customerid')|escape('js') }}";
-      const savedCustomerNameSel = "{{ getValue('customer_name_selected')|escape('js') }}";
-      if(savedCustomerId && savedCustomerNameSel){
-          $('#customer_search_input').val(savedCustomerNameSel);
-          $('#customerid').val(savedCustomerId);
-          const simulatedResult = {
-              customer_id: savedCustomerId,
-              title: savedCustomerNameSel,
-              document: "{{ getValue('customer_document_display')|escape('js') }}",
-              phones_array: ("{{ getValue('customer_phones_display')|escape('js') }}".split(' / ')).filter(p => p),
-              address_street: "{{ getValue('customer_address_street')|default('')|escape('js') }}",
-          };
-          if (simulatedResult.customer_id) {
-                $('#customerDetailsBlock').removeClass('hidden-section');
-                $('#customer_document_display').text(simulatedResult.document || 'N/D');
-                $('#customer_phones_display').text(simulatedResult.phones_array.length ? simulatedResult.phones_array.join(' / ') : 'N/D');
-                $('#plate_input').prop('disabled', false).attr('placeholder', 'Informe a placa do veículo...');
-                
-                // Carregar endereços se cliente já estava selecionado
-                $('#no-customer-message').addClass('hidden-section');
-                $('#addressSelectorContainer').removeClass('hidden-section');
-                loadCustomerAddresses(savedCustomerId);
-            }
-      }
-
-      const savedEmergency = $('input[name="is_emergency_hidden"]').val();
-      if(savedEmergency === '1'){
-          $('#is_emergency_frontend').prop('checked', true).parent('.checkbox').checkbox('check');
-      }
-
-      // Fechar mensagens de erro
+      // Fechar mensagens
       $('.ui.message .close.icon').on('click', function() {
         $(this).closest('.message').transition('fade');
       });
-
     });
   </script>
 {% endblock %}

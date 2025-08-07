@@ -715,6 +715,8 @@ $app->group('/erp', function () use ($container) {
          ->setName('ERP\Appointments\ToggleStatus');
     $this->get('/pdf/{appointmentID}', 'erp.appointments.controller:getPDF')
          ->setName('ERP\Appointments\Get\PDF');
+    $this->patch('/customers/autocomplete', 'erp.appointments.controller:getCustomerAutocompletion')
+         ->setName('ERP\Appointments\Customers\Autocomplete');
   });
 
   // --------------------------------------------[ Parametrização ]-----
