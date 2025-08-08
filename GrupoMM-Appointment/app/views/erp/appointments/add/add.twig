@@ -524,16 +524,6 @@ $(document).ready(function() {
    function initializePlateAutocomplete() {
     // Usar Semantic UI Search
     $('#plate_search').search({
-      loading: {
-        duration: 200
-    },
-    // Adicionar classe loading durante busca
-    onSearchQuery: function(query) {
-        $(this).addClass('loading');
-    },
-    onResults: function() {
-        $(this).removeClass('loading');
-    }
         apiSettings: {
             url: "{{ path_for(getVehicleCompletion.URL) }}",
             method: "{{ getVehicleCompletion.method }}",
