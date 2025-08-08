@@ -670,12 +670,11 @@ class AppointmentsController extends Controller
         $processedData['status'] = $rawData['status'] ?? 'Pendente';
     }
     
-    // Usar o customer_id se fornecido, senão processar pelo nome
+    // Usar o customer_id se fornecido
     if (!empty($rawData['customer_id'])) {
         $processedData['customerid'] = $rawData['customer_id'];
-        $customer = Entity::find($rawData['customer_id']);
     } else {
-        // Fallback: processa cliente pelo nome (código existente)
+        // Fallback: processa cliente pelo nome
         $customer = $this->processCustomer($rawData['customer_name'], $processedData['contractorid']);
         $processedData['customerid'] = $customer->entityid;
     }

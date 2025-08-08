@@ -2,7 +2,7 @@
 
 {% block title %}{{ parent() }} - Novo Agendamento{% endblock %}
 
-{% set getCustomerAutocomplete = { 'URL': 'ERP\\Appointments\\Customers\\Autocomplete', 'method': 'PATCH' } %}
+{% set getCustomerAutocomplete = { 'URL': 'ERP\\Cadastre\\Entities\\Autocompletion\\Get', 'method': 'PATCH' } %}
 
 {% block stylesheets %}
   {{ parent() }}
@@ -452,7 +452,7 @@
   {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
   {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
   
-  {% set getCustomerAutocomplete = { 'URL': 'ERP\\Appointments\\Customers\\Autocomplete', 'method': 'PATCH' } %}
+  {% set getCustomerAutocomplete = { 'URL': 'ERP\\Cadastre\\Entities\\Autocompletion\\Get', 'method': 'PATCH' } %}
   
   <script>
     $(document).ready(function() {
@@ -484,71 +484,101 @@
       
       // Configurar autocomplete de cliente
       $('#customer_search').search({
-  apiSettings: {
-    url: '{{ path_for(getCustomerAutocomplete.URL) }}',
-    method: '{{ getCustomerAutocomplete.method }}',
-    beforeSend: function(settings) {
-      settings.data = {
-        searchTerm: settings.urlData.query,
-        limit: 10
-      };
-      return settings;
+    apiSettings: {
+        url: '{{ path_for(getCustomerAutocomplete.URL) }}',
+        method: '{{ getCustomerAutocomplete.method }}',
+        beforeSend: function(settings) {
+            settings.data = {
+                searchTerm: settings.urlData.query,
+                type: 'customer',           // IMPORTANTE: tipo customer
+                detailed: true,              // IMPORTANTE: trazer detalhes
+                notIncludeAnyRegister: true, // Não incluir registro "Todos"
+                limit: 10
+            };
+            return settings;
+        },
+        onResponse: function(response) {
+            var results = { results: [] };
+            
+            if (response && response.result === 'OK' && response.data) {
+                $.each(response.data, function(index, customer) {
+                    // Formatar descrição baseada no tipo de pessoa
+                    var description = '';
+                    if (customer.juridicalperson) {
+                        description = customer.subsidiaryname + ' | ' + customer.type;
+                    } else {
+                        description = (customer.headoffice ? 'Titular' : 'Dependente: ' + customer.subsidiaryname);
+                    }
+                    
+                    results.results.push({
+                        title: customer.name,
+                        description: description,
+                        customer_data: customer
+                    });
+                });
+            }
+            
+            return results;
+        }
     },
-    onResponse: function(response) {
-      var results = { results: [] };
-      
-      if (response && response.result === 'OK' && response.data) {
-        $.each(response.data, function(index, customer) {
-          results.results.push({
-            title: customer.name,
-            description: customer.document + ' | ' + customer.subsidiary_name,
-            customer_data: customer
-          });
-        });
-      }
-      
-      return results;
+    minCharacters: 3,
+    searchDelay: 300,
+    cache: false,
+    onSelect: function(result, response) {
+        if (result && result.customer_data) {
+            var customer = result.customer_data;
+            
+            // Preencher campos ocultos
+            $('#customer_id').val(customer.id);
+            $('#subsidiary_id').val(customer.subsidiaryid);
+            
+            // Manter o nome no campo
+            $('#customer_name').val(customer.name);
+            
+            // Exibir detalhes do cliente
+            $('#customer_name_display').text(customer.name);
+            $('#customer_subsidiary_display').text(customer.subsidiaryname);
+            
+            // Para pegar os dados completos do cliente (endereço, documento, etc)
+            // fazemos uma segunda chamada
+            $.ajax({
+                url: '{{ path_for(getCustomerAutocomplete.URL) }}',
+                method: '{{ getCustomerAutocomplete.method }}',
+                data: {
+                    type: 'ownerdata',
+                    customerID: customer.id,
+                    subsidiaryID: customer.subsidiaryid
+                },
+                success: function(response) {
+                    if (response.result === 'OK' && response.data) {
+                        var ownerData = response.data;
+                        
+                        $('#customer_document_display').text(ownerData.nationalregister || 'Não informado');
+                        
+                        var address = ownerData.address || '';
+                        if (ownerData.streetnumber) address += ', ' + ownerData.streetnumber;
+                        if (ownerData.complement) address += ' - ' + ownerData.complement;
+                        if (ownerData.district) address += ' - ' + ownerData.district;
+                        if (ownerData.cityname) address += ', ' + ownerData.cityname;
+                        if (ownerData.state) address += '/' + ownerData.state;
+                        
+                        $('#customer_address_display').text(address || 'Endereço não informado');
+                        
+                        // Auto-preencher endereço de atendimento (se vazio)
+                        if (!$('#service_address').val() && ownerData.address) {
+                            $('#service_address').val(ownerData.address);
+                            $('#service_number').val(ownerData.streetnumber || '');
+                            $('#service_district').val(ownerData.district || '');
+                            $('#service_city').val(ownerData.cityname || '');
+                        }
+                    }
+                }
+            });
+            
+            $('#customer_details').addClass('active');
+        }
+        return false;
     }
-  },
-  minCharacters: 3,
-  searchDelay: 300,
-  cache: false,
-  onSelect: function(result, response) {
-    if (result && result.customer_data) {
-      var customer = result.customer_data;
-      
-      // Preencher campos ocultos
-      $('#customer_id').val(customer.id);
-      $('#subsidiary_id').val(customer.subsidiary_id);
-      
-      // Manter o nome no campo
-      $('#customer_name').val(customer.name);
-      
-      // Exibir detalhes do cliente
-      $('#customer_name_display').text(customer.name);
-      $('#customer_document_display').text(customer.document || 'Não informado');
-      $('#customer_subsidiary_display').text(customer.subsidiary_name);
-      
-      var address = customer.address || '';
-      if (customer.streetnumber) address += ', ' + customer.streetnumber;
-      if (customer.complement) address += ' - ' + customer.complement;
-      if (customer.district) address += ' - ' + customer.district;
-      if (customer.city_name) address += ', ' + customer.city_name;
-      if (customer.state) address += '/' + customer.state;
-      
-      $('#customer_address_display').text(address || 'Endereço não informado');
-      $('#customer_details').addClass('active');
-      
-      // Auto-preencher endereço de atendimento (se vazio)
-      if (!$('#service_address').val() && customer.address) {
-        $('#service_address').val(customer.address);
-        $('#service_number').val(customer.streetnumber || '');
-        $('#service_district').val(customer.district || '');
-        $('#service_city').val(customer.city_name || '');
-      }
-    }
-    return false; // Impede que o Semantic UI limpe o campo
-  }
 });
       
       // Combinar data e hora antes do submit
