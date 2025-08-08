@@ -207,29 +207,39 @@
     </div>
 
     {# SEÇÃO 2: Identificação do Veículo #}
-    <div class="ui segment section-block">
-      <h3 class="ui dividing header">
-        <i class="car icon"></i>
-        Identificação do Veículo
-      </h3>
-      
-      <div class="field required{{ cssError('plate') }}">
-        <label>Placa do Veículo</label>
-        <div class="ui icon input">
-          <input type="text" name="plate" id="plate" 
-                 placeholder="ABC-1234" 
-                 value="{{ getValue('plate') }}" 
-                 maxlength="100">
-          <i class="car icon"></i>
-        </div>
-          <input type="hidden" name="plateid"
-                 value="{{ getValue('plateid') }}">
-        {% if hasError('plate') %}
-          <small class="helper">{{ getError('plate') }}</small>
-        {% endif %}
-      </div>
-
+<div class="ui segment section-block">
+  <h3 class="ui dividing header">
+    <i class="car icon"></i>
+    Identificação do Veículo
+  </h3>
+  
+  <div class="field required{{ cssError('plate') }}">
+    <label>Placa do Veículo</label>
+    <div class="ui icon input">
+      <!-- Removido maxlength e outros atributos que podem conflitar -->
+      <input type="text" 
+             name="plate" 
+             id="plate" 
+             placeholder="Digite a placa do veículo..." 
+             value="{{ getValue('plate') }}"
+             autocomplete="off">
+      <i class="car icon"></i>
     </div>
+    
+    <!-- Campo oculto para armazenar ID do veículo selecionado -->
+    <input type="hidden" 
+           name="plateid" 
+           id="plateid"
+           value="{{ getValue('plateid') }}">
+    
+    {% if hasError('plate') %}
+      <small class="helper">{{ getError('plate') }}</small>
+    {% endif %}
+  </div>
+  
+  <!-- Container para detalhes do veículo (será preenchido via JavaScript) -->
+  <div id="vehicle_details_container"></div>
+</div>
 
     {# SEÇÃO 3: Tipo de Serviço #}
     <div class="ui segment section-block">
@@ -442,205 +452,421 @@
   {{ parent() }}
   {{ lib('semantic-ui/components/calendar.min.js') }}
   {{ lib('jquery/plugins/autocomplete/autocomplete.min.js') }}
-  {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
   
   {% set getCustomerAutocomplete = { 'URL': 'ERP\\Cadastre\\Entities\\Autocompletion\\Get', 'method': 'PATCH' } %}
   {% set getVehicleCompletion      = { 'URL': 'ERP\\Cadastre\\Vehicles\\Autocompletion\\Get', 'method': 'PATCH' } %}
   
   <script>
-    $(document).ready(function() {
-      // Inicializar componentes Semantic UI
-      $('.ui.dropdown').dropdown();
-      $('.ui.checkbox').checkbox();
-      $("input[name='plate']").autocomplete(plateCompletionOptions);
-      
-      // Inicializar calendário
-      $('#schedule_calendar').calendar({
+   $(document).ready(function() {
+    // Inicializar componentes Semantic UI
+    $('.ui.dropdown').dropdown();
+    $('.ui.checkbox').checkbox();
+    
+    // ========================================
+    // CONFIGURAÇÃO DO AUTOCOMPLETE DE PLACA
+    // ========================================
+    
+    // Variável para controlar se cliente foi selecionado
+    var customerSelected = false;
+    var currentCustomerId = $('#customer_id').val();
+    
+    // Se já tem cliente selecionado (edit mode)
+    if (currentCustomerId && currentCustomerId !== '') {
+        customerSelected = true;
+        enablePlateField();
+    } else {
+        disablePlateField();
+    }
+    
+    // Função para desabilitar campo de placa
+    function disablePlateField() {
+        $('#plate').prop('disabled', true)
+                   .attr('placeholder', 'Selecione um cliente primeiro...')
+                   .css('background-color', '#f0f0f0');
+        
+        // Adicionar mensagem informativa
+        if (!$('#plate_info_message').length) {
+            $('#plate').parent().after(
+                '<div id="plate_info_message" class="ui info message">' +
+                '<i class="info circle icon"></i>' +
+                'Selecione um cliente para habilitar a busca de veículos' +
+                '</div>'
+            );
+        }
+    }
+    
+    // Função para habilitar campo de placa
+    function enablePlateField() {
+        $('#plate').prop('disabled', false)
+                   .attr('placeholder', 'Digite a placa do veículo...')
+                   .css('background-color', '');
+        
+        // Remover mensagem informativa
+        $('#plate_info_message').remove();
+        
+        // Inicializar autocomplete de placa
+        initializePlateAutocomplete();
+    }
+    
+    // Função para inicializar autocomplete de placa
+    function initializePlateAutocomplete() {
+        // Destruir instância anterior se existir
+        if ($('#plate').data('autocomplete')) {
+            $('#plate').autocomplete('destroy');
+        }
+        
+        // Configurações do autocomplete de placa
+        var plateCompletionOptions = {
+            autoSelectFirst: true,
+            searchOnFocus: false,
+            cache: false,
+            maxResults: 20,
+            minChars: 2,
+            preventBadQueries: false,
+            ajax: {
+                url: "{{ path_for(getVehicleCompletion.URL) }}",
+                type: "{{ getVehicleCompletion.method }}",
+                data: function(params) {
+                    // CORREÇÃO: Usar o ID correto do cliente
+                    var customerId = $('#customer_id').val();
+                    
+                    console.log('Buscando veículos para cliente ID:', customerId);
+                    console.log('Termo de busca:', params.query);
+                    
+                    return {
+                        searchTerm: params.query,
+                        customerID: customerId,
+                        // Adicionar parâmetros extras se necessário
+                        type: 'vehicle',
+                        detailed: true,
+                        limit: 20
+                    };
+                },
+                // Processar resposta do servidor
+                onResponse: function(response) {
+                    console.log('Resposta do servidor:', response);
+                    
+                    if (response && response.result === 'OK' && response.data) {
+                        // Retornar no formato esperado pelo plugin
+                        return {
+                            suggestions: response.data
+                        };
+                    }
+                    
+                    return { suggestions: [] };
+                }
+            },
+            onFormatResult: function(searchTerm, suggestion) {
+                // Formatação visual dos resultados
+                var statusLabel = suggestion.inuse 
+                    ? '<span style="color: darkred; font-style: italic;"> (rastreado)</span>'
+                    : '<span style="color: #9cadcd; font-style: italic;"> (sem rastreador)</span>';
+                
+                var blockedLabel = suggestion.blocked 
+                    ? ' - <span style="color: #8b0000; font-style: italic;">Bloqueado</span>'
+                    : '';
+                
+                return '<div class="autocomplete-result">' +
+                       '  <div class="plate-info">' +
+                       '    <strong>' + suggestion.plate + '</strong>' + statusLabel +
+                       '  </div>' +
+                       '  <div class="vehicle-details">' +
+                       '    <span style="color: #0256C4; font-style: italic;">' + 
+                            suggestion.brand + ' / ' + suggestion.model + '</span><br>' +
+                       '    Cor: <span style="color: CornflowerBlue;">' + 
+                            suggestion.color + '</span>' + blockedLabel +
+                       '  </div>' +
+                       '</div>';
+            },
+            onSelect: function(element, suggestion) {
+                console.log('Veículo selecionado:', suggestion);
+                
+                // Preencher campos relacionados
+                $('#plate').val(suggestion.plate);
+                $("input[name='plateid']").val(suggestion.id);
+                
+                // Mostrar informações do veículo (opcional)
+                showVehicleDetails(suggestion);
+                
+                return false; // Prevenir comportamento padrão
+            },
+            onInvalidateSelection: function() {
+                console.log('Seleção invalidada');
+                $("input[name='plateid']").val('');
+                hideVehicleDetails();
+            }
+        };
+        
+        // Aplicar autocomplete
+        $('#plate').autocomplete(plateCompletionOptions);
+    }
+    
+    // Função para mostrar detalhes do veículo (opcional)
+    function showVehicleDetails(vehicle) {
+        // Criar ou atualizar bloco de detalhes do veículo
+        var detailsHtml = 
+            '<div class="details-block active" id="vehicle_details">' +
+            '  <h4><i class="car icon"></i>Veículo Selecionado</h4>' +
+            '  <div class="ui relaxed list">' +
+            '    <div class="item">' +
+            '      <i class="car icon"></i>' +
+            '      <div class="content">' +
+            '        <strong>' + vehicle.plate + '</strong>' +
+            '        <div class="description">' +
+            '          ' + vehicle.brand + ' ' + vehicle.model + ' - ' + vehicle.color +
+            '        </div>' +
+            '      </div>' +
+            '    </div>' +
+            '  </div>' +
+            '</div>';
+        
+        // Remover detalhes anteriores se existir
+        $('#vehicle_details').remove();
+        
+        // Adicionar após o campo de placa
+        $('#plate').closest('.field').after(detailsHtml);
+    }
+    
+    // Função para esconder detalhes do veículo
+    function hideVehicleDetails() {
+        $('#vehicle_details').remove();
+    }
+    
+    // ========================================
+    // CONFIGURAÇÃO DO AUTOCOMPLETE DE CLIENTE
+    // ========================================
+    
+    $('#customer_search').search({
+        apiSettings: {
+            url: '{{ path_for(getCustomerAutocomplete.URL) }}',
+            method: '{{ getCustomerAutocomplete.method }}',
+            beforeSend: function(settings) {
+                settings.data = {
+                    searchTerm: settings.urlData.query,
+                    type: 'customer',
+                    detailed: true,
+                    notIncludeAnyRegister: true,
+                    limit: 10
+                };
+                return settings;
+            },
+            onResponse: function(response) {
+                var results = { results: [] };
+                
+                if (response && response.result === 'OK' && response.data) {
+                    $.each(response.data, function(index, customer) {
+                        var description = '';
+                        if (customer.juridicalperson) {
+                            description = customer.subsidiaryname + ' | ' + customer.type;
+                        } else {
+                            description = (customer.headoffice ? 'Titular' : 'Dependente: ' + customer.subsidiaryname);
+                        }
+                        
+                        results.results.push({
+                            title: customer.name,
+                            description: description,
+                            customer_data: customer
+                        });
+                    });
+                }
+                
+                return results;
+            }
+        },
+        minCharacters: 1,
+        searchDelay: 100,
+        cache: false,
+        onSelect: function(result, response) {
+            if (result && result.customer_data) {
+                var customer = result.customer_data;
+                
+                // Preencher campos ocultos
+                $('#customer_id').val(customer.id);
+                $('#subsidiary_id').val(customer.subsidiaryid);
+                
+                // Manter o nome no campo
+                $('#customer_name').val(customer.name);
+                
+                // IMPORTANTE: Habilitar campo de placa após selecionar cliente
+                customerSelected = true;
+                currentCustomerId = customer.id;
+                enablePlateField();
+                
+                // Limpar seleção anterior de veículo
+                $('#plate').val('');
+                $("input[name='plateid']").val('');
+                hideVehicleDetails();
+                
+                // Exibir detalhes do cliente
+                $('#customer_name_display').text(customer.name);
+                $('#customer_subsidiary_display').text(customer.subsidiaryname);
+                
+                // Buscar dados completos do cliente
+                $.ajax({
+                    url: '{{ path_for(getCustomerAutocomplete.URL) }}',
+                    method: '{{ getCustomerAutocomplete.method }}',
+                    data: {
+                        type: 'ownerdata',
+                        customerID: customer.id,
+                        subsidiaryID: customer.subsidiaryid
+                    },
+                    success: function(response) {
+                        if (response.result === 'OK' && response.data) {
+                            var ownerData = response.data;
+                            
+                            $('#customer_document_display').text(ownerData.nationalregister || 'Não informado');
+                            
+                            var address = ownerData.address || '';
+                            if (ownerData.streetnumber) address += ', ' + ownerData.streetnumber;
+                            if (ownerData.complement) address += ' - ' + ownerData.complement;
+                            if (ownerData.district) address += ' - ' + ownerData.district;
+                            if (ownerData.cityname) address += ', ' + ownerData.cityname;
+                            if (ownerData.state) address += '/' + ownerData.state;
+                            
+                            $('#customer_address_display').text(address || 'Endereço não informado');
+                            
+                            // Auto-preencher endereço de atendimento (se vazio)
+                            if (!$('#service_address').val() && ownerData.address) {
+                                $('#service_address').val(ownerData.address);
+                                $('#service_number').val(ownerData.streetnumber || '');
+                                $('#service_district').val(ownerData.district || '');
+                                $('#service_city').val(ownerData.cityname || '');
+                            }
+                        }
+                    }
+                });
+                
+                $('#customer_details').addClass('active');
+            }
+            return false;
+        }
+    });
+    
+    // ========================================
+    // CONFIGURAÇÃO DO CALENDÁRIO
+    // ========================================
+    
+    $('#schedule_calendar').calendar({
         type: 'date',
         monthFirst: false,
         today: true,
         minDate: new Date(),
         formatter: { 
-          date: function (date, settings) { 
-            if (!date) return ''; 
-            var day = date.getDate(); 
-            var month = date.getMonth() + 1; 
-            var year = date.getFullYear(); 
-            return (day < 10 ? '0' : '') + day + '/' + (month < 10 ? '0' : '') + month + '/' + year; 
-          }
-        }
-      });
-      
-      // Máscaras
-      if ($.fn.mask) {
-        $('#plate').mask('AAA-0000');
-      }
-      
-      // Configurar autocomplete de cliente
-      $('#customer_search').search({
-    apiSettings: {
-        url: '{{ path_for(getCustomerAutocomplete.URL) }}',
-        method: '{{ getCustomerAutocomplete.method }}',
-        beforeSend: function(settings) {
-            settings.data = {
-                searchTerm: settings.urlData.query,
-                type: 'customer',           // IMPORTANTE: tipo customer
-                detailed: true,              // IMPORTANTE: trazer detalhes
-                notIncludeAnyRegister: true, // Não incluir registro "Todos"
-                limit: 10
-            };
-            return settings;
-        },
-        onResponse: function(response) {
-            var results = { results: [] };
-            
-            if (response && response.result === 'OK' && response.data) {
-                $.each(response.data, function(index, customer) {
-                    // Formatar descrição baseada no tipo de pessoa
-                    var description = '';
-                    if (customer.juridicalperson) {
-                        description = customer.subsidiaryname + ' | ' + customer.type;
-                    } else {
-                        description = (customer.headoffice ? 'Titular' : 'Dependente: ' + customer.subsidiaryname);
-                    }
-                    
-                    results.results.push({
-                        title: customer.name,
-                        description: description,
-                        customer_data: customer
-                    });
-                });
+            date: function (date, settings) { 
+                if (!date) return ''; 
+                var day = date.getDate(); 
+                var month = date.getMonth() + 1; 
+                var year = date.getFullYear(); 
+                return (day < 10 ? '0' : '') + day + '/' + 
+                       (month < 10 ? '0' : '') + month + '/' + year; 
             }
-            
-            return results;
         }
-    },
-    minCharacters: 3,
-    searchDelay: 300,
-    cache: false,
-    onSelect: function(result, response) {
-        if (result && result.customer_data) {
-            var customer = result.customer_data;
+    });
+    
+    // ========================================
+    // EVENTOS DO FORMULÁRIO
+    // ========================================
+    
+    // Monitorar mudanças manuais no campo cliente
+    $('#customer_name').on('input', function() {
+        var value = $(this).val();
+        
+        // Se o campo foi limpo manualmente
+        if (!value || value.trim() === '') {
+            // Resetar seleção de cliente
+            $('#customer_id').val('');
+            $('#subsidiary_id').val('');
+            $('#customer_details').removeClass('active');
             
-            // Preencher campos ocultos
-            $('#customer_id').val(customer.id);
-            $('#subsidiary_id').val(customer.subsidiaryid);
+            // Desabilitar campo de placa
+            customerSelected = false;
+            currentCustomerId = '';
+            disablePlateField();
             
-            // Manter o nome no campo
-            $('#customer_name').val(customer.name);
-            
-            // Exibir detalhes do cliente
-            $('#customer_name_display').text(customer.name);
-            $('#customer_subsidiary_display').text(customer.subsidiaryname);
-            
-            // Para pegar os dados completos do cliente (endereço, documento, etc)
-            // fazemos uma segunda chamada
-            $.ajax({
-                url: '{{ path_for(getCustomerAutocomplete.URL) }}',
-                method: '{{ getCustomerAutocomplete.method }}',
-                data: {
-                    type: 'ownerdata',
-                    customerID: customer.id,
-                    subsidiaryID: customer.subsidiaryid
-                },
-                success: function(response) {
-                    if (response.result === 'OK' && response.data) {
-                        var ownerData = response.data;
-                        
-                        $('#customer_document_display').text(ownerData.nationalregister || 'Não informado');
-                        
-                        var address = ownerData.address || '';
-                        if (ownerData.streetnumber) address += ', ' + ownerData.streetnumber;
-                        if (ownerData.complement) address += ' - ' + ownerData.complement;
-                        if (ownerData.district) address += ' - ' + ownerData.district;
-                        if (ownerData.cityname) address += ', ' + ownerData.cityname;
-                        if (ownerData.state) address += '/' + ownerData.state;
-                        
-                        $('#customer_address_display').text(address || 'Endereço não informado');
-                        
-                        // Auto-preencher endereço de atendimento (se vazio)
-                        if (!$('#service_address').val() && ownerData.address) {
-                            $('#service_address').val(ownerData.address);
-                            $('#service_number').val(ownerData.streetnumber || '');
-                            $('#service_district').val(ownerData.district || '');
-                            $('#service_city').val(ownerData.cityname || '');
-                        }
-                    }
-                }
-            });
-            
-            $('#customer_details').addClass('active');
+            // Limpar veículo
+            $('#plate').val('');
+            $("input[name='plateid']").val('');
+            hideVehicleDetails();
         }
-        return false;
-    }
-});
-      
-      // Combinar data e hora antes do submit
-      $('#appointmentForm').on('submit', function(e) {
+    });
+    
+    // Validação antes do submit
+    $('#appointmentForm').on('submit', function(e) {
         var date = $('#scheduled_date').val();
         var time = $('#scheduled_time').val();
         
+        // Validar se cliente foi selecionado
+        if (!$('#customer_id').val()) {
+            e.preventDefault();
+            alert('Por favor, selecione um cliente válido.');
+            $('#customer_name').focus();
+            return false;
+        }
+        
+        // Validar se veículo foi selecionado
+        if (!$("input[name='plateid']").val() && $('#plate').val()) {
+            e.preventDefault();
+            alert('Por favor, selecione um veículo válido da lista.');
+            $('#plate').focus();
+            return false;
+        }
+        
+        // Combinar data e hora
         if (date && time) {
-          var dateParts = date.split('/');
-          if (dateParts.length === 3) {
-            var datetime = dateParts[2] + '-' + dateParts[1] + '-' + dateParts[0] + ' ' + time + ':00';
-            $('#scheduled_at').val(datetime);
-          }
+            var dateParts = date.split('/');
+            if (dateParts.length === 3) {
+                var datetime = dateParts[2] + '-' + dateParts[1] + '-' + 
+                              dateParts[0] + ' ' + time + ':00';
+                $('#scheduled_at').val(datetime);
+            }
         }
         
         // Adicionar loading ao botão
         $('#save_button').addClass('loading').prop('disabled', true);
-      });
-      
-      // Fechar mensagens
-      $('.ui.message .close.icon').on('click', function() {
-        $(this).closest('.message').transition('fade');
-      });
     });
-
-// As opções para o componente de autocompletar a placa do
-// veículo
-var plateCompletionOptions = {
-  autoSelectFirst: true,
-  searchOnFocus: false,
-  cache: false,
-  maxResults: 20,
-  preventBadQueries : false,
-  ajax: {
-    url: "{{ path_for(getVehicleCompletion.URL) }}",
-    type: "{{ getVehicleCompletion.method }}",
-    data: function(params) {
-      params.customerID = $("input[name='customerid']").val();
+    
+    // Fechar mensagens
+    $('.ui.message .close.icon').on('click', function() {
+        $(this).closest('.message').transition('fade');
+    });
+    
+    // ========================================
+    // ESTILOS ADICIONAIS PARA AUTOCOMPLETE
+    // ========================================
+    
+    // Adicionar estilos CSS dinamicamente para melhorar visual do autocomplete
+    if (!$('#autocomplete_styles').length) {
+        $('head').append(
+            '<style id="autocomplete_styles">' +
+            '.autocomplete-results {' +
+            '  max-height: 300px;' +
+            '  overflow-y: auto;' +
+            '  border: 1px solid #d4d4d5;' +
+            '  border-radius: .28571429rem;' +
+            '  background: white;' +
+            '  box-shadow: 0 2px 4px 0 rgba(34,36,38,.12), 0 2px 10px 0 rgba(34,36,38,.15);' +
+            '}' +
+            '.autocomplete-result {' +
+            '  padding: 10px;' +
+            '  border-bottom: 1px solid #f0f0f0;' +
+            '  cursor: pointer;' +
+            '}' +
+            '.autocomplete-result:hover {' +
+            '  background-color: #f9fafb;' +
+            '}' +
+            '.autocomplete-result .plate-info {' +
+            '  font-size: 1.1em;' +
+            '  margin-bottom: 5px;' +
+            '}' +
+            '.autocomplete-result .vehicle-details {' +
+            '  font-size: 0.9em;' +
+            '  color: #767676;' +
+            '}' +
+            '</style>'
+        );
     }
-  },
-  onFormatResult: function(searchTerm, suggestion) {
-    console.log(suggestion);
-    return ''
-      + '<div class="content">'
-      +   '<div class="title">' + suggestion.plate + (suggestion.inuse?'<span style="color: darkred; font-style: italic;"> (rastreado)</span>':'<span style="color: #9cadcd; font-style: italic;"> (sem rastreador)</span>') + '<br>'
-      +   '[<span style="color: #0256C4; font-style: italic;">' + suggestion.brand + ' / ' + suggestion.model + '</span>]<br>'
-      +   'Cor: <span style="color: CornflowerBlue; font-style: italic;">' + suggestion.color + '</span>'
-      +   ( suggestion.blocked
-            ? ' - <span style="color: #8b0000; font-style: italic;">Bloqueado</span>'
-            : ''
-          )
-      +   '</div>'
-      + '</div>'
-    ;
-  },
-  onSelect: function (element, suggestion) {
-    // Armazena o ID do veículo selecionado
-    $("input[name='plateid']")
-      .val(suggestion.id)
-    ;
-  },
-  onInvalidateSelection: function () {
-    // Não conseguiu localizar um veículo com base nos valores
-    // informados, então limpa os dados atuais
-    $("input[name='plateid']")
-      .val(0)
-    ;
-  }
-};
+    
+    console.log('Sistema de autocomplete inicializado com sucesso!');
+});
   </script>
 {% endblock %}
