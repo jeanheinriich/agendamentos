@@ -3,6 +3,7 @@
 {% block title %}{{ parent() }} - Novo Agendamento{% endblock %}
 
 {% set getCustomerAutocomplete = { 'URL': 'ERP\\Cadastre\\Entities\\Autocompletion\\Get', 'method': 'PATCH' } %}
+{% set getVehicleCompletion      = { 'URL': 'ERP\\Cadastre\\Vehicles\\Autocompletion\\Get', 'method': 'PATCH' } %}
 
 {% block stylesheets %}
   {{ parent() }}
@@ -212,31 +213,22 @@
         Identificação do Veículo
       </h3>
       
-      <div class="field required{{ cssError('vehicle_plate') }}">
+      <div class="field required{{ cssError('plate') }}">
         <label>Placa do Veículo</label>
         <div class="ui icon input">
-          <input type="text" name="vehicle_plate" id="vehicle_plate" 
+          <input type="text" name="plate" id="plate" 
                  placeholder="ABC-1234" 
-                 value="{{ getValue('vehicle_plate') }}" 
-                 maxlength="8">
+                 value="{{ getValue('plate') }}" 
+                 maxlength="100">
           <i class="car icon"></i>
         </div>
-        {% if hasError('vehicle_plate') %}
-          <small class="helper">{{ getError('vehicle_plate') }}</small>
+          <input type="hidden" name="plateid"
+                 value="{{ getValue('plateid') }}">
+        {% if hasError('plate') %}
+          <small class="helper">{{ getError('plate') }}</small>
         {% endif %}
       </div>
-      
-      <div class="field{{ cssError('vehicle_model') }}">
-        <label>Modelo do Veículo</label>
-        <div class="ui input">
-          <input type="text" name="vehicle_model" id="vehicle_model" 
-                 placeholder="Ex: Civic, Corolla..." 
-                 value="{{ getValue('vehicle_model') }}">
-        </div>
-        {% if hasError('vehicle_model') %}
-          <small class="helper">{{ getError('vehicle_model') }}</small>
-        {% endif %}
-      </div>
+
     </div>
 
     {# SEÇÃO 3: Tipo de Serviço #}
@@ -453,12 +445,14 @@
   {{ lib('jquery/plugins/masked.input/masked.input.min.js') }}
   
   {% set getCustomerAutocomplete = { 'URL': 'ERP\\Cadastre\\Entities\\Autocompletion\\Get', 'method': 'PATCH' } %}
+  {% set getVehicleCompletion      = { 'URL': 'ERP\\Cadastre\\Vehicles\\Autocompletion\\Get', 'method': 'PATCH' } %}
   
   <script>
     $(document).ready(function() {
       // Inicializar componentes Semantic UI
       $('.ui.dropdown').dropdown();
       $('.ui.checkbox').checkbox();
+      $("input[name='plate']").autocomplete(plateCompletionOptions);
       
       // Inicializar calendário
       $('#schedule_calendar').calendar({
@@ -479,7 +473,7 @@
       
       // Máscaras
       if ($.fn.mask) {
-        $('#vehicle_plate').mask('AAA-0000');
+        $('#plate').mask('AAA-0000');
       }
       
       // Configurar autocomplete de cliente
@@ -603,5 +597,50 @@
         $(this).closest('.message').transition('fade');
       });
     });
+
+// As opções para o componente de autocompletar a placa do
+// veículo
+var plateCompletionOptions = {
+  autoSelectFirst: true,
+  searchOnFocus: false,
+  cache: false,
+  maxResults: 20,
+  preventBadQueries : false,
+  ajax: {
+    url: "{{ path_for(getVehicleCompletion.URL) }}",
+    type: "{{ getVehicleCompletion.method }}",
+    data: function(params) {
+      params.customerID = $("input[name='customerid']").val();
+    }
+  },
+  onFormatResult: function(searchTerm, suggestion) {
+    console.log(suggestion);
+    return ''
+      + '<div class="content">'
+      +   '<div class="title">' + suggestion.plate + (suggestion.inuse?'<span style="color: darkred; font-style: italic;"> (rastreado)</span>':'<span style="color: #9cadcd; font-style: italic;"> (sem rastreador)</span>') + '<br>'
+      +   '[<span style="color: #0256C4; font-style: italic;">' + suggestion.brand + ' / ' + suggestion.model + '</span>]<br>'
+      +   'Cor: <span style="color: CornflowerBlue; font-style: italic;">' + suggestion.color + '</span>'
+      +   ( suggestion.blocked
+            ? ' - <span style="color: #8b0000; font-style: italic;">Bloqueado</span>'
+            : ''
+          )
+      +   '</div>'
+      + '</div>'
+    ;
+  },
+  onSelect: function (element, suggestion) {
+    // Armazena o ID do veículo selecionado
+    $("input[name='plateid']")
+      .val(suggestion.id)
+    ;
+  },
+  onInvalidateSelection: function () {
+    // Não conseguiu localizar um veículo com base nos valores
+    // informados, então limpa os dados atuais
+    $("input[name='plateid']")
+      .val(0)
+    ;
+  }
+};
   </script>
 {% endblock %}
