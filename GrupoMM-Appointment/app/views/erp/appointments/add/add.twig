@@ -207,6 +207,7 @@
     </div>
 
     {# SEÇÃO 2: Identificação do Veículo #}
+{# SEÇÃO 2: Identificação do Veículo #}
 <div class="ui segment section-block">
   <h3 class="ui dividing header">
     <i class="car icon"></i>
@@ -215,18 +216,22 @@
   
   <div class="field required{{ cssError('plate') }}">
     <label>Placa do Veículo</label>
-    <div class="ui icon input">
-      <!-- Removido maxlength e outros atributos que podem conflitar -->
-      <input type="text" 
-             name="plate" 
-             id="plate" 
-             placeholder="Digite a placa do veículo..." 
-             value="{{ getValue('plate') }}"
-             autocomplete="off">
-      <i class="car icon"></i>
+    <!-- MUDANÇA: Usar ui search como no cliente -->
+    <div class="ui search" id="plate_search">
+      <div class="ui icon input">
+        <input class="prompt" 
+               type="text" 
+               name="plate" 
+               id="plate" 
+               placeholder="Digite a placa do veículo..." 
+               value="{{ getValue('plate') }}"
+               autocomplete="off">
+        <i class="search icon"></i>
+      </div>
+      <div class="results"></div>
     </div>
     
-    <!-- Campo oculto para armazenar ID do veículo selecionado -->
+    <!-- Campo oculto para ID do veículo -->
     <input type="hidden" 
            name="plateid" 
            id="plateid"
@@ -237,8 +242,8 @@
     {% endif %}
   </div>
   
-  <!-- Container para detalhes do veículo (será preenchido via JavaScript) -->
-  <div id="vehicle_details_container"></div>
+  <!-- Container para mensagem/detalhes -->
+  <div id="vehicle_info_container"></div>
 </div>
 
     {# SEÇÃO 3: Tipo de Serviço #}
@@ -457,7 +462,11 @@
   {% set getVehicleCompletion      = { 'URL': 'ERP\\Cadastre\\Vehicles\\Autocompletion\\Get', 'method': 'PATCH' } %}
   
   <script>
-   $(document).ready(function() {
+    // ========================================
+// SUBSTITUIR TODO O BLOCO <script> DO add.twig
+// ========================================
+
+$(document).ready(function() {
     // Inicializar componentes Semantic UI
     $('.ui.dropdown').dropdown();
     $('.ui.checkbox').checkbox();
@@ -469,6 +478,9 @@
     // Variável para controlar se cliente foi selecionado
     var customerSelected = false;
     var currentCustomerId = $('#customer_id').val();
+
+    // Variável para controlar estado
+    var vehicleSearchEnabled = false;
     
     // Se já tem cliente selecionado (edit mode)
     if (currentCustomerId && currentCustomerId !== '') {
@@ -673,9 +685,12 @@
                 return results;
             }
         },
-        minCharacters: 1,
-        searchDelay: 100,
-        cache: false,
+        autoSelectFirst: true,
+            searchOnFocus: false,
+            cache: false,
+            maxResults: 20,
+            minChars: 2,
+            preventBadQueries: false,
         onSelect: function(result, response) {
             if (result && result.customer_data) {
                 var customer = result.customer_data;
@@ -868,5 +883,7 @@
     
     console.log('Sistema de autocomplete inicializado com sucesso!');
 });
+
+
   </script>
 {% endblock %}
