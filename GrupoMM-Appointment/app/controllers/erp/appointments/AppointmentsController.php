@@ -658,31 +658,37 @@ class AppointmentsController extends Controller
      * Processa dados do agendamento antes da validação
      */
     protected function processAppointmentData(array $rawData, bool $isNew = true): array
-    {
-        $processedData = $rawData;
-        
-        // Dados do sistema
-        $processedData['contractorid'] = $this->authorization->getContractor()->id;
-        $processedData['updatedbyuserid'] = $this->authorization->getUser()->userid;
-        
-        if ($isNew) {
-            $processedData['createdbyuserid'] = $this->authorization->getUser()->userid;
-            $processedData['status'] = $rawData['status'] ?? 'Pendente';
-        }
-        
-        // Processa cliente
+{
+    $processedData = $rawData;
+    
+    // Dados do sistema
+    $processedData['contractorid'] = $this->authorization->getContractor()->id;
+    $processedData['updatedbyuserid'] = $this->authorization->getUser()->userid;
+    
+    if ($isNew) {
+        $processedData['createdbyuserid'] = $this->authorization->getUser()->userid;
+        $processedData['status'] = $rawData['status'] ?? 'Pendente';
+    }
+    
+    // Usar o customer_id se fornecido, senão processar pelo nome
+    if (!empty($rawData['customer_id'])) {
+        $processedData['customerid'] = $rawData['customer_id'];
+        $customer = Entity::find($rawData['customer_id']);
+    } else {
+        // Fallback: processa cliente pelo nome (código existente)
         $customer = $this->processCustomer($rawData['customer_name'], $processedData['contractorid']);
         $processedData['customerid'] = $customer->entityid;
-        
-        // Processa veículo
-        $vehicle = $this->processVehicle($rawData, $processedData['contractorid'], $customer->entityid);
-        $processedData['vehicleid'] = $vehicle->vehicleid;
-        
-        // Define prestador de serviço padrão
-        $processedData['serviceproviderid'] = $rawData['serviceproviderid'] ?? config('appointments.default_service_provider');
-        
-        return $processedData;
     }
+    
+    // Processa veículo
+    $vehicle = $this->processVehicle($rawData, $processedData['contractorid'], $processedData['customerid']);
+    $processedData['vehicleid'] = $vehicle->vehicleid;
+    
+    // Define prestador de serviço padrão
+    $processedData['serviceproviderid'] = $rawData['serviceproviderid'] ?? config('appointments.default_service_provider');
+    
+    return $processedData;
+}
 
     /**
      * Processa dados do cliente
