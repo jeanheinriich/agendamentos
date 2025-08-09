@@ -6562,11 +6562,7 @@ public function getAutocompletionData(
   Response $response
 ): Response
 {
-  $this->debug("Relação de placas para preenchimento automático "
-    . "despachada."
-  );
-
-  // --------------------------[ Recupera os dados requisitados ]-----
+  $this->debug("Relação de placas para preenchimento automático despachada.");
 
   // Recupera os dados da requisição
   $postParams = $request->getParsedBody();
@@ -6575,36 +6571,29 @@ public function getAutocompletionData(
   $contractor   = $this->authorization->getContractor();
   $contractorID = $contractor->id;
   
-  // Lida com as informações provenientes da solicitação
-  
-  // O termo de pesquisa (normalmente o nome ou parte do nome da
-  // placa a ser localizada)
+  // O termo de pesquisa
   $searchTerm = $postParams['searchTerm'];
 
-  // O código do cliente cujas placas serão localizadas
+  // O código do cliente
   $customerID = $postParams['customerID'] ?? 0;
   
-  // NOVO: Verifica se deve retornar dados detalhados (incluindo rastreador)
-  $detailed = isset($postParams['detailed']) && $postParams['detailed'] === true;
+  // CORREÇÃO: Aceita tanto boolean quanto string
+  $detailed = false;
+  if (isset($postParams['detailed'])) {
+    $detailed = filter_var($postParams['detailed'], FILTER_VALIDATE_BOOLEAN);
+  }
+  
+  // Debug para verificar
+  $this->debug("Parâmetro detailed recebido: " . ($detailed ? 'true' : 'false'));
   
   // Determina os limites e parâmetros da consulta
-  $start  = 0;
-  $length = 1;
-  if (isset($postParams['limit'])) {
-    $length = $postParams['limit'];
-  }
-  $ORDER  = 'plate ASC';
+  $length = isset($postParams['limit']) ? $postParams['limit'] : 20;
 
-  $this->debug("Acesso aos dados de preenchimento automático de "
-    . "placas que contenha(m) '{name}'",
-    [ 'name' => $searchTerm ]
-  );
+  $this->debug("Acesso aos dados de placas que contém '{$searchTerm}' - Detailed: " . ($detailed ? 'SIM' : 'NÃO'));
   
   try
   {
-    // Carregamos todos os veículos do cliente informado, relacionando
-    // os ativos primeiro e os inativos depois, e filtrando pelo
-    // termo de pesquisa informado.
+    // Query para buscar veículos
     $sql = ""
       . "SELECT V.vehicleID AS id,"
       . "       V.plate,"
@@ -6627,23 +6616,28 @@ public function getAutocompletionData(
       . "   AND V.customerID = {$customerID}"
       . "   AND ((V.plate ILIKE '%%{$searchTerm}%%') OR (V.plate ILIKE '%%' || public.getPlateVariant('{$searchTerm}') || '%%'))"
       . " ORDER BY V.plate ASC"
+      . " LIMIT {$length}"
     ;
     
-    $this->debug("SQL para recuperação de placas: {sql}",
-      [ 'sql' => $sql ]
-    );
     $vehicles = $this->DB->select($sql);
     
-    // NOVO: Se solicitado dados detalhados, busca informações dos rastreadores
+    // Se solicitado dados detalhados, busca informações dos rastreadores
     if ($detailed && count($vehicles) > 0) {
+      $this->debug("Buscando equipamentos para " . count($vehicles) . " veículo(s)");
+      
       foreach ($vehicles as &$vehicle) {
+        // Converte para boolean se veio como string 't' ou 'f'
+        $vehicle->inuse = ($vehicle->inuse === 't' || $vehicle->inuse === true);
+        
         if ($vehicle->inuse) {
-          // Busca informações dos equipamentos instalados neste veículo
+          $this->debug("Buscando equipamentos do veículo {$vehicle->plate} (ID: {$vehicle->id})");
+          
+          // Query para buscar equipamentos
           $sqlEquipments = ""
             . "SELECT E.equipmentID,"
             . "       E.serialNumber,"
             . "       E.main,"
-            . "       E.installedAt,"
+            . "       TO_CHAR(E.installedAt, 'YYYY-MM-DD') AS installedAt,"
             . "       E.installationSite,"
             . "       E.hasBlocking,"
             . "       E.blockingSite,"
@@ -6663,12 +6657,24 @@ public function getAutocompletionData(
             . " ORDER BY E.main DESC, E.equipmentID"
           ;
           
-          $equipments = $this->DB->select($sqlEquipments);
-          
-          // Adiciona as informações dos equipamentos ao veículo
-          $vehicle->equipments = $equipments;
-          
-          $this->debug("Veículo {$vehicle->plate} tem " . count($equipments) . " rastreador(es)");
+          try {
+            $equipments = $this->DB->select($sqlEquipments);
+            
+            // Processa os booleanos
+            foreach ($equipments as &$equipment) {
+              $equipment->main = ($equipment->main === 't' || $equipment->main === true);
+              $equipment->hasblocking = ($equipment->hasblocking === 't' || $equipment->hasblocking === true);
+              $equipment->hasibutton = ($equipment->hasibutton === 't' || $equipment->hasibutton === true);
+              $equipment->hassiren = ($equipment->hassiren === 't' || $equipment->hassiren === true);
+            }
+            
+            $vehicle->equipments = $equipments;
+            
+            $this->debug("Veículo {$vehicle->plate} tem " . count($equipments) . " rastreador(es)");
+          } catch (Exception $e) {
+            $this->error("Erro ao buscar equipamentos do veículo {$vehicle->id}: " . $e->getMessage());
+            $vehicle->equipments = [];
+          }
         } else {
           $vehicle->equipments = [];
         }
@@ -6685,35 +6691,19 @@ public function getAutocompletionData(
         ])
     ;
   }
-  catch(QueryException $exception)
-  {
-    // Registra o erro
-    $this->error("Não foi possível recuperar as informações de "
-      . "placas para preenchimento automático. Erro interno no "
-      . "banco de dados: {error}.",
-      [ 'error'  => $exception->getMessage() ]
-    );
-  }
   catch(Exception $exception)
   {
-    // Registra o erro
-    $this->error("Não foi possível recuperar as informações de "
-      . "placas para preenchimento automático. Erro interno: "
-      . "{error}.",
-      [ 'error'  => $exception->getMessage() ]
-    );
+    $this->error("Erro ao recuperar placas: " . $exception->getMessage());
+    
+    return $response
+      ->withHeader('Content-type', 'application/json')
+      ->withJson([
+          'result' => 'NOK',
+          'params' => $request->getQueryParams(),
+          'message' => "Erro ao localizar placas",
+          'data' => []
+        ])
+    ;
   }
-  
-  return $response
-    ->withHeader('Content-type', 'application/json')
-    ->withJson([
-        'result' => 'NOK',
-        'params' => $request->getQueryParams(),
-        'message' => "Não foi possível localizar as placas do "
-          . "cliente '{$searchTerm}'",
-        'data' => []
-      ])
-  ;
 }
-
 }
