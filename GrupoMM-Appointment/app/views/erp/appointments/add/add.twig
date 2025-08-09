@@ -126,6 +126,33 @@
       background: rgba(255, 255, 255, 0.8);
       z-index: 1000;
     }
+    
+    /* MELHORIAS UX: Estilo do ícone dropdown */
+    .ui.search.dropdown-style .icon {
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    
+    .ui.search.dropdown-style .icon:hover {
+      color: #2185d0;
+    }
+    
+    /* Rotação do ícone quando dropdown aberto */
+    .ui.search.dropdown-style.active .icon.dropdown {
+      transform: rotate(180deg);
+    }
+    
+    /* Cursor pointer para campos clicáveis */
+    .ui.search.dropdown-style input {
+      cursor: pointer;
+    }
+    
+    /* Melhor visual para resultados vazios */
+    .ui.search > .results .message {
+      padding: 1em;
+      font-size: 1em;
+      color: #767676;
+    }
   </style>
 {% endblock %}
 
@@ -165,10 +192,10 @@
       
       <div class="field required{{ cssError('customer_name') }}">
         <label>Nome do Cliente</label>
-        <div class="ui search" id="customer_search">
+        <div class="ui search dropdown-style" id="customer_search">
           <div class="ui icon input">
             <input class="prompt" type="text" name="customer_name" id="customer_name" 
-                   placeholder="Digite o nome do cliente..." 
+                   placeholder="Digite o nome ou clique para ver clientes..." 
                    value="{{ getValue('customer_name') }}" 
                    autocomplete="off">
             <i class="search icon"></i>
@@ -207,44 +234,42 @@
     </div>
 
     {# SEÇÃO 2: Identificação do Veículo #}
-{# SEÇÃO 2: Identificação do Veículo #}
-<div class="ui segment section-block">
-  <h3 class="ui dividing header">
-    <i class="car icon"></i>
-    Identificação do Veículo
-  </h3>
-  
-  <div class="field required{{ cssError('plate') }}">
-    <label>Placa do Veículo</label>
-    <!-- MUDANÇA: Usar ui search como no cliente -->
-    <div class="ui search" id="plate_search">
-      <div class="ui icon input">
-        <input class="prompt" 
-               type="text" 
-               name="plate" 
-               id="plate" 
-               placeholder="Digite a placa do veículo..." 
-               value="{{ getValue('plate') }}"
-               autocomplete="off">
-        <i class="search icon"></i>
+    <div class="ui segment section-block">
+      <h3 class="ui dividing header">
+        <i class="car icon"></i>
+        Identificação do Veículo
+      </h3>
+      
+      <div class="field required{{ cssError('plate') }}">
+        <label>Placa do Veículo</label>
+        <div class="ui search dropdown-style" id="plate_search">
+          <div class="ui icon input">
+            <input class="prompt" 
+                   type="text" 
+                   name="plate" 
+                   id="plate" 
+                   placeholder="Clique para ver todos ou digite para filtrar..." 
+                   value="{{ getValue('plate') }}"
+                   autocomplete="off">
+            <i class="dropdown icon"></i>
+          </div>
+          <div class="results"></div>
+        </div>
+        
+        <!-- Campo oculto para ID do veículo -->
+        <input type="hidden" 
+               name="plateid" 
+               id="plateid"
+               value="{{ getValue('plateid') }}">
+        
+        {% if hasError('plate') %}
+          <small class="helper">{{ getError('plate') }}</small>
+        {% endif %}
       </div>
-      <div class="results"></div>
+      
+      <!-- Container para mensagem/detalhes -->
+      <div id="vehicle_info_container"></div>
     </div>
-    
-    <!-- Campo oculto para ID do veículo -->
-    <input type="hidden" 
-           name="plateid" 
-           id="plateid"
-           value="{{ getValue('plateid') }}">
-    
-    {% if hasError('plate') %}
-      <small class="helper">{{ getError('plate') }}</small>
-    {% endif %}
-  </div>
-  
-  <!-- Container para mensagem/detalhes -->
-  <div id="vehicle_info_container"></div>
-</div>
 
     {# SEÇÃO 3: Tipo de Serviço #}
     <div class="ui segment section-block">
@@ -462,8 +487,8 @@
   {% set getVehicleCompletion      = { 'URL': 'ERP\\Cadastre\\Vehicles\\Autocompletion\\Get', 'method': 'PATCH' } %}
   
   <script>
-    // ========================================
-// SUBSTITUIR TODO O BLOCO <script> DO add.twig
+// ========================================
+// MELHORIAS UX - AUTOCOMPLETES v2.0
 // ========================================
 
 $(document).ready(function() {
@@ -472,15 +497,13 @@ $(document).ready(function() {
     $('.ui.checkbox').checkbox();
     
     // ========================================
-    // CONFIGURAÇÃO DO AUTOCOMPLETE DE PLACA
+    // VARIÁVEIS GLOBAIS DE CONTROLE
     // ========================================
     
-    // Variável para controlar se cliente foi selecionado
     var customerSelected = false;
     var currentCustomerId = $('#customer_id').val();
-
-    // Variável para controlar estado
-    var vehicleSearchEnabled = false;
+    var allVehicles = []; // Cache de todos os veículos do cliente
+    var isSearching = false; // Flag para controlar busca em andamento
     
     // Se já tem cliente selecionado (edit mode)
     if (currentCustomerId && currentCustomerId !== '') {
@@ -489,6 +512,10 @@ $(document).ready(function() {
     } else {
         disablePlateField();
     }
+    
+    // ========================================
+    // FUNÇÕES AUXILIARES
+    // ========================================
     
     // Função para desabilitar campo de placa
     function disablePlateField() {
@@ -510,7 +537,7 @@ $(document).ready(function() {
     // Função para habilitar campo de placa
     function enablePlateField() {
         $('#plate').prop('disabled', false)
-                   .attr('placeholder', 'Digite a placa do veículo...')
+                   .attr('placeholder', 'Clique para ver todos ou digite para filtrar...')
                    .css('background-color', '');
         
         // Remover mensagem informativa
@@ -520,266 +547,31 @@ $(document).ready(function() {
         initializePlateAutocomplete();
     }
     
-    // Função para inicializar autocomplete de placa
-   function initializePlateAutocomplete() {
-    $('#plate_search').search({
-        apiSettings: {
-            url: "{{ path_for(getVehicleCompletion.URL) }}",
-            method: "{{ getVehicleCompletion.method }}",
-            beforeSend: function(settings) {
-                var customerId = $('#customer_id').val();
-                var searchTerm = settings.urlData.query;
-                
-                settings.data = {
-                    searchTerm: searchTerm,
-                    customerID: customerId,
-                    subsidiaryID: $('#subsidiary_id').val(),
-                    type: 'vehicle',
-                    detailed: true,  // IMPORTANTE: Solicita dados detalhados
-                    limit: 20
-                };
-                
-                console.log('Buscando veículos com dados detalhados');
-                return settings;
-            },
-            onResponse: function(response) {
-                console.log('=== RESPOSTA DO SERVIDOR ===');
-                console.log('Resposta completa:', response);
-                
-                var results = { results: [] };
-                
-                // Se não houver dados, adicionar mensagem personalizada
-                if (response && response.result === 'OK') {
-                    if (response.data && response.data.length > 0) {
-                        $.each(response.data, function(index, vehicle) {
-                            console.log('Veículo ' + index + ':', vehicle);
-                            
-                            var statusLabel = vehicle.inuse 
-                                ? '<span style="color: darkred; font-style: italic;"> (rastreado)</span>'
-                                : '<span style="color: #9cadcd; font-style: italic;"> (sem rastreador)</span>';
-                            
-                            var blockedLabel = vehicle.blocked 
-                                ? ' - <span style="color: #8b0000; font-style: italic;">Bloqueado</span>'
-                                : '';
-                            
-                            var description = 
-                                '<div style="color: #0256C4; font-style: italic;">' + 
-                                vehicle.brand + ' / ' + vehicle.model + '</div>' +
-                                '<div>Cor: <span style="color: CornflowerBlue;">' + 
-                                vehicle.color + '</span>' + blockedLabel + '</div>';
-                            
-                            results.results.push({
-                                title: vehicle.plate + statusLabel,
-                                description: description,
-                                vehicle_data: vehicle
-                            });
-                        });
-                    } else {
-                        // DEBUG: Verificar se há veículos para este cliente
-                        console.log('⚠️ Nenhum veículo encontrado para o termo:', settings.urlData.query);
-                        console.log('Cliente ID usado:', $('#customer_id').val());
-                        
-                        // Mensagem customizada
-                        results.message = {
-                            type: 'empty',
-                            header: 'Nenhum veículo encontrado',
-                            description: 'Tente digitar mais caracteres ou verifique a placa'
-                        };
-                    }
-                }
-                
-                return results;
-            }
-        },
-        minCharacters: 1,  // Reduzir para 1 para teste
-        searchOnFocus: false,
-        cache: false,
-        maxResults: 20,
-        searchDelay: 300,  // Adicionar delay
-        // Configuração para mostrar mensagem quando vazio
-        error: {
-            noResults: 'Nenhum veículo encontrado para este cliente'
-        },
-        onSelect: function(result, response) {
-    if (result && result.vehicle_data) {
-        var vehicle = result.vehicle_data;
+    // Função para formatar veículo para exibição
+    function formatVehicleResult(vehicle) {
+        var statusLabel = vehicle.inuse 
+            ? '<span style="color: darkred; font-style: italic;"> (rastreado)</span>'
+            : '<span style="color: #9cadcd; font-style: italic;"> (sem rastreador)</span>';
         
-        console.log('✅ Veículo selecionado:', vehicle);
+        var blockedLabel = vehicle.blocked 
+            ? ' - <span style="color: #8b0000; font-style: italic;">Bloqueado</span>'
+            : '';
         
-        // Preencher campos - garantir que os IDs estão corretos
-        $('#plate').val(vehicle.plate);
-        $('#plateid').val(vehicle.id);
+        var description = 
+            '<div style="color: #0256C4; font-style: italic;">' + 
+            vehicle.brand + ' / ' + vehicle.model + '</div>' +
+            '<div>Cor: <span style="color: CornflowerBlue;">' + 
+            vehicle.color + '</span>' + blockedLabel + '</div>';
         
-        // Verificar se os valores foram preenchidos
-        console.log('Placa preenchida:', $('#plate').val());
-        console.log('ID do veículo preenchido:', $('#plateid').val());
-        
-        // Mostrar detalhes
-        showVehicleDetails(vehicle);
-        
-        // Fechar o dropdown de busca
-        $('#plate_search').search('hide results');
+        return {
+            title: vehicle.plate + statusLabel,
+            description: description,
+            vehicle_data: vehicle
+        };
     }
-    return false;
-}
-    });
-    
-    // Monitorar limpeza manual
-    $('#plate').on('input', function() {
-        if (!$(this).val() || $(this).val().trim() === '') {
-            $('#plateid').val('');
-            hideVehicleDetails();
-        }
-    });
-}
-    
-    // Função para mostrar detalhes do veículo (estava faltando!)
-function showVehicleDetails(vehicle) {
-    console.log('Mostrando detalhes do veículo:', vehicle);
-    
-    var statusText = vehicle.inuse ? 'Com rastreador' : 'Sem rastreador';
-    var statusClass = vehicle.inuse ? 'green' : 'grey';
-    var blockedText = vehicle.blocked ? '<span class="ui red label">Bloqueado</span>' : '';
-    
-    // HTML base do veículo
-    var detailsHtml = 
-        '<div class="details-block active" id="vehicle_details">' +
-        '  <h4><i class="car icon"></i>Veículo Selecionado</h4>' +
-        '  <div class="ui relaxed list">' +
-        '    <div class="item">' +
-        '      <i class="car icon"></i>' +
-        '      <div class="content">' +
-        '        <strong>' + vehicle.plate + '</strong> ' +
-        '        <span class="ui ' + statusClass + ' label">' + statusText + '</span> ' + 
-        blockedText +
-        '        <div class="description">' +
-        '          <strong>Modelo:</strong> ' + vehicle.brand + ' ' + vehicle.model + '<br>' +
-        '          <strong>Cor:</strong> ' + vehicle.color + '<br>' +
-        '          <strong>Tipo:</strong> ' + vehicle.type +
-        '        </div>' +
-        '      </div>' +
-        '    </div>' +
-        '  </div>';
-    
-    // Se tem rastreador E temos os dados dos equipamentos
-    if (vehicle.equipments && vehicle.equipments.length > 0) {
-        detailsHtml += 
-            '  <div class="ui divider"></div>' +
-            '  <h4><i class="wifi icon"></i>Rastreador(es) Instalado(s)</h4>' +
-            '  <div class="ui relaxed list">';
-        
-        vehicle.equipments.forEach(function(equipment) {
-            // Label do tipo de rastreador
-            var mainLabel = equipment.main ? 
-                '<span class="ui tiny blue label">Principal</span>' : 
-                '<span class="ui tiny grey label">Contingência</span>';
-            
-            // Formata a data de instalação
-            var installedDate = 'Não informado';
-            if (equipment.installedat) {
-                try {
-                    var date = new Date(equipment.installedat);
-                    installedDate = date.toLocaleDateString('pt-BR');
-                } catch(e) {
-                    installedDate = equipment.installedat;
-                }
-            }
-            
-            detailsHtml += 
-                '    <div class="item">' +
-                '      <i class="microchip icon"></i>' +
-                '      <div class="content">' +
-                '        <div class="header">' +
-                '          ' + (equipment.equipmentbrandname || 'Marca não informada') + ' ' + 
-                            (equipment.equipmentmodelname || 'Modelo não informado') + ' ' + mainLabel +
-                '        </div>' +
-                '        <div class="description">';
-            
-            // Número de série
-            detailsHtml += '          <strong>Nº Série:</strong> ' + 
-                          (equipment.serialnumber || 'Não informado') + '<br>';
-            
-            // Local de instalação
-            if (equipment.installationsite) {
-                detailsHtml += '          <strong>Local de Instalação:</strong> ' + 
-                              equipment.installationsite + '<br>';
-            }
-            
-            // Features/Recursos do rastreador
-            var features = [];
-            if (equipment.hasblocking === true || equipment.hasblocking === 't') {
-                var blockLocation = equipment.blockingsite ? ' (' + equipment.blockingsite + ')' : '';
-                features.push('<i class="lock icon"></i>Bloqueio' + blockLocation);
-            }
-            if (equipment.hasibutton === true || equipment.hasibutton === 't') {
-                var ibuttonLocation = equipment.ibuttonsite ? ' (' + equipment.ibuttonsite + ')' : '';
-                features.push('<i class="key icon"></i>iButton' + ibuttonLocation);
-            }
-            if (equipment.hassiren === true || equipment.hassiren === 't') {
-                var sirenLocation = equipment.sirensite ? ' (' + equipment.sirensite + ')' : '';
-                features.push('<i class="volume up icon"></i>Sirene' + sirenLocation);
-            }
-            if (equipment.panicbuttonsite) {
-                features.push('<i class="exclamation triangle icon"></i>Botão Pânico (' + 
-                             equipment.panicbuttonsite + ')');
-            }
-            
-            if (features.length > 0) {
-                detailsHtml += '          <div class="ui small labels" style="margin-top: 5px;">';
-                features.forEach(function(feature) {
-                    detailsHtml += '<div class="ui label">' + feature + '</div>';
-                });
-                detailsHtml += '          </div>';
-            }
-            
-            // Data de instalação
-            detailsHtml += 
-                '          <div style="margin-top: 5px;">' +
-                '            <i class="calendar check icon"></i>' +
-                '            <strong>Instalado em:</strong> ' + installedDate +
-                '          </div>' +
-                '        </div>' +
-                '      </div>' +
-                '    </div>';
-        });
-        
-        detailsHtml += '  </div>';
-        
-    } else if (vehicle.inuse) {
-        // Tem rastreador mas não carregou os detalhes
-        detailsHtml += 
-            '  <div class="ui divider"></div>' +
-            '  <div class="ui info message">' +
-            '    <i class="info circle icon"></i>' +
-            '    Este veículo possui rastreador instalado' +
-            '  </div>';
-    } else {
-        // Não tem rastreador
-        detailsHtml += 
-            '  <div class="ui divider"></div>' +
-            '  <div class="ui warning message">' +
-            '    <i class="warning sign icon"></i>' +
-            '    Este veículo não possui rastreador instalado' +
-            '  </div>';
-    }
-    
-    detailsHtml += '</div>';
-    
-    // Remove detalhes anteriores e adiciona novos
-    $('#vehicle_details').remove();
-    $('#vehicle_info_container').html(detailsHtml);
-}
-
-// Função para esconder detalhes do veículo
-function hideVehicleDetails() {
-    console.log('Escondendo detalhes do veículo');
-    $('#vehicle_details').remove();
-    $('#vehicle_info_container').empty();
-}
-  
     
     // ========================================
-    // CONFIGURAÇÃO DO AUTOCOMPLETE DE CLIENTE
+    // CONFIGURAÇÃO DO AUTOCOMPLETE DE CLIENTE (MELHORADO)
     // ========================================
     
     $('#customer_search').search({
@@ -787,12 +579,13 @@ function hideVehicleDetails() {
             url: '{{ path_for(getCustomerAutocomplete.URL) }}',
             method: '{{ getCustomerAutocomplete.method }}',
             beforeSend: function(settings) {
+                // MELHORIA: Busca sempre com o termo atual (não só 1 letra)
                 settings.data = {
                     searchTerm: settings.urlData.query,
                     type: 'customer',
                     detailed: true,
                     notIncludeAnyRegister: true,
-                    limit: 10
+                    limit: 20 // Aumentar limite
                 };
                 return settings;
             },
@@ -814,17 +607,26 @@ function hideVehicleDetails() {
                             customer_data: customer
                         });
                     });
+                } else {
+                    results.message = {
+                        type: 'empty',
+                        header: 'Nenhum cliente encontrado',
+                        description: 'Tente com outro nome ou verifique a digitação'
+                    };
                 }
                 
                 return results;
             }
         },
-        autoSelectFirst: true,
-            searchOnFocus: false,
-            cache: false,
-            maxResults: 20,
-            minChars: 2,
-            preventBadQueries: false,
+        // MELHORIAS UX - CONFIGURAÇÕES
+        minCharacters: 0, // MELHORIA: Permitir busca desde o primeiro caractere
+        searchOnFocus: false, // Não buscar ao focar (comportamento padrão)
+        cache: false, // Sem cache para sempre ter dados atualizados
+        maxResults: 20,
+        searchDelay: 200, // Delay menor para resposta mais rápida
+        showNoResults: true, // Sempre mostrar mensagem quando não encontrar
+        preserveHTML: true, // Preservar HTML nas respostas
+        selectFirstResult: false, // Não selecionar automaticamente
         onSelect: function(result, response) {
             if (result && result.customer_data) {
                 var customer = result.customer_data;
@@ -836,15 +638,16 @@ function hideVehicleDetails() {
                 // Manter o nome no campo
                 $('#customer_name').val(customer.name);
                 
-                // IMPORTANTE: Habilitar campo de placa após selecionar cliente
+                // Habilitar campo de placa
                 customerSelected = true;
                 currentCustomerId = customer.id;
                 enablePlateField();
                 
                 // Limpar seleção anterior de veículo
                 $('#plate').val('');
-                $("input[name='plateid']").val('');
+                $('#plateid').val('');
                 hideVehicleDetails();
+                allVehicles = []; // Limpar cache de veículos
                 
                 // Exibir detalhes do cliente
                 $('#customer_name_display').text(customer.name);
@@ -892,6 +695,314 @@ function hideVehicleDetails() {
     });
     
     // ========================================
+    // CONFIGURAÇÃO DO AUTOCOMPLETE DE PLACA (MELHORADO)
+    // ========================================
+    
+    function initializePlateAutocomplete() {
+        var plateSearch = $('#plate_search');
+        var plateInput = $('#plate');
+        
+        // Configurar search do Semantic UI
+        plateSearch.search({
+            apiSettings: {
+                url: "{{ path_for(getVehicleCompletion.URL) }}",
+                method: "{{ getVehicleCompletion.method }}",
+                beforeSend: function(settings) {
+                    var customerId = $('#customer_id').val();
+                    var searchTerm = settings.urlData.query || '';
+                    
+                    // Se não tem termo de busca (clicou no campo), buscar todos
+                    if (!searchTerm || searchTerm.trim() === '') {
+                        searchTerm = ' '; // Espaço para buscar todos
+                    }
+                    
+                    settings.data = {
+                        searchTerm: searchTerm,
+                        customerID: customerId,
+                        subsidiaryID: $('#subsidiary_id').val(),
+                        type: 'vehicle',
+                        detailed: true,
+                        limit: 50 // Aumentar limite para mostrar todos
+                    };
+                    
+                    console.log('Buscando veículos:', searchTerm);
+                    isSearching = true;
+                    return settings;
+                },
+                onResponse: function(response) {
+                    isSearching = false;
+                    var results = { results: [] };
+                    
+                    if (response && response.result === 'OK') {
+                        if (response.data && response.data.length > 0) {
+                            // Cachear todos os veículos
+                            allVehicles = response.data;
+                            
+                            $.each(response.data, function(index, vehicle) {
+                                results.results.push(formatVehicleResult(vehicle));
+                            });
+                        } else {
+                            results.message = {
+                                type: 'empty',
+                                header: 'Nenhum veículo encontrado',
+                                description: 'Este cliente não possui veículos cadastrados'
+                            };
+                        }
+                    }
+                    
+                    return results;
+                },
+                onComplete: function() {
+                    isSearching = false;
+                }
+            },
+            // MELHORIAS UX - CONFIGURAÇÕES
+            minCharacters: 0, // MELHORIA: Permitir busca desde o início
+            searchOnFocus: true, // MELHORIA: Buscar ao focar (comportamento dropdown)
+            cache: false,
+            maxResults: 50,
+            searchDelay: 100, // Delay menor para resposta mais rápida
+            showNoResults: true,
+            preserveHTML: true,
+            selectFirstResult: false,
+            // Configurar busca local (filtragem em tempo real)
+            searchFields: ['title', 'description'],
+            fullTextSearch: true, // MELHORIA: Busca em texto completo
+            onSelect: function(result, response) {
+                if (result && result.vehicle_data) {
+                    var vehicle = result.vehicle_data;
+                    
+                    console.log('✅ Veículo selecionado:', vehicle);
+                    
+                    // Preencher campos
+                    $('#plate').val(vehicle.plate);
+                    $('#plateid').val(vehicle.id);
+                    
+                    // Mostrar detalhes
+                    showVehicleDetails(vehicle);
+                    
+                    // Fechar o dropdown
+                    plateSearch.search('hide results');
+                }
+                return false;
+            }
+        });
+        
+        // MELHORIA: Adicionar comportamento de clique para mostrar todos
+        plateInput.on('focus', function() {
+            if (!isSearching && customerSelected) {
+                var currentVal = $(this).val();
+                
+                // Se o campo está vazio ou queremos mostrar todos
+                if (!currentVal || currentVal.trim() === '') {
+                    // Forçar busca de todos os veículos
+                    plateSearch.search('query');
+                    
+                    // Se já temos veículos em cache, mostrar
+                    if (allVehicles.length > 0) {
+                        var results = { results: [] };
+                        $.each(allVehicles, function(index, vehicle) {
+                            results.results.push(formatVehicleResult(vehicle));
+                        });
+                        plateSearch.search('add results', results.results);
+                        plateSearch.search('show results');
+                    }
+                }
+            }
+        });
+        
+        // MELHORIA: Adicionar animação ao ícone
+        plateInput.on('focus', function() {
+            plateSearch.addClass('active');
+        }).on('blur', function() {
+            setTimeout(function() {
+                plateSearch.removeClass('active');
+            }, 200);
+        });
+        
+        // Monitorar limpeza manual
+        plateInput.on('input', function() {
+            var value = $(this).val();
+            
+            if (!value || value.trim() === '') {
+                $('#plateid').val('');
+                hideVehicleDetails();
+                
+                // Se limpar o campo, mostrar todos novamente ao próximo clique
+                allVehicles = [];
+            }
+        });
+        
+        // MELHORIA: Permitir navegação com teclado
+        plateInput.on('keydown', function(e) {
+            if (e.key === 'ArrowDown' && !plateSearch.search('is visible')) {
+                plateSearch.search('show results');
+            }
+        });
+    }
+    
+    // Função para mostrar detalhes do veículo
+    function showVehicleDetails(vehicle) {
+        console.log('Mostrando detalhes do veículo:', vehicle);
+        
+        var statusText = vehicle.inuse ? 'Com rastreador' : 'Sem rastreador';
+        var statusClass = vehicle.inuse ? 'green' : 'grey';
+        var blockedText = vehicle.blocked ? '<span class="ui red label">Bloqueado</span>' : '';
+        
+        var detailsHtml = 
+            '<div class="details-block active" id="vehicle_details">' +
+            '  <h4><i class="car icon"></i>Veículo Selecionado</h4>' +
+            '  <div class="ui relaxed list">' +
+            '    <div class="item">' +
+            '      <i class="car icon"></i>' +
+            '      <div class="content">' +
+            '        <strong>' + vehicle.plate + '</strong> ' +
+            '        <span class="ui ' + statusClass + ' label">' + statusText + '</span> ' + 
+            blockedText +
+            '        <div class="description">' +
+            '          <strong>Modelo:</strong> ' + vehicle.brand + ' ' + vehicle.model + '<br>' +
+            '          <strong>Cor:</strong> ' + vehicle.color + '<br>' +
+            '          <strong>Tipo:</strong> ' + vehicle.type +
+            '        </div>' +
+            '      </div>' +
+            '    </div>' +
+            '  </div>';
+        
+        // Se tem rastreador E temos os dados dos equipamentos
+        if (vehicle.equipments && vehicle.equipments.length > 0) {
+            detailsHtml += 
+                '  <div class="ui divider"></div>' +
+                '  <h4><i class="wifi icon"></i>Rastreador(es) Instalado(s)</h4>' +
+                '  <div class="ui relaxed list">';
+            
+            vehicle.equipments.forEach(function(equipment) {
+                var mainLabel = equipment.main ? 
+                    '<span class="ui tiny blue label">Principal</span>' : 
+                    '<span class="ui tiny grey label">Contingência</span>';
+                
+                var installedDate = 'Não informado';
+                if (equipment.installedat) {
+                    try {
+                        var date = new Date(equipment.installedat);
+                        installedDate = date.toLocaleDateString('pt-BR');
+                    } catch(e) {
+                        installedDate = equipment.installedat;
+                    }
+                }
+                
+                detailsHtml += 
+                    '    <div class="item">' +
+                    '      <i class="microchip icon"></i>' +
+                    '      <div class="content">' +
+                    '        <div class="header">' +
+                    '          ' + (equipment.equipmentbrandname || 'Marca não informada') + ' ' + 
+                                (equipment.equipmentmodelname || 'Modelo não informado') + ' ' + mainLabel +
+                    '        </div>' +
+                    '        <div class="description">';
+                
+                detailsHtml += '          <strong>Nº Série:</strong> ' + 
+                              (equipment.serialnumber || 'Não informado') + '<br>';
+                
+                if (equipment.installationsite) {
+                    detailsHtml += '          <strong>Local de Instalação:</strong> ' + 
+                                  equipment.installationsite + '<br>';
+                }
+                
+                var features = [];
+                if (equipment.hasblocking === true || equipment.hasblocking === 't') {
+                    var blockLocation = equipment.blockingsite ? ' (' + equipment.blockingsite + ')' : '';
+                    features.push('<i class="lock icon"></i>Bloqueio' + blockLocation);
+                }
+                if (equipment.hasibutton === true || equipment.hasibutton === 't') {
+                    var ibuttonLocation = equipment.ibuttonsite ? ' (' + equipment.ibuttonsite + ')' : '';
+                    features.push('<i class="key icon"></i>iButton' + ibuttonLocation);
+                }
+                if (equipment.hassiren === true || equipment.hassiren === 't') {
+                    var sirenLocation = equipment.sirensite ? ' (' + equipment.sirensite + ')' : '';
+                    features.push('<i class="volume up icon"></i>Sirene' + sirenLocation);
+                }
+                if (equipment.panicbuttonsite) {
+                    features.push('<i class="exclamation triangle icon"></i>Botão Pânico (' + 
+                                 equipment.panicbuttonsite + ')');
+                }
+                
+                if (features.length > 0) {
+                    detailsHtml += '          <div class="ui small labels" style="margin-top: 5px;">';
+                    features.forEach(function(feature) {
+                        detailsHtml += '<div class="ui label">' + feature + '</div>';
+                    });
+                    detailsHtml += '          </div>';
+                }
+                
+                detailsHtml += 
+                    '          <div style="margin-top: 5px;">' +
+                    '            <i class="calendar check icon"></i>' +
+                    '            <strong>Instalado em:</strong> ' + installedDate +
+                    '          </div>' +
+                    '        </div>' +
+                    '      </div>' +
+                    '    </div>';
+            });
+            
+            detailsHtml += '  </div>';
+            
+        } else if (vehicle.inuse) {
+            detailsHtml += 
+                '  <div class="ui divider"></div>' +
+                '  <div class="ui info message">' +
+                '    <i class="info circle icon"></i>' +
+                '    Este veículo possui rastreador instalado' +
+                '  </div>';
+        } else {
+            detailsHtml += 
+                '  <div class="ui divider"></div>' +
+                '  <div class="ui warning message">' +
+                '    <i class="warning sign icon"></i>' +
+                '    Este veículo não possui rastreador instalado' +
+                '  </div>';
+        }
+        
+        detailsHtml += '</div>';
+        
+        $('#vehicle_details').remove();
+        $('#vehicle_info_container').html(detailsHtml);
+    }
+    
+    // Função para esconder detalhes do veículo
+    function hideVehicleDetails() {
+        console.log('Escondendo detalhes do veículo');
+        $('#vehicle_details').remove();
+        $('#vehicle_info_container').empty();
+    }
+    
+    // ========================================
+    // MONITORAMENTO DO CAMPO CLIENTE
+    // ========================================
+    
+    $('#customer_name').on('input', function() {
+        var value = $(this).val();
+        
+        // Se o campo foi limpo manualmente
+        if (!value || value.trim() === '') {
+            // Resetar seleção de cliente
+            $('#customer_id').val('');
+            $('#subsidiary_id').val('');
+            $('#customer_details').removeClass('active');
+            
+            // Desabilitar campo de placa
+            customerSelected = false;
+            currentCustomerId = '';
+            disablePlateField();
+            
+            // Limpar veículo
+            $('#plate').val('');
+            $('#plateid').val('');
+            hideVehicleDetails();
+            allVehicles = [];
+        }
+    });
+    
+    // ========================================
     // CONFIGURAÇÃO DO CALENDÁRIO
     // ========================================
     
@@ -913,33 +1024,9 @@ function hideVehicleDetails() {
     });
     
     // ========================================
-    // EVENTOS DO FORMULÁRIO
+    // VALIDAÇÃO DO FORMULÁRIO
     // ========================================
     
-    // Monitorar mudanças manuais no campo cliente
-    $('#customer_name').on('input', function() {
-        var value = $(this).val();
-        
-        // Se o campo foi limpo manualmente
-        if (!value || value.trim() === '') {
-            // Resetar seleção de cliente
-            $('#customer_id').val('');
-            $('#subsidiary_id').val('');
-            $('#customer_details').removeClass('active');
-            
-            // Desabilitar campo de placa
-            customerSelected = false;
-            currentCustomerId = '';
-            disablePlateField();
-            
-            // Limpar veículo
-            $('#plate').val('');
-            $("input[name='plateid']").val('');
-            hideVehicleDetails();
-        }
-    });
-    
-    // Validação antes do submit
     $('#appointmentForm').on('submit', function(e) {
         var date = $('#scheduled_date').val();
         var time = $('#scheduled_time').val();
@@ -953,7 +1040,7 @@ function hideVehicleDetails() {
         }
         
         // Validar se veículo foi selecionado
-        if (!$("input[name='plateid']").val() && $('#plate').val()) {
+        if (!$('#plateid').val() && $('#plate').val()) {
             e.preventDefault();
             alert('Por favor, selecione um veículo válido da lista.');
             $('#plate').focus();
@@ -974,50 +1061,16 @@ function hideVehicleDetails() {
         $('#save_button').addClass('loading').prop('disabled', true);
     });
     
+    // ========================================
+    // EVENTOS AUXILIARES
+    // ========================================
+    
     // Fechar mensagens
     $('.ui.message .close.icon').on('click', function() {
         $(this).closest('.message').transition('fade');
     });
     
-    // ========================================
-    // ESTILOS ADICIONAIS PARA AUTOCOMPLETE
-    // ========================================
-    
-    // Adicionar estilos CSS dinamicamente para melhorar visual do autocomplete
-    if (!$('#autocomplete_styles').length) {
-        $('head').append(
-            '<style id="autocomplete_styles">' +
-            '.autocomplete-results {' +
-            '  max-height: 300px;' +
-            '  overflow-y: auto;' +
-            '  border: 1px solid #d4d4d5;' +
-            '  border-radius: .28571429rem;' +
-            '  background: white;' +
-            '  box-shadow: 0 2px 4px 0 rgba(34,36,38,.12), 0 2px 10px 0 rgba(34,36,38,.15);' +
-            '}' +
-            '.autocomplete-result {' +
-            '  padding: 10px;' +
-            '  border-bottom: 1px solid #f0f0f0;' +
-            '  cursor: pointer;' +
-            '}' +
-            '.autocomplete-result:hover {' +
-            '  background-color: #f9fafb;' +
-            '}' +
-            '.autocomplete-result .plate-info {' +
-            '  font-size: 1.1em;' +
-            '  margin-bottom: 5px;' +
-            '}' +
-            '.autocomplete-result .vehicle-details {' +
-            '  font-size: 0.9em;' +
-            '  color: #767676;' +
-            '}' +
-            '</style>'
-        );
-    }
-    
-    console.log('Sistema de autocomplete inicializado com sucesso!');
+    console.log('✨ Sistema de autocomplete v2.0 inicializado com melhorias UX!');
 });
-
-
   </script>
 {% endblock %}
