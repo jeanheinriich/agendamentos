@@ -522,7 +522,6 @@ $(document).ready(function() {
     
     // Função para inicializar autocomplete de placa
    function initializePlateAutocomplete() {
-    // Usar Semantic UI Search
     $('#plate_search').search({
         apiSettings: {
             url: "{{ path_for(getVehicleCompletion.URL) }}",
@@ -531,31 +530,16 @@ $(document).ready(function() {
                 var customerId = $('#customer_id').val();
                 var searchTerm = settings.urlData.query;
                 
-                // DEBUG COMPLETO
-                console.log('=== DEBUG AUTOCOMPLETE PLACA ===');
-                console.log('Cliente ID:', customerId);
-                console.log('Termo de busca:', searchTerm);
-                console.log('URL:', settings.url);
-                console.log('Method:', settings.type);
-                
-                // Tentar diferentes formatos de parâmetros
                 settings.data = {
                     searchTerm: searchTerm,
                     customerID: customerId,
-                    // Tente adicionar estes parâmetros extras
-                    subsidiaryID: $('#subsidiary_id').val(), // Adicionar subsidiary
+                    subsidiaryID: $('#subsidiary_id').val(),
                     type: 'vehicle',
-                    detailed: true,
-                    limit: 20,
-                    // Parâmetros alternativos que a API pode esperar
-                    query: searchTerm,  // Alguns endpoints usam 'query'
-                    term: searchTerm,   // Outros usam 'term'
-                    search: searchTerm  // Ou 'search'
+                    detailed: true,  // IMPORTANTE: Solicita dados detalhados
+                    limit: 20
                 };
                 
-                console.log('Dados enviados:', settings.data);
-                console.log('=== FIM DEBUG ===');
-                
+                console.log('Buscando veículos com dados detalhados');
                 return settings;
             },
             onResponse: function(response) {
@@ -653,11 +637,11 @@ $(document).ready(function() {
 function showVehicleDetails(vehicle) {
     console.log('Mostrando detalhes do veículo:', vehicle);
     
-    // Criar HTML dos detalhes
     var statusText = vehicle.inuse ? 'Com rastreador' : 'Sem rastreador';
     var statusClass = vehicle.inuse ? 'green' : 'grey';
     var blockedText = vehicle.blocked ? '<span class="ui red label">Bloqueado</span>' : '';
     
+    // HTML base do veículo
     var detailsHtml = 
         '<div class="details-block active" id="vehicle_details">' +
         '  <h4><i class="car icon"></i>Veículo Selecionado</h4>' +
@@ -675,13 +659,114 @@ function showVehicleDetails(vehicle) {
         '        </div>' +
         '      </div>' +
         '    </div>' +
-        '  </div>' +
-        '</div>';
+        '  </div>';
     
-    // Remover detalhes anteriores se existir
+    // Se tem rastreador E temos os dados dos equipamentos
+    if (vehicle.equipments && vehicle.equipments.length > 0) {
+        detailsHtml += 
+            '  <div class="ui divider"></div>' +
+            '  <h4><i class="wifi icon"></i>Rastreador(es) Instalado(s)</h4>' +
+            '  <div class="ui relaxed list">';
+        
+        vehicle.equipments.forEach(function(equipment) {
+            // Label do tipo de rastreador
+            var mainLabel = equipment.main ? 
+                '<span class="ui tiny blue label">Principal</span>' : 
+                '<span class="ui tiny grey label">Contingência</span>';
+            
+            // Formata a data de instalação
+            var installedDate = 'Não informado';
+            if (equipment.installedat) {
+                try {
+                    var date = new Date(equipment.installedat);
+                    installedDate = date.toLocaleDateString('pt-BR');
+                } catch(e) {
+                    installedDate = equipment.installedat;
+                }
+            }
+            
+            detailsHtml += 
+                '    <div class="item">' +
+                '      <i class="microchip icon"></i>' +
+                '      <div class="content">' +
+                '        <div class="header">' +
+                '          ' + (equipment.equipmentbrandname || 'Marca não informada') + ' ' + 
+                            (equipment.equipmentmodelname || 'Modelo não informado') + ' ' + mainLabel +
+                '        </div>' +
+                '        <div class="description">';
+            
+            // Número de série
+            detailsHtml += '          <strong>Nº Série:</strong> ' + 
+                          (equipment.serialnumber || 'Não informado') + '<br>';
+            
+            // Local de instalação
+            if (equipment.installationsite) {
+                detailsHtml += '          <strong>Local de Instalação:</strong> ' + 
+                              equipment.installationsite + '<br>';
+            }
+            
+            // Features/Recursos do rastreador
+            var features = [];
+            if (equipment.hasblocking === true || equipment.hasblocking === 't') {
+                var blockLocation = equipment.blockingsite ? ' (' + equipment.blockingsite + ')' : '';
+                features.push('<i class="lock icon"></i>Bloqueio' + blockLocation);
+            }
+            if (equipment.hasibutton === true || equipment.hasibutton === 't') {
+                var ibuttonLocation = equipment.ibuttonsite ? ' (' + equipment.ibuttonsite + ')' : '';
+                features.push('<i class="key icon"></i>iButton' + ibuttonLocation);
+            }
+            if (equipment.hassiren === true || equipment.hassiren === 't') {
+                var sirenLocation = equipment.sirensite ? ' (' + equipment.sirensite + ')' : '';
+                features.push('<i class="volume up icon"></i>Sirene' + sirenLocation);
+            }
+            if (equipment.panicbuttonsite) {
+                features.push('<i class="exclamation triangle icon"></i>Botão Pânico (' + 
+                             equipment.panicbuttonsite + ')');
+            }
+            
+            if (features.length > 0) {
+                detailsHtml += '          <div class="ui small labels" style="margin-top: 5px;">';
+                features.forEach(function(feature) {
+                    detailsHtml += '<div class="ui label">' + feature + '</div>';
+                });
+                detailsHtml += '          </div>';
+            }
+            
+            // Data de instalação
+            detailsHtml += 
+                '          <div style="margin-top: 5px;">' +
+                '            <i class="calendar check icon"></i>' +
+                '            <strong>Instalado em:</strong> ' + installedDate +
+                '          </div>' +
+                '        </div>' +
+                '      </div>' +
+                '    </div>';
+        });
+        
+        detailsHtml += '  </div>';
+        
+    } else if (vehicle.inuse) {
+        // Tem rastreador mas não carregou os detalhes
+        detailsHtml += 
+            '  <div class="ui divider"></div>' +
+            '  <div class="ui info message">' +
+            '    <i class="info circle icon"></i>' +
+            '    Este veículo possui rastreador instalado' +
+            '  </div>';
+    } else {
+        // Não tem rastreador
+        detailsHtml += 
+            '  <div class="ui divider"></div>' +
+            '  <div class="ui warning message">' +
+            '    <i class="warning sign icon"></i>' +
+            '    Este veículo não possui rastreador instalado' +
+            '  </div>';
+    }
+    
+    detailsHtml += '</div>';
+    
+    // Remove detalhes anteriores e adiciona novos
     $('#vehicle_details').remove();
-    
-    // Adicionar no container correto
     $('#vehicle_info_container').html(detailsHtml);
 }
 
