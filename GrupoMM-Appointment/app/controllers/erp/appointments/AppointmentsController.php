@@ -28,12 +28,27 @@ class AppointmentsController extends Controller
      * Lista de tipos de serviço disponíveis
      */
     const SERVICE_TYPES = [
-        'Manutencao' => 'Manutenção',
-        'Instalacao' => 'Instalação',
-        'Reparo' => 'Reparo',
-        'Inspecao' => 'Inspeção',
-        'Emergencia' => 'Emergência'
-    ];
+    // Rastreador
+    'install_main_tracker' => 'Instalação de Rastreador Principal',
+    'maintenance_main_tracker' => 'Manutenção de Rastreador Principal', 
+    'remove_main_tracker' => 'Retirada de Rastreador Principal',
+    'install_backup_tracker' => 'Instalação de Rastreador Contingência',
+    'maintenance_backup_tracker' => 'Manutenção de Rastreador Contingência',
+    'remove_backup_tracker' => 'Retirada de Rastreador Contingência',
+    
+    // VideoTelemetria
+    'install_videotelemetry' => 'Instalação de VideoTelemetria',
+    'maintenance_videotelemetry' => 'Manutenção de VideoTelemetria',
+    'remove_videotelemetry' => 'Retirada de VideoTelemetria',
+    
+    // Acessórios
+    'install_accessory' => 'Instalação de Acessório',
+    'maintenance_accessory' => 'Manutenção de Acessório',
+    
+    // Serviços Gerais
+    'emergency' => 'Emergência',
+    'inspection' => 'Vistoria'
+];
 
     /**
      * Status disponíveis para agendamentos
@@ -825,7 +840,7 @@ class AppointmentsController extends Controller
             'customer_name' => V::notEmpty()->length(2, 100)->setName('Nome do Cliente'),
             'plate' => V::notEmpty()->length(7, 8)->setName('Placa do Veículo'),
             'vehicle_model' => V::notEmpty()->length(2, 100)->setName('Modelo do Veículo'),
-            'servicetype' => V::notEmpty()->stringType()->in(array_keys(self::SERVICE_TYPES))->setName('Tipo de Serviço'),
+            'service_type' => V::notEmpty()->stringType()->in(array_keys(self::SERVICE_TYPES))->setName('Tipo de Serviço'),
             'technicianid' => V::notEmpty()->intVal()->positive()->setName('Técnico'),
             'scheduledat' => V::notEmpty()->regex('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/')->setName('Data e Hora do Agendamento'),
             'address' => V::notEmpty()->length(5, 100)->setName('Endereço'),

@@ -153,6 +153,34 @@
       font-size: 1em;
       color: #767676;
     }
+    
+    /* Estilos para dropdown de serviços */
+    #service_type optgroup {
+      font-weight: bold;
+      color: #2185d0;
+    }
+    
+    #service_type option {
+      padding-left: 20px;
+    }
+    
+    #service_type option.emergency-highlight {
+      background-color: #fff5f5;
+      color: #d01919 !important;
+      font-weight: bold;
+    }
+    
+    .ui.dropdown.disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    
+    /* Mensagem de informação do serviço */
+    #service_info_message {
+      margin-top: 1em;
+      background-color: #f8ffff !important;
+      border: 1px solid #b5d3e7;
+    }
   </style>
 {% endblock %}
 
@@ -281,17 +309,17 @@
       <div class="field required{{ cssError('service_type') }}">
         <label>Serviço a ser Realizado</label>
         <select name="service_type" id="service_type" class="ui dropdown">
-          <option value="">Selecione o tipo de serviço</option>
-          <option value="installation" {% if getValue('service_type') == 'installation' %}selected{% endif %}>Instalação de Rastreador</option>
-          <option value="maintenance" {% if getValue('service_type') == 'maintenance' %}selected{% endif %}>Manutenção</option>
-          <option value="repair" {% if getValue('service_type') == 'repair' %}selected{% endif %}>Reparo</option>
-          <option value="removal" {% if getValue('service_type') == 'removal' %}selected{% endif %}>Retirada de Equipamento</option>
-          <option value="inspection" {% if getValue('service_type') == 'inspection' %}selected{% endif %}>Inspeção/Vistoria</option>
-          <option value="emergency" {% if getValue('service_type') == 'emergency' %}selected{% endif %}>Emergência</option>
+          <option value="">Selecione primeiro um veículo para ver serviços disponíveis</option>
         </select>
         {% if hasError('service_type') %}
           <small class="helper">{{ getError('service_type') }}</small>
         {% endif %}
+      </div>
+      
+      {# Mensagem informativa sobre o serviço selecionado #}
+      <div id="service_info_message" class="ui info message" style="display: none;">
+        <i class="info circle icon"></i>
+        <span id="service_info_text"></span>
       </div>
     </div>
 
@@ -496,6 +524,10 @@ $(document).ready(function() {
     $('.ui.dropdown').dropdown();
     $('.ui.checkbox').checkbox();
     
+    // Inicializar campo de tipo de serviço como desabilitado
+    $('#service_type').parent().addClass('disabled');
+    $('#service_type').dropdown('set text', 'Selecione primeiro um veículo');
+    
     // ========================================
     // VARIÁVEIS GLOBAIS DE CONTROLE
     // ========================================
@@ -649,6 +681,10 @@ $(document).ready(function() {
                 hideVehicleDetails();
                 allVehicles = []; // Limpar cache de veículos
                 
+                // Desabilitar e resetar tipos de serviço
+                $('#service_type').parent().addClass('disabled');
+                resetServiceTypes();
+                
                 // Exibir detalhes do cliente
                 $('#customer_name_display').text(customer.name);
                 $('#customer_subsidiary_display').text(customer.subsidiaryname);
@@ -781,6 +817,9 @@ $(document).ready(function() {
                     // Mostrar detalhes
                     showVehicleDetails(vehicle);
                     
+                    // Habilitar dropdown de serviços
+                    $('#service_type').parent().removeClass('disabled');
+                    
                     // Fechar o dropdown
                     plateSearch.search('hide results');
                 }
@@ -827,6 +866,10 @@ $(document).ready(function() {
             if (!value || value.trim() === '') {
                 $('#plateid').val('');
                 hideVehicleDetails();
+                
+                // Desabilitar dropdown de serviços
+                $('#service_type').parent().addClass('disabled');
+                resetServiceTypes();
                 
                 // Se limpar o campo, mostrar todos novamente ao próximo clique
                 allVehicles = [];
@@ -966,6 +1009,9 @@ $(document).ready(function() {
         
         $('#vehicle_details').remove();
         $('#vehicle_info_container').html(detailsHtml);
+        
+        // IMPORTANTE: Atualizar tipos de serviço baseado no veículo
+        updateServiceTypes(vehicle);
     }
     
     // Função para esconder detalhes do veículo
@@ -973,6 +1019,291 @@ $(document).ready(function() {
         console.log('Escondendo detalhes do veículo');
         $('#vehicle_details').remove();
         $('#vehicle_info_container').empty();
+        
+        // Resetar tipos de serviço
+        resetServiceTypes();
+    }
+    
+    // ========================================
+    // LÓGICA DE NEGÓCIO PARA TIPOS DE SERVIÇO
+    // ========================================
+    
+    // Função para analisar o estado do veículo
+    function analyzeVehicleState(vehicle) {
+        var state = {
+            hasMainTracker: false,
+            hasBackupTracker: false,
+            hasVideoTelemetry: false,
+            hasAccessories: false,
+            isBlocked: vehicle.blocked === true || vehicle.blocked === 't'
+        };
+        
+        // Analisar equipamentos instalados
+        if (vehicle.equipments && vehicle.equipments.length > 0) {
+            vehicle.equipments.forEach(function(equipment) {
+                // Rastreador principal
+                if (equipment.main === true || equipment.main === 't') {
+                    state.hasMainTracker = true;
+                }
+                // Rastreador contingência
+                else if (equipment.main === false || equipment.main === 'f') {
+                    state.hasBackupTracker = true;
+                }
+                
+                // VideoTelemetria (verificar por tipo ou modelo)
+                if (equipment.type === 'videotelemetry' || 
+                    (equipment.equipmentmodelname && equipment.equipmentmodelname.toLowerCase().includes('video'))) {
+                    state.hasVideoTelemetry = true;
+                }
+                
+                // Acessórios
+                if (equipment.hasblocking || equipment.hasibutton || equipment.hassiren || equipment.panicbuttonsite) {
+                    state.hasAccessories = true;
+                }
+            });
+        } else if (vehicle.inuse) {
+            // Se marca como tendo rastreador mas não temos detalhes
+            state.hasMainTracker = true;
+        }
+        
+        console.log('Estado do veículo analisado:', state);
+        return state;
+    }
+    
+    // Função para obter serviços disponíveis baseado no estado
+    function getAvailableServices(vehicleState) {
+        var services = [];
+        
+        // REGRAS PARA RASTREADOR PRINCIPAL
+        if (!vehicleState.hasMainTracker) {
+            services.push({
+                value: 'install_main_tracker',
+                text: 'Instalação de Rastreador Principal',
+                category: 'tracker',
+                priority: 1,
+                info: 'Instalação de primeiro rastreador no veículo'
+            });
+        } else {
+            services.push(
+                {
+                    value: 'maintenance_main_tracker',
+                    text: 'Manutenção de Rastreador Principal',
+                    category: 'tracker',
+                    priority: 2,
+                    info: 'Verificação e reparo do rastreador principal'
+                },
+                {
+                    value: 'remove_main_tracker',
+                    text: 'Retirada de Rastreador Principal',
+                    category: 'tracker',
+                    priority: 5,
+                    info: 'Remoção completa do rastreador principal'
+                }
+            );
+        }
+        
+        // REGRAS PARA RASTREADOR CONTINGÊNCIA
+        if (vehicleState.hasMainTracker && !vehicleState.hasBackupTracker) {
+            services.push({
+                value: 'install_backup_tracker',
+                text: 'Instalação de Rastreador Contingência',
+                category: 'tracker',
+                priority: 3,
+                info: 'Instalação de rastreador de backup para redundância'
+            });
+        } else if (vehicleState.hasBackupTracker) {
+            services.push(
+                {
+                    value: 'maintenance_backup_tracker',
+                    text: 'Manutenção de Rastreador Contingência',
+                    category: 'tracker',
+                    priority: 4,
+                    info: 'Verificação e reparo do rastreador de contingência'
+                },
+                {
+                    value: 'remove_backup_tracker',
+                    text: 'Retirada de Rastreador Contingência',
+                    category: 'tracker',
+                    priority: 6,
+                    info: 'Remoção do rastreador de contingência'
+                }
+            );
+        }
+        
+        // REGRAS PARA VIDEOTELEMETRIA
+        if (vehicleState.hasMainTracker) {
+            if (!vehicleState.hasVideoTelemetry) {
+                services.push({
+                    value: 'install_videotelemetry',
+                    text: 'Instalação de VideoTelemetria',
+                    category: 'video',
+                    priority: 7,
+                    info: 'Instalação de sistema de câmeras e telemetria'
+                });
+            } else {
+                services.push(
+                    {
+                        value: 'maintenance_videotelemetry',
+                        text: 'Manutenção de VideoTelemetria',
+                        category: 'video',
+                        priority: 8,
+                        info: 'Verificação e ajuste do sistema de vídeo'
+                    },
+                    {
+                        value: 'remove_videotelemetry',
+                        text: 'Retirada de VideoTelemetria',
+                        category: 'video',
+                        priority: 9,
+                        info: 'Remoção do sistema de videotelemetria'
+                    }
+                );
+            }
+        }
+        
+        // REGRAS PARA ACESSÓRIOS
+        if (vehicleState.hasMainTracker || vehicleState.hasBackupTracker) {
+            services.push({
+                value: 'install_accessory',
+                text: 'Instalação de Acessório',
+                category: 'accessory',
+                priority: 10,
+                info: 'Instalação de bloqueador, sirene, botão de pânico, etc.'
+            });
+            
+            if (vehicleState.hasAccessories) {
+                services.push({
+                    value: 'maintenance_accessory',
+                    text: 'Manutenção de Acessório',
+                    category: 'accessory',
+                    priority: 11,
+                    info: 'Reparo ou ajuste de acessórios instalados'
+                });
+            }
+        }
+        
+        // SERVIÇOS SEMPRE DISPONÍVEIS
+        // Emergência com destaque se veículo está bloqueado
+        if (vehicleState.isBlocked) {
+            services.push({
+                value: 'emergency',
+                text: 'EMERGÊNCIA - Veículo Bloqueado',
+                category: 'general',
+                priority: 0, // Máxima prioridade
+                info: 'Desbloqueio de emergência - veículo atualmente bloqueado',
+                highlight: true
+            });
+        } else {
+            services.push({
+                value: 'emergency',
+                text: 'Emergência',
+                category: 'general',
+                priority: 12,
+                info: 'Atendimento de emergência (desbloqueio, pane, etc.)'
+            });
+        }
+        
+        services.push({
+            value: 'inspection',
+            text: 'Vistoria',
+            category: 'general',
+            priority: 13,
+            info: 'Vistoria geral do veículo e equipamentos'
+        });
+        
+        // Ordenar por prioridade
+        return services.sort(function(a, b) {
+            return a.priority - b.priority;
+        });
+    }
+    
+    // Função para atualizar dropdown de tipos de serviço
+    function updateServiceTypes(vehicle) {
+        console.log('Atualizando tipos de serviço para o veículo:', vehicle.plate);
+        
+        // Analisar estado do veículo
+        var vehicleState = analyzeVehicleState(vehicle);
+        
+        // Obter serviços disponíveis
+        var availableServices = getAvailableServices(vehicleState);
+        
+        // Limpar dropdown atual
+        var $serviceDropdown = $('#service_type');
+        $serviceDropdown.empty();
+        
+        // Adicionar opção padrão
+        $serviceDropdown.append('<option value="">Selecione o tipo de serviço</option>');
+        
+        // Agrupar serviços por categoria
+        var categories = {
+            'tracker': 'Rastreador',
+            'video': 'VideoTelemetria',
+            'accessory': 'Acessórios',
+            'general': 'Serviços Gerais'
+        };
+        
+        // Organizar serviços por categoria
+        var servicesByCategory = {};
+        availableServices.forEach(function(service) {
+            if (!servicesByCategory[service.category]) {
+                servicesByCategory[service.category] = [];
+            }
+            servicesByCategory[service.category].push(service);
+        });
+        
+        // Adicionar serviços ao dropdown
+        Object.keys(servicesByCategory).forEach(function(category) {
+            // Adicionar grupo de opções
+            var $optgroup = $('<optgroup label="' + categories[category] + '">');
+            
+            servicesByCategory[category].forEach(function(service) {
+                var $option = $('<option value="' + service.value + '">' + service.text + '</option>');
+                
+                // Adicionar atributos de dados
+                $option.attr('data-info', service.info);
+                $option.attr('data-category', service.category);
+                
+                // Destacar emergência se necessário
+                if (service.highlight) {
+                    $option.addClass('emergency-highlight');
+                    $option.css('color', '#d01919');
+                    $option.css('font-weight', 'bold');
+                }
+                
+                $optgroup.append($option);
+            });
+            
+            $serviceDropdown.append($optgroup);
+        });
+        
+        // Reinicializar dropdown do Semantic UI
+        $serviceDropdown.dropdown('refresh');
+        
+        // Adicionar listener para mostrar info do serviço
+        $serviceDropdown.on('change', function() {
+            var selectedOption = $(this).find('option:selected');
+            var info = selectedOption.attr('data-info');
+            
+            if (info) {
+                $('#service_info_text').text(info);
+                $('#service_info_message').show();
+            } else {
+                $('#service_info_message').hide();
+            }
+        });
+        
+        console.log('Tipos de serviço atualizados:', availableServices.length + ' opções disponíveis');
+    }
+    
+    // Função para resetar tipos de serviço
+    function resetServiceTypes() {
+        console.log('Resetando tipos de serviço');
+        
+        var $serviceDropdown = $('#service_type');
+        $serviceDropdown.empty();
+        $serviceDropdown.append('<option value="">Selecione primeiro um veículo para ver serviços disponíveis</option>');
+        $serviceDropdown.dropdown('refresh');
+        
+        $('#service_info_message').hide();
     }
     
     // ========================================
@@ -999,6 +1330,10 @@ $(document).ready(function() {
             $('#plateid').val('');
             hideVehicleDetails();
             allVehicles = [];
+            
+            // Desabilitar e resetar tipos de serviço
+            $('#service_type').parent().addClass('disabled');
+            resetServiceTypes();
         }
     });
     
