@@ -6557,153 +6557,199 @@ class VehiclesController
  *
  * @return Response $response
  */
-public function getAutocompletionData(
-  Request $request,
-  Response $response
-): Response
-{
-  $this->debug("Relação de placas para preenchimento automático despachada.");
+public function getAutocompletionData(Request $request, Response $response): Response
+    {
+        $this->debug("Relação de placas para preenchimento automático despachada.");
 
-  // Recupera os dados da requisição
-  $postParams = $request->getParsedBody();
+        // Recupera os dados da requisição
+        $postParams = $request->getParsedBody();
 
-  // Recupera os dados do contratante
-  $contractor   = $this->authorization->getContractor();
-  $contractorID = $contractor->id;
-  
-  // O termo de pesquisa
-  $searchTerm = $postParams['searchTerm'];
-
-  // O código do cliente
-  $customerID = $postParams['customerID'] ?? 0;
-  
-  // CORREÇÃO: Aceita tanto boolean quanto string
-  $detailed = false;
-  if (isset($postParams['detailed'])) {
-    $detailed = filter_var($postParams['detailed'], FILTER_VALIDATE_BOOLEAN);
-  }
-  
-  // Debug para verificar
-  $this->debug("Parâmetro detailed recebido: " . ($detailed ? 'true' : 'false'));
-  
-  // Determina os limites e parâmetros da consulta
-  $length = isset($postParams['limit']) ? $postParams['limit'] : 20;
-
-  $this->debug("Acesso aos dados de placas que contém '{$searchTerm}' - Detailed: " . ($detailed ? 'SIM' : 'NÃO'));
-  
-  try
-  {
-    // Query para buscar veículos
-    $sql = ""
-      . "SELECT V.vehicleID AS id,"
-      . "       V.plate,"
-      . "       T.name AS type,"
-      . "       B.name AS brand,"
-      . "       M.name AS model,"
-      . "       C.name AS color,"
-      . "       V.blocked AS blocked,"
-      . "       EXISTS("
-      . "         SELECT 1 FROM erp.equipments AS E"
-      . "          WHERE E.vehicleID = V.vehicleID"
-      . "            AND E.storagelocation = 'Installed'"
-      . "       ) AS inUse"
-      . "  FROM erp.vehicles AS V"
-      . " INNER JOIN erp.vehicleTypes AS T USING (vehicleTypeID)"
-      . " INNER JOIN erp.vehicleBrands AS B USING (vehicleBrandID)"
-      . " INNER JOIN erp.vehicleModels AS M USING (vehicleModelID)"
-      . " INNER JOIN erp.vehicleColors AS C USING (vehicleColorID)"
-      . " WHERE V.contractorID = {$contractorID}"
-      . "   AND V.customerID = {$customerID}"
-      . "   AND ((V.plate ILIKE '%%{$searchTerm}%%') OR (V.plate ILIKE '%%' || public.getPlateVariant('{$searchTerm}') || '%%'))"
-      . " ORDER BY V.plate ASC"
-      . " LIMIT {$length}"
-    ;
-    
-    $vehicles = $this->DB->select($sql);
-    
-    // Se solicitado dados detalhados, busca informações dos rastreadores
-    if ($detailed && count($vehicles) > 0) {
-      $this->debug("Buscando equipamentos para " . count($vehicles) . " veículo(s)");
-      
-      foreach ($vehicles as &$vehicle) {
-        // Converte para boolean se veio como string 't' ou 'f'
-        $vehicle->inuse = ($vehicle->inuse === 't' || $vehicle->inuse === true);
+        // Recupera os dados do contratante
+        $contractor   = $this->authorization->getContractor();
+        $contractorID = $contractor->id;
         
-        if ($vehicle->inuse) {
-          $this->debug("Buscando equipamentos do veículo {$vehicle->plate} (ID: {$vehicle->id})");
-          
-          // Query para buscar equipamentos
-          $sqlEquipments = ""
-            . "SELECT E.equipmentID,"
-            . "       E.serialNumber,"
-            . "       E.main,"
-            . "       TO_CHAR(E.installedAt, 'YYYY-MM-DD') AS installedAt,"
-            . "       E.installationSite,"
-            . "       E.hasBlocking,"
-            . "       E.blockingSite,"
-            . "       E.hasIButton,"
-            . "       E.iButtonSite,"
-            . "       E.hasSiren,"
-            . "       E.sirenSite,"
-            . "       E.panicButtonSite,"
-            . "       EB.name AS equipmentBrandName,"
-            . "       EM.name AS equipmentModelName"
-            . "  FROM erp.equipments AS E"
-            . " INNER JOIN erp.equipmentModels AS EM ON E.equipmentModelID = EM.equipmentModelID"
-            . " INNER JOIN erp.equipmentBrands AS EB ON EM.equipmentBrandID = EB.equipmentBrandID"
-            . " WHERE E.vehicleID = {$vehicle->id}"
-            . "   AND E.contractorID = {$contractorID}"
-            . "   AND E.storageLocation = 'Installed'"
-            . " ORDER BY E.main DESC, E.equipmentID"
-          ;
-          
-          try {
-            $equipments = $this->DB->select($sqlEquipments);
-            
-            // Processa os booleanos
-            foreach ($equipments as &$equipment) {
-              $equipment->main = ($equipment->main === 't' || $equipment->main === true);
-              $equipment->hasblocking = ($equipment->hasblocking === 't' || $equipment->hasblocking === true);
-              $equipment->hasibutton = ($equipment->hasibutton === 't' || $equipment->hasibutton === true);
-              $equipment->hassiren = ($equipment->hassiren === 't' || $equipment->hassiren === true);
-            }
-            
-            $vehicle->equipments = $equipments;
-            
-            $this->debug("Veículo {$vehicle->plate} tem " . count($equipments) . " rastreador(es)");
-          } catch (Exception $e) {
-            $this->error("Erro ao buscar equipamentos do veículo {$vehicle->id}: " . $e->getMessage());
-            $vehicle->equipments = [];
-          }
-        } else {
-          $vehicle->equipments = [];
-        }
-      }
-    }
+        // O termo de pesquisa
+        $searchTerm = $postParams['searchTerm'];
 
-    return $response
-      ->withHeader('Content-type', 'application/json')
-      ->withJson([
-          'result' => 'OK',
-          'params' => $request->getQueryParams(),
-          'message' => "Placas que contém '{$searchTerm}'",
-          'data' => $vehicles
-        ])
-    ;
-  }
-  catch(Exception $exception)
-  {
-    $this->error("Erro ao recuperar placas: " . $exception->getMessage());
-    
-    return $response
-      ->withHeader('Content-type', 'application/json')
-      ->withJson([
-          'result' => 'NOK',
-          'params' => $request->getQueryParams(),
-          'message' => "Erro ao localizar placas",
-          'data' => []
-        ])
-    ;
-  }
-}
+        // O código do cliente
+        $customerID = $postParams['customerID'] ?? 0;
+        
+        // CORREÇÃO: Aceita tanto boolean quanto string
+        $detailed = false;
+        if (isset($postParams['detailed'])) {
+            $detailed = filter_var($postParams['detailed'], FILTER_VALIDATE_BOOLEAN);
+        }
+        
+        // Debug para verificar
+        $this->debug("Parâmetro detailed recebido: " . ($detailed ? 'true' : 'false'));
+        
+        // Determina os limites e parâmetros da consulta
+        $length = isset($postParams['limit']) ? $postParams['limit'] : 20;
+
+        $this->debug("Acesso aos dados de placas que contém '{$searchTerm}' - Detailed: " . ($detailed ? 'SIM' : 'NÃO'));
+        
+        try {
+            // Query para buscar veículos
+            $sql = ""
+                . "SELECT V.vehicleID AS id,"
+                . "       V.plate,"
+                . "       T.name AS type,"
+                . "       B.name AS brand,"
+                . "       M.name AS model,"
+                . "       C.name AS color,"
+                . "       V.blocked AS blocked,"
+                . "       EXISTS("
+                . "         SELECT 1 FROM erp.equipments AS E"
+                . "          WHERE E.vehicleID = V.vehicleID"
+                . "            AND E.storagelocation = 'Installed'"
+                . "       ) AS inUse"
+                . "  FROM erp.vehicles AS V"
+                . " INNER JOIN erp.vehicleTypes AS T USING (vehicleTypeID)"
+                . " INNER JOIN erp.vehicleBrands AS B USING (vehicleBrandID)"
+                . " INNER JOIN erp.vehicleModels AS M USING (vehicleModelID)"
+                . " INNER JOIN erp.vehicleColors AS C USING (vehicleColorID)"
+                . " WHERE V.contractorID = {$contractorID}"
+                . "   AND V.customerID = {$customerID}"
+                . "   AND ((V.plate ILIKE '%%{$searchTerm}%%') OR (V.plate ILIKE '%%' || public.getPlateVariant('{$searchTerm}') || '%%'))"
+                . " ORDER BY V.plate ASC"
+                . " LIMIT {$length}"
+            ;
+            
+            $vehicles = $this->DB->select($sql);
+            
+            // Se solicitado dados detalhados, busca informações dos rastreadores E ENDEREÇOS
+            if ($detailed && count($vehicles) > 0) {
+                $this->debug("Buscando equipamentos e endereços para " . count($vehicles) . " veículo(s)");
+                
+                foreach ($vehicles as &$vehicle) {
+                    // Converte para boolean se veio como string 't' ou 'f'
+                    $vehicle->inuse = ($vehicle->inuse === 't' || $vehicle->inuse === true);
+                    
+                    // ====================================
+                    // BUSCA EQUIPAMENTOS (código existente)
+                    // ====================================
+                    if ($vehicle->inuse) {
+                        $this->debug("Buscando equipamentos do veículo {$vehicle->plate} (ID: {$vehicle->id})");
+                        
+                        // Query para buscar equipamentos
+                        $sqlEquipments = ""
+                            . "SELECT E.equipmentID,"
+                            . "       E.serialNumber,"
+                            . "       E.main,"
+                            . "       TO_CHAR(E.installedAt, 'YYYY-MM-DD') AS installedAt,"
+                            . "       E.installationSite,"
+                            . "       E.hasBlocking,"
+                            . "       E.blockingSite,"
+                            . "       E.hasIButton,"
+                            . "       E.iButtonSite,"
+                            . "       E.hasSiren,"
+                            . "       E.sirenSite,"
+                            . "       E.panicButtonSite,"
+                            . "       EB.name AS equipmentBrandName,"
+                            . "       EM.name AS equipmentModelName"
+                            . "  FROM erp.equipments AS E"
+                            . " INNER JOIN erp.equipmentModels AS EM ON E.equipmentModelID = EM.equipmentModelID"
+                            . " INNER JOIN erp.equipmentBrands AS EB ON EM.equipmentBrandID = EB.equipmentBrandID"
+                            . " WHERE E.vehicleID = {$vehicle->id}"
+                            . "   AND E.contractorID = {$contractorID}"
+                            . "   AND E.storageLocation = 'Installed'"
+                            . " ORDER BY E.main DESC, E.equipmentID"
+                        ;
+                        
+                        try {
+                            $equipments = $this->DB->select($sqlEquipments);
+                            
+                            // Processa os booleanos
+                            foreach ($equipments as &$equipment) {
+                                $equipment->main = ($equipment->main === 't' || $equipment->main === true);
+                                $equipment->hasblocking = ($equipment->hasblocking === 't' || $equipment->hasblocking === true);
+                                $equipment->hasibutton = ($equipment->hasibutton === 't' || $equipment->hasibutton === true);
+                                $equipment->hassiren = ($equipment->hassiren === 't' || $equipment->hassiren === true);
+                            }
+                            
+                            $vehicle->equipments = $equipments;
+                            
+                            $this->debug("Veículo {$vehicle->plate} tem " . count($equipments) . " rastreador(es)");
+                        } catch (Exception $e) {
+                            $this->error("Erro ao buscar equipamentos do veículo {$vehicle->id}: " . $e->getMessage());
+                            $vehicle->equipments = [];
+                        }
+                    } else {
+                        $vehicle->equipments = [];
+                    }
+                    
+                    // ====================================
+                    // NOVO: BUSCA ENDEREÇOS DO VEÍCULO
+                    // ====================================
+                    try {
+                        $this->debug("Buscando endereços do veículo {$vehicle->plate} (ID: {$vehicle->id})");
+                        
+                        // Chama a função PostgreSQL para buscar endereços
+                        $sqlAddresses = "SELECT * FROM erp.getVehicleAddresses(:contractorID, :vehicleID)";
+                        
+                        $addresses = $this->DB->select($sqlAddresses, [
+                            'contractorID' => $contractorID,
+                            'vehicleID' => $vehicle->id
+                        ]);
+                        
+                        // Formata os endereços para o frontend
+                        $formattedAddresses = [];
+                        foreach ($addresses as $addr) {
+                            // Processa o campo phones se existir
+                            $phones = [];
+                            if (!empty($addr->phones)) {
+                                $phones = json_decode($addr->phones, true);
+                                if (!is_array($phones)) {
+                                    $phones = [];
+                                }
+                            }
+                            
+                            $formattedAddresses[] = [
+                                'rowNumber' => isset($addr->rownumber) ? $addr->rownumber : count($formattedAddresses) + 1,
+                                'main' => ($addr->main === 't' || $addr->main === true),
+                                'place' => $addr->place ?? '',
+                                'address' => $addr->address ?? '',
+                                'streetNumber' => $addr->streetnumber ?? '',
+                                'complement' => $addr->complement ?? '',
+                                'district' => $addr->district ?? '',
+                                'postalCode' => $addr->postalcode ?? '',
+                                'cityID' => $addr->cityid ?? null,
+                                'cityName' => $addr->cityname ?? '',
+                                'state' => $addr->state ?? '',
+                                'phones' => $phones
+                            ];
+                        }
+                        
+                        $vehicle->addresses = $formattedAddresses;
+                        $this->debug("Veículo {$vehicle->plate} tem " . count($formattedAddresses) . " endereço(s) disponíveis");
+                        
+                    } catch (Exception $e) {
+                        $this->error("Erro ao buscar endereços do veículo {$vehicle->id}: " . $e->getMessage());
+                        $vehicle->addresses = [];
+                    }
+                }
+            }
+
+            return $response
+                ->withHeader('Content-type', 'application/json')
+                ->withJson([
+                    'result' => 'OK',
+                    'params' => $request->getQueryParams(),
+                    'message' => "Placas que contém '{$searchTerm}'",
+                    'data' => $vehicles
+                ]);
+                
+        } catch(Exception $exception) {
+            $this->error("Erro ao recuperar placas: " . $exception->getMessage());
+            
+            return $response
+                ->withHeader('Content-type', 'application/json')
+                ->withJson([
+                    'result' => 'NOK',
+                    'params' => $request->getQueryParams(),
+                    'message' => "Erro ao localizar placas",
+                    'data' => []
+                ]);
+        }
+    }
 }

@@ -672,7 +672,10 @@ class AppointmentsController extends Controller
     /**
      * Processa dados do agendamento antes da validação
      */
-    protected function processAppointmentData(array $rawData, bool $isNew = true): array
+    /**
+ * Processa dados do agendamento antes da validação
+ */
+protected function processAppointmentData(array $rawData, bool $isNew = true): array
 {
     $processedData = $rawData;
     
@@ -685,7 +688,9 @@ class AppointmentsController extends Controller
         $processedData['status'] = $rawData['status'] ?? 'Pendente';
     }
     
-    // Usar o customer_id se fornecido
+    // ========================================
+    // PROCESSAR CLIENTE
+    // ========================================
     if (!empty($rawData['customer_id'])) {
         $processedData['customerid'] = $rawData['customer_id'];
     } else {
@@ -694,12 +699,196 @@ class AppointmentsController extends Controller
         $processedData['customerid'] = $customer->entityid;
     }
     
-    // Processa veículo
-    $vehicle = $this->processVehicle($rawData, $processedData['contractorid'], $processedData['customerid']);
-    $processedData['vehicleid'] = $vehicle->vehicleid;
+    // ========================================
+    // PROCESSAR VEÍCULO
+    // ========================================
+    if (!empty($rawData['plateid'])) {
+        $processedData['vehicleid'] = $rawData['plateid'];
+    } else {
+        // Fallback: processa veículo pela placa
+        $vehicle = $this->processVehicle($rawData, $processedData['contractorid'], $processedData['customerid']);
+        $processedData['vehicleid'] = $vehicle->vehicleid;
+    }
     
-    // Define prestador de serviço padrão
-    $processedData['serviceproviderid'] = $rawData['serviceproviderid'] ?? config('appointments.default_service_provider');
+    // ========================================
+    // PROCESSAR DATA E HORA/PERÍODO
+    // ========================================
+    $scheduleType = $rawData['schedule_type'] ?? 'time';
+    $scheduledDate = $rawData['scheduled_date'] ?? '';
+    
+    // Converter data do formato DD/MM/YYYY para YYYY-MM-DD
+    if ($scheduledDate) {
+        $dateParts = explode('/', $scheduledDate);
+        if (count($dateParts) === 3) {
+            $scheduledDate = $dateParts[2] . '-' . $dateParts[1] . '-' . $dateParts[0];
+        }
+    }
+    
+    if ($scheduleType === 'period') {
+        // Agendamento por período
+        $period = $rawData['scheduled_period'] ?? '';
+        
+        if ($period === 'morning') {
+            // Período da manhã: 8h às 12h
+            $processedData['scheduledat'] = $scheduledDate . ' 08:00:00';
+            $processedData['endedat'] = $scheduledDate . ' 12:00:00';
+            $processedData['appointment_period'] = 'Manhã (8h às 12h)';
+        } else if ($period === 'afternoon') {
+            // Período da tarde: 13h às 17h
+            $processedData['scheduledat'] = $scheduledDate . ' 13:00:00';
+            $processedData['endedat'] = $scheduledDate . ' 17:00:00';
+            $processedData['appointment_period'] = 'Tarde (13h às 17h)';
+        }
+        
+        // Adicionar informação do período nas notas
+        $periodNote = "Agendamento por período: " . $processedData['appointment_period'];
+        if (!empty($processedData['notes'])) {
+            $processedData['notes'] = $periodNote . "\n" . $processedData['notes'];
+        } else {
+            $processedData['notes'] = $periodNote;
+        }
+        
+    } else {
+        // Agendamento por horário específico
+        $scheduledTime = $rawData['scheduled_time'] ?? '';
+        
+        if ($scheduledTime) {
+            $processedData['scheduledat'] = $scheduledDate . ' ' . $scheduledTime . ':00';
+            // Estimar fim em 1 hora após o início (pode ser ajustado conforme necessário)
+            $endTime = date('Y-m-d H:i:s', strtotime($processedData['scheduledat'] . ' +1 hour'));
+            $processedData['endedat'] = $endTime;
+        }
+    }
+    
+    // ========================================
+    // PROCESSAR ENDEREÇO COMPLETO
+    // ========================================
+    
+    // Endereço principal
+    $processedData['address'] = $rawData['service_address'] ?? '';
+    $processedData['streetnumber'] = $rawData['service_number'] ?? '';
+    $processedData['complement'] = $rawData['service_complement'] ?? '';
+    $processedData['district'] = $rawData['service_district'] ?? '';
+    $processedData['postalcode'] = $rawData['service_postalcode'] ?? '';
+    
+    // Processar cidade
+    if (!empty($rawData['service_city'])) {
+        // Se a cidade veio como "São Paulo - SP", separar cidade e estado
+        $cityParts = explode(' - ', $rawData['service_city']);
+        $cityName = trim($cityParts[0]);
+        $state = isset($cityParts[1]) ? trim($cityParts[1]) : '';
+        
+        // Buscar ID da cidade no banco
+        try {
+            $cityQuery = "SELECT cityid FROM erp.cities WHERE name ILIKE :cityname";
+            $params = ['cityname' => $cityName];
+            
+            if ($state) {
+                $cityQuery .= " AND state = :state";
+                $params['state'] = $state;
+            }
+            
+            $cityQuery .= " LIMIT 1";
+            
+            $cities = $this->DB->select($cityQuery, $params);
+            
+            if (!empty($cities)) {
+                $processedData['cityid'] = $cities[0]->cityid;
+            } else {
+                // Se não encontrar, usar cidade padrão ou criar
+                $processedData['cityid'] = config('appointments.default_city_id', 1);
+            }
+        } catch (Exception $e) {
+            $this->error("Erro ao buscar cidade: {error}", ['error' => $e->getMessage()]);
+            $processedData['cityid'] = config('appointments.default_city_id', 1);
+        }
+    }
+    
+    // ========================================
+    // PROCESSAR TIPO DE SERVIÇO
+    // ========================================
+    $processedData['servicetype'] = $rawData['service_type'] ?? '';
+    
+    // Se for emergência, adicionar flag
+    if ($processedData['servicetype'] === 'emergency') {
+        $processedData['priority'] = 'high';
+        $processedData['is_emergency'] = true;
+        
+        // Adicionar nota de emergência
+        $emergencyNote = "*** ATENDIMENTO DE EMERGÊNCIA ***";
+        if (!empty($processedData['notes'])) {
+            $processedData['notes'] = $emergencyNote . "\n" . $processedData['notes'];
+        } else {
+            $processedData['notes'] = $emergencyNote;
+        }
+    } else {
+        $processedData['priority'] = 'normal';
+        $processedData['is_emergency'] = false;
+    }
+    
+    // ========================================
+    // PROCESSAR TÉCNICO
+    // ========================================
+    $processedData['technicianid'] = $rawData['technician_id'] ?? null;
+    
+    // ========================================
+    // PRESTADOR DE SERVIÇO
+    // ========================================
+    // Se não foi especificado, usar o padrão
+    if (empty($processedData['serviceproviderid'])) {
+        // Buscar prestador baseado no técnico
+        if ($processedData['technicianid']) {
+            try {
+                $techQuery = "SELECT serviceproviderid FROM erp.technicians WHERE technicianid = :techid";
+                $techs = $this->DB->select($techQuery, ['techid' => $processedData['technicianid']]);
+                
+                if (!empty($techs)) {
+                    $processedData['serviceproviderid'] = $techs[0]->serviceproviderid;
+                }
+            } catch (Exception $e) {
+                $this->error("Erro ao buscar prestador do técnico: {error}", ['error' => $e->getMessage()]);
+            }
+        }
+        
+        // Se ainda não tem prestador, usar o padrão
+        if (empty($processedData['serviceproviderid'])) {
+            $processedData['serviceproviderid'] = config('appointments.default_service_provider', 1);
+        }
+    }
+    
+    // ========================================
+    // VALIDAR DADOS OBRIGATÓRIOS
+    // ========================================
+    $requiredFields = [
+        'contractorid' => 'ID do contratante',
+        'customerid' => 'Cliente',
+        'vehicleid' => 'Veículo',
+        'technicianid' => 'Técnico',
+        'servicetype' => 'Tipo de serviço',
+        'scheduledat' => 'Data/hora agendada',
+        'address' => 'Endereço',
+        'cityid' => 'Cidade'
+    ];
+    
+    foreach ($requiredFields as $field => $label) {
+        if (empty($processedData[$field])) {
+            throw new RuntimeException("Campo obrigatório não preenchido: {$label}");
+        }
+    }
+    
+    // Log dos dados processados para debug
+    $this->debug("Dados processados para agendamento:", [
+        'customer_id' => $processedData['customerid'],
+        'vehicle_id' => $processedData['vehicleid'],
+        'technician_id' => $processedData['technicianid'],
+        'service_type' => $processedData['servicetype'],
+        'scheduled_at' => $processedData['scheduledat'],
+        'ended_at' => $processedData['endedat'] ?? null,
+        'address' => $processedData['address'],
+        'city_id' => $processedData['cityid'],
+        'is_emergency' => $processedData['is_emergency'] ?? false,
+        'schedule_type' => $scheduleType
+    ]);
     
     return $processedData;
 }
@@ -959,3 +1148,4 @@ public function getCustomerAutocompletion(Request $request, Response $response):
     }
 }
 }
+

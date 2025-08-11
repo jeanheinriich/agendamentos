@@ -364,9 +364,9 @@ COMMENT ON TABLE erp.work_orders_history IS 'Histórico de alterações nas orde
 COMMENT ON TABLE erp.service_types IS 'Tipos de serviço disponíveis';
 
 -- 17. Permissões
-ALTER TABLE erp.work_orders OWNER TO admin;
-ALTER TABLE erp.work_orders_history OWNER TO admin;
-ALTER TABLE erp.service_types OWNER TO admin;
+ALTER TABLE erp.work_orders OWNER TO postgres;
+ALTER TABLE erp.work_orders_history OWNER TO postgres;
+ALTER TABLE erp.service_types OWNER TO postgres;
 
 -- 18. Criação da primeira partição (exemplo para janeiro 2025)
 CREATE TABLE IF NOT EXISTS erp.work_orders_202501 PARTITION OF erp.work_orders

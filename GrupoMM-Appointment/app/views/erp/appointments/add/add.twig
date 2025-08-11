@@ -181,6 +181,168 @@
       background-color: #f8ffff !important;
       border: 1px solid #b5d3e7;
     }
+    
+    /* Estilos para seleção de endereços */
+    #address_options_list .segment {
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    
+    #address_options_list .segment:hover {
+      background-color: #f8f9fa;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    #address_options_list .segment.selected {
+      background-color: #e8f4fd;
+      border-left: 3px solid #2185d0;
+    }
+    
+    .address-radio {
+      margin-right: 10px;
+    }
+    
+    .address-main-badge {
+      display: inline-block;
+      background: #2185d0;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 0.85em;
+      margin-left: 10px;
+    }
+    
+    .address-place {
+      font-weight: bold;
+      color: #2185d0;
+      margin-bottom: 5px;
+    }
+    
+    .address-details {
+      color: #666;
+      font-size: 0.95em;
+      line-height: 1.5;
+    }
+    
+    .address-phones {
+      margin-top: 5px;
+      font-size: 0.9em;
+      color: #888;
+    }
+    
+    #manual_address_form {
+      transition: all 0.3s ease;
+    }
+    
+    #manual_address_form.hidden {
+      display: none;
+    }
+    
+    .new-address-option {
+      background-color: #f8ffff !important;
+      border: 2px dashed #2185d0 !important;
+    }
+    
+    .new-address-option:hover {
+      background-color: #e8f4fd !important;
+    }
+    
+    .new-address-option .icon {
+      color: #2185d0;
+    }
+    
+    /* Estilos para autocomplete de CEP */
+    .ui.input.loading input {
+      background-image: url('data:image/gif;base64,R0lGODlhEAAQAPIAAP///wAAAMLCwkJCQgAAAGJiYoKCgpKSkiH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAADMwi63P4wyklrE2MIOggZnAdOmGYJRbExwroUmcG2LmDEwnHQLVsYOd2mBzkYDAdKa+dIAAAh+QQJCgAAACwAAAAAEAAQAAADNAi63P5OjCEgG4QMu7DmikRxQlFUYDEZIGBMRVsaqHwctXXf7WEYB4Ag1xjihkMZsiUkKhIAIfkECQoAAAAsAAAAABAAEAAAAzYIujIjK8pByJDMlFYvBoVjHA70GU7xSUJhmKtwHPAKzLO9HMaoKwJZ7Rf8AYPDDzKpZBqfvwQAIfkECQoAAAAsAAAAABAAEAAAAzMIumIlK8oyhpHsnFZfhYumCYUhDAQxRIdhHBGqRoKw0R8DYlJd8z0fMDgsGo/IpHI5TAAAIfkECQoAAAAsAAAAABAAEAAAAzIIunInK0rnZBTwGPNMgQwmdsNgXGJUlIWEuR5oWUIpz8pAEAMe6TwfwyYsGo/IpFKSAAAh+QQJCgAAACwAAAAAEAAQAAADMwi6IMKQORfjdOe82p4wGccc4CEuQradylesojEMBgsUc2G7sDX3lQGBMLAJibufbSlKAAAh+QQJCgAAACwAAAAAEAAQAAADMgi63P7wCRHZnFVdmgHu2nFwlWCI3WGc3TSWhUFGxTAUkGCbtgENBMJAEJsxgMLWzpEAACH5BAkKAAAALAAAAAAQABAAAAMyCLrc/jDKSatlQtScKdceCAjDII7HcQ4EMTCpyrCuUBjCYRgHVtqlAiB1YhiCnlsRkAAAOwAAAAAAAAAAAA==');
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 35px !important;
+    }
+    
+    .field.success .ui.input input {
+      background-color: #fcfff5 !important;
+      border-color: #a3c293 !important;
+      color: #2c662d !important;
+      transition: all 0.3s ease;
+    }
+    
+    #cep_message {
+      animation: slideDown 0.3s ease;
+    }
+    
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    #search_cep_btn {
+      margin-left: 10px;
+    }
+    
+    .ui.input .info.circle.icon {
+      cursor: help;
+      opacity: 0.6;
+      margin-left: 5px;
+    }
+    
+    .ui.input .info.circle.icon:hover {
+      opacity: 1;
+    }
+    
+    /* Estilos para seleção de tipo de agendamento */
+    #schedule_type_time.active,
+    #schedule_type_period.active {
+      background-color: #2185d0 !important;
+      color: white !important;
+    }
+    
+    #schedule_type_time:not(.active),
+    #schedule_type_period:not(.active) {
+      background-color: #f8f9fa !important;
+      color: #666 !important;
+    }
+    
+    .ui.two.buttons .button {
+      transition: all 0.3s ease;
+    }
+    
+    /* Estilos para os botões de ação */
+    #cancel_button {
+      background: white !important;
+      border: 1px solid #d4d4d5 !important;
+      color: #db2828 !important;
+      font-weight: 500;
+    }
+    
+    #cancel_button:hover {
+      background: #fff8f8 !important;
+      border-color: #db2828 !important;
+    }
+    
+    #save_button {
+      background-color: #2185d0 !important;
+      color: white !important;
+      font-weight: 500;
+    }
+    
+    #save_button:hover {
+      background-color: #1678c2 !important;
+    }
+    
+    .ui.two.buttons {
+      margin-top: 20px;
+    }
+    
+    .ui.two.buttons .button {
+      margin: 0 !important;
+    }
   </style>
 {% endblock %}
 
@@ -226,7 +388,7 @@
                    placeholder="Digite o nome ou clique para ver clientes..." 
                    value="{{ getValue('customer_name') }}" 
                    autocomplete="off">
-            <i class="search icon"></i>
+            <i class="dropdown icon"></i>
           </div>
           <div class="results"></div>
         </div>
@@ -330,44 +492,85 @@
         Data e Hora do Atendimento
       </h3>
       
-      <div class="two fields">
-        <div class="field required{{ cssError('scheduled_date') }}">
-          <label>Data do Agendamento</label>
-          <div class="ui calendar" id="schedule_calendar">
-            <div class="ui input left icon">
-              <i class="calendar icon"></i>
-              <input type="text" name="scheduled_date" id="scheduled_date" 
-                     placeholder="DD/MM/AAAA" 
-                     value="{{ getValue('scheduled_date') }}">
+      <div class="field required{{ cssError('scheduled_date') }}">
+        <label>Data do Agendamento</label>
+        <div class="ui calendar" id="schedule_calendar">
+          <div class="ui input left icon">
+            <i class="calendar icon"></i>
+            <input type="text" name="scheduled_date" id="scheduled_date" 
+                   placeholder="DD/MM/AAAA" 
+                   value="{{ getValue('scheduled_date') }}">
+          </div>
+        </div>
+        {% if hasError('scheduled_date') %}
+          <small class="helper">{{ getError('scheduled_date') }}</small>
+        {% endif %}
+      </div>
+      
+      {# Seleção de tipo de agendamento: Horário ou Período #}
+      <div class="field">
+        <label>Tipo de Agendamento</label>
+        <div class="ui two buttons">
+          <button type="button" class="ui button active" id="schedule_type_time">
+            <i class="clock icon"></i>
+            Horário Específico
+          </button>
+          <button type="button" class="ui button" id="schedule_type_period">
+            <i class="sun icon"></i>
+            Período
+          </button>
+        </div>
+      </div>
+      
+      {# Container para horário específico #}
+      <div class="field required{{ cssError('scheduled_time') }}" id="time_selection_container">
+        <label>Horário</label>
+        <select name="scheduled_time" id="scheduled_time" class="ui dropdown">
+          <option value="">Selecione o horário</option>
+          {% set current_time = getValue('scheduled_time') %}
+          {% for hour in 8..18 %}
+            {% for minute in ['00', '30'] %}
+              {% if not (hour == 12 and minute == '30') %}
+                {% set time_val = '%02d:%s'|format(hour, minute) %}
+                <option value="{{ time_val }}" {% if current_time == time_val %}selected{% endif %}>{{ time_val }}</option>
+              {% endif %}
+            {% endfor %}
+          {% endfor %}
+        </select>
+        {% if hasError('scheduled_time') %}
+          <small class="helper">{{ getError('scheduled_time') }}</small>
+        {% endif %}
+      </div>
+      
+      {# Container para período #}
+      <div class="field" id="period_selection_container" style="display: none;">
+        <label>Período de Atendimento</label>
+        <div class="ui selection dropdown" id="scheduled_period">
+          <input type="hidden" name="scheduled_period" value="{{ getValue('scheduled_period') }}">
+          <i class="dropdown icon"></i>
+          <div class="default text">Selecione o período</div>
+          <div class="menu">
+            <div class="item" data-value="morning">
+              <i class="sun icon" style="color: #f39c12;"></i>
+              <span style="margin-left: 10px;">
+                <strong>Manhã</strong> 
+                <span style="color: #888; font-size: 0.9em;">(8h às 12h)</span>
+              </span>
+            </div>
+            <div class="item" data-value="afternoon">
+              <i class="sun outline icon" style="color: #e67e22;"></i>
+              <span style="margin-left: 10px;">
+                <strong>Tarde</strong>
+                <span style="color: #888; font-size: 0.9em;">(13h às 17h)</span>
+              </span>
             </div>
           </div>
-          {% if hasError('scheduled_date') %}
-            <small class="helper">{{ getError('scheduled_date') }}</small>
-          {% endif %}
-        </div>
-        
-        <div class="field required{{ cssError('scheduled_time') }}">
-          <label>Horário</label>
-          <select name="scheduled_time" id="scheduled_time" class="ui dropdown">
-            <option value="">Selecione o horário</option>
-            {% set current_time = getValue('scheduled_time') %}
-            {% for hour in 8..18 %}
-              {% for minute in ['00', '30'] %}
-                {% if not (hour == 12 and minute == '30') %}
-                  {% set time_val = '%02d:%s'|format(hour, minute) %}
-                  <option value="{{ time_val }}" {% if current_time == time_val %}selected{% endif %}>{{ time_val }}</option>
-                {% endif %}
-              {% endfor %}
-            {% endfor %}
-          </select>
-          {% if hasError('scheduled_time') %}
-            <small class="helper">{{ getError('scheduled_time') }}</small>
-          {% endif %}
         </div>
       </div>
       
       {# Campo oculto para datetime combinado #}
       <input type="hidden" name="scheduled_at" id="scheduled_at" value="{{ getValue('scheduled_at') }}">
+      <input type="hidden" name="schedule_type" id="schedule_type" value="{{ getValue('schedule_type') ?: 'time' }}">
     </div>
 
     {# SEÇÃO 5: Técnico Responsável #}
@@ -413,53 +616,99 @@
         Local do Atendimento
       </h3>
       
-      <div class="field required{{ cssError('service_address') }}">
-        <label>Endereço</label>
-        <div class="ui input">
-          <input type="text" name="service_address" id="service_address" 
-                 placeholder="Rua, Av..." 
-                 value="{{ getValue('service_address') }}">
+      {# Container para seleção de endereços - aparece após selecionar veículo #}
+      <div id="address_selection_container" style="display: none;">
+        <div class="field">
+          <label>Selecione o Endereço de Entrega</label>
+          <div class="ui info message">
+            <i class="info circle icon"></i>
+            Escolha um endereço existente ou informe um novo local
+          </div>
         </div>
-        {% if hasError('service_address') %}
-          <small class="helper">{{ getError('service_address') }}</small>
-        {% endif %}
+        
+        {# Lista de endereços disponíveis será preenchida via JavaScript #}
+        <div class="field">
+          <div id="address_options_list" class="ui segments">
+            {# Endereços serão inseridos aqui dinamicamente #}
+          </div>
+        </div>
       </div>
       
-      <div class="three fields">
-        <div class="field{{ cssError('service_number') }}">
-          <label>Número</label>
-          <div class="ui input">
-            <input type="text" name="service_number" id="service_number" 
-                   placeholder="123" 
-                   value="{{ getValue('service_number') }}">
+      {# Formulário de endereço manual - sempre visível inicialmente, depois controlado por JS #}
+      <div id="manual_address_form">
+        <div class="two fields">
+          <div class="field">
+            <label>CEP <i class="info circle icon" style="opacity: 0.6;"></i></label>
+            <div class="ui input">
+              <input type="text" name="service_postalcode" id="service_postalcode" 
+                     placeholder="00000-000" 
+                     value="{{ getValue('service_postalcode') }}"
+                     maxlength="9">
+            </div>
+            <div class="ui tiny basic button" id="search_cep_btn" style="margin-top: 5px; display: none;">
+              <i class="search icon"></i>
+              Buscar CEP
+            </div>
           </div>
-          {% if hasError('service_number') %}
-            <small class="helper">{{ getError('service_number') }}</small>
+          
+          <div class="field{{ cssError('service_number') }}">
+            <label>Número <span style="color: red;">*</span></label>
+            <div class="ui input">
+              <input type="text" name="service_number" id="service_number" 
+                     placeholder="123" 
+                     value="{{ getValue('service_number') }}">
+            </div>
+            {% if hasError('service_number') %}
+              <small class="helper">{{ getError('service_number') }}</small>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="field required{{ cssError('service_address') }}">
+          <label>Endereço</label>
+          <div class="ui input">
+            <input type="text" name="service_address" id="service_address" 
+                   placeholder="Rua, Av... (será preenchido automaticamente pelo CEP)" 
+                   value="{{ getValue('service_address') }}">
+          </div>
+          {% if hasError('service_address') %}
+            <small class="helper">{{ getError('service_address') }}</small>
           {% endif %}
         </div>
         
-        <div class="field{{ cssError('service_district') }}">
-          <label>Bairro</label>
-          <div class="ui input">
-            <input type="text" name="service_district" id="service_district" 
-                   placeholder="Centro" 
-                   value="{{ getValue('service_district') }}">
+        <div class="two fields">
+          <div class="field{{ cssError('service_district') }}">
+            <label>Bairro</label>
+            <div class="ui input">
+              <input type="text" name="service_district" id="service_district" 
+                     placeholder="Centro (será preenchido pelo CEP)" 
+                     value="{{ getValue('service_district') }}">
+            </div>
+            {% if hasError('service_district') %}
+              <small class="helper">{{ getError('service_district') }}</small>
+            {% endif %}
           </div>
-          {% if hasError('service_district') %}
-            <small class="helper">{{ getError('service_district') }}</small>
-          {% endif %}
+          
+          <div class="field{{ cssError('service_city') }}">
+            <label>Cidade</label>
+            <div class="ui input">
+              <input type="text" name="service_city" id="service_city" 
+                     placeholder="São Paulo (será preenchido pelo CEP)" 
+                     value="{{ getValue('service_city') }}">
+            </div>
+            {% if hasError('service_city') %}
+              <small class="helper">{{ getError('service_city') }}</small>
+            {% endif %}
+          </div>
         </div>
         
-        <div class="field{{ cssError('service_city') }}">
-          <label>Cidade</label>
+        <div class="field">
+          <label>Complemento</label>
           <div class="ui input">
-            <input type="text" name="service_city" id="service_city" 
-                   placeholder="São Paulo" 
-                   value="{{ getValue('service_city') }}">
+            <input type="text" name="service_complement" id="service_complement" 
+                   placeholder="Apto, Bloco, Sala, etc. (opcional)" 
+                   value="{{ getValue('service_complement') }}">
           </div>
-          {% if hasError('service_city') %}
-            <small class="helper">{{ getError('service_city') }}</small>
-          {% endif %}
         </div>
       </div>
     </div>
@@ -473,34 +722,24 @@
       
       <div class="field{{ cssError('notes') }}">
         <label>Observações</label>
-        <textarea name="notes" id="notes" rows="3" 
-                  placeholder="Informações adicionais sobre o agendamento...">{{ getValue('notes') }}</textarea>
+        <textarea name="notes" id="notes" rows="4" 
+                  placeholder="Informações adicionais sobre o agendamento, referências do local, instruções especiais, etc.">{{ getValue('notes') }}</textarea>
         {% if hasError('notes') %}
           <small class="helper">{{ getError('notes') }}</small>
         {% endif %}
-      </div>
-      
-      <div class="field">
-        <div class="ui checkbox">
-          <input type="checkbox" name="is_emergency" id="is_emergency" value="1" {% if getValue('is_emergency') %}checked{% endif %}>
-          <label>Agendamento de emergência (prioridade alta)</label>
-        </div>
       </div>
     </div>
 
     {# Botões de ação #}
     <div class="ui hidden divider"></div>
     
-    <div class="field">
-      <button type="submit" class="ui large green fluid button" id="save_button">
-        <i class="save icon"></i> Salvar Agendamento
+    <div class="ui two buttons">
+      <button type="button" class="ui large button" id="cancel_button" style="background: white; border: 1px solid #d4d4d5;">
+        <span style="color: #db2828;">Cancelar</span>
       </button>
-    </div>
-    
-    <div class="field">
-      <a href="{{ path_for('ERP\\Appointments\\Calendar') }}" class="ui large fluid button">
-        <i class="cancel icon"></i> Cancelar
-      </a>
+      <button type="submit" class="ui large primary button" id="save_button">
+        Adicionar
+      </button>
     </div>
   </form>
 </div>
@@ -713,13 +952,8 @@ $(document).ready(function() {
                             
                             $('#customer_address_display').text(address || 'Endereço não informado');
                             
-                            // Auto-preencher endereço de atendimento (se vazio)
-                            if (!$('#service_address').val() && ownerData.address) {
-                                $('#service_address').val(ownerData.address);
-                                $('#service_number').val(ownerData.streetnumber || '');
-                                $('#service_district').val(ownerData.district || '');
-                                $('#service_city').val(ownerData.cityname || '');
-                            }
+                            // NÃO preencher mais automaticamente o endereço de atendimento
+                            // Agora será controlado pela seleção de endereços após escolher o veículo
                         }
                     }
                 });
@@ -1012,6 +1246,16 @@ $(document).ready(function() {
         
         // IMPORTANTE: Atualizar tipos de serviço baseado no veículo
         updateServiceTypes(vehicle);
+        
+        // NOVO: Os endereços já vêm no objeto vehicle!
+        if (vehicle.addresses && vehicle.addresses.length > 0) {
+            console.log('Veículo tem ' + vehicle.addresses.length + ' endereços disponíveis');
+            displayAddressOptions(vehicle.addresses);
+        } else {
+            console.log('Veículo não tem endereços cadastrados');
+            $('#address_selection_container').hide();
+            $('#manual_address_form').removeClass('hidden').show();
+        }
     }
     
     // Função para esconder detalhes do veículo
@@ -1022,7 +1266,404 @@ $(document).ready(function() {
         
         // Resetar tipos de serviço
         resetServiceTypes();
+        
+        // Resetar seleção de endereços
+        resetAddressSelection();
     }
+    
+    // ========================================
+    // GERENCIAMENTO DE ENDEREÇOS
+    // ========================================
+    
+    // NÃO PRECISA MAIS da função loadVehicleAddresses pois os endereços já vêm no objeto!
+    // Vamos direto para displayAddressOptions
+    
+    // Função para exibir opções de endereço
+    function displayAddressOptions(addresses) {
+        console.log('Exibindo ' + addresses.length + ' endereços disponíveis');
+        
+        // Mostrar container de seleção
+        $('#address_selection_container').show();
+        
+        // Limpar lista
+        var $list = $('#address_options_list');
+        $list.empty();
+        
+        // Adicionar cada endereço como opção
+        addresses.forEach(function(addr, index) {
+            var isMain = addr.main === true || addr.main === 't';
+            var addressId = 'address_option_' + index;
+            
+            // Formatar telefones
+            var phonesHtml = '';
+            if (addr.phones && addr.phones.length > 0) {
+                var phoneNumbers = addr.phones.map(function(phone) {
+                    return phone.phoneNumber || phone.phonenumber || phone.phoneTypeID;
+                }).filter(function(phone) {
+                    return phone;
+                }).join(' | ');
+                
+                if (phoneNumbers) {
+                    phonesHtml = '<div class="address-phones">' +
+                                '<i class="phone icon"></i>' + phoneNumbers +
+                                '</div>';
+                }
+            }
+            
+            // Montar endereço completo
+            var fullAddress = addr.address || '';
+            if (addr.streetNumber) fullAddress += ', ' + addr.streetNumber;
+            if (addr.complement) fullAddress += ' - ' + addr.complement;
+            if (addr.district) fullAddress += '<br>' + addr.district;
+            if (addr.cityName && addr.state) {
+                fullAddress += ', ' + addr.cityName + '/' + addr.state;
+            }
+            if (addr.postalCode) fullAddress += '<br>CEP: ' + addr.postalCode;
+            
+            var segmentHtml = 
+                '<div class="ui segment" data-address-index="' + index + '">' +
+                '  <div class="ui radio checkbox">' +
+                '    <input type="radio" name="address_selection" id="' + addressId + '" ' +
+                '           value="existing_' + index + '"' +
+                '           data-address-data=\'' + JSON.stringify(addr).replace(/'/g, '&apos;') + '\'>' +
+                '    <label for="' + addressId + '">' +
+                '      <div class="address-place">' +
+                '        ' + (addr.place || 'Endereço ' + (index + 1)) +
+                (isMain ? '<span class="address-main-badge">Principal</span>' : '') +
+                '      </div>' +
+                '      <div class="address-details">' +
+                '        ' + fullAddress +
+                '      </div>' +
+                       phonesHtml +
+                '    </label>' +
+                '  </div>' +
+                '</div>';
+            
+            $list.append(segmentHtml);
+        });
+        
+        // Adicionar opção de novo endereço
+        var newAddressHtml = 
+            '<div class="ui segment new-address-option" data-address-index="new">' +
+            '  <div class="ui radio checkbox">' +
+            '    <input type="radio" name="address_selection" id="address_option_new" value="new">' +
+            '    <label for="address_option_new">' +
+            '      <div class="address-place">' +
+            '        <i class="plus circle icon"></i>' +
+            '        Informar outro endereço' +
+            '      </div>' +
+            '      <div class="address-details">' +
+            '        Clique aqui para informar um endereço diferente' +
+            '      </div>' +
+            '    </label>' +
+            '  </div>' +
+            '</div>';
+        
+        $list.append(newAddressHtml);
+        
+        // Inicializar radio buttons
+        $('.ui.radio.checkbox').checkbox();
+        
+        // Selecionar o endereço principal por padrão
+        var mainAddress = addresses.find(function(addr) {
+            return addr.main === true || addr.main === 't';
+        });
+        
+        if (mainAddress) {
+            var mainIndex = addresses.indexOf(mainAddress);
+            $('#address_option_' + mainIndex).prop('checked', true);
+            $('[data-address-index="' + mainIndex + '"]').addClass('selected');
+            
+            // Preencher campos com endereço principal
+            fillAddressFields(mainAddress);
+            $('#manual_address_form').addClass('hidden');
+        } else {
+            // Se não tem endereço principal, seleciona o primeiro
+            if (addresses.length > 0) {
+                $('#address_option_0').prop('checked', true);
+                $('[data-address-index="0"]').addClass('selected');
+                fillAddressFields(addresses[0]);
+                $('#manual_address_form').addClass('hidden');
+            }
+        }
+        
+        // Eventos de seleção
+        $('input[name="address_selection"]').on('change', function() {
+            var value = $(this).val();
+            
+            // Remover classe selected de todos
+            $('.ui.segment', $list).removeClass('selected');
+            
+            // Adicionar classe selected ao selecionado
+            $(this).closest('.ui.segment').addClass('selected');
+            
+            if (value === 'new') {
+                // Mostrar formulário manual
+                $('#manual_address_form').removeClass('hidden').show();
+                clearAddressFields();
+            } else {
+                // Preencher com endereço selecionado
+                var addressData = JSON.parse($(this).attr('data-address-data'));
+                fillAddressFields(addressData);
+                $('#manual_address_form').addClass('hidden');
+            }
+        });
+        
+        // Click direto no segment
+        $('.ui.segment', $list).on('click', function(e) {
+            if (!$(e.target).is('input')) {
+                $(this).find('input[type="radio"]').prop('checked', true).trigger('change');
+            }
+        });
+    }
+    // Função para preencher campos de endereço
+    function fillAddressFields(addressData) {
+        console.log('Preenchendo campos com endereço:', addressData);
+        
+        $('#service_address').val(addressData.address || '');
+        $('#service_number').val(addressData.streetNumber || '');
+        $('#service_complement').val(addressData.complement || '');
+        $('#service_district').val(addressData.district || '');
+        $('#service_city').val(addressData.cityName || '');
+        $('#service_postalcode').val(addressData.postalCode || '');
+        
+        // Se tiver cityID, pode ser útil armazenar
+        if (addressData.cityID) {
+            $('#service_address').attr('data-city-id', addressData.cityID);
+        }
+    }
+    
+    // Função para limpar campos de endereço
+    function clearAddressFields() {
+        console.log('Limpando campos de endereço');
+        
+        $('#service_address').val('');
+        $('#service_number').val('');
+        $('#service_complement').val('');
+        $('#service_district').val('');
+        $('#service_city').val('');
+        $('#service_postalcode').val('');
+        $('#service_address').removeAttr('data-city-id');
+    }
+    
+    // Função para resetar seleção de endereços
+    function resetAddressSelection() {
+        console.log('Resetando seleção de endereços');
+        
+        $('#address_selection_container').hide();
+        $('#address_options_list').empty();
+        $('#manual_address_form').removeClass('hidden').show();
+        clearAddressFields();
+    }
+    
+    // Máscara para CEP
+    $('#service_postalcode').on('input', function() {
+        var value = $(this).val().replace(/\D/g, '');
+        if (value.length > 5) {
+            value = value.substring(0, 5) + '-' + value.substring(5, 8);
+        }
+        $(this).val(value);
+        
+        // NOVO: Busca CEP automaticamente quando completar 8 dígitos
+        if (value.replace(/\D/g, '').length === 8) {
+            searchCEP(value);
+        }
+    });
+    
+    // ========================================
+    // AUTOCOMPLETE DE CEP
+    // ========================================
+    
+    // Função para buscar CEP
+    function searchCEP(cep) {
+        // Remove caracteres não numéricos
+        var cleanCEP = cep.replace(/\D/g, '');
+        
+        // Validação básica
+        if (cleanCEP.length !== 8) {
+            return;
+        }
+        
+        console.log('Buscando CEP:', cleanCEP);
+        
+        // Mostrar loading no campo CEP
+        $('#service_postalcode').parent().addClass('loading');
+        
+        // Desabilitar campos temporariamente
+        $('#service_address, #service_district, #service_city').prop('readonly', true);
+        
+        // Buscar na API ViaCEP
+        $.ajax({
+            url: 'https://viacep.com.br/ws/' + cleanCEP + '/json/',
+            method: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                console.log('Dados do CEP recebidos:', data);
+                
+                // Remover loading
+                $('#service_postalcode').parent().removeClass('loading');
+                
+                // Habilitar campos
+                $('#service_address, #service_district, #service_city').prop('readonly', false);
+                
+                // Verificar se o CEP é válido
+                if (!data.erro) {
+                    // Preencher campos com dados do CEP
+                    fillAddressFromCEP(data);
+                    
+                    // Mostrar mensagem de sucesso
+                    showCEPMessage('success', 'Endereço encontrado! Complete com o número.');
+                    
+                    // Focar no campo número
+                    $('#service_number').focus();
+                } else {
+                    // CEP não encontrado
+                    showCEPMessage('warning', 'CEP não encontrado. Verifique o número digitado.');
+                }
+            },
+            error: function() {
+                console.error('Erro ao buscar CEP');
+                
+                // Remover loading
+                $('#service_postalcode').parent().removeClass('loading');
+                
+                // Habilitar campos
+                $('#service_address, #service_district, #service_city').prop('readonly', false);
+                
+                // Mostrar mensagem de erro
+                showCEPMessage('error', 'Erro ao buscar CEP. Tente novamente.');
+            }
+        });
+    }
+    
+    // Função para preencher endereço com dados do CEP
+    function fillAddressFromCEP(cepData) {
+        // Preencher logradouro
+        if (cepData.logradouro) {
+            $('#service_address').val(cepData.logradouro);
+        }
+        
+        // Preencher bairro
+        if (cepData.bairro) {
+            $('#service_district').val(cepData.bairro);
+        }
+        
+        // Preencher cidade
+        if (cepData.localidade) {
+            var cidade = cepData.localidade;
+            // Se tiver UF, adicionar
+            if (cepData.uf) {
+                cidade += ' - ' + cepData.uf;
+            }
+            $('#service_city').val(cidade);
+        }
+        
+        // Preencher complemento se vier da API (raro)
+        if (cepData.complemento && !$('#service_complement').val()) {
+            $('#service_complement').val(cepData.complemento);
+        }
+        
+        // Limpar o número (usuário precisa preencher)
+        if (!$('#service_number').val()) {
+            $('#service_number').val('');
+        }
+        
+        // Adicionar classe de sucesso nos campos preenchidos
+        $('#service_address, #service_district, #service_city').each(function() {
+            if ($(this).val()) {
+                $(this).parent().addClass('success');
+                
+                // Remover classe success após 3 segundos
+                setTimeout(function() {
+                    $('#service_address, #service_district, #service_city').parent().removeClass('success');
+                }, 3000);
+            }
+        });
+    }
+    
+    // Função para mostrar mensagem sobre o CEP
+    function showCEPMessage(type, message) {
+        // Remover mensagem anterior se existir
+        $('#cep_message').remove();
+        
+        var iconClass = '';
+        var messageClass = '';
+        
+        switch(type) {
+            case 'success':
+                iconClass = 'check circle';
+                messageClass = 'positive';
+                break;
+            case 'warning':
+                iconClass = 'warning sign';
+                messageClass = 'warning';
+                break;
+            case 'error':
+                iconClass = 'times circle';
+                messageClass = 'negative';
+                break;
+        }
+        
+        var messageHtml = 
+            '<div id="cep_message" class="ui ' + messageClass + ' message" style="margin-top: 10px;">' +
+            '  <i class="' + iconClass + ' icon"></i>' +
+            '  ' + message +
+            '</div>';
+        
+        // Adicionar mensagem após o campo CEP
+        $('#service_postalcode').closest('.field').after(messageHtml);
+        
+        // Auto remover mensagem após 5 segundos
+        setTimeout(function() {
+            $('#cep_message').transition('fade');
+            setTimeout(function() {
+                $('#cep_message').remove();
+            }, 500);
+        }, 5000);
+    }
+    
+    // Adicionar botão de busca manual de CEP (opcional)
+    $('#service_postalcode').parent().after(
+        '<div class="ui tiny basic button" id="search_cep_btn" style="margin-top: 5px; display: none;">' +
+        '  <i class="search icon"></i>' +
+        '  Buscar CEP' +
+        '</div>'
+    );
+    
+    // Mostrar botão de busca quando tiver 8 dígitos
+    $('#service_postalcode').on('input', function() {
+        var cleanValue = $(this).val().replace(/\D/g, '');
+        if (cleanValue.length === 8) {
+            $('#search_cep_btn').show();
+        } else {
+            $('#search_cep_btn').hide();
+            $('#cep_message').remove();
+        }
+    });
+    
+    // Evento do botão de busca manual
+    $('#search_cep_btn').on('click', function() {
+        var cep = $('#service_postalcode').val();
+        if (cep) {
+            searchCEP(cep);
+        }
+    });
+    
+    // Configurar tooltip de ajuda no CEP
+    $('#service_postalcode').parent().parent().find('.info.icon').attr({
+        'data-content': 'Digite o CEP para buscar o endereço automaticamente',
+        'data-variation': 'tiny'
+    }).popup();
+    
+    // Validação para aceitar apenas números no CEP
+    $('#service_postalcode').on('keypress', function(e) {
+        // Permitir apenas números, backspace, delete e hífen
+        var charCode = e.which || e.keyCode;
+        if (charCode !== 8 && charCode !== 46 && charCode !== 45 && (charCode < 48 || charCode > 57)) {
+            e.preventDefault();
+            return false;
+        }
+    });
     
     // ========================================
     // LÓGICA DE NEGÓCIO PARA TIPOS DE SERVIÇO
@@ -1078,7 +1719,7 @@ $(document).ready(function() {
         if (!vehicleState.hasMainTracker) {
             services.push({
                 value: 'install_main_tracker',
-                text: 'Instalação de Rastreador Principal',
+                text: '🔧 Instalação de Rastreador Principal',
                 category: 'tracker',
                 priority: 1,
                 info: 'Instalação de primeiro rastreador no veículo'
@@ -1087,14 +1728,14 @@ $(document).ready(function() {
             services.push(
                 {
                     value: 'maintenance_main_tracker',
-                    text: 'Manutenção de Rastreador Principal',
+                    text: '🔨 Manutenção de Rastreador Principal',
                     category: 'tracker',
                     priority: 2,
                     info: 'Verificação e reparo do rastreador principal'
                 },
                 {
                     value: 'remove_main_tracker',
-                    text: 'Retirada de Rastreador Principal',
+                    text: '❌ Retirada de Rastreador Principal',
                     category: 'tracker',
                     priority: 5,
                     info: 'Remoção completa do rastreador principal'
@@ -1106,7 +1747,7 @@ $(document).ready(function() {
         if (vehicleState.hasMainTracker && !vehicleState.hasBackupTracker) {
             services.push({
                 value: 'install_backup_tracker',
-                text: 'Instalação de Rastreador Contingência',
+                text: '🔧 Instalação de Rastreador Contingência',
                 category: 'tracker',
                 priority: 3,
                 info: 'Instalação de rastreador de backup para redundância'
@@ -1115,14 +1756,14 @@ $(document).ready(function() {
             services.push(
                 {
                     value: 'maintenance_backup_tracker',
-                    text: 'Manutenção de Rastreador Contingência',
+                    text: '🔨 Manutenção de Rastreador Contingência',
                     category: 'tracker',
                     priority: 4,
                     info: 'Verificação e reparo do rastreador de contingência'
                 },
                 {
                     value: 'remove_backup_tracker',
-                    text: 'Retirada de Rastreador Contingência',
+                    text: '❌ Retirada de Rastreador Contingência',
                     category: 'tracker',
                     priority: 6,
                     info: 'Remoção do rastreador de contingência'
@@ -1135,7 +1776,7 @@ $(document).ready(function() {
             if (!vehicleState.hasVideoTelemetry) {
                 services.push({
                     value: 'install_videotelemetry',
-                    text: 'Instalação de VideoTelemetria',
+                    text: '📹 Instalação de VideoTelemetria',
                     category: 'video',
                     priority: 7,
                     info: 'Instalação de sistema de câmeras e telemetria'
@@ -1144,14 +1785,14 @@ $(document).ready(function() {
                 services.push(
                     {
                         value: 'maintenance_videotelemetry',
-                        text: 'Manutenção de VideoTelemetria',
+                        text: '🔧 Manutenção de VideoTelemetria',
                         category: 'video',
                         priority: 8,
                         info: 'Verificação e ajuste do sistema de vídeo'
                     },
                     {
                         value: 'remove_videotelemetry',
-                        text: 'Retirada de VideoTelemetria',
+                        text: '❌ Retirada de VideoTelemetria',
                         category: 'video',
                         priority: 9,
                         info: 'Remoção do sistema de videotelemetria'
@@ -1164,7 +1805,7 @@ $(document).ready(function() {
         if (vehicleState.hasMainTracker || vehicleState.hasBackupTracker) {
             services.push({
                 value: 'install_accessory',
-                text: 'Instalação de Acessório',
+                text: '➕ Instalação de Acessório',
                 category: 'accessory',
                 priority: 10,
                 info: 'Instalação de bloqueador, sirene, botão de pânico, etc.'
@@ -1173,7 +1814,7 @@ $(document).ready(function() {
             if (vehicleState.hasAccessories) {
                 services.push({
                     value: 'maintenance_accessory',
-                    text: 'Manutenção de Acessório',
+                    text: '🔧 Manutenção de Acessório',
                     category: 'accessory',
                     priority: 11,
                     info: 'Reparo ou ajuste de acessórios instalados'
@@ -1186,7 +1827,7 @@ $(document).ready(function() {
         if (vehicleState.isBlocked) {
             services.push({
                 value: 'emergency',
-                text: 'EMERGÊNCIA - Veículo Bloqueado',
+                text: '🚨 EMERGÊNCIA - Veículo Bloqueado',
                 category: 'general',
                 priority: 0, // Máxima prioridade
                 info: 'Desbloqueio de emergência - veículo atualmente bloqueado',
@@ -1195,7 +1836,7 @@ $(document).ready(function() {
         } else {
             services.push({
                 value: 'emergency',
-                text: 'Emergência',
+                text: '🚨 Emergência',
                 category: 'general',
                 priority: 12,
                 info: 'Atendimento de emergência (desbloqueio, pane, etc.)'
@@ -1204,7 +1845,7 @@ $(document).ready(function() {
         
         services.push({
             value: 'inspection',
-            text: 'Vistoria',
+            text: '🔍 Vistoria',
             category: 'general',
             priority: 13,
             info: 'Vistoria geral do veículo e equipamentos'
@@ -1235,10 +1876,10 @@ $(document).ready(function() {
         
         // Agrupar serviços por categoria
         var categories = {
-            'tracker': 'Rastreador',
-            'video': 'VideoTelemetria',
-            'accessory': 'Acessórios',
-            'general': 'Serviços Gerais'
+            'tracker': '🛰️ Rastreador',
+            'video': '📹 VideoTelemetria',
+            'accessory': '⚙️ Acessórios',
+            'general': '📋 Serviços Gerais'
         };
         
         // Organizar serviços por categoria
@@ -1346,6 +1987,18 @@ $(document).ready(function() {
         monthFirst: false,
         today: true,
         minDate: new Date(),
+        // Tradução para português
+        text: {
+            days: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'],
+            months: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
+            monthsShort: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
+                         'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+            today: 'Hoje',
+            now: 'Agora',
+            am: 'AM',
+            pm: 'PM'
+        },
         formatter: { 
             date: function (date, settings) { 
                 if (!date) return ''; 
@@ -1359,12 +2012,60 @@ $(document).ready(function() {
     });
     
     // ========================================
+    // CONTROLE DE TIPO DE AGENDAMENTO
+    // ========================================
+    
+    // Inicializar dropdown de período
+    $('#scheduled_period').dropdown();
+    
+    // Eventos dos botões de tipo de agendamento
+    $('#schedule_type_time').on('click', function() {
+        if (!$(this).hasClass('active')) {
+            $(this).addClass('active');
+            $('#schedule_type_period').removeClass('active');
+            
+            // Mostrar seleção de horário
+            $('#time_selection_container').show();
+            $('#period_selection_container').hide();
+            
+            // Atualizar campo hidden
+            $('#schedule_type').val('time');
+            
+            // Limpar seleção de período
+            $('#scheduled_period').dropdown('clear');
+        }
+    });
+    
+    $('#schedule_type_period').on('click', function() {
+        if (!$(this).hasClass('active')) {
+            $(this).addClass('active');
+            $('#schedule_type_time').removeClass('active');
+            
+            // Mostrar seleção de período
+            $('#period_selection_container').show();
+            $('#time_selection_container').hide();
+            
+            // Atualizar campo hidden
+            $('#schedule_type').val('period');
+            
+            // Limpar seleção de horário
+            $('#scheduled_time').dropdown('clear');
+        }
+    });
+    
+    // Verificar valor inicial (em caso de edição)
+    if ($('#schedule_type').val() === 'period') {
+        $('#schedule_type_period').trigger('click');
+    }
+    
+    // ========================================
     // VALIDAÇÃO DO FORMULÁRIO
     // ========================================
     
     $('#appointmentForm').on('submit', function(e) {
         var date = $('#scheduled_date').val();
-        var time = $('#scheduled_time').val();
+        var scheduleType = $('#schedule_type').val();
+        var time = '';
         
         // Validar se cliente foi selecionado
         if (!$('#customer_id').val()) {
@@ -1382,6 +2083,39 @@ $(document).ready(function() {
             return false;
         }
         
+        // Validar data
+        if (!date) {
+            e.preventDefault();
+            alert('Por favor, selecione uma data para o agendamento.');
+            $('#scheduled_date').focus();
+            return false;
+        }
+        
+        // Validar horário ou período
+        if (scheduleType === 'period') {
+            var period = $('input[name="scheduled_period"]').val();
+            if (!period) {
+                e.preventDefault();
+                alert('Por favor, selecione um período para o agendamento.');
+                return false;
+            }
+            
+            // Converter período em horário
+            if (period === 'morning') {
+                time = '08:00'; // Início do período da manhã
+            } else if (period === 'afternoon') {
+                time = '13:00'; // Início do período da tarde
+            }
+        } else {
+            time = $('#scheduled_time').val();
+            if (!time) {
+                e.preventDefault();
+                alert('Por favor, selecione um horário para o agendamento.');
+                $('#scheduled_time').dropdown('show');
+                return false;
+            }
+        }
+        
         // Combinar data e hora
         if (date && time) {
             var dateParts = date.split('/');
@@ -1397,15 +2131,20 @@ $(document).ready(function() {
     });
     
     // ========================================
-    // EVENTOS AUXILIARES
+    // EVENTOS DOS BOTÕES
     // ========================================
+    
+    // Botão cancelar
+    $('#cancel_button').on('click', function() {
+        if (confirm('Tem certeza que deseja cancelar? Todas as informações serão perdidas.')) {
+            window.location.href = '{{ path_for("ERP\\Appointments\\Calendar") }}';
+        }
+    });
     
     // Fechar mensagens
     $('.ui.message .close.icon').on('click', function() {
         $(this).closest('.message').transition('fade');
     });
-    
-    console.log('✨ Sistema de autocomplete v2.0 inicializado com melhorias UX!');
 });
   </script>
 {% endblock %}
