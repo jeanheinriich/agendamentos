@@ -4,119 +4,1172 @@
 
 {% block stylesheets %}
   {{ parent() }}
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@3.10.2/dist/fullcalendar.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css" rel="stylesheet">
+  
   <style>
-    #calendar {
-      background: white;
-      padding: 20px;
+    /* ========================================
+       ESTILOS GERAIS
+    ======================================== */
+    .appointments-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 2rem;
       border-radius: 10px;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     }
-    .fc-event {
-      font-size: 13px;
-      padding: 4px;
+
+    .appointments-header h1 {
+      margin: 0;
+      font-weight: 600;
     }
+
+    .appointments-header .subtitle {
+      opacity: 0.9;
+      margin-top: 0.5rem;
+    }
+
+    /* ========================================
+       CONTROLES E FILTROS
+    ======================================== */
     .calendar-controls {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 10px;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .filter-section {
       display: flex;
-      justify-content: flex-end;
-      margin-bottom: 10px;
-      gap: 10px;
+      gap: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .filter-group {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .filter-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #6b7280;
+      margin-bottom: 0.3rem;
+    }
+
+    .stats-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    .stat-card .stat-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .stat-card.pending .stat-icon {
+      background: #fef3c7;
+      color: #f59e0b;
+    }
+
+    .stat-card.scheduled .stat-icon {
+      background: #dbeafe;
+      color: #3b82f6;
+    }
+
+    .stat-card.completed .stat-icon {
+      background: #d1fae5;
+      color: #10b981;
+    }
+
+    .stat-card.emergency .stat-icon {
+      background: #fee2e2;
+      color: #ef4444;
+    }
+
+    .stat-card .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #1f2937;
+      line-height: 1;
+    }
+
+    .stat-card .stat-label {
+      font-size: 0.875rem;
+      color: #6b7280;
+      margin-top: 0.5rem;
+    }
+
+    /* ========================================
+       CALENDÁRIO
+    ======================================== */
+    #calendar-container {
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      position: relative;
+    }
+
+    #calendar {
+      min-height: 600px;
+    }
+
+    /* Customização do FullCalendar */
+    .fc {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .fc-toolbar {
+      margin-bottom: 2rem;
+      padding: 0 1rem;
+    }
+
+    .fc-toolbar-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .fc-button-primary {
+      background: #667eea !important;
+      border-color: #667eea !important;
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .fc-button-primary:hover {
+      background: #5a67d8 !important;
+      border-color: #5a67d8 !important;
+      transform: translateY(-1px);
+    }
+
+    .fc-button-primary:disabled {
+      background: #9ca3af !important;
+      border-color: #9ca3af !important;
+    }
+
+    .fc-button-active {
+      background: #764ba2 !important;
+      border-color: #764ba2 !important;
+    }
+
+    /* Eventos no calendário */
+    .fc-event {
+      border: none;
+      padding: 4px 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-radius: 4px;
+    }
+
+    .fc-event:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .fc-event-time {
+      font-weight: 600;
+      margin-right: 4px;
+    }
+
+    .fc-daygrid-event {
+      white-space: normal;
+    }
+
+    /* Indicador de emergência */
+    .fc-event.emergency {
+      animation: pulse 2s infinite;
+      border: 2px solid #dc2626 !important;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+      }
+    }
+
+    /* ========================================
+       MODAL DE DETALHES
+    ======================================== */
+    .appointment-modal .modal-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 0.5rem 0.5rem 0 0;
+    }
+
+    .appointment-modal .modal-body {
+      padding: 2rem;
+    }
+
+    .detail-section {
+      margin-bottom: 2rem;
+    }
+
+    .detail-section h4 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .detail-item {
+      padding: 0.75rem;
+      background: #f9fafb;
+      border-radius: 6px;
+    }
+
+    .detail-label {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-bottom: 0.25rem;
+      font-weight: 500;
+    }
+
+    .detail-value {
+      font-size: 0.95rem;
+      color: #1f2937;
+      font-weight: 600;
+    }
+
+    /* Status badges */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      gap: 0.25rem;
+    }
+
+    .status-badge.pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-badge.scheduled {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .status-badge.in_progress {
+      background: #e9d5ff;
+      color: #6b21a8;
+    }
+
+    .status-badge.completed {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .status-badge.cancelled {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    /* Priority badges */
+    .priority-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .priority-badge.very-high {
+      background: #dc2626;
+      color: white;
+    }
+
+    .priority-badge.high {
+      background: #f59e0b;
+      color: white;
+    }
+
+    .priority-badge.normal {
+      background: #10b981;
+      color: white;
+    }
+
+    .priority-badge.low {
+      background: #3b82f6;
+      color: white;
+    }
+
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 2rem;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 0.75rem;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #e5e7eb;
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 1.5rem;
+      padding-left: 1rem;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -1.25rem;
+      top: 0.25rem;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: white;
+      border: 2px solid #667eea;
+    }
+
+    .timeline-date {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-bottom: 0.25rem;
+    }
+
+    .timeline-content {
+      background: #f9fafb;
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+    }
+
+    /* Action buttons */
+    .action-buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .action-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .action-btn.primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .action-btn.success {
+      background: #10b981;
+      color: white;
+    }
+
+    .action-btn.warning {
+      background: #f59e0b;
+      color: white;
+    }
+
+    .action-btn.danger {
+      background: #ef4444;
+      color: white;
+    }
+
+    .action-btn.secondary {
+      background: #6b7280;
+      color: white;
+    }
+
+    /* Loading overlay */
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      border-radius: 10px;
+    }
+
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid #e5e7eb;
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+      .filter-section {
+        flex-direction: column;
+      }
+      
+      .filter-group {
+        width: 100%;
+      }
+      
+      .stats-cards {
+        grid-template-columns: 1fr;
+      }
+      
+      .fc-toolbar {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      
+      .fc-toolbar-chunk {
+        display: flex;
+        justify-content: center;
+      }
     }
   </style>
 {% endblock %}
 
 {% block content %}
+<div class="ui main basic segment">
+  <!-- Header Principal -->
+  <div class="appointments-header">
+    <h1>
+      <i class="far fa-calendar-alt"></i> Calendário de Agendamentos
+    </h1>
+    <div class="subtitle">
+      Gerencie todos os agendamentos e ordens de serviço do sistema
+    </div>
+  </div>
 
-  <div class="ui main basic segment">
-    <h2 class="ui blue header">
-      <i class="calendar alternate outline icon"></i>
-      <div class="content">
-        Calendário de Agendamentos
-        <div class="sub header">Visualize todos os agendamentos do sistema</div>
+  <!-- Cards de Estatísticas -->
+  <div class="stats-cards" id="stats-container">
+    <div class="stat-card pending">
+      <div class="stat-icon">
+        <i class="far fa-clock"></i>
       </div>
-    </h2>
-
-    <div class="calendar-controls">
-      <button class="ui primary button" id="btn-novo-agendamento">
-        <i class="plus icon"></i> Novo Agendamento
-      </button>
-      <button class="ui button" id="btn-filtro">
-        <i class="filter icon"></i> Filtros
-      </button>
+      <div class="stat-value" id="stat-pending">0</div>
+      <div class="stat-label">Pendentes</div>
     </div>
+    
+    <div class="stat-card scheduled">
+      <div class="stat-icon">
+        <i class="far fa-calendar-check"></i>
+      </div>
+      <div class="stat-value" id="stat-scheduled">0</div>
+      <div class="stat-label">Agendados</div>
+    </div>
+    
+    <div class="stat-card completed">
+      <div class="stat-icon">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div class="stat-value" id="stat-completed">0</div>
+      <div class="stat-label">Concluídos</div>
+    </div>
+    
+    <div class="stat-card emergency">
+      <div class="stat-icon">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <div class="stat-value" id="stat-emergency">0</div>
+      <div class="stat-label">Emergências</div>
+    </div>
+  </div>
 
+  <!-- Controles e Filtros -->
+  <div class="calendar-controls">
+    <div class="filter-section">
+      <div class="filter-group">
+        <label>Técnico</label>
+        <select class="ui fluid dropdown" id="filter-technician">
+          <option value="">Todos os técnicos</option>
+          {% for technician in technicians %}
+            <option value="{{ technician.value|default(technician.technicianid) }}">
+              {{ technician.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Cliente</label>
+        <select class="ui fluid search dropdown" id="filter-customer">
+          <option value="">Todos os clientes</option>
+          {% for customer in customers %}
+            <option value="{{ customer.entityid }}">{{ customer.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Status</label>
+        <select class="ui fluid dropdown" id="filter-status">
+          <option value="">Todos os status</option>
+          {% for key, label in statusOptions %}
+            <option value="{{ key }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>&nbsp;</label>
+        <div class="ui buttons">
+          <button class="ui button" id="btn-clear-filters">
+            <i class="fas fa-times"></i> Limpar
+          </button>
+          <button class="ui primary button" id="btn-apply-filters">
+            <i class="fas fa-filter"></i> Filtrar
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="ui divider"></div>
+    
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <div class="ui icon buttons">
+          <button class="ui button" id="btn-today">
+            <i class="fas fa-calendar-day"></i> Hoje
+          </button>
+          <button class="ui button" id="btn-week-view">
+            <i class="fas fa-calendar-week"></i> Semana
+          </button>
+          <button class="ui button" id="btn-month-view">
+            <i class="fas fa-calendar-alt"></i> Mês
+          </button>
+          <button class="ui button" id="btn-list-view">
+            <i class="fas fa-list"></i> Lista
+          </button>
+        </div>
+      </div>
+      
+      <div>
+        <button class="ui green button" id="btn-new-appointment">
+          <i class="fas fa-plus"></i> Novo Agendamento
+        </button>
+        <button class="ui teal button" id="btn-refresh">
+          <i class="fas fa-sync-alt"></i> Atualizar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Container do Calendário -->
+  <div id="calendar-container">
     <div id="calendar"></div>
+    <div class="loading-overlay" id="calendar-loading" style="display: none;">
+      <div class="loading-spinner"></div>
+    </div>
   </div>
+</div>
 
-  <div class="ui modal" id="eventDetailsModal">
-    <i class="close icon"></i>
-    <div class="header">Detalhes do Agendamento</div>
-    <div class="content">
-      <p><strong>Cliente:</strong> <span id="modal-title"></span></p>
-      <p><strong>Serviço:</strong> <span id="modal-service"></span></p>
-      <p><strong>Início:</strong> <span id="modal-start"></span></p>
-    </div>
-    <div class="actions">
-      <div class="ui approve button">Fechar</div>
+<!-- Modal de Detalhes do Agendamento -->
+<div class="ui large modal appointment-modal" id="appointmentDetailsModal">
+  <div class="modal-header">
+    <h3 style="margin: 0; padding: 1.5rem;">
+      <i class="fas fa-clipboard-list"></i> Detalhes do Agendamento
+    </h3>
+  </div>
+  
+  <div class="modal-body">
+    <!-- Será preenchido dinamicamente via JavaScript -->
+    <div id="modal-content">
+      <div class="ui active inverted dimmer">
+        <div class="ui text loader">Carregando...</div>
+      </div>
     </div>
   </div>
+  
+  <div class="actions">
+    <button class="ui button" onclick="$('#appointmentDetailsModal').modal('hide');">
+      Fechar
+    </button>
+    <button class="ui yellow button" id="btn-modal-edit">
+      <i class="fas fa-edit"></i> Editar
+    </button>
+    <button class="ui blue button" id="btn-modal-print">
+      <i class="fas fa-print"></i> Imprimir OS
+    </button>
+    <button class="ui green button" id="btn-modal-complete">
+      <i class="fas fa-check"></i> Concluir
+    </button>
+    <button class="ui red button" id="btn-modal-cancel">
+      <i class="fas fa-times"></i> Cancelar
+    </button>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
   {{ parent() }}
-  <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@3.10.2/dist/fullcalendar.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@3.10.2/dist/locale/pt-br.js"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/pt-br.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/locale/pt-br.js"></script>
+  
   <script>
-    var dados = [
-      {% for appointment in appointments %}
-        {% if appointment.status == 'Pendente' %}
-          {% set color = '#F59E0B' %} {# Laranja #}
-        {% elseif appointment.status == 'Concluido' %}
-          {% set color = '#10B981' %} {# Verde #}
-        {% elseif appointment.status == 'Cancelado' %}
-          {% set color = '#EF4444' %} {# Vermelho #}
-        {% else %}
-          {% set color = '#6B7280' %} {# Cinza padrão #}
-        {% endif%}
-      {
-        id: {{ appointment.id }},
-        title: "{{ appointment.title }}",
-        service: "{{ appointment.servicetype }}",
-        start: "{{ appointment.scheduledat }}",
-        color: "{{ color }}"
-      }{% if not loop.last %},{% endif %}
-      {% endfor %}
-    ];
-    $(document).ready(function () {
-      $('#calendar').fullCalendar({
+// Configuração global
+moment.locale('pt-br');
+
+let calendar;
+let currentWorkOrderId = null;
+let allEvents = [];
+
+$(document).ready(function() {
+    // Inicializar dropdowns do Semantic UI
+    $('.ui.dropdown').dropdown();
+    
+    // Inicializar calendário
+    initializeCalendar();
+    
+    // Carregar eventos
+    loadEvents();
+    
+    // Event Listeners
+    setupEventListeners();
+});
+
+function initializeCalendar() {
+    const calendarEl = document.getElementById('calendar');
+    
+    calendar = new FullCalendar.Calendar(calendarEl, {
         locale: 'pt-br',
+        initialView: 'dayGridMonth',
         height: 'auto',
-        defaultView: 'month',
-        editable: false,
-        eventLimit: true,
-        header: {
-          left: 'prev,next today',
-          center: 'title', 
-          right: 'month,agendaWeek,agendaDay,listMonth'
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
         },
-        events: dados,
-        eventClick: function(event) {
-          $('#modal-title').text(event.title);
-          $('#modal-service').text(event.service);
-          $('#modal-start').text(moment(event.start).format('DD/MM/YYYY HH:mm'));
-          $('#eventDetailsModal').modal('show');
+        buttonText: {
+            today: 'Hoje',
+            month: 'Mês',
+            week: 'Semana',
+            day: 'Dia',
+            list: 'Lista'
+        },
+        editable: false,
+        selectable: true,
+        selectMirror: true,
+        dayMaxEvents: true,
+        weekends: true,
+        
+        // Eventos
+        eventClick: handleEventClick,
+        
+        // Customização de eventos
+        eventDidMount: function(info) {
+            // Adicionar tooltip com Semantic UI
+            $(info.el).popup({
+                title: info.event.extendedProps.work_order_number || 'Agendamento',
+                content: `
+                    <div style="font-size: 0.9em;">
+                        <strong>Cliente:</strong> ${info.event.extendedProps.customer || 'N/A'}<br>
+                        <strong>Veículo:</strong> ${info.event.extendedProps.vehicle || 'N/A'}<br>
+                        <strong>Serviço:</strong> ${info.event.extendedProps.service_type || 'N/A'}<br>
+                        <strong>Técnico:</strong> ${info.event.extendedProps.technician || 'N/A'}<br>
+                        <strong>Status:</strong> ${info.event.extendedProps.status || 'N/A'}
+                    </div>
+                `,
+                position: 'top center',
+                variation: 'wide'
+            });
+            
+            // Marcar emergências
+            if (info.event.extendedProps.is_emergency) {
+                info.el.classList.add('emergency');
+            }
+        },
+        
+        // Clique em data vazia
+        dateClick: function(info) {
+            // Redirecionar para criar novo agendamento com data pré-selecionada
+            const date = moment(info.date).format('DD/MM/YYYY');
+            window.location.href = '/erp/appointments/add?date=' + date;
         }
-      });
-
-      $('#btn-novo-agendamento').click(function () {
-        window.location.href = '/erp/appointments/newAppointment';
-      });
-
-      $('#btn-filtro').click(function () {
-        alert('Funcionalidade de filtro em desenvolvimento.');
-      });
     });
-  </script>
+    
+    calendar.render();
+}
+
+function loadEvents() {
+    showLoading();
+    
+    // Pegar filtros
+    const filters = {
+        technician_id: $('#filter-technician').val(),
+        customer_id: $('#filter-customer').val(),
+        status: $('#filter-status').val()
+    };
+    
+    console.log('Carregando eventos com filtros:', filters);
+    
+    // Buscar eventos
+    $.ajax({
+        url: '{{ path_for("ERP\\Appointments\\Get") }}',
+        method: 'PATCH',
+        data: filters,
+        success: function(events) {
+            console.log('Eventos recebidos:', events);
+            allEvents = events;
+            
+            // Limpar eventos antigos
+            calendar.removeAllEvents();
+            
+            // Adicionar novos eventos
+            if (events && events.length > 0) {
+                calendar.addEventSource(events);
+            }
+            
+            // Atualizar estatísticas
+            updateStatistics(events);
+            
+            hideLoading();
+        },
+        error: function(xhr, status, error) {
+            console.error('Erro ao carregar eventos:', error);
+            showNotification('error', 'Erro ao carregar agendamentos');
+            hideLoading();
+        }
+    });
+}
+
+function updateStatistics(events) {
+    const stats = {
+        pending: 0,
+        scheduled: 0,
+        completed: 0,
+        emergency: 0
+    };
+    
+    if (events && events.length > 0) {
+        events.forEach(event => {
+            const status = event.extendedProps ? event.extendedProps.status : '';
+            
+            if (status === 'Pendente') stats.pending++;
+            else if (status === 'Agendado') stats.scheduled++;
+            else if (status === 'Concluído') stats.completed++;
+            
+            if (event.extendedProps && event.extendedProps.is_emergency) {
+                stats.emergency++;
+            }
+        });
+    }
+    
+    // Atualizar cards
+    $('#stat-pending').text(stats.pending);
+    $('#stat-scheduled').text(stats.scheduled);
+    $('#stat-completed').text(stats.completed);
+    $('#stat-emergency').text(stats.emergency);
+}
+
+function handleEventClick(info) {
+    currentWorkOrderId = info.event.id;
+    console.log('Evento clicado, ID:', currentWorkOrderId);
+    
+    // Abrir modal
+    $('#appointmentDetailsModal').modal('show');
+    
+    // Carregar detalhes
+    loadWorkOrderDetails(currentWorkOrderId);
+}
+
+function loadWorkOrderDetails(workOrderId) {
+    console.log('Carregando detalhes do work order:', workOrderId);
+    
+    $('#modal-content').html(`
+        <div class="ui active inverted dimmer">
+            <div class="ui text loader">Carregando detalhes...</div>
+        </div>
+    `);
+    
+    // Construir URL corretamente
+    const detailsUrl = '/erp/appointments/details/' + workOrderId;
+    
+    $.ajax({
+        url: detailsUrl,
+        method: 'GET',
+        success: function(response) {
+            console.log('Detalhes recebidos:', response);
+            if (response.success) {
+                renderWorkOrderDetails(response.data);
+            } else {
+                $('#modal-content').html(`
+                    <div class="ui warning message">
+                        <div class="header">Aviso</div>
+                        <p>Não foi possível carregar todos os detalhes do agendamento.</p>
+                    </div>
+                `);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Erro ao carregar detalhes:', error);
+            $('#modal-content').html(`
+                <div class="ui negative message">
+                    <i class="close icon"></i>
+                    <div class="header">Erro ao carregar detalhes</div>
+                    <p>Não foi possível carregar os detalhes do agendamento.</p>
+                </div>
+            `);
+        }
+    });
+}
+
+function renderWorkOrderDetails(data) {
+    console.log('Renderizando detalhes:', data);
+    
+    const wo = data.work_order;
+    const statusClass = wo.status.replace('_', '-');
+    const priorityClass = wo.priority <= 2 ? 'very-high' : wo.priority == 3 ? 'normal' : 'low';
+    
+    let html = `
+        <!-- Cabeçalho com Status e Prioridade -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <div>
+                <h2 style="margin: 0;">${wo.number}</h2>
+                <div style="margin-top: 0.5rem;">
+                    <span class="status-badge ${statusClass}">
+                        <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                        ${wo.status_label}
+                    </span>
+                    <span class="priority-badge ${priorityClass}" style="margin-left: 0.5rem;">
+                        ${wo.priority_label}
+                    </span>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 0.875rem; color: #6b7280;">Agendado para</div>
+                <div style="font-size: 1.25rem; font-weight: 600; color: #1f2937;">
+                    ${wo.scheduled_at}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Informações do Cliente -->
+        <div class="detail-section">
+            <h4><i class="fas fa-user"></i> Cliente</h4>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Nome</div>
+                    <div class="detail-value">${data.customer.name}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Documento</div>
+                    <div class="detail-value">${data.customer.document || 'Não informado'}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Informações do Veículo -->
+        <div class="detail-section">
+            <h4><i class="fas fa-car"></i> Veículo</h4>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Placa</div>
+                    <div class="detail-value">${data.vehicle.plate}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Modelo</div>
+                    <div class="detail-value">${data.vehicle.brand || ''} ${data.vehicle.model || ''}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Cor</div>
+                    <div class="detail-value">${data.vehicle.color || 'N/A'}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Informações do Serviço -->
+        <div class="detail-section">
+            <h4><i class="fas fa-wrench"></i> Serviço</h4>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Tipo</div>
+                    <div class="detail-value">${data.service.name}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Categoria</div>
+                    <div class="detail-value">${data.service.category}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Duração Estimada</div>
+                    <div class="detail-value">${data.service.duration}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Técnico</div>
+                    <div class="detail-value">${data.technician.name}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Local do Atendimento -->
+        <div class="detail-section">
+            <h4><i class="fas fa-map-marker-alt"></i> Local do Atendimento</h4>
+            <div class="detail-item">
+                <div class="detail-value">${wo.address}</div>
+            </div>
+        </div>
+        
+        <!-- Observações -->
+        ${wo.observations ? `
+        <div class="detail-section">
+            <h4><i class="fas fa-sticky-note"></i> Observações</h4>
+            <div class="detail-item">
+                <div class="detail-value">${wo.observations}</div>
+            </div>
+        </div>
+        ` : ''}
+        
+        <!-- Timeline de Alterações -->
+        ${data.timeline && data.timeline.length > 0 ? `
+        <div class="detail-section">
+            <h4><i class="fas fa-history"></i> Histórico de Alterações</h4>
+            <div class="timeline">
+                ${data.timeline.map(item => `
+                    <div class="timeline-item">
+                        <div class="timeline-date">${item.date} - ${item.user}</div>
+                        <div class="timeline-content">
+                            <i class="fas fa-${item.icon}"></i> ${item.description}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        ` : ''}
+    `;
+    
+    $('#modal-content').html(html);
+    
+    // Configurar botões baseado no status
+    configurarBotoesModal(wo.status);
+}
+
+function configurarBotoesModal(status) {
+    // Resetar botões
+    $('.modal .actions button').show();
+    
+    // Configurar baseado no status
+    switch(status) {
+        case 'completed':
+            $('#btn-modal-complete').hide();
+            $('#btn-modal-cancel').hide();
+            break;
+        case 'cancelled':
+            $('#btn-modal-complete').hide();
+            $('#btn-modal-cancel').hide();
+            $('#btn-modal-edit').hide();
+            break;
+        case 'in_progress':
+            $('#btn-modal-cancel').hide();
+            break;
+    }
+}
+
+function setupEventListeners() {
+    // Botão novo agendamento
+    $('#btn-new-appointment').on('click', function() {
+        console.log('Botão novo agendamento clicado');
+        window.location.href = '/erp/appointments/add';
+    });
+    
+    // Botão atualizar
+    $('#btn-refresh').on('click', function() {
+        console.log('Botão atualizar clicado');
+        loadEvents();
+    });
+    
+    // Filtros
+    $('#btn-apply-filters').on('click', function() {
+        console.log('Aplicando filtros');
+        loadEvents();
+    });
+    
+    $('#btn-clear-filters').on('click', function() {
+        console.log('Limpando filtros');
+        $('#filter-technician').dropdown('clear');
+        $('#filter-customer').dropdown('clear');
+        $('#filter-status').dropdown('clear');
+        loadEvents();
+    });
+    
+    // Visualizações
+    $('#btn-today').on('click', function() {
+        calendar.today();
+    });
+    
+    $('#btn-week-view').on('click', function() {
+        calendar.changeView('timeGridWeek');
+    });
+    
+    $('#btn-month-view').on('click', function() {
+        calendar.changeView('dayGridMonth');
+    });
+    
+    $('#btn-list-view').on('click', function() {
+        calendar.changeView('listWeek');
+    });
+    
+    // Botões do modal
+    $('#btn-modal-edit').on('click', function() {
+        if (currentWorkOrderId) {
+            console.log('Editando work order:', currentWorkOrderId);
+            window.location.href = '/erp/appointments/edit/' + currentWorkOrderId;
+        }
+    });
+    
+    $('#btn-modal-print').on('click', function() {
+        if (currentWorkOrderId) {
+            console.log('Imprimindo work order:', currentWorkOrderId);
+            window.open('/erp/appointments/pdf/' + currentWorkOrderId);
+        }
+    });
+    
+    $('#btn-modal-complete').on('click', function() {
+        if (currentWorkOrderId) {
+            console.log('Completando work order:', currentWorkOrderId);
+            updateWorkOrderStatus(currentWorkOrderId, 'complete');
+        }
+    });
+    
+    $('#btn-modal-cancel').on('click', function() {
+        if (currentWorkOrderId) {
+            if (confirm('Tem certeza que deseja cancelar este agendamento?')) {
+                console.log('Cancelando work order:', currentWorkOrderId);
+                updateWorkOrderStatus(currentWorkOrderId, 'cancel');
+            }
+        }
+    });
+}
+
+function updateWorkOrderStatus(workOrderId, action) {
+    console.log('Atualizando status:', workOrderId, action);
+    
+    const statusUrl = '/erp/appointments/togglestatus/' + workOrderId;
+    
+    $.ajax({
+        url: statusUrl,
+        method: 'PUT',
+        data: { 
+            action: action,
+            _method: 'PUT' // Para compatibilidade com Slim
+        },
+        success: function(response) {
+            console.log('Status atualizado:', response);
+            if (response.success) {
+                showNotification('success', response.message);
+                $('#appointmentDetailsModal').modal('hide');
+                loadEvents();
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Erro ao atualizar status:', error);
+            showNotification('error', 'Erro ao atualizar status');
+        }
+    });
+}
+
+function showLoading() {
+    $('#calendar-loading').show();
+}
+
+function hideLoading() {
+    $('#calendar-loading').hide();
+}
+
+function showNotification(type, message) {
+    // Criar notificação temporária
+    const notificationClass = type === 'success' ? 'positive' : 'negative';
+    const icon = type === 'success' ? 'check circle' : 'times circle';
+    
+    const notification = $(`
+        <div class="ui ${notificationClass} message" style="position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 300px;">
+            <i class="${icon} icon"></i>
+            ${message}
+        </div>
+    `);
+    
+    $('body').append(notification);
+    
+    // Remover após 3 segundos
+    setTimeout(function() {
+        notification.fadeOut(function() {
+            $(this).remove();
+        });
+    }, 3000);
+}
+
+// Adicionar console.log para debug
+console.log('Script do calendário carregado');
+</script>
 {% endblock %}

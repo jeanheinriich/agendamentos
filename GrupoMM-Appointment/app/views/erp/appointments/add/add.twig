@@ -2,16 +2,13 @@
 
 {% block title %}{{ parent() }} - Novo Agendamento{% endblock %}
 
-{% set getCustomerAutocomplete = { 'URL': 'ERP\\Cadastre\\Entities\\Autocompletion\\Get', 'method': 'PATCH' } %}
-{% set getVehicleCompletion      = { 'URL': 'ERP\\Cadastre\\Vehicles\\Autocompletion\\Get', 'method': 'PATCH' } %}
-
 {% block stylesheets %}
   {{ parent() }}
   {{ css('libs/jquery/plugins/autocomplete/autocomplete.min.css') }}
   {{ css('libs/semantic-ui/components/calendar.min.css') }}
   
   <style>
-    /* Estilos para o formulário de agendamentos */
+    /* MANTENDO O ESTILO ORIGINAL - SEM GRADIENTES */
     .ui.form .fields .field .ui.calendar {
       width: 100%;
     }
@@ -127,61 +124,6 @@
       z-index: 1000;
     }
     
-    /* MELHORIAS UX: Estilo do ícone dropdown */
-    .ui.search.dropdown-style .icon {
-      cursor: pointer;
-      transition: transform 0.2s ease;
-    }
-    
-    .ui.search.dropdown-style .icon:hover {
-      color: #2185d0;
-    }
-    
-    /* Rotação do ícone quando dropdown aberto */
-    .ui.search.dropdown-style.active .icon.dropdown {
-      transform: rotate(180deg);
-    }
-    
-    /* Cursor pointer para campos clicáveis */
-    .ui.search.dropdown-style input {
-      cursor: pointer;
-    }
-    
-    /* Melhor visual para resultados vazios */
-    .ui.search > .results .message {
-      padding: 1em;
-      font-size: 1em;
-      color: #767676;
-    }
-    
-    /* Estilos para dropdown de serviços */
-    #service_type optgroup {
-      font-weight: bold;
-      color: #2185d0;
-    }
-    
-    #service_type option {
-      padding-left: 20px;
-    }
-    
-    #service_type option.emergency-highlight {
-      background-color: #fff5f5;
-      color: #d01919 !important;
-      font-weight: bold;
-    }
-    
-    .ui.dropdown.disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
-    
-    /* Mensagem de informação do serviço */
-    #service_info_message {
-      margin-top: 1em;
-      background-color: #f8ffff !important;
-      border: 1px solid #b5d3e7;
-    }
-    
     /* Estilos para seleção de endereços */
     #address_options_list .segment {
       cursor: pointer;
@@ -239,63 +181,6 @@
       display: none;
     }
     
-    .new-address-option {
-      background-color: #f8ffff !important;
-      border: 2px dashed #2185d0 !important;
-    }
-    
-    .new-address-option:hover {
-      background-color: #e8f4fd !important;
-    }
-    
-    .new-address-option .icon {
-      color: #2185d0;
-    }
-    
-    /* Estilos para autocomplete de CEP */
-    .ui.input.loading input {
-      background-image: url('data:image/gif;base64,R0lGODlhEAAQAPIAAP///wAAAMLCwkJCQgAAAGJiYoKCgpKSkiH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAADMwi63P4wyklrE2MIOggZnAdOmGYJRbExwroUmcG2LmDEwnHQLVsYOd2mBzkYDAdKa+dIAAAh+QQJCgAAACwAAAAAEAAQAAADNAi63P5OjCEgG4QMu7DmikRxQlFUYDEZIGBMRVsaqHwctXXf7WEYB4Ag1xjihkMZsiUkKhIAIfkECQoAAAAsAAAAABAAEAAAAzYIujIjK8pByJDMlFYvBoVjHA70GU7xSUJhmKtwHPAKzLO9HMaoKwJZ7Rf8AYPDDzKpZBqfvwQAIfkECQoAAAAsAAAAABAAEAAAAzMIumIlK8oyhpHsnFZfhYumCYUhDAQxRIdhHBGqRoKw0R8DYlJd8z0fMDgsGo/IpHI5TAAAIfkECQoAAAAsAAAAABAAEAAAAzIIunInK0rnZBTwGPNMgQwmdsNgXGJUlIWEuR5oWUIpz8pAEAMe6TwfwyYsGo/IpFKSAAAh+QQJCgAAACwAAAAAEAAQAAADMwi6IMKQORfjdOe82p4wGccc4CEuQradylesojEMBgsUc2G7sDX3lQGBMLAJibufbSlKAAAh+QQJCgAAACwAAAAAEAAQAAADMgi63P7wCRHZnFVdmgHu2nFwlWCI3WGc3TSWhUFGxTAUkGCbtgENBMJAEJsxgMLWzpEAACH5BAkKAAAALAAAAAAQABAAAAMyCLrc/jDKSatlQtScKdceCAjDII7HcQ4EMTCpyrCuUBjCYRgHVtqlAiB1YhiCnlsRkAAAOwAAAAAAAAAAAA==');
-      background-repeat: no-repeat;
-      background-position: right 10px center;
-      padding-right: 35px !important;
-    }
-    
-    .field.success .ui.input input {
-      background-color: #fcfff5 !important;
-      border-color: #a3c293 !important;
-      color: #2c662d !important;
-      transition: all 0.3s ease;
-    }
-    
-    #cep_message {
-      animation: slideDown 0.3s ease;
-    }
-    
-    @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
-    #search_cep_btn {
-      margin-left: 10px;
-    }
-    
-    .ui.input .info.circle.icon {
-      cursor: help;
-      opacity: 0.6;
-      margin-left: 5px;
-    }
-    
-    .ui.input .info.circle.icon:hover {
-      opacity: 1;
-    }
-    
     /* Estilos para seleção de tipo de agendamento */
     #schedule_type_time.active,
     #schedule_type_period.active {
@@ -317,13 +202,14 @@
     #cancel_button {
       background: white !important;
       border: 1px solid #d4d4d5 !important;
-      color: #db2828 !important;
+      color: rgba(0,0,0,.6) !important;
       font-weight: 500;
     }
     
     #cancel_button:hover {
       background: #fff8f8 !important;
       border-color: #db2828 !important;
+      color: #db2828 !important;
     }
     
     #save_button {
@@ -343,6 +229,28 @@
     .ui.two.buttons .button {
       margin: 0 !important;
     }
+    
+    /* Mensagem de info do serviço */
+    #service_info_message {
+      margin-top: 1em;
+      background-color: #f8ffff !important;
+      border: 1px solid #b5d3e7;
+    }
+    
+    /* Validação para CEP */
+    .ui.input.loading input {
+      background-image: url('data:image/gif;base64,R0lGODlhEAAQAPIAAP///wAAAMLCwkJCQgAAAGJiYoKCgpKSkiH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAADMwi63P4wyklrE2MIOggZnAdOmGYJRbExwroUmcG2LmDEwnHQLVsYOd2mBzkYDAdKa+dIAAAh+QQJCgAAACwAAAAAEAAQAAADNAi63P5OjCEgG4QMu7DmikRxQlFUYDEZIGBMRVsaqHwctXXf7WEYB4Ag1xjihkMZsiUkKhIAIfkECQoAAAAsAAAAABAAEAAAAzYIujIjK8pByJDMlFYvBoVjHA70GU7xSUJhmKtwHPAKzLO9HMaoKwJZ7Rf8AYPDDzKpZBqfvwQAIfkECQoAAAAsAAAAABAAEAAAAzMIumIlK8oyhpHsnFZfhYumCYUhDAQxRIdhHBGqRoKw0R8DYlJd8z0fMDgsGo/IpHI5TAAAIfkECQoAAAAsAAAAABAAEAAAAzIIunInK0rnZBTwGPNMgQwmdsNgXGJUlIWEuR5oWUIpz8pAEAMe6TwfwyYsGo/IpFKSAAAh+QQJCgAAACwAAAAAEAAQAAADMwi6IMKQORfjdOe82p4wGccc4CEuQradylesojEMBgsUc2G7sDX3lQGBMLAJibufbSlKAAAh+QQJCgAAACwAAAAAEAAQAAADMgi63P7wCRHZnFVdmgHu2nFwlWCI3WGc3TSWhUFGxTAUkGCbtgENBMJAEJsxgMLWzpEAACH5BAkKAAAALAAAAAAQABAAAAMyCLrc/jDKSatlQtScKdceCAjDII7HcQ4EMTCpyrCuUBjCYRgHVtqlAiB1YhiCnlsRkAAAOwAAAAAAAAAAAA==');
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 35px !important;
+    }
+    
+    .field.success .ui.input input {
+      background-color: #fcfff5 !important;
+      border-color: #a3c293 !important;
+      color: #2c662d !important;
+      transition: all 0.3s ease;
+    }
   </style>
 {% endblock %}
 
@@ -352,7 +260,7 @@
     <i class="calendar plus outline icon"></i>
     <div class="content">
       Novo Agendamento
-      <div class="sub header">Preencha os dados para criar um novo agendamento técnico</div>
+      <div class="sub header">Preencha os dados para criar uma nova ordem de serviço</div>
     </div>
   </h2>
 
@@ -438,19 +346,17 @@
                    type="text" 
                    name="plate" 
                    id="plate" 
-                   placeholder="Clique para ver todos ou digite para filtrar..." 
+                   placeholder="Selecione um cliente primeiro..." 
                    value="{{ getValue('plate') }}"
-                   autocomplete="off">
+                   autocomplete="off"
+                   disabled>
             <i class="dropdown icon"></i>
           </div>
           <div class="results"></div>
         </div>
         
         <!-- Campo oculto para ID do veículo -->
-        <input type="hidden" 
-               name="plateid" 
-               id="plateid"
-               value="{{ getValue('plateid') }}">
+        <input type="hidden" name="plateid" id="plateid" value="{{ getValue('plateid') }}">
         
         {% if hasError('plate') %}
           <small class="helper">{{ getError('plate') }}</small>
@@ -634,25 +540,21 @@
         </div>
       </div>
       
-      {# Formulário de endereço manual - sempre visível inicialmente, depois controlado por JS #}
+      {# Formulário de endereço manual #}
       <div id="manual_address_form">
         <div class="two fields">
           <div class="field">
-            <label>CEP <i class="info circle icon" style="opacity: 0.6;"></i></label>
+            <label>CEP <span style="color: red;">*</span></label>
             <div class="ui input">
               <input type="text" name="service_postalcode" id="service_postalcode" 
                      placeholder="00000-000" 
                      value="{{ getValue('service_postalcode') }}"
                      maxlength="9">
             </div>
-            <div class="ui tiny basic button" id="search_cep_btn" style="margin-top: 5px; display: none;">
-              <i class="search icon"></i>
-              Buscar CEP
-            </div>
           </div>
           
           <div class="field{{ cssError('service_number') }}">
-            <label>Número <span style="color: red;">*</span></label>
+            <label>Número</label>
             <div class="ui input">
               <input type="text" name="service_number" id="service_number" 
                      placeholder="123" 
@@ -668,7 +570,7 @@
           <label>Endereço</label>
           <div class="ui input">
             <input type="text" name="service_address" id="service_address" 
-                   placeholder="Rua, Av... (será preenchido automaticamente pelo CEP)" 
+                   placeholder="Rua, Avenida..." 
                    value="{{ getValue('service_address') }}">
           </div>
           {% if hasError('service_address') %}
@@ -681,7 +583,7 @@
             <label>Bairro</label>
             <div class="ui input">
               <input type="text" name="service_district" id="service_district" 
-                     placeholder="Centro (será preenchido pelo CEP)" 
+                     placeholder="Centro" 
                      value="{{ getValue('service_district') }}">
             </div>
             {% if hasError('service_district') %}
@@ -690,10 +592,10 @@
           </div>
           
           <div class="field{{ cssError('service_city') }}">
-            <label>Cidade</label>
+            <label>Cidade <span style="color: red;">*</span></label>
             <div class="ui input">
               <input type="text" name="service_city" id="service_city" 
-                     placeholder="São Paulo (será preenchido pelo CEP)" 
+                     placeholder="São Paulo - SP" 
                      value="{{ getValue('service_city') }}">
             </div>
             {% if hasError('service_city') %}
@@ -723,19 +625,19 @@
       <div class="field{{ cssError('notes') }}">
         <label>Observações</label>
         <textarea name="notes" id="notes" rows="4" 
-                  placeholder="Informações adicionais sobre o agendamento, referências do local, instruções especiais, etc.">{{ getValue('notes') }}</textarea>
+                  placeholder="Informações adicionais sobre o agendamento...">{{ getValue('notes') }}</textarea>
         {% if hasError('notes') %}
           <small class="helper">{{ getError('notes') }}</small>
         {% endif %}
       </div>
     </div>
-
+ {{ csrf() }}
     {# Botões de ação #}
     <div class="ui hidden divider"></div>
     
     <div class="ui two buttons">
-      <button type="button" class="ui large button" id="cancel_button" style="background: white; border: 1px solid #d4d4d5;">
-        <span style="color: #db2828;">Cancelar</span>
+      <button type="button" class="ui large button" id="cancel_button">
+        Cancelar
       </button>
       <button type="submit" class="ui large primary button" id="save_button">
         Adicionar
@@ -754,6 +656,39 @@
   {% set getVehicleCompletion      = { 'URL': 'ERP\\Cadastre\\Vehicles\\Autocompletion\\Get', 'method': 'PATCH' } %}
   
   <script>
+  $(document).ready(function() {
+      // Recarregar página se token expirou (previne erro de CSRF)
+      if (window.performance && window.performance.navigation.type === window.performance.navigation.TYPE_BACK_FORWARD) {
+        location.reload();
+      }
+      
+      // MANTER TODO O JAVASCRIPT ORIGINAL QUE JÁ ESTAVA FUNCIONANDO
+      // Todo o código de autocomplete, validação, etc continua igual
+      
+      // Adicionar handler para o submit do formulário
+      $('#appointmentForm').on('submit', function(e) {
+        // Se o token estiver expirado, recarregar a página
+        if ($('input[name="{{ csrf.keys.name }}"]').val() === '') {
+          e.preventDefault();
+          alert('Sessão expirada. A página será recarregada.');
+          location.reload();
+          return false;
+        }
+        
+        // Validações originais continuam aqui...
+        
+        // Adicionar loading ao botão
+        $('#save_button').addClass('loading').prop('disabled', true);
+      });
+      
+      // Handler para erro de CSRF via AJAX
+      $(document).ajaxError(function(event, jqxhr, settings, thrownError) {
+        if (jqxhr.status === 403 || jqxhr.responseText.includes('CSRF')) {
+          alert('Sua sessão expirou. A página será recarregada.');
+          location.reload();
+        }
+      });
+    });
 // ========================================
 // MELHORIAS UX - AUTOCOMPLETES v2.0
 // ========================================

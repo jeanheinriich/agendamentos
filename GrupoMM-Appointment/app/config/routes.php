@@ -695,28 +695,46 @@ $app->group('/erp', function () use ($container) {
   // ------------------------------------------------[ Agendamentos ]-----
 
   $this->group('/appointments', function () use ($container) {
+    // Rotas principais existentes
     $this->get('', 'erp.appointments.controller:show')
          ->setName('ERP\Appointments\Calendar');
+    
     $this->patch('/get', 'erp.appointments.controller:get')
          ->setName('ERP\Appointments\Get');
+    
     $this->map(['GET', 'POST'], '/add', 'erp.appointments.controller:add')
          ->add($container['csrf'])
          ->add($container['trimmer'])
          ->setName('ERP\Appointments\Add');
+    
     $this->map(['GET', 'PUT'], '/edit/{appointmentID}', 'erp.appointments.controller:edit')
          ->add($container['csrf'])
          ->add($container['trimmer'])
          ->setName('ERP\Appointments\Edit');
+    
     $this->delete('/delete/{appointmentID}', 'erp.appointments.controller:delete')
          ->setName('ERP\Appointments\Delete');
+    
     $this->get('/list', 'erp.appointments.controller:index')
          ->setName('ERP\Appointments\List');
+    
     $this->put('/togglestatus/{appointmentID}', 'erp.appointments.controller:toggleStatus')
          ->setName('ERP\Appointments\ToggleStatus');
+    
     $this->get('/pdf/{appointmentID}', 'erp.appointments.controller:getPDF')
          ->setName('ERP\Appointments\Get\PDF');
-    $this->post('/appointments/vehicle-addresses', 'AppointmentsController:getVehicleAddresses')
-         ->setName('ERP\Appointments\GetVehicleAddresses');
+    
+    // === NOVAS ROTAS NECESSÁRIAS ===
+    
+    // Rota para buscar detalhes do agendamento (AJAX - para modal)
+    $this->get('/details/{appointmentID}', 'erp.appointments.controller:getDetails')
+         ->setName('ERP\Appointments\Details');
+    
+    // Rota alternativa para criar novo agendamento (alias)
+    $this->map(['GET', 'POST'], '/newAppointment', 'erp.appointments.controller:add')
+         ->add($container['csrf'])
+         ->add($container['trimmer'])
+         ->setName('ERP\Appointments\New');
   });
 
   // --------------------------------------------[ Parametrização ]-----
