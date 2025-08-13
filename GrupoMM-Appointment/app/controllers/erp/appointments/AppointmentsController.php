@@ -66,47 +66,115 @@ class AppointmentsController extends Controller
      * Endpoint AJAX para carregar dados do calendário
      */
     public function get(Request $request, Response $response)
-    {
-        try {
-            $contractorID = $this->authorization->getContractor()->id;
-            $filters = $this->getCalendarFilters($request);
-            
-            // Usar Eloquent com a nova estrutura
-            $query = WorkOrder::with(['customer', 'vehicle', 'technician', 'serviceType', 'city'])
-                ->byContractor($contractorID);
-            
-            // Aplicar filtros
-            if (!empty($filters['start_date'])) {
-                $query->where('scheduled_at', '>=', $filters['start_date'] . ' 00:00:00');
-            }
-            if (!empty($filters['end_date'])) {
-                $query->where('scheduled_at', '<=', $filters['end_date'] . ' 23:59:59');
-            }
-            if (!empty($filters['technician_id'])) {
-                $query->byTechnician($filters['technician_id']);
-            }
-            if (!empty($filters['customer_id'])) {
-                $query->byCustomer($filters['customer_id']);
-            }
-            if (!empty($filters['status'])) {
-                $query->where('status', $filters['status']);
-            }
-            
-            $workOrders = $query->orderBy('scheduled_at')->get();
-            
-            // Formata dados para o FullCalendar
-            $calendarEvents = $this->formatWorkOrdersForCalendar($workOrders);
-            
-            return $response->withJson($calendarEvents);
-            
-        } catch (QueryException | Exception $exception) {
-            $this->error("Erro ao carregar dados do calendário: {error}", [
-                'error' => $exception->getMessage()
-            ]);
-            
-            return $response->withJson(['error' => 'Erro ao carregar dados'], 500);
+{
+    try {
+        $contractorID = $this->authorization->getContractor()->id;
+        $filters = $this->getCalendarFilters($request);
+        
+        $sql = "
+            SELECT 
+                wo.work_order_id,
+                wo.work_order_number,
+                wo.scheduled_at,
+                wo.started_at,
+                wo.completed_at,
+                wo.status,
+                wo.priority,
+                wo.observations,
+                wo.internal_notes,
+                wo.address,
+                wo.street_number,
+                wo.complement,
+                wo.district,
+                wo.postal_code,
+                wo.is_warranty,
+                
+                -- Cliente (SEM documento por enquanto)
+                c.name as customer_name,
+                
+                -- Veículo  
+                v.plate as vehicle_plate,
+                v.modelname as vehicle_model,
+                v.brandname as vehicle_brand,
+                v.color as vehicle_color,
+                
+                -- Técnico
+                t.name as technician_name,
+                
+                -- Tipo de serviço
+                st.name as service_type_name,
+                st.description as service_type_description,
+                st.estimated_duration,
+                
+                -- Cidade
+                ct.name as city_name,
+                ct.state as city_state
+                
+            FROM erp.work_orders wo
+            LEFT JOIN erp.entities c ON wo.customer_id = c.entityid
+            LEFT JOIN erp.vehicles v ON wo.vehicle_id = v.vehicleid  
+            LEFT JOIN erp.technicians t ON wo.technician_id = t.technicianid
+            LEFT JOIN erp.service_types st ON wo.service_type_id = st.service_type_id
+            LEFT JOIN erp.cities ct ON wo.city_id = ct.cityid
+            WHERE wo.contractor_id = :contractor_id
+        ";
+        
+        $params = ['contractor_id' => $contractorID];
+        
+        // Aplicar filtros dinamicamente
+        if (!empty($filters['start_date'])) {
+            $sql .= " AND wo.scheduled_at >= :start_date";
+            $params['start_date'] = $filters['start_date'] . ' 00:00:00';
         }
+        
+        if (!empty($filters['end_date'])) {
+            $sql .= " AND wo.scheduled_at <= :end_date";  
+            $params['end_date'] = $filters['end_date'] . ' 23:59:59';
+        }
+        
+        if (!empty($filters['technician_id'])) {
+            $sql .= " AND wo.technician_id = :technician_id";
+            $params['technician_id'] = intval($filters['technician_id']);
+        }
+        
+        if (!empty($filters['customer_id'])) {
+            $sql .= " AND wo.customer_id = :customer_id";
+            $params['customer_id'] = intval($filters['customer_id']);
+        }
+        
+        if (!empty($filters['status'])) {
+            $sql .= " AND wo.status = :status";
+            $params['status'] = $filters['status'];
+        }
+        
+        $sql .= " ORDER BY wo.scheduled_at ASC";
+        
+        // Executar query
+        $workOrders = $this->DB->select($sql, $params);
+        
+        // Formatar dados para o FullCalendar
+        $calendarEvents = $this->formatWorkOrdersForCalendarSQL($workOrders);
+        
+        $this->debug("Carregados " . count($workOrders) . " agendamentos para o calendário");
+        
+        return $response->withJson([
+            'success' => true,
+            'events' => $calendarEvents,
+            'total' => count($workOrders)
+        ]);
+        
+    } catch (QueryException | Exception $exception) {
+        $this->error("Erro ao carregar dados do calendário: {error}", [
+            'error' => $exception->getMessage()
+        ]);
+        
+        return $response->withJson([
+            'success' => false,
+            'error' => 'Erro ao carregar dados do calendário',
+            'message' => $exception->getMessage()
+        ], 500);
     }
+}
 
     /**
      * Adicionar novo agendamento (GET exibe formulário, POST processa)
@@ -262,79 +330,128 @@ class AppointmentsController extends Controller
      * Retorna detalhes do agendamento (AJAX)
      */
     public function getDetails(Request $request, Response $response)
-    {
-        $workOrderID = $request->getAttribute('appointmentID');
+{
+    $workOrderID = $request->getAttribute('appointmentID');
 
-        try {
-            $workOrder = WorkOrder::with([
-                'customer', 
-                'vehicle', 
-                'technician', 
-                'serviceType', 
-                'city',
-                'serviceProvider',
-                'createdByUser',
-                'updatedByUser'
-            ])
-            ->byContractor($this->authorization->getContractor()->id)
-            ->find($workOrderID);
-            
-            if (!$workOrder) {
-                return $response->withJson(['error' => 'Agendamento não encontrado'], 404);
-            }
-            
-            // Buscar histórico
-            $timeline = WorkOrderHistory::getTimeline($workOrderID);
-            
-            return $response->withJson([
-                'success' => true,
-                'data' => [
-                    'work_order' => [
-                        'id' => $workOrder->work_order_id,
-                        'number' => $workOrder->work_order_number,
-                        'status' => $workOrder->status,
-                        'status_label' => $workOrder->getStatusLabel(),
-                        'status_color' => $workOrder->getStatusColor(),
-                        'priority' => $workOrder->priority,
-                        'priority_label' => $workOrder->getPriorityLabel(),
-                        'priority_color' => $workOrder->getPriorityColor(),
-                        'scheduled_at' => $workOrder->scheduled_at->format('d/m/Y H:i'),
-                        'address' => $workOrder->getFullAddress(),
-                        'observations' => $workOrder->observations,
-                        'internal_notes' => $workOrder->internal_notes,
-                        'is_emergency' => $workOrder->isEmergency()
-                    ],
-                    'customer' => [
-                        'id' => $workOrder->customer->entityid,
-                        'name' => $workOrder->customer->name,
-                        'document' => $workOrder->customer->nationalregister
-                    ],
-                    'vehicle' => [
-                        'id' => $workOrder->vehicle->vehicleid,
-                        'plate' => $workOrder->vehicle->plate,
-                        'model' => $workOrder->vehicle->modelname,
-                        'brand' => $workOrder->vehicle->brandname,
-                        'color' => $workOrder->vehicle->color
-                    ],
-                    'technician' => [
-                        'id' => $workOrder->technician->technicianid,
-                        'name' => $workOrder->technician->name
-                    ],
-                    'service' => [
-                        'id' => $workOrder->serviceType->service_type_id,
-                        'name' => $workOrder->serviceType->getLabel(),
-                        'category' => $workOrder->serviceType->getCategoryLabel(),
-                        'duration' => $workOrder->serviceType->getFormattedDuration()
-                    ],
-                    'timeline' => $timeline
-                ]
-            ]);
-            
-        } catch (Exception $e) {
-            $this->error("Erro ao buscar detalhes: {error}", ['error' => $e->getMessage()]);
-            return $response->withJson(['error' => 'Erro interno'], 500);
+    try {
+        $contractorID = $this->authorization->getContractor()->id;
+        
+        // SQL em vez de Eloquent
+        $sql = "
+            SELECT 
+                wo.*,
+                c.name as customer_name,
+                c.nationalregister as customer_document,
+                v.plate as vehicle_plate,
+                v.modelname as vehicle_model,
+                v.brandname as vehicle_brand,
+                v.color as vehicle_color,
+                t.name as technician_name,
+                st.name as service_type_name,
+                st.description as service_type_description,
+                st.estimated_duration,
+                ct.name as city_name,
+                ct.state as city_state,
+                sp.name as service_provider_name,
+                cu.name as created_by_name,
+                uu.name as updated_by_name
+            FROM erp.work_orders wo
+            LEFT JOIN erp.entities c ON wo.customer_id = c.entityid
+            LEFT JOIN erp.vehicles v ON wo.vehicle_id = v.vehicleid
+            LEFT JOIN erp.technicians t ON wo.technician_id = t.technicianid
+            LEFT JOIN erp.service_types st ON wo.service_type_id = st.service_type_id
+            LEFT JOIN erp.cities ct ON wo.city_id = ct.cityid
+            LEFT JOIN erp.entities sp ON wo.service_provider_id = sp.entityid
+            LEFT JOIN erp.users cu ON wo.created_by_user_id = cu.userid
+            LEFT JOIN erp.users uu ON wo.updated_by_user_id = uu.userid
+            WHERE wo.work_order_id = :work_order_id
+            AND wo.contractor_id = :contractor_id
+            LIMIT 1
+        ";
+        
+        $params = [
+            'work_order_id' => $workOrderID,
+            'contractor_id' => $contractorID
+        ];
+        
+        $result = $this->DB->select($sql, $params);
+        
+        if (empty($result)) {
+            return $response->withJson(['error' => 'Agendamento não encontrado'], 404);
         }
+        
+        $wo = $result[0];
+        
+        // Buscar histórico usando SQL também
+        $historySQL = "
+            SELECT 
+                wh.*,
+                u.name as user_name
+            FROM erp.work_orders_history wh
+            LEFT JOIN erp.users u ON wh.changed_by_user_id = u.userid
+            WHERE wh.work_order_id = :work_order_id
+            ORDER BY wh.changed_at DESC
+            LIMIT 50
+        ";
+        
+        $timeline = $this->DB->select($historySQL, ['work_order_id' => $workOrderID]);
+        
+        // Formatar resposta
+        $address = $wo->address;
+        if ($wo->street_number) $address .= ', ' . $wo->street_number;
+        if ($wo->district) $address .= ' - ' . $wo->district;
+        if ($wo->city_name) {
+            $address .= ' - ' . $wo->city_name;
+            if ($wo->city_state) $address .= '/' . $wo->city_state;
+        }
+        
+        return $response->withJson([
+            'success' => true,
+            'data' => [
+                'work_order' => [
+                    'id' => $wo->work_order_id,
+                    'number' => $wo->work_order_number,
+                    'status' => $wo->status,
+                    'status_label' => $this->getStatusLabel($wo->status),
+                    'status_color' => $this->getStatusColor($wo->status),
+                    'priority' => $wo->priority,
+                    'priority_label' => $this->getPriorityLabel($wo->priority),
+                    'scheduled_at' => date('d/m/Y H:i', strtotime($wo->scheduled_at)),
+                    'address' => $address,
+                    'observations' => $wo->observations,
+                    'internal_notes' => $wo->internal_notes,
+                    'is_emergency' => ($wo->priority == 1)
+                ],
+                'customer' => [
+                    'id' => $wo->customer_id,
+                    'name' => $wo->customer_name,
+                    'document' => $wo->customer_document
+                ],
+                'vehicle' => [
+                    'id' => $wo->vehicle_id,
+                    'plate' => $wo->vehicle_plate,
+                    'model' => $wo->vehicle_model,
+                    'brand' => $wo->vehicle_brand,
+                    'color' => $wo->vehicle_color
+                ],
+                'technician' => [
+                    'id' => $wo->technician_id,
+                    'name' => $wo->technician_name
+                ],
+                'service' => [
+                    'id' => $wo->service_type_id,
+                    'name' => $wo->service_type_description ?? $wo->service_type_name,
+                    'duration' => $this->formatDuration($wo->estimated_duration)
+                ],
+                'timeline' => $timeline
+            ]
+        ]);
+        
+    } catch (Exception $e) {
+        $this->error("Erro ao buscar detalhes: {error}", ['error' => $e->getMessage()]);
+        return $response->withJson(['error' => 'Erro interno'], 500);
     }
+}
 
     // ================ MÉTODOS AUXILIARES ================
 
@@ -350,11 +467,9 @@ class AppointmentsController extends Controller
         // Processa dados antes da validação
         $processedData = $this->processWorkOrderData($rawData);
         
-        // NÃO usar o validator padrão que está dando problema
-        // Vamos validar manualmente os campos essenciais
+        // Validações manuais básicas
         $errors = [];
         
-        // Validações manuais básicas
         if (empty($processedData['customer_id'])) {
             $errors[] = 'Cliente é obrigatório';
         }
@@ -378,18 +493,17 @@ class AppointmentsController extends Controller
         }
         
         if (empty($errors)) {
-            // Dados válidos - cria o agendamento
+            // Dados válidos - cria o agendamento usando SQL direto
             $workOrder = $this->createWorkOrder($processedData);
             
             // Log da criação
-            WorkOrderHistory::logCreation(
-                $workOrder->work_order_id,
-                $this->authorization->getUser()->userid,
-                $workOrder->toArray()
+            $this->logWorkOrderCreation(
+                $workOrder['work_order_id'],
+                $this->authorization->getUser()->userid
             );
 
             $this->flash->addMessage('success', 
-                "Agendamento {$workOrder->work_order_number} criado com sucesso!");
+                "Agendamento {$workOrder['work_order_number']} criado com sucesso!");
             
             return $response->withRedirect($this->router->pathFor('ERP\\Appointments\\Calendar'));
             
@@ -634,17 +748,103 @@ class AppointmentsController extends Controller
     /**
      * Cria o agendamento
      */
-    protected function createWorkOrder(array $data): WorkOrder
-    {
-        $workOrder = new WorkOrder();
-        $workOrder->fill($data);
+    protected function createWorkOrder(array $data): array
+{
+    try {
+        // Montar SQL de INSERT
+        $sql = "
+            INSERT INTO erp.work_orders (
+                contractor_id,
+                customer_id,
+                vehicle_id,
+                technician_id,
+                service_provider_id,
+                service_type_id,
+                address,
+                street_number,
+                complement,
+                district,
+                city_id,
+                postal_code,
+                scheduled_at,
+                status,
+                priority,
+                observations,
+                created_at,
+                created_by_user_id,
+                updated_at,
+                updated_by_user_id
+            ) VALUES (
+                :contractor_id,
+                :customer_id,
+                :vehicle_id,
+                :technician_id,
+                :service_provider_id,
+                :service_type_id,
+                :address,
+                :street_number,
+                :complement,
+                :district,
+                :city_id,
+                :postal_code,
+                :scheduled_at,
+                :status,
+                :priority,
+                :observations,
+                :created_at,
+                :created_by_user_id,
+                :updated_at,
+                :updated_by_user_id
+            )
+            RETURNING work_order_id, work_order_number
+        ";
         
-        if (!$workOrder->save()) {
-            throw new RuntimeException('Falha ao salvar agendamento');
+        // Preparar parâmetros
+        $params = [
+            'contractor_id' => $data['contractor_id'],
+            'customer_id' => $data['customer_id'],
+            'vehicle_id' => $data['vehicle_id'],
+            'technician_id' => $data['technician_id'],
+            'service_provider_id' => $data['service_provider_id'],
+            'service_type_id' => $data['service_type_id'],
+            'address' => $data['address'] ?? '',
+            'street_number' => $data['street_number'] ?? '',
+            'complement' => $data['complement'] ?? '',
+            'district' => $data['district'] ?? '',
+            'city_id' => $data['city_id'],
+            'postal_code' => $data['postal_code'] ?? '',
+            'scheduled_at' => $data['scheduled_at'],
+            'status' => $data['status'] ?? 'pending',
+            'priority' => $data['priority'] ?? 3,
+            'observations' => $data['observations'] ?? null,
+            'created_at' => $data['created_at'] ?? date('Y-m-d H:i:s'),
+            'created_by_user_id' => $data['created_by_user_id'],
+            'updated_at' => $data['updated_at'] ?? date('Y-m-d H:i:s'),
+            'updated_by_user_id' => $data['updated_by_user_id']
+        ];
+        
+        // Executar INSERT
+        $result = $this->DB->select($sql, $params);
+        
+        if (empty($result)) {
+            throw new RuntimeException('Falha ao salvar agendamento - nenhum ID retornado');
         }
         
+        // Retornar dados do work order criado
+        $workOrder = [
+            'work_order_id' => $result[0]->work_order_id,
+            'work_order_number' => $result[0]->work_order_number
+        ];
+        
+        $this->debug("Work Order criado com sucesso", $workOrder);
+        
         return $workOrder;
+        
+    } catch (Exception $e) {
+        $this->error("Erro ao inserir work order: {error}", ['error' => $e->getMessage()]);
+        throw new RuntimeException('Falha ao salvar agendamento: ' . $e->getMessage());
     }
+}
 
     /**
      * Registra alterações no work order
@@ -671,29 +871,70 @@ class AppointmentsController extends Controller
     /**
      * Recupera work order para edição
      */
-    protected function getWorkOrderForEdit(int $workOrderID): WorkOrder
-    {
-        $contractorID = $this->authorization->getContractor()->id;
-        
-        $workOrder = WorkOrder::with(['customer', 'vehicle', 'technician', 'serviceType', 'city'])
-            ->byContractor($contractorID)
-            ->where('work_order_id', $workOrderID)
-            ->firstOrFail();
-            
-        return $workOrder;
+    protected function getWorkOrderForEdit(int $workOrderID): array
+{
+    $contractorID = $this->authorization->getContractor()->id;
+    
+    $sql = "
+        SELECT 
+            wo.*,
+            c.name as customer_name,
+            v.plate as vehicle_plate,
+            t.name as technician_name,
+            st.description as service_type_name,
+            ct.name as city_name
+        FROM erp.work_orders wo
+        LEFT JOIN erp.entities c ON wo.customer_id = c.entityid
+        LEFT JOIN erp.vehicles v ON wo.vehicle_id = v.vehicleid
+        LEFT JOIN erp.technicians t ON wo.technician_id = t.technicianid
+        LEFT JOIN erp.service_types st ON wo.service_type_id = st.service_type_id
+        LEFT JOIN erp.cities ct ON wo.city_id = ct.cityid
+        WHERE wo.work_order_id = :work_order_id
+        AND wo.contractor_id = :contractor_id
+        LIMIT 1
+    ";
+    
+    $params = [
+        'work_order_id' => $workOrderID,
+        'contractor_id' => $contractorID
+    ];
+    
+    $result = $this->DB->select($sql, $params);
+    
+    if (empty($result)) {
+        throw new RuntimeException('Agendamento não encontrado');
     }
+    
+    return (array) $result[0];
+}
 
     /**
      * Recupera work order para deleção
      */
-    protected function getWorkOrderForDelete(int $workOrderID): ?WorkOrder
-    {
-        $contractorID = $this->authorization->getContractor()->id;
-        
-        return WorkOrder::byContractor($contractorID)
-            ->where('work_order_id', $workOrderID)
-            ->first();
+    protected function getWorkOrderForDelete(int $workOrderID): ?array
+{
+    $contractorID = $this->authorization->getContractor()->id;
+    
+    $sql = "
+        SELECT * FROM erp.work_orders 
+        WHERE work_order_id = :work_order_id
+        AND contractor_id = :contractor_id
+        LIMIT 1
+    ";
+    
+    $params = [
+        'work_order_id' => $workOrderID,
+        'contractor_id' => $contractorID
+    ];
+    
+    $result = $this->DB->select($sql, $params);
+    
+    if (empty($result)) {
+        return null;
     }
+    
+    return (array) $result[0];
+}
 
     /**
      * Formata work orders para o FullCalendar
@@ -1008,4 +1249,183 @@ class AppointmentsController extends Controller
 
         return $rules;
     }
+
+    /**
+ * Registra criação do work order no histórico
+ */
+protected function logWorkOrderCreation(int $workOrderId, int $userId): void
+{
+    try {
+        $sql = "
+            INSERT INTO erp.work_orders_history (
+                work_order_id,
+                field_name,
+                old_value,
+                new_value,
+                change_reason,
+                changed_at,
+                changed_by_user_id
+            ) VALUES (
+                :work_order_id,
+                'CREATED',
+                NULL,
+                'Work order criado',
+                'Criação inicial',
+                :changed_at,
+                :changed_by_user_id
+            )
+        ";
+        
+        $params = [
+            'work_order_id' => $workOrderId,
+            'changed_at' => date('Y-m-d H:i:s'),
+            'changed_by_user_id' => $userId
+        ];
+        
+        $this->DB->insert($sql, $params);
+        
+    } catch (Exception $e) {
+        $this->error("Erro ao registrar log de criação: {error}", ['error' => $e->getMessage()]);
+        // Não lançar exceção aqui, pois o work order já foi criado
+    }
 }
+protected function formatWorkOrdersForCalendarSQL(array $workOrders): array
+{
+    $events = [];
+    
+    foreach ($workOrders as $wo) {
+        try {
+            $scheduledAt = new \Carbon\Carbon($wo->scheduled_at);
+        } catch (Exception $e) {
+            $this->error("Erro ao converter data: {error}", ['error' => $e->getMessage()]);
+            continue;
+        }
+        
+        $title = ($wo->vehicle_plate ?? 'S/Placa') . ' - ' . ($wo->customer_name ?? 'Cliente');
+        
+        $endTime = $scheduledAt->copy();
+        if ($wo->estimated_duration && $wo->estimated_duration > 0) {
+            $endTime->addMinutes($wo->estimated_duration);
+        } else {
+            $endTime->addHour();
+        }
+        
+        $statusColor = $this->getStatusColor($wo->status);
+        
+        $address = $wo->address;
+        if ($wo->street_number) {
+            $address .= ', ' . $wo->street_number;
+        }
+        if ($wo->district) {
+            $address .= ' - ' . $wo->district;
+        }
+        if ($wo->city_name) {
+            $address .= ' - ' . $wo->city_name;
+            if ($wo->city_state) {
+                $address .= '/' . $wo->city_state;
+            }
+        }
+        
+        $isEmergency = (
+            stripos($wo->service_type_name ?? '', 'emergencia') !== false ||
+            stripos($wo->service_type_description ?? '', 'emergencia') !== false ||
+            $wo->priority == 1
+        );
+        
+        $events[] = [
+            'id' => $wo->work_order_id,
+            'title' => $title,
+            'start' => $scheduledAt->toIso8601String(),
+            'end' => $endTime->toIso8601String(),
+            'backgroundColor' => $statusColor,
+            'borderColor' => $statusColor,
+            'extendedProps' => [
+                'work_order_number' => $wo->work_order_number,
+                'service_type' => $wo->service_type_description ?? $wo->service_type_name ?? '',
+                'status' => $this->getStatusLabel($wo->status),
+                'priority' => $this->getPriorityLabel($wo->priority),
+                'customer' => $wo->customer_name ?? '',
+                'customer_document' => '', // Removido por enquanto
+                'vehicle' => $wo->vehicle_plate ?? '',
+                'vehicle_model' => $wo->vehicle_model ?? '',
+                'vehicle_brand' => $wo->vehicle_brand ?? '',
+                'technician' => $wo->technician_name ?? '',
+                'address' => $address,
+                'observations' => $wo->observations ?? '',
+                'internal_notes' => $wo->internal_notes ?? '',
+                'is_emergency' => $isEmergency,
+                'is_warranty' => (bool) ($wo->is_warranty ?? false),
+                'estimated_duration' => $wo->estimated_duration ?? 60
+            ]
+        ];
+    }
+    
+    return $events;
+}
+
+/**
+ * Retorna cor baseada no status
+ */
+protected function getStatusColor(string $status): string
+{
+    $colors = [
+        'pending' => '#ffc107',      // Amarelo - Pendente
+        'scheduled' => '#007bff',    // Azul - Agendado  
+        'in_progress' => '#17a2b8',  // Ciano - Em andamento
+        'completed' => '#28a745',    // Verde - Concluído
+        'cancelled' => '#dc3545',    // Vermelho - Cancelado
+        'failed_visit' => '#fd7e14',  // Laranja - Visita frustrada
+        'rescheduled' => '#6f42c1'   // Roxo - Reagendado
+    ];
+    
+    return $colors[$status] ?? '#6c757d'; // Cinza como padrão
+}
+
+/**
+ * Retorna label do status
+ */
+protected function getStatusLabel(string $status): string
+{
+    return self::STATUS_MAP[$status] ?? ucfirst($status);
+}
+
+/**
+ * Retorna label da prioridade
+ */
+protected function getPriorityLabel(?int $priority): string
+{
+    $labels = [
+        1 => 'Muito Alta',
+        2 => 'Alta', 
+        3 => 'Normal',
+        4 => 'Baixa',
+        5 => 'Muito Baixa'
+    ];
+    
+    return $labels[$priority ?? 3] ?? 'Normal';
+}
+
+/**
+ * Formata duração em minutos para texto legível
+ */
+protected function formatDuration(?int $minutes): string
+{
+    if (!$minutes || $minutes <= 0) {
+        return '1 hora (estimado)';
+    }
+    
+    if ($minutes < 60) {
+        return $minutes . ' min';
+    }
+    
+    $hours = floor($minutes / 60);
+    $remainingMinutes = $minutes % 60;
+    
+    if ($remainingMinutes == 0) {
+        return $hours . 'h';
+    }
+    
+    return $hours . 'h ' . $remainingMinutes . 'min';
+}
+}
+

@@ -697,6 +697,118 @@ BEGIN
       
       RETURN NEXT addressData;
     END IF;
+    -- ============================================
+-- SOLUÇÃO IMEDIATA: Criar partição de agosto
+-- ============================================
+
+-- 1. Criar partição para agosto 2025
+CREATE TABLE IF NOT EXISTS erp.work_orders_202508 PARTITION OF erp.work_orders
+FOR VALUES FROM ('2025-08-01') TO ('2025-09-01');
+
+-- 2. Criar índices para a partição
+CREATE INDEX IF NOT EXISTS work_orders_202508_created_at_idx ON erp.work_orders_202508 (created_at);
+CREATE INDEX IF NOT EXISTS work_orders_202508_customer_idx ON erp.work_orders_202508 (customer_id, created_at);
+CREATE INDEX IF NOT EXISTS work_orders_202508_technician_idx ON erp.work_orders_202508 (technician_id, scheduled_at);
+CREATE INDEX IF NOT EXISTS work_orders_202508_status_idx ON erp.work_orders_202508 (status, created_at);
+CREATE INDEX IF NOT EXISTS work_orders_202508_vehicle_idx ON erp.work_orders_202508 (vehicle_id, created_at);
+CREATE INDEX IF NOT EXISTS work_orders_202508_number_idx ON erp.work_orders_202508 (work_order_number);
+
+-- 3. CORREÇÃO DA FUNÇÃO DE PARTICIONAMENTO
+CREATE OR REPLACE FUNCTION erp.work_orders_partition_trigger()
+RETURNS TRIGGER AS
+$BODY$
+DECLARE
+    year_of_date CHAR(4);
+    month_of_date CHAR(2);
+    start_of_month DATE;
+    end_of_month DATE;
+    partition_name VARCHAR;
+    table_exists BOOLEAN;
+BEGIN
+    IF (TG_OP = 'INSERT') THEN
+        -- Extrai ano e mês da data de criação
+        year_of_date := EXTRACT(YEAR FROM NEW.created_at);
+        month_of_date := LPAD(EXTRACT(MONTH FROM NEW.created_at)::VARCHAR, 2, '0');
+        partition_name := 'work_orders_' || year_of_date || month_of_date;
+        start_of_month := DATE_TRUNC('MONTH', NEW.created_at);
+        -- ✅ CORREÇÃO: Remove a subtração de 1 dia
+        end_of_month := DATE_TRUNC('MONTH', NEW.created_at) + INTERVAL '1 MONTH';
+        
+        -- Verifica se a partição existe
+        SELECT EXISTS(
+            SELECT 1 FROM pg_catalog.pg_class c
+            JOIN pg_catalog.pg_namespace n ON c.relnamespace = n.oid
+            WHERE c.relname = partition_name AND n.nspname = 'erp'
+        ) INTO table_exists;
+        
+        IF NOT table_exists THEN
+            RAISE NOTICE 'Criando partição % para work_orders (% a %)', 
+                         partition_name, start_of_month, end_of_month;
+            
+            -- Cria a partição
+            EXECUTE FORMAT('CREATE TABLE erp.%I PARTITION OF erp.work_orders 
+                          FOR VALUES FROM (%L) TO (%L)',
+                          partition_name, start_of_month, end_of_month);
+            
+            -- Cria índices na partição
+            EXECUTE FORMAT('CREATE INDEX %I_created_at_idx ON erp.%I (created_at)', 
+                          partition_name, partition_name);
+            EXECUTE FORMAT('CREATE INDEX %I_customer_idx ON erp.%I (customer_id, created_at)', 
+                          partition_name, partition_name);
+            EXECUTE FORMAT('CREATE INDEX %I_technician_idx ON erp.%I (technician_id, scheduled_at)', 
+                          partition_name, partition_name);
+            EXECUTE FORMAT('CREATE INDEX %I_status_idx ON erp.%I (status, created_at)', 
+                          partition_name, partition_name);
+            EXECUTE FORMAT('CREATE INDEX %I_vehicle_idx ON erp.%I (vehicle_id, created_at)', 
+                          partition_name, partition_name);
+            EXECUTE FORMAT('CREATE INDEX %I_number_idx ON erp.%I (work_order_number)', 
+                          partition_name, partition_name);
+        END IF;
+    END IF;
+    
+    RETURN NEW;
+END;
+$BODY$ LANGUAGE plpgsql;
+
+-- ============================================
+-- VERIFICAÇÕES ÚTEIS
+-- ============================================
+
+-- Verificar partições existentes
+SELECT 
+    schemaname,
+    tablename,
+    pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size
+FROM pg_tables 
+WHERE tablename LIKE 'work_orders_%' 
+AND schemaname = 'erp'
+ORDER BY tablename;
+
+-- Verificar se a data atual tem partição disponível
+SELECT 
+    'Partição para hoje (' || CURRENT_DATE || '):' as info,
+    CASE 
+        WHEN EXISTS (
+            SELECT 1 FROM pg_tables 
+            WHERE tablename = 'work_orders_' || TO_CHAR(CURRENT_DATE, 'YYYYMM')
+            AND schemaname = 'erp'
+        ) THEN 'EXISTS ✅'
+        ELSE 'NOT FOUND ❌'
+    END as status;
+
+-- Testar inserção (remover após teste)
+/*
+INSERT INTO erp.work_orders (
+    work_order_number, contractor_id, customer_id, vehicle_id, 
+    technician_id, service_provider_id, service_type_id,
+    address, city_id, postal_code, scheduled_at,
+    created_by_user_id, updated_by_user_id
+) VALUES (
+    'TEST-2025-000001', 1, 1, 1, 1, 1, 1,
+    'Rua Teste', 1, '01234-567', '2025-08-12 17:00:00',
+    1, 1
+);
+*/
   END loop;
 END
 $$
